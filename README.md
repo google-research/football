@@ -20,11 +20,13 @@ You can either install the code from github (newest version) or from pypi (stabl
   glee-dev libsdl-sge-dev python3-pip`
 
   1. Install gfootball python package from pypi:
+
     - Use `pip3 install gfootball[tf_cpu] --process-dependency-links` if you want to use CPU version of TensorFlow.
     - Use `pip3 install gfootball[tf_gpu] --process-dependency-links` if you want to use GPU version of TensorFlow.
     - This command can run for couple of minutes, as it compiles the C++ environment in the background.
 
   1. OR install gfootball python package (run the commands from the main project directory):
+
     - `git clone https://github.com/google-research/football.git`
     - `cd football`
     - Use `pip3 install .[tf_cpu] --process-dependency-links` if you want to use CPU version of TensorFlow.
@@ -44,11 +46,15 @@ In order to train with nice replays being saved, run
 Run `python3 -m gfootball.play_game`. By default it starts the
 base scenario and the home player is controlled by the keyboard. Different types
 of players are suported (game pad, external bots, agents...). For possible
-options run `python3 -m gfootball.play_game -helpfull`. Please note that playing
+options run `python3 -m gfootball.play_game -helpfull`.
+
+Please note that playing
 the game is implemented through environment, so human-controlled players use
 the same interface as the agents. One important fact is that there is a single
 action per 100 ms reported to the environment, which might cause lag effect
-when playing. You can implement your own player by adding its implementation
+when playing.
+
+You can implement your own player by adding its implementation
 to the env/players directory (no other changes are needed).
 Have a look at existing players code for example implementation.
 
@@ -152,9 +158,12 @@ step.
 ## Scenarios
 We provide a number of built-in scenarios/levels.
 Most of them are provided in two modes - deterministic and stochastic.
+
 Deterministic scenarios provide fully determnistic environment - both built-in
 AI and game physics. As a result, for fixed sequence of actions observations
-and rewards returned by the environment are fixed. Stochastic episodes introduce
+and rewards returned by the environment are fixed.
+
+Stochastic episodes introduce
 some variance to provide more realistic behavior.
 
 - Hard scenarios
@@ -175,7 +184,7 @@ some variance to provide more realistic behavior.
 - Simple
     - `empty_goal` - single player tries to score on an empty goal.
 
-You can add your own scenarios by adding a new file to the gfootball/scenarios/
+You can add your own scenarios by adding a new file to the `gfootball/scenarios/`
 directory. Have a look at existing scenarios for example.
 
 ## Trace dumps
@@ -184,11 +193,11 @@ analysis. Each trace dump consists of a picked episode trace (observations,
 reward, additional debug info) and optionally an AVI file with rendered episode.
 Picked episode trace can be played back later on using `replay.py` script.
 By default trace dumps are disabled to not occupy disk space. They
-are controlled by the following set of flags.
+are controlled by the following set of flags:
 
 -  `dump_full_episodes` - should trace for each entire episode be recorded.
 -  `dump_scores` - should sampled traces for scores be recorded.
 -  `tracesdir` - directory in which trace dumps are saved.
 -  `write_video` - should video be recorded together with the trace.
     If rendering is disabled (`render` config flag), video contains a simple
-    episode animatoin.
+    episode animation.
