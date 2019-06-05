@@ -1,0 +1,13 @@
+<object>
+
+	<geometry>
+		<filename>goals.ase</filename>
+		<name>goals</name>
+		<position>0, 0, 0</position>
+		<rotation>0, 0, 0, 0</rotation>
+		<properties>
+			<dynamic>true</dynamic>
+		</properties>
+	</geometry>
+
+</object>

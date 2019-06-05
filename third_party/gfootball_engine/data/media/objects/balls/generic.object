@@ -1,0 +1,10 @@
+<object>
+
+	<geometry>
+		<filename>generic.ase</filename>
+		<name>generic ball</name>
+		<position>0, 0, 0</position>
+		<localmode>absolute</localmode>
+	</geometry>
+
+</object>

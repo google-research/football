@@ -1,0 +1,158 @@
+<object>
+
+
+
+	<node>
+		<name>body</name>
+		<position>0, 0, 0.96</position>
+		<rotation>0, 0, 0, 0</rotation>
+
+
+
+
+
+	<geometry>
+		<filename>models/pelvis.ase</filename>
+		<name>pelvis</name>
+	</geometry>
+
+	<node>
+		<name>middle</name>
+		<position>0, 0, 0.15</position>
+		<rotation>0, 0, 0, 0</rotation>
+
+		<geometry>
+			<filename>models/trunk.ase</filename>
+			<name>trunk</name>
+		</geometry>
+
+		<node>
+			<name>neck</name>
+			<position>0, -0.03, 0.5</position>
+			<rotation>0, 0, 0, 0</rotation>
+	
+			<geometry>
+				<filename>models/head.ase</filename>
+				<name>head</name>
+			</geometry>
+		</node>
+	
+		<node>
+			<name>left_shoulder</name>
+			<position>0.16, -0.01, 0.48</position>
+			<rotation>10, 0, -1, 0</rotation>
+	
+			<geometry>
+				<filename>models/upperarm.ase</filename>
+				<name>left_upperarm</name>
+			</geometry>
+	
+			<node>
+				<name>left_elbow</name>
+				<position>-0.01, -0.00, -0.33</position>
+				<rotation>-6, 0, -1, 0</rotation>
+	
+				<geometry>
+					<filename>models/lowerarm.ase</filename>
+					<name>left_lowerarm</name>
+				</geometry>
+	
+			</node>
+		</node>
+	
+		<node>
+			<name>right_shoulder</name>
+			<position>-0.16, -0.01, 0.48</position>
+			<rotation>10, 0, 1, 0</rotation>
+	
+			<geometry>
+				<filename>models/upperarm.ase</filename>
+				<name>right_upperarm</name>
+			</geometry>
+	
+			<node>
+				<name>right_elbow</name>
+				<position>0.01, -0.00, -0.33</position>
+				<rotation>-6, 0, 1, 0</rotation>
+	
+				<geometry>
+					<filename>models/lowerarm.ase</filename>
+					<name>right_lowerarm</name>
+				</geometry>
+	
+			</node>
+		</node>
+	</node>
+
+	<node>
+		<name>left_thigh</name>
+		<position>0.087, 0, -0.01</position>
+		<rotation>2, 0, -1, 0</rotation>
+
+		<geometry>
+			<filename>models/upperleg.ase</filename>
+			<name>left_upperleg</name>
+		</geometry>
+
+		<node>
+			<name>left_knee</name>
+			<position>0, 0, -0.42</position>
+			<rotation>-2, 0, -1, 0</rotation>
+
+			<geometry>
+				<filename>models/lowerleg.ase</filename>
+				<name>left_lowerleg</name>
+			</geometry>
+
+			<node>
+				<name>left_ankle</name>
+				<position>0, -0.04, -0.44</position>
+				<rotation>0, 0, 0, 0</rotation>
+
+				<geometry>
+					<filename>models/foot.ase</filename>
+					<name>left_foot</name>
+				</geometry>
+			</node>
+		</node>
+	</node>
+
+	<node>
+		<name>right_thigh</name>
+		<position>-0.087, 0, -0.01</position>
+		<rotation>2, 0, 1, 0</rotation>
+
+		<geometry>
+			<filename>models/upperleg.ase</filename>
+			<name>right_upperleg</name>
+		</geometry>
+
+		<node>
+			<name>right_knee</name>
+			<position>0, 0, -0.42</position>
+			<rotation>-2, 0, 1, 0</rotation>
+
+			<geometry>
+				<filename>models/lowerleg.ase</filename>
+				<name>right_lowerleg</name>
+			</geometry>
+
+			<node>
+				<name>right_ankle</name>
+				<position>0, -0.04, -0.44</position>
+				<rotation>0, 0, 0, 0</rotation>
+
+				<geometry>
+					<filename>models/foot.ase</filename>
+					<name>right_foot</name>
+				</geometry>
+			</node>
+		</node>
+	</node>
+
+	
+
+	</node>
+
+
+</object>

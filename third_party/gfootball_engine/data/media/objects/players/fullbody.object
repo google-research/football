@@ -1,0 +1,11 @@
+<object>
+
+	<geometry>
+		<filename>models/fullbody.ase</filename>
+		<name>fullbody</name>
+		<properties>
+			<dynamic>true</dynamic>
+		</properties>
+	</geometry>
+
+</object>

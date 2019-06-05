@@ -1,0 +1,29 @@
+<object>
+
+	<geometry>
+		<filename>pitch.ase</filename>
+		<name>pitch</name>
+		<position>0, 0, 0</position>
+		<rotation>0, 0, 0, 0</rotation>
+		<properties>
+			<physicable>false</physicable>
+			<movable>false</movable>
+		</properties>
+	</geometry>
+
+	<geometry>
+		<filename>test.ase</filename>
+		<name>test stadium</name>
+		<position>0, 0, 0</position>
+		<rotation>0, 0, 0, 0</rotation>
+		<properties>
+			<physicable>true</physicable>
+			<physics_collision_type>box</physics_collision_type>
+			<physics_collision_box_x>200</physics_collision_box_x>
+			<physics_collision_box_y>100</physics_collision_box_y>
+			<physics_collision_box_z>0.01</physics_collision_box_z>
+			<movable>false</movable>
+		</properties>
+	</geometry>
+
+</object>

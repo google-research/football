@@ -1,0 +1,18 @@
+hello modders!
+
+here's how the player table in the database works:
+
+the stat values in the profile_xml field denote the *distribution* of a player's skills, relative to each other.
+the average of all profile stats should end up somewhere around 0.5.
+
+the base_stat field denotes how good a player will be at his development peak (right now that's about age 27; future
+versions will have various development curve options).
+
+so if you want to make a player better or worse, change his base_stat value (or his age ;) ), NOT his profile_xml info.
+profile_xml just describes what *type* of player we are talking about. for extra clarity on what it does: setting every
+value in the profile_xml to 0.4 would result in a player with exactly the same ingame stats as setting every value to 0.6.
+
+another thing; take into account that the format of the database and graphics may be subject to change for the full version.
+so your mods may require adaptation when future version(s) are released. sorry about that!
+
+have fun modding!

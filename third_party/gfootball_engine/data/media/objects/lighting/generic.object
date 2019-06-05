@@ -1,0 +1,14 @@
+<object>
+
+	<light>
+		<name>sun</name>
+		<position>0, 0, 0</position>
+		<properties>
+			<color>1.0, 1.0, 1.0</color>
+			<radius>1000000</radius>
+			<type>directional</type>
+			<shadow>true</shadow>
+		</properties>
+	</light>
+
+</object>

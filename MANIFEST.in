@@ -1,0 +1,3 @@
+include gfootball/build_game_engine.sh
+recursive-include third_party/gfootball_engine/ *
+recursive-include third_party/fonts/ *
