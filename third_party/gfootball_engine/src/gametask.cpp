@@ -57,6 +57,8 @@ void GameTask::Action(e_GameTaskMessage message) {
       {
         if (Verbose()) printf("*gametaskmessage: starting match\n");
 
+        randomize(GetScenarioConfig().game_engine_random_seed);
+
         //GetGraphicsSystem()->getPhaseMutex.lock();
         MatchData *matchData = GetMenuTask()->GetMatchData();
         assert(matchData);

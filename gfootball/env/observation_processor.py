@@ -31,7 +31,6 @@ from gfootball.env import config as cfg
 from gfootball.env import constants
 from gfootball.env import football_action_set
 import numpy as np
-import scipy
 from six.moves import range
 from six.moves import zip
 import six.moves.cPickle
@@ -173,16 +172,19 @@ def write_dump(name, trace, skip_visuals=False, config={}):
         writer = TextWriter(frame, 0)
         writer.write('FRAME: %d' % frame_cnt)
         writer.write('TIME: %f' % (o._time - time))
-        time = o._time
-        writer.write('Pressure: %d' % o._pressed_pressure)
-        writer.write('Keeper pressure: %d' % o._pressed_keeper_rush)
-        writer.write('Team pressure: %d' % o._pressed_team_pressure)
-        writer.write('Sprint: %d' % o._pressed_sprint)
-        writer.write('Dribble: %d' % o._pressed_dribble)
-        writer.write('DIRECTION: %s' % ('NONE' if o._pressed_direction is None
-                                        else o._pressed_direction.name))
+        sticky_actions = football_action_set.get_sticky_actions(config)
+        assert len(sticky_actions) == len(o['home_agent_sticky_actions'][0])
+        active_direction = None
+        for i in range(len(sticky_actions)):
+          if sticky_actions[i]._directional:
+            if o['home_agent_sticky_actions'][0][i]:
+              active_direction = sticky_actions[i]
+          else:
+            writer.write('%s: %d' % (sticky_actions[i]._name, o['home_agent_sticky_actions'][0][i]))
+        writer.write('DIRECTION: %s' % ('NONE' if active_direction is None
+                                        else active_direction._name))
         if 'action' in o._trace['debug']:
-          writer.write('ACTION: %s' % (o['action'][0].name))
+          writer.write('ACTION: %s' % (o['action'][0]._name))
         if 'baseline' in o._trace['debug']:
           writer.write('BASELINE: %.5f' % o._trace['debug']['baseline'])
         if 'logits' in o._trace['debug']:
@@ -241,15 +243,6 @@ class ObservationState(object):
     self._time = timeit.default_timer()
     self._away_defence_max_x = -10
     self._score = [0, 0]
-    self._pressed_direction = None
-    self._pressed_X = False
-    self._pressed_Y = False
-    self._pressed_A = False
-    self._pressed_B = False
-    self._pressed_LB = False
-    self._pressed_RB = False
-    self._pressed_LT = False
-    self._pressed_RT = False
 
   def __getitem__(self, key):
     if key in self._trace:
@@ -383,29 +376,6 @@ class ObservationProcessor(object):
     else:
       self._state = ObservationState(trace)
     self._trace.append(self._state)
-    state = self._state
-    sticky = self._state['home_agent_sticky_actions'][0]
-    if sticky[0]:
-      state._pressed_direction = football_action_set.core_action_left
-    if sticky[1]:
-      state._pressed_direction = football_action_set.core_action_top_left
-    if sticky[2]:
-      state._pressed_direction = football_action_set.core_action_top
-    if sticky[3]:
-      state._pressed_direction = football_action_set.core_action_top_right
-    if sticky[4]:
-      state._pressed_direction = football_action_set.core_action_right
-    if sticky[5]:
-      state._pressed_direction = football_action_set.core_action_bottom_right
-    if sticky[6]:
-      state._pressed_direction = football_action_set.core_action_bottom
-    if sticky[7]:
-      state._pressed_direction = football_action_set.core_action_bottom_left
-    state._pressed_keeper_rush = sticky[8]
-    state._pressed_pressure = sticky[9]
-    state._pressed_team_pressure = sticky[10]
-    state._pressed_sprint = sticky[11]
-    state._pressed_dribble = sticky[12]
     self.process_pending_dumps(False)
     return self._state
 

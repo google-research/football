@@ -187,11 +187,27 @@ void GoalieDefaultStrategy::RequestInput(const MentalImage *mentalImage, Vector3
       float u = 0.0f;
       float distance = ballToGoal.GetDistanceToPoint(player->GetPosition() + player->GetMovement() * 0.05f, u);
 
+      float u_at_1sec = 0.0f;
+      float distance_at_1sec = ballToGoal.GetDistanceToPoint(mentalImage->GetBallPrediction(1010).Get2D(), u_at_1sec);
+
+      bool should_gk_run_towards_the_goal = false;
+      if (u_at_1sec > 1e-4) {
+        float time_to_reach_gk = u / u_at_1sec;
+        Vector3 ball_position_at_gk = mentalImage->GetBallPrediction(10 + 1000 * time_to_reach_gk);
+        if (ball_position_at_gk.coords[2] > 2.5) {
+          should_gk_run_towards_the_goal = true;
+        }
+      }
+
       u = clamp(u, 0.0f, 1.0f);
 
-      targetPos = ballToGoal.GetVertex(0) + (ballToGoal.GetVertex(1) - ballToGoal.GetVertex(0)) * u;
-      targetPos.coords[2] = 0.0;
-      targetPos.coords[0] = clamp(targetPos.coords[0], -pitchHalfW + 0.2f, pitchHalfW - 0.2f); // not very useful to stand behind line
+      if (should_gk_run_towards_the_goal) {
+        targetPos = ballOverGoalLinePos;
+      } else {
+        targetPos = ballToGoal.GetVertex(0) + (ballToGoal.GetVertex(1) - ballToGoal.GetVertex(0)) * u;
+        targetPos.coords[2] = 0.0;
+        targetPos.coords[0] = clamp(targetPos.coords[0], -pitchHalfW + 0.2f, pitchHalfW - 0.2f); // not very useful to stand behind line
+      }
     }
   }
 

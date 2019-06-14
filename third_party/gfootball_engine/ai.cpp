@@ -279,7 +279,6 @@ void GameEnv::step() {
 
 void GameEnv::reset(ScenarioConfig game_config) {
   setConfig(game_config);
-  randomize(game_config.game_engine_random_seed);
   for (auto controller : GetControllers()) {
     controller->Reset();
   }
@@ -406,6 +405,40 @@ BOOST_PYTHON_MODULE(_gameplayfootball) {
       .value("e_GameMode_Corner", e_GameMode::e_GameMode_Corner)
       .value("e_GameMode_ThrowIn", e_GameMode::e_GameMode_ThrowIn)
       .value("e_GameMode_Penalty", e_GameMode::e_GameMode_Penalty);
+
+  enum_<Action>("e_BackendAction")
+    .value("idle", Action::game_idle)
+    .value("left", Action::game_left)
+    .value("top_left", Action::game_top_left)
+    .value("top", Action::game_top)
+    .value("top_right", Action::game_top_right)
+    .value("right", Action::game_right)
+    .value("bottom_right", Action::game_bottom_right)
+    .value("bottom", Action::game_bottom)
+    .value("bottom_left", Action::game_bottom_left)
+    .value("long_pass", Action::game_long_pass)
+    .value("high_pass", Action::game_high_pass)
+    .value("short_pass", Action::game_short_pass)
+    .value("shot", Action::game_shot)
+    .value("keeper_rush", Action::game_keeper_rush)
+    .value("sliding", Action::game_sliding)
+    .value("pressure", Action::game_pressure)
+    .value("team_pressure", Action::game_team_pressure)
+    .value("switch", Action::game_switch)
+    .value("sprint", Action::game_sprint)
+    .value("dribble", Action::game_dribble)
+    .value("release_direction", Action::game_release_direction)
+    .value("release_long_pass", Action::game_release_long_pass)
+    .value("release_high_pass", Action::game_release_high_pass)
+    .value("release_short_pass", Action::game_release_short_pass)
+    .value("release_shot", Action::game_release_shot)
+    .value("release_keeper_rush", Action::game_release_keeper_rush)
+    .value("release_sliding", Action::game_release_sliding)
+    .value("release_pressure", Action::game_release_pressure)
+    .value("release_team_pressure", Action::game_release_team_pressure)
+    .value("release_switch", Action::game_release_switch)
+    .value("release_sprint", Action::game_release_sprint)
+    .value("release_dribble", Action::game_release_dribble);
 
   enum_<e_Team>("e_Team")
       .value("e_Home", e_Team::e_Home)

@@ -37,7 +37,6 @@ class Player(player_base.PlayerBase):
 
   def _direction_action(self, delta):
     """For required movement direction vector returns appropriate action."""
-    delta_x, delta_y = delta
     all_directions = [
         football_action_set.core_action_top,
         football_action_set.core_action_top_left,

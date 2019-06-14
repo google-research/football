@@ -24,7 +24,6 @@ import copy
 import gfootball_engine as libgame
 from gfootball.env import config as cfg
 from gfootball.env import constants
-from gfootball.env import controller_provider
 from gfootball.env import football_action_set
 import numpy as np
 from six.moves import range
@@ -65,10 +64,10 @@ class FootballEnvCore(object):
     self._home_controllers = []
     self._away_controllers = []
     for _ in range(self._scenario_cfg.home_agents):
-      controller = controller_provider.get_controller(self)
+      controller = football_action_set.StickyWrapper(config, self)
       self._home_controllers.append(controller)
     for _ in range(self._scenario_cfg.away_agents):
-      controller = controller_provider.get_controller(self)
+      controller = football_action_set.StickyWrapper(config, self)
       self._away_controllers.append(controller)
     self._env.reset(self._config.ScenarioConfig())
     while not self._retrieve_observation():
@@ -104,9 +103,7 @@ class FootballEnvCore(object):
       player_action = action[action_index]
       action_index += 1
       assert isinstance(player_action, football_action_set.CoreAction)
-      self._home_controllers[self._player_id].perform_action(
-          player_action, self._step * self._config['physics_steps_per_frame'] /
-          constants.PHYSICS_STEPS_PER_SECOND)
+      self._home_controllers[self._player_id].perform_action(player_action)
       self._player_id += 1
     self._player_id = 0
     self._home_team = False
@@ -114,9 +111,7 @@ class FootballEnvCore(object):
       player_action = action[action_index]
       action_index += 1
       assert isinstance(player_action, football_action_set.CoreAction)
-      self._away_controllers[self._player_id].perform_action(
-          player_action, self._step * self._config['physics_steps_per_frame'] /
-          constants.PHYSICS_STEPS_PER_SECOND)
+      self._away_controllers[self._player_id].perform_action(player_action)
       self._player_id += 1
     while True:
       enter_time = timeit.default_timer()
@@ -222,15 +217,15 @@ class FootballEnvCore(object):
     for i in range(self._scenario_cfg.home_agents):
       result['home_agent_controlled_player'].append(
           info.home_controllers[i].controlled_player)
-      result['home_agent_sticky_actions'].append(
-          np.array(self._home_controllers[i].active_actions(), dtype=np.uint8))
+      result['home_agent_sticky_actions'].append(np.array(
+          self._home_controllers[i].active_sticky_actions(), dtype=np.uint8))
       if info.home_controllers[i].controlled_player >= 0:
         game_is_on = True
     for i in range(self._scenario_cfg.away_agents):
       result['away_agent_controlled_player'].append(
           info.away_controllers[i].controlled_player)
-      result['away_agent_sticky_actions'].append(
-          np.array(self._away_controllers[i].active_actions(), dtype=np.uint8))
+      result['away_agent_sticky_actions'].append(np.array(
+          self._away_controllers[i].active_sticky_actions(), dtype=np.uint8))
     result['game_mode'] = int(info.game_mode)
     result['score'] = [info.home_goals, info.away_goals]
     result['ball_owned_team'] = info.ball_owned_team

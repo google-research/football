@@ -13,5 +13,7 @@
 # limitations under the License.
 
 set -e
+# Delete pre-existing version of CMakeCache.txt to make 'pip3 install' work.
+rm -f third_party/gfootball_engine/CMakeCache.txt
 pushd third_party/gfootball_engine && cmake . && make -j10 && popd
 pushd third_party/gfootball_engine && ln -sf libgame.so _gameplayfootball.so && popd

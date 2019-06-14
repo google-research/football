@@ -8,6 +8,7 @@ This is not an official Google product.
 We'd like to thank Bastiaan Konings Schuiling, who authored and opensourced the original version of this game.
 
 For more information, please look at our [paper (github)](https://github.com/google-research/football/blob/master/paper.pdf).
+Mailing list: https://groups.google.com/forum/#!forum/google-research-football
 
 ## Installation
 Currently we're supporting only Linux and Python3.
@@ -25,7 +26,7 @@ You can either install the code from github (newest version) or from pypi (stabl
     - Use `pip3 install gfootball[tf_gpu] --process-dependency-links` if you want to use GPU version of TensorFlow.
     - This command can run for couple of minutes, as it compiles the C++ environment in the background.
 
-  1. OR install gfootball python package (run the commands from the main project directory):
+  OR install gfootball python package (run the commands from the main project directory):
 
     - `git clone https://github.com/google-research/football.git`
     - `cd football`
@@ -53,6 +54,15 @@ the game is implemented through environment, so human-controlled players use
 the same interface as the agents. One important fact is that there is a single
 action per 100 ms reported to the environment, which might cause lag effect
 when playing.
+
+## Multiagent support
+Using play_game script (see 'Playing game yourself' section for details)
+it is possible to set up a game played between multiple agents.
+`home_players` and `away_players` command line parameters are the comma
+separated list of players on the home and away teams, respectively.
+For example, to play yourself using gamepad with two lazy bots on your team
+against three bots you can run
+`python3 -m gfootball.play_game --home_players=gamepad,lazy,lazy --away_players=bot,bot,bot`.
 
 You can implement your own player by adding its implementation
 to the env/players directory (no other changes are needed).
@@ -120,7 +130,7 @@ Environment exposes following observations:
     - `away_team_roles` - same as for home team.
 - Controlled player information:
     - `active` - {0..N-1} integer denoting index of the controlled player.
-    - `sticky_actions` - 13-elements vector of 0s or 1s denoting whether corresponding actions are active:
+    - `sticky_actions` - 11-elements vector of 0s or 1s denoting whether corresponding actions are active:
         - `game_left`
         - `game_top_left`
         - `game_top`
@@ -129,10 +139,8 @@ Environment exposes following observations:
         - `game_bottom_right`
         - `game_bottom`
         - `game_bottom_left`
-        - `game_keeper_rush`
-        - `game_pressure`
-        - `game_team_pressure`
         - `game_sprint`
+        - `game_keeper_rush`
         - `game_dribble`
 - Match state:
     - `score` - pair of integers denoting number of goals for home and away teams, respectively.
@@ -213,3 +221,20 @@ are controlled by the following set of flags:
 -  `write_video` - should video be recorded together with the trace.
     If rendering is disabled (`render` config flag), video contains a simple
     episode animation.
+
+## Frequent Problems & Solutions
+
+### Rendering not working / "OpenGL version not equal to or higher than 3.2"
+
+Solution: set environment variables for MESA driver, like this:
+
+`MESA_GL_VERSION_OVERRIDE=3.2 MESA_GLSL_VERSION_OVERRIDE=150 python3 -m gfootball.play_game`
+
+### process-dependency-links flag not found
+
+See: https://github.com/google-research/football/issues/1
+
+### Building docker image under MacOS
+
+You may need to increase memory for building. Go to docker menu, then
+Preferences, then Advanced/Memory and set memory to 4GB.

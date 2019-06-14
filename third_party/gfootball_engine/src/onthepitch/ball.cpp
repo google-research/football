@@ -528,14 +528,6 @@ Vector3 Ball::GetAveragePosition(unsigned int duration_ms) const {
 }
 
 void Ball::Process() {
-
-  if (!IsReleaseVersion() && UserEventManager::GetInstance().GetKeyboardState(SDLK_BACKSPACE)) {
-    Player *player = match->GetTeam(0)->GetDesignatedTeamPossessionPlayer();
-    positionBuffer.Set(player->GetPosition() + player->GetDirectionVec() * 0.25f + player->GetMovement() * 0.06f + Vector3(0, 0, 0.2f));
-    SetMomentum(player->GetMovement() * 1.2f);
-    SetRotation(0, 0, 0);
-  }
-
   BallSpatialInfo spatialInfo = CalculatePrediction();
   momentum = spatialInfo.momentum;
   rotation_ms = spatialInfo.rotation_ms;

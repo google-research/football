@@ -553,10 +553,6 @@ void Humanoid::Process() {
         Vector3 touchVec = GetShotVector(match, CastPlayer(), nextStartPos, nextStartAngle, nextBodyAngle, CalculateOutgoingMovement(currentAnim->positions), currentAnim, currentAnim->frameNum, spatialState, decayingPositionOffset, xRot, yRot, zRot, currentAnim->originatingCommand.touchInfo.autoDirectionBias);
 
         touchVec = touchVec * (1.0f - bumpyRideBias) + currentBallVec * bumpyRideBias;
-        // Limit Z-coordinate of the ball's speed, so that it is not likely
-        // to shot over the goal keeper. Value of '5' was selected empirically
-        // by analyzing observations making sure the ball doesn't fly too high.
-        touchVec.coords[2] = std::min(5.0f, touchVec.coords[2]);
         if (player->GetDebug() && bumpyRideBias > 0.01f) printf("bumpyridebias (shot): %f\n", bumpyRideBias);
 
         match->GetBall()->Touch(touchVec);

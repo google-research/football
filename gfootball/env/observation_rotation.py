@@ -56,37 +56,33 @@ def rotate_points(points):
   return -points
 
 
-def rotate_sticky_actions(sticky_actions):
+def rotate_sticky_actions(sticky_actions_state, config):
   """Rotate the sticky bits of directional actions.
 
   This is used to make a policy believe it is playing from left to right
   although it is actually playing from right to left.
 
   Args:
-    sticky_actions: Array of bits corresponding to the active actions.
+    sticky_actions_state: Array of bits corresponding to the active actions.
+    config: config used by the environment
 
   Returns:
     Array of bits corresponding to the same active actions for a player
     who would play from the opposite side.
   """
-  # Re-order the sticky bits of the directional actions.
-  # !!! Note !!!: This depends of the order chosen in controller_provider
-  #   0: controller_actions.game_left,
-  #   1: controller_actions.game_top_left,
-  #   2: controller_actions.game_top,
-  #   3: controller_actions.game_top_right,
-  #   4: controller_actions.game_right,
-  #   5: controller_actions.game_bottom_right,
-  #   6: controller_actions.game_bottom,
-  #   7: controller_actions.game_bottom_left,
-  rotated_sticky_actions = sticky_actions[:]
-  sa = rotated_sticky_actions  # Short name alias.
-  sa[0], sa[1], sa[2], sa[3], sa[4], sa[5], sa[6], sa[7] = (
-      sa[4], sa[5], sa[6], sa[7], sa[0], sa[1], sa[2], sa[3])
-  return sa
+  sticky_actions = football_action_set.get_sticky_actions(config)
+  assert len(sticky_actions) == len(sticky_actions_state)
+  action_to_state = {}
+  for i in range(len(sticky_actions)):
+    action_to_state[sticky_actions[i]] = sticky_actions_state[i]
+  rotated_sticky_actions = []
+  for i in range(len(sticky_actions)):
+    rotated_sticky_actions.append(action_to_state[flip_action(
+        sticky_actions[i])])
+  return rotated_sticky_actions
 
 
-def flip_observation(observation):
+def flip_observation(observation, config):
   """Observation corresponding to the field rotated by 180 degrees."""
   flipped_observation = {}
   flipped_observation['ball'] = rotate_3d_point(observation['ball'])
@@ -124,7 +120,7 @@ def flip_observation(observation):
   flipped_observation['steps_left'] = observation['steps_left']
   flipped_observation['active'] = observation['opponent_active']
   flipped_observation['sticky_actions'] = rotate_sticky_actions(
-      observation['opponent_sticky_actions'])
+      observation['opponent_sticky_actions'], config)
   return flipped_observation
 
 
