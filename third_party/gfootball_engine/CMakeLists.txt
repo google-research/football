@@ -16,6 +16,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules")
 
 project(gameplayfootball)
 
+string(APPEND CMAKE_SHARED_LINKER_FLAGS " -Wl,--no-as-needed")
+
 set (CMAKE_CXX_STANDARD 14)
 
 if(UNIX)
