@@ -1,11 +1,11 @@
 # Google Research Football
 
-This repository contains a RL environment based on open-source game Gameplay
-Football. It was created by Google Brain team for research purposes.
+This repository contains an RL environment based on open-source game Gameplay
+Football. It was created by the Google Brain team for research purposes.
 
 This is not an official Google product.
 
-We'd like to thank Bastiaan Konings Schuiling, who authored and opensourced the original version of this game.
+We'd like to thank Bastiaan Konings Schuiling, who authored and open-sourced the original version of this game.
 
 For more information, please look at our [paper (github)](https://github.com/google-research/football/blob/master/paper.pdf).
 Mailing list: https://groups.google.com/forum/#!forum/google-research-football
@@ -30,9 +30,9 @@ You can either install the code from github (newest version) or from pypi (stabl
 
     - `git clone https://github.com/google-research/football.git`
     - `cd football`
-    - Use `pip3 install .[tf_cpu] --process-dependency-links` if you want to use CPU version of TensorFlow.
+    - Use `pip3 install .[tf_cpu] --process-dependency-links` if you want to use the CPU version of TensorFlow.
     - Use `pip3 install .[tf_gpu] --process-dependency-links` if you want to use GPU version of TensorFlow.
-    - This command can run for couple of minutes, as it compiles the C++ environment in the background.
+    - This command can run for a couple of minutes, as it compiles the C++ environment in the background.
 
 ## Running experiments
 - To run example PPO experiment on `academy_empty_goal` scenario, run
@@ -44,29 +44,28 @@ In order to train with nice replays being saved, run
 `python3 -m gfootball.examples.run_ppo2 --dump_full_episodes=True --render=True`
 
 ## Playing game yourself
-Run `python3 -m gfootball.play_game`. By default it starts the
+Run `python3 -m gfootball.play_game`. By default, it starts the
 base scenario and the home player is controlled by the keyboard. Different types
-of players are suported (game pad, external bots, agents...). For possible
+of players are supported (gamepad, external bots, agents...). For possible
 options run `python3 -m gfootball.play_game -helpfull`.
 
 Please note that playing
-the game is implemented through environment, so human-controlled players use
+the game is implemented through an environment, so human-controlled players use
 the same interface as the agents. One important fact is that there is a single
-action per 100 ms reported to the environment, which might cause lag effect
+action per 100 ms reported to the environment, which might cause a lag effect
 when playing.
 
 ## Multiagent support
 Using play_game script (see 'Playing game yourself' section for details)
 it is possible to set up a game played between multiple agents.
-`home_players` and `away_players` command line parameters are the comma
-separated list of players on the home and away teams, respectively.
-For example, to play yourself using gamepad with two lazy bots on your team
+`home_players` and `away_players` command line parameters are the comma-separated list of players on the home and away teams, respectively.
+For example, to play yourself using a gamepad with two lazy bots on your team
 against three bots you can run
 `python3 -m gfootball.play_game --home_players=gamepad,lazy,lazy --away_players=bot,bot,bot`.
 
 You can implement your own player by adding its implementation
 to the env/players directory (no other changes are needed).
-Have a look at existing players code for example implementation.
+Have a look at existing players code for an example implementation.
 
 ### Keyboard mapping
 The game defines following keyboard mapping:
@@ -75,11 +74,11 @@ The game defines following keyboard mapping:
 - `ARROW DOWN` - run to the bottom.
 - `ARROW LEFT` - run to the left.
 - `ARROW RIGHT` - run to the right.
-- `S` - short pass in attack mode, pressure in the defence mode.
-- `A` - high pass in attack mode, sliding in the defence mode.
-- `D` - shot in the attack mode, team pressure in the defence mode.
-- `W` - long pass in the attack mode, goal keeper pressure in the defence mode.
-- `Q` - switch active player on defence mode.
+- `S` - short pass in attack mode, pressure in the defense mode.
+- `A` - high pass in attack mode, sliding in the defense mode.
+- `D` - shot in the attack mode, team pressure in the defense mode.
+- `W` - long pass in the attack mode, goalkeeper pressure in the defense mode.
+- `Q` - switch the active player on defense mode.
 - `C` - dribble in the attack mode.
 - `E` - sprint.
 
@@ -158,9 +157,9 @@ Environment exposes following observations:
     screen. It is only exposed when rendering is enabled (`render` flag).
 
 Where `N` is the number of players on the team.
-X coordinates are int the range `[-1, 1]`.
-Y coordinates are int the range `[-0.42, 0.42]`.
-Speed vectors represent change in the possition of the object within a single
+X coordinates are in the range `[-1, 1]`.
+Y coordinates are in the range `[-0.42, 0.42]`.
+Speed vectors represent a change in the position of the object within a single
 step.
 
 ## Scenarios
@@ -192,7 +191,7 @@ We provide two sets of scenarios/levels:
      keeper.
    - academy_3_vs_1_with_keeper - Three of our players try to score from the
      edge of the box, one on each side, and the other at the center. Initially,
-     the player at the center has the ball, and is facing the defender.
+     the player at the center has the ball and is facing the defender.
      There is an opponent keeper.
    - academy_corner - Standard corner-kick situation, except that the corner
      taker can run with the ball from the corner.
@@ -200,26 +199,26 @@ We provide two sets of scenarios/levels:
      remaining players of both teams run back towards the ball.
    - academy_counterattack_hard - 4 versus 2 counter-attack with keeper; all the
      remaining players of both teams run back towards the ball.
-   - academy_single_goal_versus_lazy - Full 11 versus 11 game, where the
+   - academy_single_goal_versus_lazy - Full 11 versus 11 games, where the
      opponents cannot move but they can only intercept the ball if it is close
-     enough to them. Our centerback defender has the ball at first.
+     enough to them. Our center back defender has the ball at first.
 
 You can add your own scenarios by adding a new file to the `gfootball/scenarios/`
 directory. Have a look at existing scenarios for example.
 
 ## Trace dumps
-GFootball environment supports recording of scenarios for later watching or
+GFootball environment supports the recording of scenarios for later watching or
 analysis. Each trace dump consists of a picked episode trace (observations,
-reward, additional debug info) and optionally an AVI file with rendered episode.
+reward, additional debug info) and optionally an AVI file with the rendered episode.
 Picked episode trace can be played back later on using `replay.py` script.
-By default trace dumps are disabled to not occupy disk space. They
+By default trace, dumps are disabled to not occupy disk space. They
 are controlled by the following set of flags:
 
 -  `dump_full_episodes` - should trace for each entire episode be recorded.
--  `dump_scores` - should sampled traces for scores be recorded.
+-  `dump_scores` - should sample traces for scores be recorded.
 -  `tracesdir` - directory in which trace dumps are saved.
--  `write_video` - should video be recorded together with the trace.
-    If rendering is disabled (`render` config flag), video contains a simple
+-  `write_video` - should a video be recorded together with the trace.
+    If rendering is disabled (`render` config flag), the video contains a simple
     episode animation.
 
 ## Frequent Problems & Solutions
@@ -234,7 +233,7 @@ Solution: set environment variables for MESA driver, like this:
 
 See: https://github.com/google-research/football/issues/1
 
-### Building docker image under MacOS
+### Building a docker image under MacOS
 
-You may need to increase memory for building. Go to docker menu, then
-Preferences, then Advanced/Memory and set memory to 4GB.
+You may need to increase memory for building. Go to the docker menu, then
+Preferences, then Advanced/Memory and set memory to the 4GB.
