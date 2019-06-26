@@ -94,6 +94,16 @@ The game defines following keyboard mapping:
 After entering the image, you can run sample training with `python3 -m gfootball.examples.run_ppo2`.
 Unfortunately, rendering is not supported inside the docker.
 
+### Prebuilt docker images can be used.
+### CPU version
+1. Enter the image with `docker run -it gumush/gfootball:latest bash`
+
+### GPU version
+1. Enter the image with `nvidia-docker run -it gumush/gfootball_gpu:latest bash`
+
+After entering the image, you can run sample training with `python3 -m gfootball.examples.run_ppo2`.
+Unfortunately, rendering is not supported inside the docker.
+
 ## Observations
 Environment exposes following observations:
 
