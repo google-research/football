@@ -44,7 +44,8 @@ class TeamAIController {
     void CalculateManMarking();
     void ApplyOffsideTrap(Vector3 &position) const;
     float GetOffsideTrapX() const { return offsideTrapX; }
-    void PrepareSetPiece(e_GameMode setPiece, int takerTeamID = -1);
+    void PrepareSetPiece(e_GameMode setPiece, Team* other_team,
+                         int kickoffTakerTeamId, int takerTeamID);
     Player *GetPieceTaker() { return taker; }
     e_GameMode GetSetPieceType() { return setPieceType; }
     void ApplyAttackingRun(Player *manualPlayer = 0);

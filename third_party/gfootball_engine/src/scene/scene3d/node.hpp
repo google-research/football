@@ -46,9 +46,6 @@ namespace blunted {
       boost::intrusive_ptr<Object> GetObject(const std::string &name);
       void DeleteObject(boost::intrusive_ptr<Object> object,
                         bool exitObject = true);
-      void RemoveObject(boost::intrusive_ptr<Object> object);
-
-      void GetSpatials(std::list < boost::intrusive_ptr<Spatial> > &gatherSpatials, bool recurse = true, int depth = 0) const;
 
       void GetObjects(std::list<boost::intrusive_ptr<Object> > &gatherObjects,
                       bool recurse = true, int depth = 0) const;
@@ -60,8 +57,8 @@ namespace blunted {
         //objects.Lock();
         int objectsSize = objects.size();
         for (int i = 0; i < objectsSize; i++) {
-          if (objects.at(i)->GetObjectType() == targetObjectType) {
-            gatherObjects.push_back(static_pointer_cast<T>(objects.at(i)));
+          if (objects[i]->GetObjectType() == targetObjectType) {
+            gatherObjects.push_back(static_pointer_cast<T>(objects[i]));
           }
         }
         //objects.Unlock();
@@ -70,7 +67,7 @@ namespace blunted {
           //nodes.Lock();
           int nodesSize = nodes.size();
           for (int i = 0; i < nodesSize; i++) {
-            nodes.at(i)->GetObjects<T>(targetObjectType, gatherObjects, recurse, depth + 1);
+            nodes[i]->GetObjects<T>(targetObjectType, gatherObjects, recurse, depth + 1);
           }
           //nodes.Unlock();
         }
@@ -81,8 +78,8 @@ namespace blunted {
         //objects.Lock();
         int objectsSize = objects.size();
         for (int i = 0; i < objectsSize; i++) {
-          if (objects.at(i)->GetObjectType() == targetObjectType) {
-            if (objects.at(i)->GetAABB().Intersects(bounding)) gatherObjects.push_back(static_pointer_cast<T>(objects.at(i)));
+          if (objects[i]->GetObjectType() == targetObjectType) {
+            if (objects[i]->GetAABB().Intersects(bounding)) gatherObjects.push_back(static_pointer_cast<T>(objects[i]));
           }
         }
         //objects.Unlock();
@@ -91,7 +88,7 @@ namespace blunted {
           //nodes.Lock();
           int nodesSize = nodes.size();
           for (int i = 0; i < nodesSize; i++) {
-            if (nodes.at(i)->GetAABB().Intersects(bounding)) nodes.at(i)->GetObjects<T>(targetObjectType, gatherObjects, bounding, recurse, depth + 1);
+            if (nodes[i]->GetAABB().Intersects(bounding)) nodes[i]->GetObjects<T>(targetObjectType, gatherObjects, bounding, recurse, depth + 1);
           }
           //nodes.Unlock();
         }
@@ -99,7 +96,6 @@ namespace blunted {
 
       void PokeObjects(e_ObjectType targetObjectType, e_SystemType targetSystem);
 
-      void PrintTree(int recursionDepth = 0);
       virtual AABB GetAABB() const;
 
       virtual void RecursiveUpdateSpatialData(e_SpatialDataType spatialDataType, e_SystemType excludeSystem = e_SystemType_None);

@@ -29,42 +29,34 @@ MentalImage::~MentalImage() {
 }
 
 void MentalImage::TakeSnapshot() {
-  players.clear();
-
   std::vector<Player*> allPlayers;
+  allPlayers.reserve(players.size());
   match->GetTeam(0)->GetActivePlayers(allPlayers);
   match->GetTeam(1)->GetActivePlayers(allPlayers);
+  players.resize(allPlayers.size());
 
   for (int playerCounter = 0; playerCounter < (signed int)allPlayers.size(); playerCounter++) {
 
     Player *player = allPlayers.at(playerCounter);
 
-    PlayerImage playerImage;
-    playerImage.teamID = player->GetTeamID();
-    playerImage.side = player->GetTeam()->GetSide();
-    playerImage.playerID = player->GetID();
+    PlayerImage& playerImage = players[playerCounter];
     playerImage.player = player;
     playerImage.position = player->GetPosition();
     playerImage.directionVec = player->GetDirectionVec();
-    playerImage.bodyDirectionVec = player->GetBodyDirectionVec();
     playerImage.velocity = player->GetFloatVelocity();
     playerImage.movement = player->GetMovement();
-    playerImage.formationEntry = player->GetFormationEntry();
     playerImage.dynamicFormationEntry = player->GetDynamicFormationEntry();
-    players.push_back(playerImage);
   }
 
   UpdateBallPredictions();
 }
 
 PlayerImage MentalImage::GetPlayerImage(int playerID) const {
-
-  for (unsigned int playerCounter = 0; playerCounter < players.size(); playerCounter++) {
-
-    if (players.at(playerCounter).playerID == playerID) {
-      PlayerImage newImage = players.at(playerCounter);
-      Vector3 extrapolation = players.at(playerCounter).movement * GetTimeStampNeg_ms() * 0.001f;
-      newImage.position = players.at(playerCounter).position + extrapolation;
+  for (auto& player : players) {
+    if (player.player->GetID() == playerID) {
+      PlayerImage newImage = player;
+      Vector3 extrapolation = player.movement * GetTimeStampNeg_ms() * 0.001f;
+      newImage.position = player.position + extrapolation;
       newImage.position = newImage.position.EnforceMaximumDeviation(newImage.player->GetPosition(), maxDistanceDeviation);
       newImage.movement = newImage.movement.EnforceMaximumDeviation(newImage.player->GetMovement(), maxMovementDeviation);
       return newImage;
@@ -72,22 +64,22 @@ PlayerImage MentalImage::GetPlayerImage(int playerID) const {
   }
 
   // failsafe
-  return players.at(0);
+  return players[0];
 }
 
-void MentalImage::GetTeamPlayerImages(int teamID, int exceptPlayerID, std::vector<PlayerImage> &playerImages) const {
-  for (unsigned int playerCounter = 0; playerCounter < players.size(); playerCounter++) {
-    Player *player = match->GetPlayer(players.at(playerCounter).playerID);
-    assert(player);
-    if (player->IsActive() && player->GetTeamID() == teamID && player->GetID() != exceptPlayerID) {
-      PlayerImage newImage = players.at(playerCounter);
-      Vector3 extrapolation = players.at(playerCounter).movement * GetTimeStampNeg_ms() * 0.001f;
-      newImage.position = players.at(playerCounter).position + extrapolation;
-      newImage.position = newImage.position.EnforceMaximumDeviation(newImage.player->GetPosition(), maxDistanceDeviation);
-      newImage.movement = newImage.movement.EnforceMaximumDeviation(newImage.player->GetMovement(), maxMovementDeviation); // new
-      playerImages.push_back(newImage);
+std::vector<PlayerImagePosition> MentalImage::GetTeamPlayerImages(int teamID) const {
+  std::vector<PlayerImagePosition> result;
+  result.reserve(11);
+  for (auto& player : players) {
+    if (player.player->IsActive() && player.player->GetTeamID() == teamID) {
+      Vector3 extrapolation = player.movement * GetTimeStampNeg_ms() * 0.001f;
+      Vector3 position = player.position + extrapolation;
+      position = position.EnforceMaximumDeviation(player.player->GetPosition(), maxDistanceDeviation);
+      Vector3 movement = player.movement.EnforceMaximumDeviation(player.player->GetMovement(), maxMovementDeviation); // new
+      result.emplace_back(position, movement, player.dynamicFormationEntry.role);
     }
   }
+  return result;
 }
 
 void MentalImage::UpdateBallPredictions() {

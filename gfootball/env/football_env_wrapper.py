@@ -29,7 +29,7 @@ class FootballEnvWrapper(object):
 
   def __init__(self, config):
     self._config = config
-    self._env = None
+    self._env = football_env_core.FootballEnvCore(config)
     self._env_state = 'initialized'
 
   @cfg.log
@@ -37,17 +37,14 @@ class FootballEnvWrapper(object):
     return self._env_state
 
   @cfg.log
-  def reset(self, config):
+  def reset(self):
     """Reset environment for a new episode using a given config."""
     self._episode_start = timeit.default_timer()
-    self._config = config
-    self._action_set = football_action_set.get_action_set(config)
+    self._action_set = football_action_set.get_action_set(self._config)
     self._trace = observation_processor.ObservationProcessor(self._config)
-    if not self._env:
-      self._env = football_env_core.FootballEnvCore()
     self._cumulative_reward = 0
     self._step_count = 0
-    self._env.reset(config, self._trace)
+    self._env.reset(self._trace)
     self._env_state = 'game_started'
 
   @cfg.log
@@ -59,11 +56,9 @@ class FootballEnvWrapper(object):
     if self._env_state != 'game_started':
       raise RuntimeError('invalid game state: {}'.format(self._env_state))
     action = [
-        football_action_set.action_from_action_set(self._action_set, a)
+        football_action_set.named_action_from_action_set(self._action_set, a)
         for a in action
     ]
-
-    action = [self._action_set[a] for a in action]
     self._step_count += 1
     observation, reward, done, debug = self._env.step(action)
     debug['time'] = timeit.default_timer()
@@ -93,3 +88,6 @@ class FootballEnvWrapper(object):
   @cfg.log
   def observation(self):
     return self._env.observation()
+
+  def close(self):
+    self._env.close()

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 """Player with actions coming from the keyboard."""
 
 import pygame
@@ -22,30 +23,32 @@ from gfootball.env import event_queue
 
 
 KEY_TO_ACTIONS = {
-    pygame.K_s: [football_action_set.core_action_short_pass,
-                 football_action_set.core_action_pressure],
-    pygame.K_d: [football_action_set.core_action_shot,
-                 football_action_set.core_action_team_pressure],
-    pygame.K_a: [football_action_set.core_action_high_pass,
-                 football_action_set.core_action_sliding],
-    pygame.K_w: [football_action_set.core_action_long_pass,
-                 football_action_set.core_action_keeper_rush],
-    pygame.K_q: [football_action_set.core_action_switch],
-    pygame.K_c: [football_action_set.core_action_dribble],
-    pygame.K_e: [football_action_set.core_action_sprint],
+    pygame.K_s: [football_action_set.action_short_pass,
+                 football_action_set.action_pressure],
+    pygame.K_d: [football_action_set.action_shot,
+                 football_action_set.action_team_pressure],
+    pygame.K_a: [football_action_set.action_high_pass,
+                 football_action_set.action_sliding],
+    pygame.K_w: [football_action_set.action_long_pass,
+                 football_action_set.action_keeper_rush],
+    pygame.K_q: [football_action_set.action_switch],
+    pygame.K_c: [football_action_set.action_dribble],
+    pygame.K_e: [football_action_set.action_sprint],
 }
 
 
 class Player(controller_base.Controller):
   """Player with actions coming from the keyboard."""
 
-  def __init__(self, config):
-    controller_base.Controller.__init__(self)
+  def __init__(self, player_config, env_config):
+    controller_base.Controller.__init__(self, player_config)
     self._init_done = False
     pygame.init()
     event_queue.add_controller('keyboard')
 
   def take_action(self, observations):
+    assert len(observations['active']
+              ) == 1, 'keyboard does not support multiple player control'
     if not self._init_done:
       self._init_done = True
       pygame.display.set_mode((1, 1), pygame.NOFRAME)

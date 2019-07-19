@@ -34,15 +34,14 @@ namespace blunted {
     public:
       Plane();
       Plane(const Vector3 vec1, const Vector3 vec2);
-      virtual ~Plane();
+      ~Plane();
 
-      virtual void Set(const Vector3 &pos, const Vector3 &dir);
-      virtual void SetVertex(unsigned char pos, const real x, const real y, const real z);
-      virtual void SetVertex(unsigned char pos, const Vector3 &vec);
-      virtual const Vector3 &GetVertex(unsigned char pos) const;
+      void Set(const Vector3 &pos, const Vector3 &dir);
+      void SetVertex(unsigned char pos, const Vector3 &vec);
+      const Vector3 &GetVertex(unsigned char pos) const;
 
-      virtual void CalculateDeterminant() const;
-      virtual real GetDeterminant() const;
+      void CalculateDeterminant() const;
+      real GetDeterminant() const;
 
     protected:
       Vector3 vertices[2];

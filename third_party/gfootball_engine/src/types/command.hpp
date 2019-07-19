@@ -20,11 +20,9 @@
 
 #include "../defines.hpp"
 
-#include <boost/thread/mutex.hpp>
 #include <boost/thread/condition.hpp>
 
 #include "../types/refcounted.hpp"
-#include "../types/lockable.hpp"
 
 namespace blunted {
 

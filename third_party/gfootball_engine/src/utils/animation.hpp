@@ -19,6 +19,7 @@
 #define _HPP_ANIMATION
 
 #include "../defines.hpp"
+#include <iostream>
 
 #include "../scene/scene3d/node.hpp"
 
@@ -56,17 +57,127 @@ enum e_DefString {
   struct KeyFrame {
     Quaternion orientation;
     Vector3 position;
+    bool operator<(const KeyFrame& a) const {
+      return position < a.position;
+    }
   };
 
   struct WeighedKey {
-    KeyFrame keyFrame;
+    const KeyFrame* keyFrame;
     float influence = 0.0f; // [0..1]
     int frame = 0;
   };
 
+  struct KeyFrames {
+    std::vector<std::pair<int, KeyFrame>> d;
+    void clear() {
+      d.clear();
+    }
+    KeyFrame* getFrame(int frame) {
+      for (auto& i : d) {
+        if (i.first == frame) {
+          return &i.second;
+        }
+      }
+      return nullptr;
+    }
+    void addFrame(const std::pair<int, KeyFrame>& frame) {
+      d.push_back(frame);
+      std::sort(d.begin(), d.end());
+    }
+  };
+
+  enum BodyPart {
+    middle,
+    neck,
+    left_thigh,
+    right_thigh,
+    left_knee,
+    right_knee,
+    left_ankle,
+    right_ankle,
+    left_shoulder,
+    right_shoulder,
+    left_elbow,
+    right_elbow,
+    body,
+    player,
+    body_part_max
+  };
+
+  typedef boost::intrusive_ptr<Node> NodeMap[body_part_max];
+
+  static std::string BodyPartString(BodyPart part) {
+    switch(part) {
+      case middle:
+        return "middle";
+      case neck:
+        return "neck";
+      case left_thigh:
+        return "left_thigh";
+      case right_thigh:
+        return "right_thigh";
+      case left_knee:
+        return "left_knee";
+      case right_knee:
+        return "right_knee";
+      case left_ankle:
+        return "left_ankle";
+      case right_ankle:
+        return "right_ankle";
+      case left_shoulder:
+        return "left_shoulder";
+      case right_shoulder:
+        return "right_shoulder";
+      case left_elbow:
+        return "left_elbow";
+      case right_elbow:
+        return "right_elbow";
+      case body:
+        return "body";
+      case player:
+        return "player";
+      case body_part_max:
+        return "body_part_max";
+    }
+  }
+
+  static BodyPart BodyPartFromString(const std::string part) {
+    if (part == "middle")
+      return middle;
+    if (part == "neck")
+      return neck;
+    if (part == "left_thigh")
+      return left_thigh;
+    if (part == "right_thigh")
+      return right_thigh;
+    if (part == "left_knee")
+      return left_knee;
+    if (part == "right_knee")
+      return right_knee;
+    if (part == "left_ankle")
+      return left_ankle;
+    if (part == "right_ankle")
+      return right_ankle;
+    if (part == "left_shoulder")
+      return left_shoulder;
+    if (part == "right_shoulder")
+      return right_shoulder;
+    if (part == "left_elbow")
+      return left_elbow;
+    if (part == "right_elbow")
+      return right_elbow;
+    if (part == "body")
+      return body;
+    if (part == "player")
+      return player;
+    Log(e_FatalError, "", "", "Body part not known: '" + part + "'");
+    return body_part_max;
+  }
+
   struct NodeAnimation {
-    std::string nodeName;
-    std::map<int, KeyFrame> animation; // frame, angles
+    BodyPart nodeName;
+    KeyFrames animation; // frame, angles
   };
 
   enum e_Foot {
@@ -75,19 +186,36 @@ enum e_DefString {
   };
 
   struct BiasedOffset {
-    BiasedOffset() {
-      bias = 0.0f;
-      isRelative = false;
-    }
-    float bias = 0.0f; // 0 .. 1
     Quaternion orientation;
+    float bias = 0.0f; // 0 .. 1
     bool isRelative = false;
   };
 
-  static std::map < std::string, BiasedOffset > emptyOffsets;
+  struct BiasedOffsets {
+   public:
+    BiasedOffsets() {
+    }
+    BiasedOffsets(const BiasedOffsets &obj) {
+      for (int x = 0; x < body_part_max; x++) {
+        elements[x] = obj.elements[x];
+      }
+    }
+    void clear() {
+      for (int x = 0; x < body_part_max; x++) {
+        elements[x].bias = 0.0f;
+      }
+    }
+    inline BiasedOffset& operator[](BodyPart part) {
+      return elements[part];
+    }
+  private:
+    BiasedOffset elements[body_part_max];
+  };
+
+  static BiasedOffsets emptyOffsets;
 
   struct MovementHistoryEntry {
-    std::string nodeName;
+    BodyPart nodeName;
     Vector3 position;
     Quaternion orientation;
     int timeDiff_ms = 0;
@@ -101,6 +229,87 @@ enum e_DefString {
   // rules:
   //   - first node inserted (by using SetKeyFrame) should be root node of the animated object (for optimization purposes)
 
+  class VariableCache {
+   public:
+    std::string get(const std::string& key) const {
+      auto iter = values.find(key);
+      if (iter != values.end()) {
+        return iter->second;
+      } else {
+        return "";
+      }
+    }
+    void set(const std::string& key, const std::string& value) {
+      values[key] = value;
+      if (key == "idlelevel") {
+        _idlelevel = atof(value.c_str());
+      } else if (key == "quadrant_id") {
+        _quadrant_id = atoi(value.c_str());
+      } else if (key == "specialvar1") {
+        _specialvar1 = atof(value.c_str());
+      } else if (key == "specialvar2") {
+        _specialvar2 = atof(value.c_str());
+      } else if (key == "lastditch") {
+        _lastditch = value.compare("true") == 0;
+      } else if (key == "baseanim") {
+        _baseanim = value.compare("true") == 0;
+      } else if (key == "outgoing_special_state") {
+        _outgoing_special_state = value;
+      } else if (key == "incoming_retain_state") {
+        _incoming_retain_state = value;
+      } else if (key == "incoming_special_state") {
+        _incoming_special_state = value;
+      }
+    }
+
+    void set_specialvar1(float v) {
+      _specialvar1 = v;
+    }
+
+    void set_specialvar2(float v) {
+      _specialvar2 = v;
+    }
+
+    void mirror() {
+      for (auto varIter : values) {
+        mirror(varIter.second);
+      }
+      mirror(_outgoing_special_state);
+      mirror(_incoming_retain_state);
+      mirror(_incoming_special_state);
+    }
+
+    inline float idlelevel() const { return _idlelevel; }
+    inline int quadrant_id() const { return _quadrant_id; }
+    inline float specialvar1() const { return _specialvar1; }
+    inline float specialvar2() const { return _specialvar2; }
+    inline bool lastditch() const { return _lastditch; }
+    inline bool baseanim() const { return _baseanim; }
+    inline const std::string& outgoing_special_state() const { return _outgoing_special_state; }
+    inline const std::string& incoming_retain_state() const { return _incoming_retain_state; }
+    inline const std::string& incoming_special_state() const { return _incoming_special_state; }
+
+   private:
+    void mirror(std::string& varData) {
+      if (varData.substr(0, 4) == "left") {
+        varData = varData.replace(0, 4, "right");
+      } else if (varData.substr(0, 5) == "right") {
+        varData = varData.replace(0, 5, "left");
+      }
+    }
+
+    float _idlelevel = 0;
+    int _quadrant_id = 0;
+    float _specialvar1 = 0;
+    float _specialvar2 = 0;
+    bool _lastditch = false;
+    bool _baseanim = false;
+    std::string _outgoing_special_state;
+    std::string _incoming_retain_state;
+    std::string _incoming_special_state;
+    std::map<std::string, std::string> values;
+  };
+
   class Animation {
 
     public:
@@ -113,23 +322,21 @@ enum e_DefString {
       int GetFrameCount() const;
       int GetEffectiveFrameCount() const { return GetFrameCount() - 1; }
 
-      bool GetKeyFrame(std::string nodeName, int frame, Quaternion &orientation, Vector3 &position, bool getOrientation = true, bool getPosition = true) const;
-      void SetKeyFrame(std::string nodeName, int frame,
+      bool GetKeyFrame(BodyPart nodeName, int frame, Quaternion &orientation, Vector3 &position) const;
+      void SetKeyFrame(BodyPart nodeName, int frame,
                        const Quaternion &orientation,
                        const Vector3 &position = Vector3(0, 0, 0));
-      void GetInterpolatedValues(const std::map<int, KeyFrame> &animation,
+      void GetInterpolatedValues(const KeyFrames &animation,
                                  int frame, Quaternion &orientation,
-                                 Vector3 &position, bool getOrientation = true,
-                                 bool getPosition = true) const;
+                                 Vector3 &position) const;
       void ConvertToStartFacingForwardIfIdle();
-      void Apply(const std::map<const std::string, boost::intrusive_ptr<Node> >
-                     nodeMap,
+      void Apply(const NodeMap& nodeMap,
                  int frame, int timeOffset_ms = 0, bool smooth = true,
                  float smoothFactor = 1.0f,
                  /*const boost::shared_ptr<Animation> previousAnimation, int
                     smoothFrames, */
                  const Vector3 &basePos = Vector3(0), radian baseRot = 0,
-                 std::map<std::string, BiasedOffset> &offsets = emptyOffsets,
+                 BiasedOffsets &offsets = emptyOffsets,
                  MovementHistory *movementHistory = 0, int timeDiff_ms = 10,
                  bool noPos = false, bool updateSpatial = true);
 
@@ -158,7 +365,10 @@ enum e_DefString {
       void AddExtension(const std::string &name, boost::shared_ptr<AnimationExtension> extension);
       boost::shared_ptr<AnimationExtension> GetExtension(const std::string &name);
 
-      const std::string &GetVariable(const char *name) const;
+      const std::string GetVariable(const char *name) const;
+      const VariableCache& GetVariableCache() const {
+        return variableCache;
+      }
       void SetVariable(const std::string &name, const std::string &value);
       e_DefString GetAnimType() const { return cache_AnimType; }
       const std::string &GetAnimTypeStr() const { return cache_AnimType_str; }
@@ -166,6 +376,7 @@ enum e_DefString {
       std::vector<NodeAnimation *> &GetNodeAnimations() {
         return nodeAnimations;
       }
+      mutable float order_float = 0;
 
     protected:
       std::vector<NodeAnimation*> nodeAnimations;
@@ -175,7 +386,7 @@ enum e_DefString {
       std::map < std::string, boost::shared_ptr<AnimationExtension> > extensions;
 
       boost::shared_ptr<XMLTree> customData;
-      std::map<std::string, std::string> variableCache;
+      VariableCache variableCache;
 
       // this hack only applies to humanoids
       // it's which foot is moving first in this anim

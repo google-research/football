@@ -22,11 +22,9 @@
 
 #include "iscene.hpp"
 
-#include "../types/lockable.hpp"
-
 namespace blunted {
 
-  typedef Lockable < std::vector < boost::intrusive_ptr<Object> > > vector_Objects;
+  typedef std::vector < boost::intrusive_ptr<Object> > vector_Objects;
 
   class Scene : public IScene {
 

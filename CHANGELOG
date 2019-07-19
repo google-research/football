@@ -1,0 +1,24 @@
+v1.0 (released July 19th, 2019)
+- added support for multi agent training with run_multiagent_rllib.py example.
+- added enable_sides_swap parameter to create_environment, which enables random swapping of team sides for each episode. This is useful for self-play training.
+- over 3x speedup to the game engine.
+- renamed home/away teams to left/right.
+- eliminated implicit observation and action rotation for the right team. `is_active_left` denotes controlling left team.
+- config is not passed anymore to the reset method.
+- minor game engine bug fixes and code cleanup.
+- eliminated chdir calls from the environment, so that working dir does not change.
+- backfilled missing values in simple115 representation for the case when training with less than 22 players.
+- updated game engine to use Boost.Signals2.
+- updated environment to the new OpenAI Gym API.
+
+v0.3 (released June 14th, 2019)
+- change action set to include sliding, dribbling and keeper rush.
+- cleanup in action set & sticky actions on python side.
+- change to env: now it release non-sticky actions after a single environment step.
+- game engine change: the goalkeeper now move backwards when the ball if bound.
+  for the goal and is flying high.
+- game engine change: call randomize with seed right before match creation.
+- update documentation with frequent problems & mailing list.
+- updated paper.pdf with citation to RoboCup and new action set.
+
+v0.2 - initial release (released June 7th, 2019)

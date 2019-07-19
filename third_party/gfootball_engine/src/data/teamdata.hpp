@@ -51,24 +51,15 @@ class TeamData {
     Vector3 GetColor1() { return color1; }
     Vector3 GetColor2() { return color2; }
 
-    int GetDatabaseID() const { return databaseID; }
-
     const TeamTactics &GetTactics() const { return tactics; }
     TeamTactics &GetTacticsWritable() { return tactics; }
 
     FormationEntry GetFormationEntry(int num);
     void SetFormationEntry(int num, FormationEntry entry);
 
-    void SwitchPlayers(int databaseID1, int databaseID2);
-
     // vector index# is entry in formation[index#]
-    const std::vector<PlayerData*> &GetPlayerData() { return playerData; }
     int GetPlayerNum() { return playerData.size(); }
     PlayerData *GetPlayerData(int num) { return playerData.at(num); }
-    PlayerData *GetPlayerDataByDatabaseID(int id);
-
-    void SaveLineup();
-    void SaveTactics();
 
    protected:
     int databaseID = 0;

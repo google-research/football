@@ -82,9 +82,4 @@ namespace blunted {
       this->surface = newSurf;
     }
   }
-
-  void Surface::SetAlpha(float alpha) {
-    sdl_setsurfacealpha(this->surface, int(std::round(alpha * 255)));
-  }
-
 }

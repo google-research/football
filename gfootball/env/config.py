@@ -51,15 +51,54 @@ def log(func):
     return wrapper
 
 
+def parse_player_definition(definition):
+  """Parses player definition.
+
+  An example of player definition is: "agent:players=4" or "replay:path=...".
+
+  Args:
+    definition: a string defining a player
+
+  Returns:
+    A tuple (name, dict).
+  """
+  if ':' not in definition:
+    return definition, {}
+
+  (name, params) = definition.split(':')
+  d = {}
+  for param in params.split(','):
+    (key, value) = param.split('=')
+    d[key] = value
+  return name, d
+
+
+def parse_number_of_players(definition):
+  """Returns a number of players given a definition."""
+  return int(parse_player_definition(definition)[1].get('players', 1))
+
+
+def get_number_of_players(players):
+  """Returns a total number of players controlled."""
+  return sum([parse_number_of_players(player) for player in players])
+
+
+def get_agent_number_of_players(players):
+  """Returns a total number of players controlled by an agent."""
+  return sum([parse_number_of_players(player) for player in players
+              if player.startswith('agent')])
+
+
 class Config(object):
 
   def __init__(self, values=None):
     self._values = {
         'action_set': 'default',
-        'away_players': [],
+        'right_players': [],
         'data_dir':
             os.path.abspath(os.path.join(os.path.dirname(libgame.__file__),
                                          'data')),
+        'enable_sides_swap': False,
         'font_file':
             os.path.abspath(os.path.join(os.path.dirname(libgame.__file__),
                                          'fonts', 'AlegreyaSansSC-ExtraBold.ttf')),
@@ -67,7 +106,7 @@ class Config(object):
         'dump_full_episodes': False,
         'dump_scores': False,
         'game_difficulty': 0.6,
-        'home_players': ['agent'],
+        'left_players': ['agent:players=1'],
         'level': '11_vs_11_stochastic',
         'physics_steps_per_frame': 10,
         'real_time': False,
@@ -82,6 +121,15 @@ class Config(object):
     if values:
       self._values.update(values)
     self.NewScenario()
+
+  def number_of_left_players(self):
+    return get_number_of_players(self._values['left_players'])
+
+  def number_of_right_players(self):
+    return get_number_of_players(self._values['right_players'])
+
+  def number_of_players_agent_controls(self):
+    return get_agent_number_of_players(self._values['left_players'])
 
   def __eq__(self, other):
     assert isinstance(other, self.__class__)
@@ -120,7 +168,6 @@ class Config(object):
     cfg.high_quality = self['render']
     cfg.data_dir = self['data_dir']
     cfg.font_file = self['font_file']
-    cfg.game_difficulty = self['game_difficulty']
     cfg.physics_steps_per_frame = self['physics_steps_per_frame']
     return cfg
 

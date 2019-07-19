@@ -32,7 +32,7 @@ namespace blunted {
   void Scene::CreateSystemObjects(boost::intrusive_ptr<Object> object) {
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      ISceneInterpreter *sceneInterpreter = static_cast<ISceneInterpreter*>(observers.at(i).get());
+      ISceneInterpreter *sceneInterpreter = static_cast<ISceneInterpreter*>(observers[i].get());
       sceneInterpreter->CreateSystemObject(object);
     }
   }
@@ -47,7 +47,7 @@ namespace blunted {
 
   bool Scene::SupportedObjectType(e_ObjectType objectType) const {
     for (int i = 0; i < (signed int)supportedObjectTypes.size(); i++) {
-      if (objectType == supportedObjectTypes.at(i)) return true;
+      if (objectType == supportedObjectTypes[i]) return true;
     }
     return false;
   }

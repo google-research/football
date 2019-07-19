@@ -102,9 +102,9 @@ namespace blunted {
     }
 
     for (unsigned int i = 0; i < data->entries.size(); i++) {
-      if (data->entries.at(i)->name.compare("GEOMOBJECT") == 0) {
-        if (data->entries.at(i)->subtree) if (data->entries.at(i)->subtree->entries.at(0)) {
-          BuildTriangleMesh(data->entries.at(i)->subtree, resource, materialList);
+      if (data->entries[i]->name.compare("GEOMOBJECT") == 0) {
+        if (data->entries[i]->subtree) if (data->entries[i]->subtree->entries.at(0)) {
+          BuildTriangleMesh(data->entries[i]->subtree, resource, materialList);
         }
       }
     }
@@ -183,7 +183,7 @@ namespace blunted {
     if (tree_mesh_vertex_list->entries.size() != (unsigned int)numvertex) Log(e_FatalError, "ASELoader", "BuildTriangleMesh", "numvertex and tree_mesh_vertex_list->entries.size() differ! Loader corrupt?");
 
     for (unsigned int i = 0; i < tree_mesh_vertex_list->entries.size(); i++) {
-      const s_treeentry *entry = tree_mesh_vertex_list->entries.at(i); // less typing
+      const s_treeentry *entry = tree_mesh_vertex_list->entries[i]; // less typing
 
       if (atoi(entry->values.at(0).c_str()) >= numvertex) Log(e_FatalError, "ASELoader", "BuildTriangleMesh", "vertex index larger than numvertex! Loader corrupt?");
       vertex_cache[atoi(entry->values.at(0).c_str())].coords[0] = atof(entry->values.at(1).c_str());
@@ -211,7 +211,7 @@ namespace blunted {
 
     for (unsigned int i = 0; i < tree_mesh_face_list->entries.size(); i++) {
       Triangle *triangle = new Triangle();
-      s_treeentry *entry = tree_mesh_face_list->entries.at(i); // less typing
+      s_treeentry *entry = tree_mesh_face_list->entries[i]; // less typing
 
       if (atoi(entry->values.at(0).c_str()) >= numfaces) Log(e_FatalError, "ASELoader", "BuildTriangleMesh", "Face index larger than numfaces! Loader corrupt?");
       triangle->SetVertex(0, vertex_cache[atoi(entry->values.at(2).c_str())]);
@@ -256,7 +256,7 @@ namespace blunted {
     // face normals
     for (unsigned int i = 0; i < tree_mesh_normals->entries.size(); i += 4) {
 
-      s_treeentry *entry_normal = tree_mesh_normals->entries.at(i); // less typing
+      s_treeentry *entry_normal = tree_mesh_normals->entries[i]; // less typing
 
       // vertex normals
       for (int v = 0; v < 3; v++) {
@@ -294,7 +294,7 @@ namespace blunted {
       if (tree_mesh_tvertex_list->entries.size() != (unsigned int)numtvertex) Log(e_FatalError, "ASELoader", "BuildTriangleMesh", "numtvertex and tree_mesh_tvertex_list->entries.size() differ! Loader corrupt?");
 
       for (unsigned int i = 0; i < tree_mesh_tvertex_list->entries.size(); i++) {
-        s_treeentry *entry = tree_mesh_tvertex_list->entries.at(i); // less typing
+        s_treeentry *entry = tree_mesh_tvertex_list->entries[i]; // less typing
 
         if (atoi(entry->values.at(0).c_str()) >= numtvertex) Log(e_FatalError, "ASELoader", "BuildTriangleMesh", "tvertex index larger than numtvertex! Loader corrupt?");
         tvertex_cache[atoi(entry->values.at(0).c_str())].coords[0] = atof(entry->values.at(1).c_str());
@@ -311,7 +311,7 @@ namespace blunted {
       if (tree_mesh_tface_list->entries.size() != (unsigned int)numtfaces) Log(e_FatalError, "ASELoader", "BuildTriangleMesh", "numtfaces and tree_mesh_tface_list->entries.size() differ! Loader corrupt?");
 
       for (unsigned int i = 0; i < tree_mesh_tface_list->entries.size(); i++) {
-        s_treeentry *entry = tree_mesh_tface_list->entries.at(i); // less typing
+        s_treeentry *entry = tree_mesh_tface_list->entries[i]; // less typing
 
         if (atoi(entry->values.at(0).c_str()) >= numtfaces) Log(e_FatalError, "ASELoader", "BuildTriangleMesh", "tface index larger than numtfaces! Loader corrupt?");
         for (int x = 0; x < 3; x++) {

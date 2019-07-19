@@ -38,7 +38,6 @@
 
 #include "base/log.hpp"
 
-#include "types/thread.hpp"
 #include "utils/orbitcamera.hpp"
 
 #include "wrap_SDL_ttf.h"
@@ -67,29 +66,6 @@ boost::shared_ptr<GameTask> gameTask;
 boost::shared_ptr<MenuTask> menuTask;
 boost::shared_ptr<SynchronizationTask> synchronizationTask;
 
-boost::intrusive_ptr<Geometry> greenPilon;
-boost::intrusive_ptr<Geometry> bluePilon;
-boost::intrusive_ptr<Geometry> yellowPilon;
-boost::intrusive_ptr<Geometry> redPilon;
-
-boost::intrusive_ptr<Geometry> smallDebugCircle1;
-boost::intrusive_ptr<Geometry> smallDebugCircle2;
-boost::intrusive_ptr<Geometry> largeDebugCircle;
-
-void SetGreenDebugPilon(const Vector3 &pos) { greenPilon->SetPosition(pos, false); }
-void SetBlueDebugPilon(const Vector3 &pos) { bluePilon->SetPosition(pos, false); }
-void SetYellowDebugPilon(const Vector3 &pos) { yellowPilon->SetPosition(pos, false); }
-void SetRedDebugPilon(const Vector3 &pos) { redPilon->SetPosition(pos, false); }
-
-boost::intrusive_ptr<Geometry> GetGreenDebugPilon() { return greenPilon; }
-boost::intrusive_ptr<Geometry> GetBlueDebugPilon() { return bluePilon; }
-boost::intrusive_ptr<Geometry> GetYellowDebugPilon() { return yellowPilon; }
-boost::intrusive_ptr<Geometry> GetRedDebugPilon() { return redPilon; }
-
-boost::intrusive_ptr<Geometry> GetSmallDebugCircle1() { return smallDebugCircle1; }
-boost::intrusive_ptr<Geometry> GetSmallDebugCircle2() { return smallDebugCircle2; }
-boost::intrusive_ptr<Geometry> GetLargeDebugCircle() { return largeDebugCircle; }
-
 Database *db;
 
 Properties *config;
@@ -98,20 +74,11 @@ GameConfig game_config;
 TTF_Font *defaultFont;
 TTF_Font *defaultOutlineFont;
 
-boost::intrusive_ptr<Image2D> debugImage;
-boost::intrusive_ptr<Image2D> debugOverlay;
-
 std::vector<IHIDevice*> controllers;
-
-bool superDebug = false;
-e_DebugMode debugMode = e_DebugMode_Off;
 
 std::string activeSaveDirectory;
 
 std::string configFile = "football.config";
-std::string GetConfigFilename() {
-  return configFile;
-}
 
 boost::shared_ptr<Scene2D> GetScene2D() {
   return scene2D;
@@ -141,19 +108,6 @@ Database *GetDB() {
   return db;
 }
 
-bool IsReleaseVersion() {
-  if (GetConfiguration()->GetBool("debug", false)) return false; else return true;
-}
-
-bool Verbose() {
-  return !IsReleaseVersion();
-}
-
-bool UpdateNonImportableDB() {
-  if (IsReleaseVersion()) return false;
-  else return true;
-}
-
 Properties *GetConfiguration() {
   return config;
 }
@@ -164,82 +118,6 @@ ScenarioConfig& GetScenarioConfig() {
 
 GameConfig& GetGameConfig() {
   return game_config;
-}
-
-std::string GetActiveSaveDirectory() {
-  return activeSaveDirectory;
-}
-
-void SetActiveSaveDirectory(const std::string &dir) {
-  activeSaveDirectory = dir;
-}
-
-bool SuperDebug() {
-  return superDebug;
-}
-
-e_DebugMode GetDebugMode() {
-  return debugMode;
-}
-
-boost::intrusive_ptr<Image2D> GetDebugOverlay() {
-  return debugOverlay;
-}
-
-void GetDebugOverlayCoord(Match *match, const Vector3 &worldPos, int &x, int &y) {
-  Vector3 proj = GetProjectedCoord(worldPos, match->GetCamera());
-  int dud1, dud2;
-  GetMenuTask()->GetWindowManager()->GetCoordinates(proj.coords[0], proj.coords[1], 1, 1, x, y, dud1, dud2);
-
-  int contextW, contextH, bpp;
-  GetScene2D()->GetContextSize(contextW, contextH, bpp);
-  x = clamp(x, 0, contextW - 1);
-  y = clamp(y, 0, contextH - 1);
-}
-
-void InitDebugImage() {
-  SDL_Surface *sdlSurface = CreateSDLSurface(200, 150);
-
-  boost::intrusive_ptr < Resource <Surface> > resource = ResourceManagerPool::getSurfaceManager()->Fetch("debugimage", false, true);
-  Surface *surface = resource->GetResource();
-
-  surface->SetData(sdlSurface);
-
-  debugImage = boost::static_pointer_cast<Image2D>(ObjectFactory::GetInstance().CreateObject("debugimage", e_ObjectType_Image2D));
-  scene2D->CreateSystemObjects(debugImage);
-  debugImage->SetImage(resource);
-
-  int contextW, contextH, bpp; // context
-  scene2D->GetContextSize(contextW, contextH, bpp);
-  debugImage->SetPosition(contextW - 210, contextH - 160);
-
-  scene2D->AddObject(debugImage);
-
-  debugImage->DrawRectangle(0, 0, 200, 150, Vector3(40, 20, 20), 100);
-  debugImage->OnChange();
-}
-
-void InitDebugOverlay() {
-  int contextW, contextH, bpp; // context
-  scene2D->GetContextSize(contextW, contextH, bpp);
-
-  SDL_Surface *sdlSurface = CreateSDLSurface(contextW, contextH);
-
-  boost::intrusive_ptr < Resource <Surface> > resource = ResourceManagerPool::getSurfaceManager()->Fetch("debugoverlay", false, true);
-  Surface *surface = resource->GetResource();
-
-  surface->SetData(sdlSurface);
-
-  debugOverlay = boost::static_pointer_cast<Image2D>(ObjectFactory::GetInstance().CreateObject("debugoverlay", e_ObjectType_Image2D));
-  scene2D->CreateSystemObjects(debugOverlay);
-  debugOverlay->SetImage(resource);
-
-  debugOverlay->SetPosition(0, 0);
-
-  scene2D->AddObject(debugOverlay);
-
-  debugOverlay->DrawRectangle(0, 0, contextW, contextH, Vector3(0, 0, 0), 0);
-  debugOverlay->OnChange();
 }
 
 const std::vector<IHIDevice*> &GetControllers() {
@@ -258,7 +136,7 @@ void run_game(Properties* input_config) {
   auto& game_config = GetGameConfig();
 
   Initialize(*config);
-  randomize(false);
+  randomize(0);
 
   int timeStep_ms = config->GetInt("physics_frametime_ms", 10);
 
@@ -266,7 +144,8 @@ void run_game(Properties* input_config) {
   // database
 
   db = new Database();
-  bool dbSuccess = db->Load("databases/default/database.sqlite");
+  bool dbSuccess =
+      db->Load(game_config.updatePath("databases/default/database.sqlite"));
   if (!dbSuccess) Log(e_FatalError, "main", "()", "Could not open database");
 
 
@@ -286,72 +165,6 @@ void run_game(Properties* input_config) {
 
   scene3D = boost::shared_ptr<Scene3D>(new Scene3D("scene3D"));
   SceneManager::GetInstance().RegisterScene(scene3D);
-
-  if (SuperDebug()) InitDebugImage();
-  if (GetDebugMode() == e_DebugMode_AI) InitDebugOverlay();
-
-  // debug pilons
-
-  boost::intrusive_ptr < Resource<GeometryData> > geometry = ResourceManagerPool::getGeometryManager()->Fetch("media/objects/helpers/green.ase", true);
-  greenPilon = static_pointer_cast<Geometry>(ObjectFactory::GetInstance().CreateObject("greenPilon", e_ObjectType_Geometry));
-  scene3D->CreateSystemObjects(greenPilon);
-  greenPilon->SetGeometryData(geometry);
-  greenPilon->SetLocalMode(e_LocalMode_Absolute);
-  greenPilon->SetPosition(Vector3(0, 0, -10));
-  //greenPilon->Disable();
-
-  geometry = ResourceManagerPool::getGeometryManager()->Fetch("media/objects/helpers/blue.ase", true);
-  bluePilon = static_pointer_cast<Geometry>(ObjectFactory::GetInstance().CreateObject("bluePilon", e_ObjectType_Geometry));
-  scene3D->CreateSystemObjects(bluePilon);
-  bluePilon->SetGeometryData(geometry);
-  bluePilon->SetLocalMode(e_LocalMode_Absolute);
-  bluePilon->SetPosition(Vector3(0, 0, -10));
-  //bluePilon->Disable();
-
-  geometry = ResourceManagerPool::getGeometryManager()->Fetch("media/objects/helpers/yellow.ase", true);
-  yellowPilon = static_pointer_cast<Geometry>(ObjectFactory::GetInstance().CreateObject("yellowPilon", e_ObjectType_Geometry));
-  scene3D->CreateSystemObjects(yellowPilon);
-  yellowPilon->SetGeometryData(geometry);
-  yellowPilon->SetLocalMode(e_LocalMode_Absolute);
-  yellowPilon->SetPosition(Vector3(0, 0, -10));
-  //yellowPilon->Disable();
-
-  geometry = ResourceManagerPool::getGeometryManager()->Fetch("media/objects/helpers/red.ase", true);
-  redPilon = static_pointer_cast<Geometry>(ObjectFactory::GetInstance().CreateObject("redPilon", e_ObjectType_Geometry));
-  scene3D->CreateSystemObjects(redPilon);
-  redPilon->SetGeometryData(geometry);
-  redPilon->SetLocalMode(e_LocalMode_Absolute);
-  redPilon->SetPosition(Vector3(0, 0, -10));
-  //redPilon->Disable();
-
-  geometry = ResourceManagerPool::getGeometryManager()->Fetch("media/objects/helpers/smalldebugcircle.ase", true);
-  smallDebugCircle1 = static_pointer_cast<Geometry>(ObjectFactory::GetInstance().CreateObject("smallDebugCircle1", e_ObjectType_Geometry));
-  scene3D->CreateSystemObjects(smallDebugCircle1);
-  smallDebugCircle1->SetGeometryData(geometry);
-  smallDebugCircle1->SetLocalMode(e_LocalMode_Absolute);
-  smallDebugCircle1->SetPosition(Vector3(0, 0, -10));
-//  smallDebugCircle1->Disable();
-
-  geometry = ResourceManagerPool::getGeometryManager()->Fetch("media/objects/helpers/smalldebugcircle.ase", true);
-  smallDebugCircle2 = static_pointer_cast<Geometry>(ObjectFactory::GetInstance().CreateObject("smallDebugCircle2", e_ObjectType_Geometry));
-  scene3D->CreateSystemObjects(smallDebugCircle2);
-  smallDebugCircle2->SetGeometryData(geometry);
-  smallDebugCircle2->SetLocalMode(e_LocalMode_Absolute);
-  smallDebugCircle2->SetPosition(Vector3(0, 0, -10));
-//  smallDebugCircle2->Disable();
-
-  geometry = ResourceManagerPool::getGeometryManager()->Fetch("media/objects/helpers/largedebugcircle.ase", true);
-  largeDebugCircle = static_pointer_cast<Geometry>(ObjectFactory::GetInstance().CreateObject("largeDebugCircle", e_ObjectType_Geometry));
-  scene3D->CreateSystemObjects(largeDebugCircle);
-  largeDebugCircle->SetGeometryData(geometry);
-  largeDebugCircle->SetLocalMode(e_LocalMode_Absolute);
-  largeDebugCircle->SetPosition(Vector3(0, 0, -10));
-//  largeDebugCircle->Disable();
-
-  geometry.reset();
-
-
-  // controllers
 
   for (int x = 0; x < 2 * MAX_PLAYERS; x++) {
     controllers.push_back(new AIControlledKeyboard());
@@ -399,35 +212,17 @@ void run_game(Properties* input_config) {
   // fire!
 
 void quit_game() {
-  if (SuperDebug()) scene2D->DeleteObject(debugImage);
-  if (GetDebugMode() == e_DebugMode_AI) scene2D->DeleteObject(debugOverlay);
-
   gameTask.reset();
   menuTask.reset();
 
   gameSequence.reset();
   graphicsSequence.reset();
 
-  greenPilon->Exit();
-  greenPilon.reset();
-  bluePilon->Exit();
-  bluePilon.reset();
-  yellowPilon->Exit();
-  yellowPilon.reset();
-  redPilon->Exit();
-  redPilon.reset();
-  smallDebugCircle1->Exit();
-  smallDebugCircle1.reset();
-  smallDebugCircle2->Exit();
-  smallDebugCircle2.reset();
-  largeDebugCircle->Exit();
-  largeDebugCircle.reset();
-
   scene2D.reset();
   scene3D.reset();
 
   for (unsigned int i = 0; i < controllers.size(); i++) {
-    delete controllers.at(i);
+    delete controllers[i];
   }
   controllers.clear();
 

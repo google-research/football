@@ -100,8 +100,9 @@ namespace blunted {
 
     std::vector<ShadowMap>::iterator iter = caller->shadowMaps.begin();
     while (iter != caller->shadowMaps.end()) {
-
-      Renderer3DMessage_DeleteFrameBuffer((*iter).frameBufferID, e_TargetAttachment_Depth).Handle(renderer3D);
+      renderer3D->BindFrameBuffer((*iter).frameBufferID);
+      renderer3D->SetFrameBufferTexture2D(e_TargetAttachment_Depth, 0);
+      renderer3D->DeleteFrameBuffer((*iter).frameBufferID);
       (*iter).visibleGeometry.clear();
       (*iter).texture.reset();
       iter = caller->shadowMaps.erase(iter);
@@ -138,7 +139,7 @@ namespace blunted {
 
     int index = -1;
     for (int i = 0; i < (signed int)caller->shadowMaps.size(); i++) {
-      if (caller->shadowMaps.at(i).cameraName == camera->GetName()) {
+      if (caller->shadowMaps[i].cameraName == camera->GetName()) {
         index = i;
       }
     }
@@ -156,9 +157,21 @@ namespace blunted {
         map.texture->GetResource()->CreateTexture(e_InternalPixelFormat_DepthComponent16, e_PixelFormat_DepthComponent, 2048, 2048, false, false, false, true, true);
 
         // create framebuffer for shadowmap
-        Renderer3DMessage_CreateFrameBuffer op(e_TargetAttachment_Depth, map.texture->GetResource()->GetID());
-        op.Handle(renderer3D);
-        map.frameBufferID = op.frameBufferID;
+        map.frameBufferID = renderer3D->CreateFrameBuffer();
+        renderer3D->BindFrameBuffer(map.frameBufferID);
+        // texture buffers
+        renderer3D->SetFrameBufferTexture2D(e_TargetAttachment_Depth, map.texture->GetResource()->GetID());
+        // all draw buffers must specify attachment points that have images attached. so to be sure, select none
+        std::vector<e_TargetAttachment> targets;
+        targets.push_back(e_TargetAttachment_None);
+        renderer3D->SetRenderTargets(targets);
+        targets.clear();
+
+        if (!renderer3D->CheckFrameBufferStatus()) Log(e_FatalError, "Renderer3DMessage_CreateFrameBuffer", "Execute", "Could not create framebuffer");
+        renderer3D->BindFrameBuffer(0);
+        targets.push_back(e_TargetAttachment_Back);
+        renderer3D->SetRenderTargets(targets);
+        targets.clear();
       }
 
       map.cameraName = camera->GetName();
@@ -225,8 +238,8 @@ namespace blunted {
 
   ShadowMap GraphicsLight_LightInterpreter::GetShadowMap(const std::string &camName) {
     for (unsigned int i = 0; i < caller->shadowMaps.size(); i++) {
-      if (caller->shadowMaps.at(i).cameraName == camName) {
-        return caller->shadowMaps.at(i);
+      if (caller->shadowMaps[i].cameraName == camName) {
+        return caller->shadowMaps[i];
       }
     }
 
@@ -237,10 +250,46 @@ namespace blunted {
   void GraphicsLight_LightInterpreter::OnPoke() {
     if (!caller->GetShadow()) return;
 
-    for (auto& it : caller->shadowMaps) {
-      Renderer3DMessage_RenderShadowMap op(it);
-      op.Handle(caller->GetGraphicsScene()->GetGraphicsSystem()->GetRenderer3D());
-      it.visibleGeometry.clear();
+    for (auto& map : caller->shadowMaps) {
+      Renderer3D *renderer = caller->GetGraphicsScene()->GetGraphicsSystem()->GetRenderer3D();
+      renderer->UseShader("zphase");
+      renderer->BindFrameBuffer(map.frameBufferID);
+
+      int shadowW, shadowH;
+      map.texture->GetResource()->GetSize(shadowW, shadowH);
+      renderer->SetViewport(0, 0, shadowW, shadowH);
+
+      renderer->ClearBuffer(Vector3(0, 0, 0), true, false);
+
+      renderer->SetMatrix("projectionMatrix", map.lightProjectionMatrix);
+      renderer->SetMatrix("viewMatrix", map.lightViewMatrix);
+
+      std::vector<e_TargetAttachment> targets;
+      targets.push_back(e_TargetAttachment_None);
+      renderer->SetRenderTargets(targets);
+      targets.clear();
+
+      renderer->SetCullingMode(e_CullingMode_Front);
+      renderer->SetBlendingMode(e_BlendingMode_Off);
+      renderer->SetDepthFunction(e_DepthFunction_Less);
+      renderer->SetDepthTesting(true);
+      renderer->SetDepthMask(true);
+
+      renderer->RenderVertexBuffer(map.visibleGeometry, e_RenderMode_GeometryOnly);
+
+      renderer->BindFrameBuffer(0);
+      renderer->UseShader("");
+
+      targets.push_back(e_TargetAttachment_Back);
+      renderer->SetRenderTargets(targets);
+      targets.clear();
+
+      // restore context viewport
+      int width, height, bpp;
+      renderer->GetContextSize(width, height, bpp);
+      renderer->SetViewport(0, 0, width, height);
+      renderer->SetCullingMode(e_CullingMode_Back);
+      map.visibleGeometry.clear();
     }
   }
 

@@ -34,82 +34,22 @@
 #include "../utils/gui2/widgets/caption.hpp"
 #include "../menu/ingame/scoreboard.hpp"
 #include "../menu/ingame/radar.hpp"
-#include "../menu/ingame/tacticsdebug.hpp"
 
 #include "../scene/objects/camera.hpp"
 #include "../scene/objects/light.hpp"
 
 #include "../types/messagequeue.hpp"
 #include "../types/command.hpp"
-#include "../types/lockable.hpp"
 
 #include <boost/circular_buffer.hpp>
 
 #include <fstream>
 #include <iostream>
 
-
-struct ReplaySpatialFrame {
-  unsigned long frameTime_ms = 0;
-  Vector3 position;
-  Quaternion orientation;
-};
-
-struct ReplayBallTouchesNetFrame {
-  unsigned long frameTime_ms = 0;
-  bool ballTouchesNet = false;
-};
-
-struct ReplaySpatial {
-  ReplaySpatial(int frameCount) : frames(frameCount) { }
-  boost::intrusive_ptr<Spatial> spatial;
-  boost::circular_buffer<ReplaySpatialFrame> frames;
-};
-
 struct PlayerBounce {
   Player *opp;
   float force = 0.0f;
 };
-
-struct ReplayState {
-  ReplayState() {
-    dirty = false;
-  }
-  bool dirty = false;
-  unsigned long viewTime_ms = 0;
-  int cam = 0;
-  float modifierValue = 0.0f;
-};
-
-/*
-struct MissingAnim {
-
-  MissingAnim() {
-    timesMissed = 1;
-    angleDifference = 0.0f;
-  }
-
-  bool operator == (const MissingAnim &comp) const {
-    if (this->outgoingVelocity == comp.outgoingVelocity &&
-        this->outgoingDirection.GetDistance(comp.outgoingDirection) < 0.001f &&
-        this->outgoingBodyDirection.GetDistance(comp.outgoingBodyDirection) <  0.001f) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  bool operator < (const MissingAnim &comp) const {
-    if (this->timesMissed < comp.timesMissed) return true; else return false;
-  }
-
-  Vector3 outgoingDirection;
-  e_Velocity outgoingVelocity;
-  Vector3 outgoingBodyDirection;
-  mutable int timesMissed = 0;
-  mutable radian angleDifference;
-};
-*/
 
 class Match {
 
@@ -130,7 +70,6 @@ class Match {
     void GetAllTeamPlayers(int teamID, std::vector<Player*> &players);
     void GetActiveTeamPlayers(int teamID, std::vector<Player*> &players);
     void GetOfficialPlayers(std::vector<PlayerBase*> &players);
-
     boost::shared_ptr<AnimCollection> GetAnimCollection();
 
     const MentalImage *GetMentalImage(int history_ms);
@@ -138,7 +77,6 @@ class Match {
 
     void ResetSituation(const Vector3 &focusPos);
 
-    void Pause(bool doPause) { pause = doPause; }
     bool GetPause() { return pause; }
     void SetMatchPhase(e_MatchPhase newMatchPhase);
     e_MatchPhase GetMatchPhase() const { return matchPhase; }
@@ -174,7 +112,8 @@ class Match {
     float GetLastTouchBias(int decay_ms, unsigned long time_ms = 0) { if (GetLastTouchTeam()) return GetLastTouchTeam()->GetLastTouchBias(decay_ms, time_ms); else return 0; }
     bool IsBallInGoal() const { return ballIsInGoal; }
 
-    signed int GetBestPossessionTeamID();
+    Team* GetBestPossessionTeam();
+
     Player *GetDesignatedPossessionPlayer() { return designatedPossessionPlayer; }
     Player *GetBallRetainer() { return ballRetainer; }
     void SetBallRetainer(Player *retainer) { ballRetainer = retainer; }
@@ -187,10 +126,8 @@ class Match {
 
     void GameOver();
 
-    void GetCameraParams(float &zoom, float &height, float &fov, float &angleFactor);
-    void SetCameraParams(float zoom, float height, float fov, float angleFactor);
-
     void UpdateIngameCamera();
+
 
     boost::intrusive_ptr<Camera> GetCamera() { return camera; }
 
@@ -208,7 +145,6 @@ class Match {
     void SetAutoUpdateIngameCamera(bool autoUpdate = true) { if (autoUpdate != autoUpdateIngameCamera) { camPos.clear(); autoUpdateIngameCamera = autoUpdate; } }
 
     int GetReplaySize_ms();
-    int GetReplayCamCount();
 
     MatchData* GetMatchData() { return matchData; }
 
@@ -227,14 +163,14 @@ class Match {
     //void AddMissingAnim(const MissingAnim &someAnim);
 
     // not sure about how signals work in this game at the moment. whole menu/game thing needs a rethink, i guess
-    boost::signal<void(Match*)> sig_OnMatchPhaseChange;
-    boost::signal<void(Match*)> sig_OnShortReplayMoment;
-    boost::signal<void(Match*)> sig_OnExtendedReplayMoment;
-    boost::signal<void(Match*)> sig_OnGameOver;
-    boost::signal<void(Match*)> sig_OnCreatedMatch;
-    boost::signal<void(Match*)> sig_OnExitedMatch;
+    boost::signals2::signal<void(Match*)> sig_OnMatchPhaseChange;
+    boost::signals2::signal<void(Match*)> sig_OnShortReplayMoment;
+    boost::signals2::signal<void(Match*)> sig_OnExtendedReplayMoment;
+    boost::signals2::signal<void(Match*)> sig_OnGameOver;
+    boost::signals2::signal<void(Match*)> sig_OnCreatedMatch;
+    boost::signals2::signal<void(Match*)> sig_OnExitedMatch;
 
-  protected:
+  private:
     bool CheckForGoal(signed int side);
 
     void CalculateBestPossessionTeamID();
@@ -281,7 +217,6 @@ class Match {
 
     Gui2ScoreBoard *scoreboard;
     Gui2Radar *radar;
-    Gui2TacticsDebug *tacticsDebug;
     Gui2Caption *messageCaption;
     unsigned long messageCaptionRemoveTime_ms = 0;
     unsigned long iterations = 0;
@@ -304,7 +239,7 @@ class Match {
     Player *lastGoalScorer;
     int lastTouchTeamIDs[e_TouchType_SIZE];
     int lastTouchTeamID = 0;
-    signed int bestPossessionTeamID = 0;
+    Team* bestPossessionTeam = 0;
     Player *designatedPossessionPlayer;
     Player *ballRetainer;
 
@@ -361,14 +296,6 @@ class Match {
 
     std::vector<Vector3> nettingMeshesSrc[2];
     std::vector<float*> nettingMeshes[2];
-
-    //boost::intrusive_ptr<Light> lightTest[100];
-
-
-    bool _positionLogging = false;
-    std::ofstream positionLogFile;
-
-    //std::vector<MissingAnim> missingAnims;
 
     float matchDifficulty = 0.0f;
     // Whether to use magnet logic (that automatically pushes active player

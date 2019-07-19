@@ -48,7 +48,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IScene3DInterpreter *scene3DInterpreter = static_cast<IScene3DInterpreter*>(observers.at(i).get());
+      IScene3DInterpreter *scene3DInterpreter = static_cast<IScene3DInterpreter*>(observers[i].get());
       scene3DInterpreter->OnLoad();
     }
 
@@ -61,7 +61,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IScene3DInterpreter *scene3DInterpreter = static_cast<IScene3DInterpreter*>(observers.at(i).get());
+      IScene3DInterpreter *scene3DInterpreter = static_cast<IScene3DInterpreter*>(observers[i].get());
       scene3DInterpreter->OnUnload();
     }
 
@@ -69,10 +69,6 @@ namespace blunted {
 
   }
 
-
-  void Scene3D::PrintTree() {
-    hierarchyRoot->PrintTree();
-  }
 
   void Scene3D::AddNode(boost::intrusive_ptr<Node> node) {
     hierarchyRoot->AddNode(node);

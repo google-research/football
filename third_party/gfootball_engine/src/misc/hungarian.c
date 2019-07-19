@@ -42,8 +42,6 @@
 #include "hungarian.h"
 
 #define INF (0x7FFFFFFF)
-#define verbose (0)
-
 #define hungarian_test_alloc(X) do {if ((void *)(X) == NULL) fprintf(stderr, "Out of memory in %s, (%s, line %d).\n", __FUNCTION__, __FILE__, __LINE__); } while (0)
 
 int** array_to_matrix(int* m, int rows, int cols) {
@@ -185,8 +183,6 @@ int hungarian_solve(hungarian_problem_t* p)
       p->assignment[i][j]=HUNGARIAN_NOT_ASSIGNED;
 
   // Begin subtract column minima in order to start with lots of zeroes 12
-  if (verbose)
-    fprintf(stderr, "Using heuristic\n");
   for (l=0;l<n;l++)
     {
       s=p->cost[0][l];
@@ -221,13 +217,9 @@ int hungarian_solve(hungarian_problem_t* p)
 	  {
 	    col_mate[k]=l;
 	    row_mate[l]=k;
-	    if (verbose)
-	      fprintf(stderr, "matching col %d==row %d\n",l,k);
 	    goto row_done;
 	  }
       col_mate[k]= -1;
-      if (verbose)
-	fprintf(stderr, "node %d: unmatched row %d\n",t,k);
       unchosen_row[t++]=k;
     row_done:
       ;
@@ -240,8 +232,6 @@ int hungarian_solve(hungarian_problem_t* p)
   unmatched=t;
   while (1)
     {
-      if (verbose)
-	fprintf(stderr, "Matched %d rows.\n",m-t);
       q=0;
       while (1)
 	{
@@ -264,9 +254,6 @@ int hungarian_solve(hungarian_problem_t* p)
 				goto breakthru;
 			      slack[l]=0;
 			      parent_row[l]=k;
-			      if (verbose)
-				fprintf(stderr, "node %d: row %d==col %d--row %d\n",
-				       t,row_mate[l],l,k);
 			      unchosen_row[t++]=row_mate[l];
 			    }
 			  else
@@ -296,10 +283,6 @@ int hungarian_solve(hungarian_problem_t* p)
 		  {
 		    // Begin look at a new zero 22
 		    k=slack_row[l];
-		    if (verbose)
-		      fprintf(stderr, 
-			     "Decreasing uncovered elements by %d produces zero at [%d,%d]\n",
-			     s,k,l);
 		    if (row_mate[l]<0)
 		      {
 			for (j=l+1;j<n;j++)
@@ -310,8 +293,6 @@ int hungarian_solve(hungarian_problem_t* p)
 		    else
 		      {
 			parent_row[l]=k;
-			if (verbose)
-			  fprintf(stderr, "node %d: row %d==col %d--row %d\n",t,row_mate[l],l,k);
 			unchosen_row[t++]=row_mate[l];
 		      }
 		    // End look at a new zero 22
@@ -323,15 +304,11 @@ int hungarian_solve(hungarian_problem_t* p)
 	}
     breakthru:
       // Begin update the matching 20
-      if (verbose)
-	fprintf(stderr, "Breakthrough at node %d of %d!\n",q,t);
       while (1)
 	{
 	  j=col_mate[k];
 	  col_mate[k]=l;
 	  row_mate[l]=k;
-	  if (verbose)
-	    fprintf(stderr, "rematching col %d==row %d\n",l,k);
 	  if (j<0)
 	    break;
 	  k=parent_row[j];
@@ -350,8 +327,6 @@ int hungarian_solve(hungarian_problem_t* p)
       for (k=0;k<m;k++)
 	if (col_mate[k]<0)
 	  {
-	    if (verbose)
-	      fprintf(stderr, "node %d: unmatched row %d\n",t,k);
 	    unchosen_row[t++]=k;
 	  }
       // End get ready for another stage 17
@@ -396,9 +371,6 @@ int hungarian_solve(hungarian_problem_t* p)
     cost+=row_dec[i];
   for (i=0;i<n;i++)
     cost-=col_inc[i];
-  if (verbose)
-    fprintf(stderr, "Cost is %d\n",cost);
-
 
   free(slack);
   free(col_inc);

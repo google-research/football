@@ -38,9 +38,9 @@ class PlayerDesc {
 MatchData::MatchData(int team1DatabaseID, int team2DatabaseID) {
   auto& scenario = GetScenarioConfig();
   teamData[0] = new TeamData(team1DatabaseID, team1DatabaseID,
-                             scenario.home_team);
+                             scenario.left_team);
   teamData[1] = new TeamData(team2DatabaseID, scenario.symmetrical_teams
-      ? team1DatabaseID : team2DatabaseID, scenario.away_team);
+      ? team1DatabaseID : team2DatabaseID, scenario.right_team);
 
   std::vector<PlayerDesc> names = {
       PlayerDesc("Ada", "Lovelace", 1),
@@ -82,7 +82,7 @@ MatchData::MatchData(int team1DatabaseID, int team2DatabaseID) {
   //      PlayerDesc("Hertha", "Ayrton", 1),
   //      PlayerDesc("Caroline", "Herschel", 1),
   //      PlayerDesc("Candace", "Pert", 1),
-  for (int x = 0; x < scenario.home_team.size(); x++) {
+  for (int x = 0; x < scenario.left_team.size(); x++) {
     PlayerData* player = teamData[0]->GetPlayerData(x);
     player->UpdateName(names[x].getFirstName(), names[x].getLastName());
     if (names[x].getValue()) {
@@ -90,7 +90,7 @@ MatchData::MatchData(int team1DatabaseID, int team2DatabaseID) {
       player->SetModelId(1);
     }
   }
-  for (int x = 0; x < scenario.away_team.size(); x++) {
+  for (int x = 0; x < scenario.right_team.size(); x++) {
     PlayerData* player = teamData[1]->GetPlayerData(x);
     player->UpdateName(names[x+11].getFirstName(), names[x+11].getLastName());
     if (names[x+11].getValue()) {
@@ -100,9 +100,6 @@ MatchData::MatchData(int team1DatabaseID, int team2DatabaseID) {
   }
   goalCount[0] = 0;
   goalCount[1] = 0;
-
-  possessionTime_ms[0] = 0;
-  possessionTime_ms[1] = 0;
 
   shots[0] = 0;
   shots[1] = 0;
@@ -116,7 +113,6 @@ MatchData::~MatchData() {
 }
 
 void MatchData::AddPossessionTime_10ms(int teamID) {
-  possessionTime_ms[teamID] += 10;
   if (teamID == 0) possession60seconds = std::max(possession60seconds - 0.01f, -60.0f);
   else if (teamID == 1) possession60seconds = std::min(possession60seconds + 0.01f, 60.0f);
 }

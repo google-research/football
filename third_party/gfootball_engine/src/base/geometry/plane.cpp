@@ -40,14 +40,6 @@ namespace blunted {
     SetVertex(1, dir);
   }
 
-  void Plane::SetVertex(unsigned char pos, const real x, const real y, const real z) {
-    assert(pos < 2);
-    vertices[pos].coords[0] = x;
-    vertices[pos].coords[1] = y;
-    vertices[pos].coords[2] = z;
-    _dirty_determinant = true;
-  }
-
   void Plane::SetVertex(unsigned char pos, const Vector3 &vec) {
     assert(pos < 2);
     vertices[pos].coords[0] = vec.coords[0];

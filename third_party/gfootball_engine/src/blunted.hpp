@@ -28,9 +28,6 @@ namespace blunted {
   /// load managers, systems, scheduler and scene
   void Initialize(Properties &config);
 
-  /// run the scheduler
-  void Run();
-
   /// execute a single scheduler loop
   void DoStep();
 

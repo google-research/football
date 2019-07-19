@@ -50,14 +50,14 @@ namespace blunted {
 
     ~s_tree() {
       for (int i = 0; i < (signed int)entries.size(); i++) {
-        delete entries.at(i);
+        delete entries[i];
       }
       entries.clear();
     }
   };
 
   // ----- load .ase file into a tree
-  s_tree *tree_load(const std::string asefile);
+  s_tree *tree_load(std::string asefile);
   s_tree *tree_readblock(std::ifstream &datafile);
 
   // tree structure utility functions
@@ -67,8 +67,6 @@ namespace blunted {
   // string functions
   std::string stringchomp(std::string input, char chomp);
   void tokenize(const std::string& str, std::vector<std::string> &tokens, const std::string &delimiters = " ");
-
-  std::string StripString(const std::string &input); // strips special chars
 
   std::string file_to_string(std::string filename);
   void file_to_vector(std::string filename, std::vector<std::string> &destination);
@@ -82,9 +80,6 @@ namespace blunted {
   std::string GetStringFromVector(const Vector3 &vec);
   Vector3 GetVectorFromString(const std::string &vecString);
   Quaternion GetQuaternionFromString(const std::string &quatString);
-
-  bool CreateDirectory(boost::filesystem::path const &dir);
-  bool CopyFile(boost::filesystem::path const &source, boost::filesystem::path const &destinationDir);
 
   // assumes 10ms input timestep
   template <typename T> class ValueHistory {

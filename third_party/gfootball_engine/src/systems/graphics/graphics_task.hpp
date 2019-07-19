@@ -44,10 +44,6 @@ namespace blunted {
       void PutPhase();
 
       GraphicsSystem *graphicsSystem;
-
-      boost::intrusive_ptr<Renderer3DMessage_SwapBuffers> swapBuffers;
-
-      mutable Lockable<unsigned long> lastSwapTime_ms;
   };
 
   class GraphicsTaskCommand_EnqueueView : public Command {

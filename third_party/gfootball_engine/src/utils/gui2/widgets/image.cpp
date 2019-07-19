@@ -19,12 +19,13 @@
 
 #include <SDL2_rotozoom.h>
 
+#include "../main.hpp"
 #include "../windowmanager.hpp"
 
 namespace blunted {
 
   SDL_Surface* IMG_LoadBmp(const std::string& file) {
-    std::string name = file;
+    std::string name = GetGameConfig().updatePath(file);
     name = name.substr(0, name.length() - 4) + ".bmp";
     auto image = SDL_LoadBMP(name.c_str());
     if (image->format->format == SDL_PIXELFORMAT_ARGB8888) {

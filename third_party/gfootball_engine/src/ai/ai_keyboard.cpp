@@ -27,13 +27,6 @@ bool AIControlledKeyboard::GetButton(e_ButtonFunction buttonFunction) {
   return buttons_pressed_.find(buttonFunction) != buttons_pressed_.end();
 }
 
-float AIControlledKeyboard::GetButtonValue(e_ButtonFunction buttonFunction) {
-  if (GetButton(buttonFunction)) {
-    return 1.0;
-  }
-  return 0.0;
-}
-
 void AIControlledKeyboard::SetButton(e_ButtonFunction buttonFunction, bool state) {
   if (state) {
     buttons_pressed_.insert(buttonFunction);

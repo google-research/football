@@ -223,7 +223,6 @@ namespace blunted {
   }
 
   Vector3 Vector3::GetNormalizedMax(float length) const {
-    //printf("vec debug: %f, %f\n", GetLength(), length);
     if (GetLength() > length) return GetNormalized(0) * length; else return Vector3(*this);
   }
 
@@ -290,10 +289,6 @@ namespace blunted {
 
   void Vector3::Extrapolate(const Vector3 &direction, unsigned long time) {
     *this += direction * (time / 1000.0);
-  }
-
-  void Vector3::Print() const {
-    printf("%f, %f, %f\n", coords[0], coords[1], coords[2]);
   }
 
   std::ostream& operator<<(std::ostream& os, const Vector3& v)

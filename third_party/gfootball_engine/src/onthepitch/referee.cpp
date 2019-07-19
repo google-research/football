@@ -29,6 +29,7 @@
 Referee::Referee(Match *match) : match(match) {
   buffer.desiredSetPiece = e_GameMode_KickOff;
   buffer.teamID = 0;
+  buffer.setpiece_teamID = 0;
   buffer.stopTime = 0;
   buffer.prepareTime = 0;
   buffer.startTime = buffer.prepareTime + 2000;
@@ -51,8 +52,6 @@ Referee::Referee(Match *match) : match(match) {
 }
 
 Referee::~Referee() {
-  if (Verbose()) printf("exiting referee.. ");
-  if (Verbose()) printf("done\n");
 }
 
 void Referee::Process() {
@@ -88,6 +87,7 @@ void Referee::Process() {
           buffer.startTime = buffer.prepareTime + 500;
           buffer.restartPos = Vector3(0, 0, 0);
           buffer.teamID = 0;//abs(match->GetLastGoalTeamID() - 1);
+          buffer.setpiece_teamID = abs(match->GetLastGoalTeamID() - 1);
           match->SetMatchPhase(e_MatchPhase_1stHalf);
         } else if ((ballPos.coords[0] > 0 && lastSide > 0) || (ballPos.coords[0] < 0 && lastSide < 0)) {
           buffer.desiredSetPiece = e_GameMode_Corner;
@@ -182,8 +182,8 @@ void Referee::Process() {
         (buffer.taker->TouchAnim() && !buffer.taker->TouchPending())) {
       buffer.active = false;
       match->StopSetPiece();
-      match->GetTeam(0)->GetController()->PrepareSetPiece(e_GameMode_Normal);
-      match->GetTeam(1)->GetController()->PrepareSetPiece(e_GameMode_Normal);
+      match->GetTeam(0)->GetController()->PrepareSetPiece(e_GameMode_Normal, match->GetTeam(1), -1, -1);
+      match->GetTeam(1)->GetController()->PrepareSetPiece(e_GameMode_Normal, match->GetTeam(0), -1, -1);
       afterSetPieceRelaxTime_ms = 400;
       foul.foulPlayer = 0;
       foul.foulType = 0;
@@ -202,8 +202,8 @@ void Referee::PrepareSetPiece(e_GameMode setPiece) {
 
   match->ResetSituation(buffer.restartPos);
 
-  match->GetTeam(0)->GetController()->PrepareSetPiece(setPiece, buffer.teamID);
-  match->GetTeam(1)->GetController()->PrepareSetPiece(setPiece, buffer.teamID);
+  match->GetTeam(0)->GetController()->PrepareSetPiece(setPiece, match->GetTeam(1), buffer.setpiece_teamID, buffer.teamID);
+  match->GetTeam(1)->GetController()->PrepareSetPiece(setPiece, match->GetTeam(0), buffer.setpiece_teamID, buffer.teamID);
 
   buffer.taker = match->GetTeam(buffer.teamID)->GetController()->GetPieceTaker();
   // Reset offside state.
@@ -290,7 +290,6 @@ void Referee::TripNotice(Player *tripee, Player *tripper, int tackleType) {
       foul.foulTime = match->GetActualTime_ms();
       foul.foulPosition = tripee->GetPosition();
       foul.hasBeenProcessed = false;
-      if (!IsReleaseVersion()) match->SpamMessage("advantage", 2000);
     }
 
   } else if (tackleType == 3 && (tripper != foul.foulPlayer || foul.foulType == 0)) { // sliding tackle

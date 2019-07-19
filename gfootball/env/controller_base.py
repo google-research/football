@@ -24,15 +24,12 @@ from gfootball.env import player_base
 class Controller(player_base.PlayerBase):
   """Base controller class."""
 
-  def __init__(self):
+  def __init__(self, player_config):
+    player_base.PlayerBase.__init__(self, player_config)
     self._active_actions = {}
-    self._last_action = football_action_set.core_action_idle
-    self._last_direction = football_action_set.core_action_idle
-    self._current_direction = football_action_set.core_action_idle
-
-  def can_play_right_to_left(self):
-    """Returns true if player supports playing right to left."""
-    return False
+    self._last_action = football_action_set.action_idle
+    self._last_direction = football_action_set.action_idle
+    self._current_direction = football_action_set.action_idle
 
   def _check_action(self, action, active_actions):
     """Compare (and update) controller's state with the set of active actions.
@@ -43,7 +40,7 @@ class Controller(player_base.PlayerBase):
     """
     assert isinstance(action, football_action_set.CoreAction)
     state = active_actions.get(action, 0)
-    if (self._last_action == football_action_set.core_action_idle and
+    if (self._last_action == football_action_set.action_idle and
         self._active_actions.get(action, 0) != state):
       self._active_actions[action] = state
       if state:
@@ -59,7 +56,7 @@ class Controller(player_base.PlayerBase):
       action: Action to check
       state: Current state of the action being checked
     """
-    if self._current_direction != football_action_set.core_action_idle:
+    if self._current_direction != football_action_set.action_idle:
       return
     if state:
       self._current_direction = number
@@ -71,41 +68,41 @@ class Controller(player_base.PlayerBase):
       action: Action to check
       state: Current state of the action being checked
     """
-    self._current_direction = football_action_set.core_action_idle
-    self._check_direction(football_action_set.core_action_top_left, top and
+    self._current_direction = football_action_set.action_idle
+    self._check_direction(football_action_set.action_top_left, top and
                           left)
-    self._check_direction(football_action_set.core_action_top_right, top and
+    self._check_direction(football_action_set.action_top_right, top and
                           right)
-    self._check_direction(football_action_set.core_action_bottom_left,
+    self._check_direction(football_action_set.action_bottom_left,
                           bottom and left)
-    self._check_direction(football_action_set.core_action_bottom_right,
+    self._check_direction(football_action_set.action_bottom_right,
                           bottom and right)
-    if self._current_direction == football_action_set.core_action_idle:
-      self._check_direction(football_action_set.core_action_right, right)
-      self._check_direction(football_action_set.core_action_left, left)
-      self._check_direction(football_action_set.core_action_top, top)
-      self._check_direction(football_action_set.core_action_bottom, bottom)
+    if self._current_direction == football_action_set.action_idle:
+      self._check_direction(football_action_set.action_right, right)
+      self._check_direction(football_action_set.action_left, left)
+      self._check_direction(football_action_set.action_top, top)
+      self._check_direction(football_action_set.action_bottom, bottom)
     if self._current_direction != self._last_direction:
       self._last_direction = self._current_direction
-      if self._current_direction == football_action_set.core_action_idle:
-        return football_action_set.core_action_release_direction
+      if self._current_direction == football_action_set.action_idle:
+        return football_action_set.action_release_direction
       else:
         return self._current_direction
-    self._last_action = football_action_set.core_action_idle
-    self._check_action(football_action_set.core_action_long_pass,
+    self._last_action = football_action_set.action_idle
+    self._check_action(football_action_set.action_long_pass,
                        active_actions)
-    self._check_action(football_action_set.core_action_high_pass,
+    self._check_action(football_action_set.action_high_pass,
                        active_actions)
-    self._check_action(football_action_set.core_action_short_pass,
+    self._check_action(football_action_set.action_short_pass,
                        active_actions)
-    self._check_action(football_action_set.core_action_shot, active_actions)
-    self._check_action(football_action_set.core_action_keeper_rush,
+    self._check_action(football_action_set.action_shot, active_actions)
+    self._check_action(football_action_set.action_keeper_rush,
                        active_actions)
-    self._check_action(football_action_set.core_action_sliding, active_actions)
-    self._check_action(football_action_set.core_action_pressure,
+    self._check_action(football_action_set.action_sliding, active_actions)
+    self._check_action(football_action_set.action_pressure,
                        active_actions)
-    self._check_action(football_action_set.core_action_team_pressure,
+    self._check_action(football_action_set.action_team_pressure,
                        active_actions)
-    self._check_action(football_action_set.core_action_sprint, active_actions)
-    self._check_action(football_action_set.core_action_dribble, active_actions)
+    self._check_action(football_action_set.action_sprint, active_actions)
+    self._check_action(football_action_set.action_dribble, active_actions)
     return self._last_action

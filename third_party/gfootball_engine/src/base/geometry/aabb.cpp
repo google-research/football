@@ -79,18 +79,18 @@ namespace blunted {
     vecs.push_back(vec);
 
     for (int i = 0; i < (signed int)vecs.size(); i++) {
-      vecs.at(i) = rot * vecs.at(i);
+      vecs[i] = rot * vecs[i];
     }
 
     aabb.Reset();
 
     for (int i = 0; i < (signed int)vecs.size(); i++) {
-      if (vecs.at(i).coords[0] < aabb.minxyz.coords[0]) aabb.minxyz.coords[0] = vecs.at(i).coords[0];
-      if (vecs.at(i).coords[0] > aabb.maxxyz.coords[0]) aabb.maxxyz.coords[0] = vecs.at(i).coords[0];
-      if (vecs.at(i).coords[1] < aabb.minxyz.coords[1]) aabb.minxyz.coords[1] = vecs.at(i).coords[1];
-      if (vecs.at(i).coords[1] > aabb.maxxyz.coords[1]) aabb.maxxyz.coords[1] = vecs.at(i).coords[1];
-      if (vecs.at(i).coords[2] < aabb.minxyz.coords[2]) aabb.minxyz.coords[2] = vecs.at(i).coords[2];
-      if (vecs.at(i).coords[2] > aabb.maxxyz.coords[2]) aabb.maxxyz.coords[2] = vecs.at(i).coords[2];
+      if (vecs[i].coords[0] < aabb.minxyz.coords[0]) aabb.minxyz.coords[0] = vecs[i].coords[0];
+      if (vecs[i].coords[0] > aabb.maxxyz.coords[0]) aabb.maxxyz.coords[0] = vecs[i].coords[0];
+      if (vecs[i].coords[1] < aabb.minxyz.coords[1]) aabb.minxyz.coords[1] = vecs[i].coords[1];
+      if (vecs[i].coords[1] > aabb.maxxyz.coords[1]) aabb.maxxyz.coords[1] = vecs[i].coords[1];
+      if (vecs[i].coords[2] < aabb.minxyz.coords[2]) aabb.minxyz.coords[2] = vecs[i].coords[2];
+      if (vecs[i].coords[2] > aabb.maxxyz.coords[2]) aabb.maxxyz.coords[2] = vecs[i].coords[2];
     }
 
     radius_needupdate = true;

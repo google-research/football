@@ -28,16 +28,13 @@ namespace blunted {
 
   class Gui2WindowManager;
 
-  class Gui2View : public boost::signals::trackable {
+  class Gui2View : public boost::signals2::trackable {
 
     public:
       Gui2View(Gui2WindowManager *windowManager, const std::string &name, float x_percent, float y_percent, float width_percent, float height_percent);
       virtual ~Gui2View();
 
       virtual void Exit();
-
-      std::string GetName() { return name; }
-      void SetName(const std::string &newName) { name = newName; }
 
       virtual void UpdateImagePosition();
       virtual void UpdateImageVisibility();
@@ -54,8 +51,6 @@ namespace blunted {
       virtual void CenterPosition();
       virtual void GetImages(std::vector < boost::intrusive_ptr<Image2D> > &target);
 
-      std::vector<Gui2View*> GetChildren() { return children; }
-
       virtual void Process();
       virtual void Redraw() {}
 
@@ -63,14 +58,15 @@ namespace blunted {
 
       virtual void ProcessWindowingEvent(WindowingEvent *event);
       virtual void ProcessKeyboardEvent(KeyboardEvent *event);
-      virtual void ProcessJoystickEvent(JoystickEvent *event);
 
       bool IsFocussed();
       void SetFocus();
       virtual void OnGainFocus() { if (!children.empty()) children.at(0)->SetFocus(); }
       virtual void OnLoseFocus() {}
-      virtual void SetInFocusPath(bool onOff) { isInFocusPath = onOff; if (parent) parent->SetInFocusPath(onOff); }
-      bool IsInFocusPath() { return isInFocusPath; }
+      virtual void SetInFocusPath(bool onOff) {
+        isInFocusPath = onOff;
+        if (parent) parent->SetInFocusPath(onOff);
+      }
 
       virtual bool IsVisible() { if (isVisible) { if (parent) return parent->IsVisible(); else return true; } else return false; }
       virtual bool IsSelectable() { return isSelectable; }
@@ -85,7 +81,7 @@ namespace blunted {
       virtual void SetZPriority(int prio);
       virtual int GetZPriority() const { return zPriority; }
 
-      boost::signal<void()> sig_OnClose;
+      boost::signals2::signal<void()> sig_OnClose;
 
     protected:
       Gui2WindowManager *windowManager;

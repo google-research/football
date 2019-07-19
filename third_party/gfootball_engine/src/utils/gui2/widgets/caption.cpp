@@ -70,7 +70,7 @@ namespace blunted {
   }
 
   void Gui2Caption::Redraw() {
-    if (GetGameConfig().render_mode == e_Disabled) {
+    if (!GetScenarioConfig().render) {
       return;
     }
     int x, y, w, h;
@@ -135,7 +135,7 @@ namespace blunted {
   }
 
   void Gui2Caption::SetCaption(const std::string &newCaption) {
-    if (GetGameConfig().render_mode == e_Disabled) {
+    if (!GetScenarioConfig().render) {
       return;
     }
     std::string adaptedCaption = newCaption;
@@ -146,18 +146,4 @@ namespace blunted {
       Redraw();
     }
   }
-
-  float Gui2Caption::GetTextWidthPercent(int subStrLength) {
-    int x, y, w, h;
-    windowManager->GetCoordinates(x_percent, y_percent, width_percent, height_percent, x, y, w, h);
-
-    int resW, resH;
-    TTF_SizeUTF8(windowManager->GetStyle()->GetFont(e_TextType_DefaultOutline), caption.substr(0, subStrLength).c_str(), &resW, &resH);
-
-    float zoomy = 0.0f;
-    zoomy = (float)h / (float)renderedTextHeightPix;
-
-    return windowManager->GetWidthPercent(resW * zoomy);
-  }
-
 }

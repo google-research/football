@@ -30,18 +30,6 @@ namespace blunted {
   Scheduler::~Scheduler() {
   }
 
-  void Scheduler::Exit() {
-
-    if (GetSequenceCount() != 0) { // shouldn't happen
-      //sequences.Lock();
-      for (unsigned int i = 0; i < sequences.size(); i++) {
-        printf("sequence '%s' is stuck on entry #%i!\n", sequences.at(i)->taskSequence->GetName().c_str(), sequences.at(i)->programCounter);
-      }
-      //sequences.Unlock();
-    }
-    assert(GetSequenceCount() == 0);
-  }
-
   int Scheduler::GetSequenceCount() {
     int size = sequences.size();
     return size;
@@ -65,7 +53,7 @@ namespace blunted {
 
   void Scheduler::ResetTaskSequenceTime(const std::string &name) {
     for (unsigned int i = 0; i < sequences.size(); i++) {
-      boost::shared_ptr<TaskSequenceProgram> program = sequences.at(i);
+      boost::shared_ptr<TaskSequenceProgram> program = sequences[i];
       if (program->taskSequence->GetName() == name) {
         program->startTime = EnvironmentManager::GetInstance().GetTime_ms();// - startTime_ms;
         program->timesRan = 0;
@@ -77,7 +65,7 @@ namespace blunted {
   TaskSequenceInfo Scheduler::GetTaskSequenceInfo(const std::string &name) {
     TaskSequenceInfo info;
     for (unsigned int i = 0; i < sequences.size(); i++) {
-      boost::shared_ptr<TaskSequenceProgram> program = sequences.at(i);
+      boost::shared_ptr<TaskSequenceProgram> program = sequences[i];
       if (program->taskSequence->GetName() == name) {
 
         info.sequenceStartTime_ms = program->sequenceStartTime;
@@ -94,17 +82,7 @@ namespace blunted {
 
   bool Scheduler::Run() {
 
-    bool verbose = false;
-
-    // sequenced version, the best yet!
-    // thought up by Jurian Broertjes & Bastiaan Konings Schuiling
-
-    //boost::mutex::scoped_lock lock(somethingIsDoneMutex);
-
     unsigned int firstSequence = 0;
-    int quiterations = 0;
-    bool sequencesQuitMessageDone = false;
-
     //while (true) {
 
       unsigned long time_ms = EnvironmentManager::GetInstance().GetTime_ms();
@@ -190,8 +168,6 @@ namespace blunted {
 
         if (dueEntry.program != boost::shared_ptr<TaskSequenceProgram>()) {
 
-          if (verbose) printf("time until due entry: %li\n", dueEntry.timeUntilDueEntry_ms);
-
           if (dueEntry.timeUntilDueEntry_ms <= 0) { // the first and/or other entries are due
 
             // run!
@@ -199,7 +175,6 @@ namespace blunted {
               dueEntry.program->sequenceStartTime = time_ms;
             }
 
-            if (verbose) printf("executing program counter %i\n", dueEntry.program->programCounter);
             dueEntry.program->taskSequence->GetEntry(dueEntry.program->programCounter)->Execute();
 
             dueEntry.program->previousProgramCounter = dueEntry.program->programCounter;

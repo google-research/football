@@ -21,8 +21,6 @@
 
 #include <boost/random.hpp>
 
-#include <boost/thread/mutex.hpp>
-
 namespace blunted {
 
   unsigned int fastrandseed = 0;
@@ -69,10 +67,6 @@ namespace blunted {
     v[2] *= f;
   }
 
-  bool sign(real n) {
-    return n >= 0;
-  }
-
   signed int signSide(real n) {
     return n >= 0 ? 1 : -1;
   }
@@ -83,8 +77,7 @@ namespace blunted {
 
   void randomseed(unsigned int seed) {
     rng.engine().seed(seed);
-    rng_non_deterministic.engine().seed(
-        static_cast<unsigned int>(std::time(0)));
+    rng_non_deterministic.engine().seed(seed);
   }
 
   inline real boostrandom() {

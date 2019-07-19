@@ -58,25 +58,6 @@ namespace blunted {
     return command->IsReady();
   }
 
-  // TaskSequenceEntry_Lock
-
-  TaskSequenceEntryLockThread::TaskSequenceEntryLockThread(boost::mutex &sequenceLock) : sequenceLock(sequenceLock) {
-    Reset();
-  }
-
-  void TaskSequenceEntryLockThread::operator()() {
-    sequenceLock.lock();
-    isReady.SetData(true);
-  }
-
-  void TaskSequenceEntryLockThread::Reset() {
-    isReady.SetData(false);
-  }
-
-  bool TaskSequenceEntryLockThread::IsReady() {
-    return isReady.GetData();
-  }
-
   // TaskSequenceEntry_Terminator
 
   TaskSequenceEntry_Terminator::TaskSequenceEntry_Terminator() {

@@ -234,7 +234,6 @@ void CreateChunk(int i, int resX, int resY, int resSpecularX, int resSpecularY, 
   Uint32 *normalBitmap;
   normalBitmap = new Uint32[resNormalX * resNormalY];
 
-  if (Verbose()) printf("1\n");
 
   for (int x = 0; x < resX; x++) {
     for (int y = 0; y < resY; y++) {
@@ -243,10 +242,6 @@ void CreateChunk(int i, int resX, int resY, int resSpecularX, int resSpecularY, 
       diffuseBitmap[y * resX + x] = GetPitchDiffuseColor(pitchDiffuseSurf, xCoord, yCoord);
     }
   }
-  if (Verbose()) printf("1a\n");
-  //DrawLines(pitchDiffuseSurf->format, diffuseBitmap, resX, resY, offsetW, offsetH);
-  if (Verbose()) printf("1b\n");
-  //DrawMud(pitchDiffuseSurf->format, diffuseBitmap, resX, resY, offsetW, offsetH);
   for (int x = 0; x < resSpecularX; x++) {
     for (int y = 0; y < resSpecularY; y++) {
       float xSpecularCoord = x / (resSpecularX * 1.0) * pitchFullHalfW + pitchFullHalfW * offsetW;
@@ -254,7 +249,6 @@ void CreateChunk(int i, int resX, int resY, int resSpecularX, int resSpecularY, 
       specularBitmap[y * resSpecularX + x] = GetPitchSpecularColor(pitchSpecularSurf, xSpecularCoord, ySpecularCoord);
     }
   }
-  if (Verbose()) printf("1c\n");
   for (int x = 0; x < resNormalX; x++) {
     for (int y = 0; y < resNormalY; y++) {
       float xNormalCoord = x / (resNormalX * 1.0) * pitchFullHalfW + pitchFullHalfW * offsetW;
@@ -269,9 +263,6 @@ void CreateChunk(int i, int resX, int resY, int resSpecularX, int resSpecularY, 
   delete [] diffuseBitmap;
   delete [] specularBitmap;
   delete [] normalBitmap;
-
-  if (Verbose()) printf("2\n");
-
 
   // find pitch texture
 
@@ -301,9 +292,6 @@ void CreateChunk(int i, int resX, int resY, int resSpecularX, int resSpecularY, 
   pitchNormalTex->GetResource()->CreateTexture(e_InternalPixelFormat_RGB8, e_PixelFormat_RGB, resNormalX, resNormalY, false, true, true, true);
   pitchNormalTex->GetResource()->UpdateTexture(pitchNormalSurf, false, true);
   SDL_FreeSurface(pitchNormalSurf);
-
-  if (Verbose()) printf("3\n");
-
 }
 
 static bool already_loaded = false;

@@ -47,18 +47,6 @@ namespace blunted {
     }
   }
 
-  void Gui2Page::CreatePage(int pageID, void *data) {
-    Properties properties;
-    CreatePage(pageID, properties, data);
-  }
-
-  void Gui2Page::CreatePage(int pageID, const Properties &properties, void *data) {
-    windowManager->GetPageFactory()->CreatePage(pageID, properties, data);
-  }
-
-
-
-
   Gui2PageFactory::Gui2PageFactory() {  }
 
   Gui2PageFactory::~Gui2PageFactory() {

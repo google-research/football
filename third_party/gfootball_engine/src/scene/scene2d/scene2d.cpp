@@ -44,18 +44,15 @@ namespace blunted {
   }
 
   void Scene2D::Exit() { // ATOMIC
-    //printf("EXITING SCENE2D\n");
-    objects.Lock();
-    for (int i = 0; i < (signed int)objects.data.size(); i++) {
-      objects.data.at(i)->Exit(); //now in spatial intrusiveptr
-      objects.data.at(i).reset();
+    for (int i = 0; i < (signed int)objects.size(); i++) {
+      objects[i]->Exit(); //now in spatial intrusiveptr
+      objects[i].reset();
     }
-    objects.data.clear();
-    objects.Unlock();
+    objects.clear();
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IScene2DInterpreter *scene2DInterpreter = static_cast<IScene2DInterpreter*>(observers.at(i).get());
+      IScene2DInterpreter *scene2DInterpreter = static_cast<IScene2DInterpreter*>(observers[i].get());
       scene2DInterpreter->OnUnload();
     }
 
@@ -66,23 +63,19 @@ namespace blunted {
     if (!SupportedObjectType(object->GetObjectType())) {
       Log(e_FatalError, "Scene2D", "AddObject", "Object type not supported");
     }
-    objects.Lock();
-    objects->push_back(object);
-    objects.Unlock();
+    objects.push_back(object);
   }
 
   void Scene2D::DeleteObject(boost::intrusive_ptr<Object> object) {
-    objects.Lock();
-    std::vector <boost::intrusive_ptr<Object> >::iterator objIter = objects.data.begin();
-    while (objIter != objects.data.end()) {
+    std::vector <boost::intrusive_ptr<Object> >::iterator objIter = objects.begin();
+    while (objIter != objects.end()) {
       if ((*objIter) == object) {
         (*objIter)->Exit();
-        objIter = objects.data.erase(objIter);
+        objIter = objects.erase(objIter);
       } else {
         objIter++;
       }
     }
-    objects.Unlock();
   }
 
   bool SortObjects(const boost::intrusive_ptr<Object> &a, const boost::intrusive_ptr<Object> &b) {
@@ -91,13 +84,11 @@ namespace blunted {
 
   void Scene2D::PokeObjects(e_ObjectType targetObjectType, e_SystemType targetSystemType) {
     if (!SupportedObjectType(targetObjectType)) return;
-    objects.Lock();
-    std::stable_sort(objects.data.begin(), objects.data.end(), SortObjects);
-    int objectsSize = objects.data.size();
+    std::stable_sort(objects.begin(), objects.end(), SortObjects);
+    int objectsSize = objects.size();
     for (int i = 0; i < objectsSize; i++) {
-      if (objects.data.at(i)->IsEnabled()) if (objects.data.at(i)->GetObjectType() == targetObjectType) objects.data.at(i)->Poke(targetSystemType);
+      if (objects[i]->IsEnabled()) if (objects[i]->GetObjectType() == targetObjectType) objects[i]->Poke(targetSystemType);
     }
-    objects.Unlock();
   }
 
   void Scene2D::GetContextSize(int &width, int &height, int &bpp) {

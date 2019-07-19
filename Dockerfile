@@ -10,6 +10,6 @@ RUN apt-get update && apt-get install -yq git cmake build-essential \
   glee-dev libsdl-sge-dev python3-pip
 
 COPY . /gfootball
-RUN if [ $DEVICE = "cpu" ]; then pip3 install 'tensorflow<2.0'; fi
-RUN cd /gfootball && pip3 install .[tf_$DEVICE] --process-dependency-links
+RUN cd /gfootball && pip3 install .[tf_$DEVICE]
+RUN pip3 install git+https://github.com/openai/baselines.git@master
 WORKDIR '/gfootball'

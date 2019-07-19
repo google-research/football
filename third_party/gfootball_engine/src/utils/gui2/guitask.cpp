@@ -16,29 +16,12 @@
 // i do not offer support, so don't ask. to be used for inspiration :)
 
 #include "guitask.hpp"
-
-#include "../../managers/usereventmanager.hpp"
+#include "../../main.hpp"
 
 namespace blunted {
 
-  Gui2Task::Gui2Task(boost::shared_ptr<Scene2D> scene2D, float aspectRatio, float margin) : scene2D(scene2D) {
+  Gui2Task::Gui2Task(boost::shared_ptr<Scene2D> scene2D, float aspectRatio, float margin) {
     windowManager = new Gui2WindowManager(scene2D, aspectRatio, margin);
-    for (int j = 0; j < _JOYSTICK_MAX; j++) {
-      for (int i = 0; i < _JOYSTICK_MAXBUTTONS; i++) {
-        prevButtonState[j][i] = false;
-      }
-    }
-    for (int j = 0; j < _JOYSTICK_MAX; j++) {
-      for (int i = 0; i < _JOYSTICK_MAXAXES; i++) {
-        prevAxisState[j][i] = false;
-      }
-    }
-
-    joyButtonActivate = 1;
-    joyButtonEscape = 1;
-    activeJoystick = 0;
-
-    keyboard = false;
   }
 
   Gui2Task::~Gui2Task() {
@@ -50,7 +33,9 @@ namespace blunted {
   }
 
   void Gui2Task::ProcessPhase() {
-    windowManager->GetRoot()->SetRecursiveZPriority(0);
+    if (GetScenarioConfig().render) {
+      windowManager->GetRoot()->SetRecursiveZPriority(0);
+    }
     ProcessEvents();
     windowManager->Process();
   }
@@ -59,44 +44,5 @@ namespace blunted {
   }
 
   void Gui2Task::ProcessEvents() {
-
-
-
-    if (!windowManager->GetFocus()) return;
-    Gui2View *currentFocus = windowManager->GetFocus();
-
-    // some buttons need to be sent through a windowing event (escape, enter, directional controls)
-    // if a view accepts a keyboard/joystick event, don't send windowing event => *disabled, now uses focus check
-    bool needsWindowingEvent = false;
-    WindowingEvent *wEvent = new WindowingEvent();
-
-
-    // keyboard events
-
-    KeyboardEvent *event = new KeyboardEvent();
-    bool needsKeyboardEvent = false;
-
-    auto current = UserEventManager::GetInstance().GetKeyboardState();
-    prevKeyState = current;
-
-    if (needsKeyboardEvent) {
-      if (windowManager->GetFocus() == currentFocus) windowManager->GetFocus()->ProcessEvent(event);
-    }
-    delete event;
-
-
-    // joystick events
-
-    if (needsWindowingEvent)
-      if (windowManager->GetFocus() == currentFocus) windowManager->GetFocus()->ProcessEvent(wEvent);
-
-    delete wEvent;
-
   }
-
-  void Gui2Task::SetEventJoyButtons(int activate, int escape) {
-    this->joyButtonActivate = activate;
-    this->joyButtonEscape = escape;
-  }
-
 }

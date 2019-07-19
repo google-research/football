@@ -17,10 +17,10 @@
 
 #include "utils.hpp"
 
+#include "../main.hpp"
 #include "log.hpp"
-
-#include "math/vector3.hpp"
 #include "math/quaternion.hpp"
+#include "math/vector3.hpp"
 
 namespace blunted {
 
@@ -34,7 +34,8 @@ namespace blunted {
 
   // ----- load .ase file into a tree
 
-  s_tree *tree_load(const std::string asefile) {
+  s_tree *tree_load(std::string asefile) {
+    asefile = GetGameConfig().updatePath(asefile);
     std::ifstream datafile(asefile.c_str(), std::ios::in);
     if (datafile.fail()) {
       Log(e_FatalError, "tree_load", "", "could not open " + asefile);
@@ -61,9 +62,8 @@ namespace blunted {
       std::vector <std::string> tokens;
 
       // delete CR character, if it's there
-      size_t ln = strlen(line.c_str()) - 1;
-      if (ln > 0) {
-        if (line.c_str()[ln] == '\r') line = line.substr(0, line.length() - 1);
+      if (line.length() > 1) {
+        if (line[line.length() - 1] == '\r') line = line.substr(0, line.length() - 1);
       }
 
       line = stringchomp(line, '\t');
@@ -81,7 +81,7 @@ namespace blunted {
             entry->name = tokens.at(0);
           }
           for (unsigned int i = 1; i < tokens.size(); i++) {
-            entry->values.push_back(tokens.at(i));
+            entry->values.push_back(tokens[i]);
           }
 
           if (tokens.at(tokens.size() - 1).compare("{") == 0) { // iterate
@@ -103,8 +103,8 @@ namespace blunted {
     assert(tree);
 
     for (unsigned int i = 0; i < tree->entries.size(); i++) {
-      assert(tree->entries.at(i));
-      if (tree->entries.at(i)->name.compare(needle) == 0) return tree->entries.at(i);
+      assert(tree->entries[i]);
+      if (tree->entries[i]->name.compare(needle) == 0) return tree->entries[i];
     }
     return NULL;
   }
@@ -113,10 +113,10 @@ namespace blunted {
     //assert(tree);
 
     for (unsigned int i = 0; i < tree->entries.size(); i++) {
-      assert(tree->entries.at(i));
-      if (tree->entries.at(i)->name.compare(needle) == 0) {
-        assert(tree->entries.at(i)->subtree);
-        return tree->entries.at(i)->subtree;
+      assert(tree->entries[i]);
+      if (tree->entries[i]->name.compare(needle) == 0) {
+        assert(tree->entries[i]->subtree);
+        return tree->entries[i]->subtree;
       }
     }
     return NULL;
@@ -147,15 +147,8 @@ namespace blunted {
     }
   }
 
-  std::string StripString(const std::string &input) {
-    std::string result;
-    for (unsigned int i = 0; i < input.size(); i++) {
-      if (isalnum(input[i])) result += input[i];
-    }
-    return result;
-  }
-
   std::string file_to_string(std::string filename) {
+    filename = GetGameConfig().updatePath(filename);
 
     char line[1024];
     std::ifstream file;
@@ -181,7 +174,7 @@ namespace blunted {
 
     char line[32767];
     std::ifstream file;
-
+    filename = GetGameConfig().updatePath(filename);
     file.open(filename.c_str(), std::ios::in);
 
     if (file.fail()) Log(e_FatalError, "utils", "file_to_vector", "file not found or empty: " + filename);
@@ -265,17 +258,4 @@ namespace blunted {
     return quaternion;
   }
 
-  bool CreateDirectory(boost::filesystem::path const &dir) {
-    namespace fs = boost::filesystem;
-    return fs::create_directory(dir);
-  }
-
-  bool CopyFile(boost::filesystem::path const &source, boost::filesystem::path const &destinationDir) {
-    boost::system::error_code error;
-    namespace fs = boost::filesystem;
-    fs::copy_file(source, destinationDir / source.filename(), error);
-    //if (error != 0) return false; else return true;
-    return true;
-  }
-}
-
+  }  // namespace blunted

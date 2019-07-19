@@ -18,6 +18,8 @@
 #ifndef _HPP_REFEREE
 #define _HPP_REFEREE
 
+#include <set>
+
 #include "../defines.hpp"
 #include "../gamedefines.hpp"
 
@@ -32,6 +34,7 @@ struct RefereeBuffer {
   bool active = false;
   e_GameMode desiredSetPiece;
   signed int teamID = 0;
+  signed int setpiece_teamID = 0;
   unsigned long stopTime = 0;
   unsigned long prepareTime = 0;
   unsigned long startTime = 0;
@@ -84,7 +87,6 @@ class Referee {
     std::set<Player*> offsidePlayers;
 
     Foul foul;
-    bool offsides = false;
 };
 
 #endif

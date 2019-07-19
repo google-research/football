@@ -23,8 +23,9 @@ from gfootball.env import player_base
 
 class Player(player_base.PlayerBase):
 
-  def __init__(self, config):
-    assert config['player_agent'] == 0, 'Only one \'agent\' player allowed'
+  def __init__(self, player_config, env_config):
+    player_base.PlayerBase.__init__(self, player_config)
+    assert player_config['player_agent'] == 0, 'Only one \'agent\' player allowed'
     self._action = None
 
   def set_action(self, action):

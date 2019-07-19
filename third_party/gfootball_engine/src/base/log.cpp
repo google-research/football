@@ -34,26 +34,10 @@ namespace blunted {
 
   signal_LogCallback callback;
 
-  std::ofstream logFile;
-
-  void LogOpen() {
-    logFile.open("log.txt", std::ios::out);
-  }
-
-  void LogClose() {
-    if (logFile.is_open()) logFile.close();
-  }
-
   void Log(e_LogType logType, std::string className, std::string methodName, std::string message) {
     std::string logTypeString;
 
     switch (logType) {
-      case e_Notice:
-        logTypeString = "Notice";
-        if (!GetGameConfig().log_notice) {
-          return;
-        }
-        break;
       case e_Warning:
         logTypeString = "Warning";
         break;
@@ -65,24 +49,14 @@ namespace blunted {
         break;
     }
 
-    char bla[2048];
     std::string date = now();
     date = date.substr(0, date.length() - 1);
-    sprintf(bla, "%s [%s] in [%s::%s]: %s\n", date.c_str(),
+    callback(logType, className.c_str(), methodName.c_str(), message.c_str());
+    printf("%s [%s] in [%s::%s]: %s\n", date.c_str(),
             logTypeString.c_str(), className.c_str(), methodName.c_str(),
             message.c_str());
-    callback(logType, className.c_str(), methodName.c_str(), message.c_str());
-
-    printf("%s", bla);
-    if (logFile.is_open()) logFile << bla;
-    logFile.flush();
 
     if (logType == e_FatalError) {
-      LogClose();
-      // for gdb backtracing
-      int *foo = (int*)-1; // make a bad pointer
-      printf("%d\n", *foo); // causes segfault
-      print_stacktrace();
       exit(1);
     }
   }

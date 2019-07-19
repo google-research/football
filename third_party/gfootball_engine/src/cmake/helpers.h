@@ -16,7 +16,7 @@
 
 #include <string>
 
-bool FindDataDir();
+std::string FindDataDir();
 
 std::string FindFontFile();
 

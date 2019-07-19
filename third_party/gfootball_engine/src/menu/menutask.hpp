@@ -58,8 +58,6 @@ struct QueuedFixture {
   MatchData *matchData;
 };
 
-void SetActiveController(int side, bool keyboard);
-
 class MenuTask : public Gui2Task {
 
   public:
@@ -68,26 +66,26 @@ class MenuTask : public Gui2Task {
 
     virtual void ProcessPhase();
 
-    bool QuickStart();
-    void QuitGame();
-
-    void ReleaseAllButtons();
-
-    void SetControllerSetup(const std::vector<SideSelection> &sides) { queuedFixture.Lock(); queuedFixture->sides = sides; queuedFixture.Unlock(); }
-    const std::vector<SideSelection> GetControllerSetup() { return queuedFixture.GetData().sides; }
-    void SetTeamIDs(const std::string &id1, const std::string &id2) { queuedFixture.Lock(); queuedFixture->teamID1 = id1; queuedFixture->teamID2 = id2; queuedFixture.Unlock(); }
-    int GetTeamID(int whichOne) { if (whichOne == 0) return atoi(queuedFixture.GetData().teamID1.c_str()); else return atoi(queuedFixture.GetData().teamID2.c_str()); }
-    int GetTeamKitNum(int teamID) { if (teamID == 0) return queuedFixture.GetData().team1KitNum; else return queuedFixture.GetData().team2KitNum; }
-    void SetMatchData(MatchData *matchData) { queuedFixture.Lock(); queuedFixture->matchData = matchData; queuedFixture.Unlock(); }
-    MatchData *GetMatchData() { return queuedFixture.GetData().matchData; } // hint: this lock is useless, since we are returning the pointer and not a copy
+    void SetControllerSetup(const std::vector<SideSelection> &sides) { queuedFixture.sides = sides;  }
+    const std::vector<SideSelection> GetControllerSetup() {
+      return queuedFixture.sides;
+    }
+    int GetTeamID(int whichOne) {
+      if (whichOne == 0)
+        return atoi(queuedFixture.teamID1.c_str());
+      else
+        return atoi(queuedFixture.teamID2.c_str());
+    }
+    int GetTeamKitNum(int teamID) { if (teamID == 0) return queuedFixture.team1KitNum; else return queuedFixture.team2KitNum; }
+    void SetMatchData(MatchData *matchData) {  queuedFixture.matchData = matchData;  }
+    MatchData *GetMatchData() { return queuedFixture.matchData; } // hint: this lock is useless, since we are returning the pointer and not a copy
 
     void SetMenuAction(e_MenuAction menuAction) { this->menuAction = menuAction; }
 
   protected:
-    e_MenuAction menuAction;
-    const Properties* config_;
+   e_MenuAction menuAction;
 
-    Lockable<QueuedFixture> queuedFixture;
+   QueuedFixture queuedFixture;
 
 };
 

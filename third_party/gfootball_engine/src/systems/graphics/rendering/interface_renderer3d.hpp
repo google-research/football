@@ -18,7 +18,6 @@
 #ifndef _HPP_RENDERER3D
 #define _HPP_RENDERER3D
 
-#include "../../../types/thread.hpp"
 #include "../../../types/resource.hpp"
 
 #include "../../../base/sdl_surface.hpp"
@@ -214,7 +213,7 @@ namespace blunted {
     unsigned int fragmentShaderID = 0;
   };
 
-  class Renderer3D : public Thread {
+  class Renderer3D {
 
     public:
       virtual ~Renderer3D() {};
@@ -316,8 +315,6 @@ namespace blunted {
 
       virtual void HDRCaptureOverallBrightness() = 0;
       virtual float HDRGetOverallBrightness() = 0;
-
-      void operator()() = 0;
 
     protected:
       std::map<std::string, Shader> shaders;
@@ -437,8 +434,6 @@ namespace blunted {
 
       virtual void HDRCaptureOverallBrightness() {}
       virtual float HDRGetOverallBrightness() { return 1.0; }
-
-      void operator()() { }
 
     protected:
       View view_;

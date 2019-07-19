@@ -20,9 +20,7 @@
 
 #include "../../utils/gui2/windowmanager.hpp"
 
-#include "../../utils/gui2/widgets/menu.hpp"
 #include "../../utils/gui2/widgets/root.hpp"
-#include "../../utils/gui2/widgets/grid.hpp"
 #include "../../utils/gui2/widgets/image.hpp"
 
 #include "../../onthepitch/match.hpp"

@@ -39,15 +39,13 @@ namespace blunted {
       void SetGeometryData(boost::intrusive_ptr < Resource<GeometryData> > geometryData);
       boost::intrusive_ptr < Resource<GeometryData> > GetGeometryData();
 
-      virtual void OnUpdateGeometryData(bool updateMaterials = true);
+      void OnUpdateGeometryData(bool updateMaterials = true);
 
       virtual void Poke(e_SystemType targetSystemType);
 
-      virtual void RecursiveUpdateSpatialData(e_SpatialDataType spatialDataType, e_SystemType excludeSystem = e_SystemType_None);
+      void RecursiveUpdateSpatialData(e_SpatialDataType spatialDataType, e_SystemType excludeSystem = e_SystemType_None);
 
       virtual AABB GetAABB() const;
-
-      virtual void ApplyForceAtRelativePosition(float force, const Vector3 &direction, const Vector3 &position);
 
     protected:
       boost::intrusive_ptr < Resource<GeometryData> > geometryData;
@@ -64,11 +62,6 @@ namespace blunted {
       virtual void OnRotate(const Quaternion &rotation) = 0;
 
       virtual void OnPoke() = 0;
-
-      virtual void ApplyForceAtRelativePosition(float force, const Vector3 &direction, const Vector3 &position) {};
-
-    protected:
-
   };
 
 }

@@ -144,7 +144,7 @@ Vector3 AI_GetAdaptedFormationPosition(Match *match, Player *player, float backX
   return position;
 }
 
-float AI_CalculateFreeSpace(Match *match, const MentalImage *mentalImage, int teamID, const Vector3 &focusPos, float safeDistance, float futureTime_sec, bool ignoreKeeper) {
+float AI_CalculateFreeSpace(Match *match, const MentalImage *mentalImage, int teamID, const Vector3 &focusPos, float safeDistance, float futureTime_sec) {
   //void AI_GetClosestPlayers(Team *team, const Vector3 &position, bool onlyAIControlled, std::vector<Player*> &result, unsigned int playerCount)
 
 
@@ -152,20 +152,19 @@ float AI_CalculateFreeSpace(Match *match, const MentalImage *mentalImage, int te
 
   float currentSituation = 0.0f;
 
-  std::vector<PlayerImage> opponentPlayerImages;
-  mentalImage->GetTeamPlayerImages(abs(teamID - 1), -1, opponentPlayerImages);
+  auto opponentPlayerImages = mentalImage->GetTeamPlayerImages(abs(teamID - 1));
 
   // player position predictions
   for (int i = 0; i < (signed int)opponentPlayerImages.size(); i++) {
-    if (ignoreKeeper == false || opponentPlayerImages.at(i).dynamicFormationEntry.role != e_PlayerRole_GK) {
+    if (opponentPlayerImages[i].player_role != e_PlayerRole_GK) {
 
       // resulting opp position
-      opponentPlayerImages.at(i).position = opponentPlayerImages.at(i).position + opponentPlayerImages.at(i).movement * 0.2f; // slowness
-      Vector3 toFocusMovement = (focusPos - opponentPlayerImages.at(i).position).GetNormalized(0) * sprintVelocity * clamp(futureTime_sec - 0.2f, 0.0f, 1000.0f);
-      if (toFocusMovement.GetLength() > (focusPos - opponentPlayerImages.at(i).position).GetLength()) toFocusMovement = focusPos - opponentPlayerImages.at(i).position;
-      opponentPlayerImages.at(i).position += toFocusMovement;
+      opponentPlayerImages[i].position = opponentPlayerImages[i].position + opponentPlayerImages[i].movement * 0.2f; // slowness
+      Vector3 toFocusMovement = (focusPos - opponentPlayerImages[i].position).GetNormalized(0) * sprintVelocity * clamp(futureTime_sec - 0.2f, 0.0f, 1000.0f);
+      if (toFocusMovement.GetLength() > (focusPos - opponentPlayerImages[i].position).GetLength()) toFocusMovement = focusPos - opponentPlayerImages[i].position;
+      opponentPlayerImages[i].position += toFocusMovement;
 
-      float situation = 1.0f - clamp((opponentPlayerImages.at(i).position - focusPos).GetLength(), 0, safeDistance) / safeDistance;
+      float situation = 1.0f - clamp((opponentPlayerImages[i].position - focusPos).GetLength(), 0, safeDistance) / safeDistance;
 
       currentSituation += situation;
 
@@ -179,26 +178,25 @@ float AI_GetOffsideLine(Match *match, const MentalImage *mentalImage, int teamID
 
   signed int side = match->GetTeam(teamID)->GetSide();
 
-  std::vector<PlayerImage> opponentPlayerImages;
-  mentalImage->GetTeamPlayerImages(teamID, -1, opponentPlayerImages);
+  auto opponentPlayerImages = mentalImage->GetTeamPlayerImages(teamID);
 
   int dudDeepestOpponent = 0;
   Vector3 deepestOpponentPosition;
 
   for (int i = 0; i < (signed int)opponentPlayerImages.size(); i++) {
 
-    opponentPlayerImages.at(i).position.coords[0] += opponentPlayerImages.at(i).movement.coords[0] * futureSim_ms * 0.001f;
+    opponentPlayerImages[i].position.coords[0] += opponentPlayerImages[i].movement.coords[0] * futureSim_ms * 0.001f;
 
     // for offside
-    if (opponentPlayerImages.at(i).position.coords[0] * side > opponentPlayerImages.at(dudDeepestOpponent).position.coords[0] * side) {
+    if (opponentPlayerImages[i].position.coords[0] * side > opponentPlayerImages.at(dudDeepestOpponent).position.coords[0] * side) {
       dudDeepestOpponent = i;
     }
   }
 
   // offside: we are actually looking for the one-but-deepest opponent (association football rule! EAT THAT, PES6!! :P)
   for (int i = 0; i < (signed int)opponentPlayerImages.size(); i++) {
-    if (opponentPlayerImages.at(i).position.coords[0] * side > deepestOpponentPosition.coords[0] * side && i != dudDeepestOpponent) {
-      deepestOpponentPosition = opponentPlayerImages.at(i).position;
+    if (opponentPlayerImages[i].position.coords[0] * side > deepestOpponentPosition.coords[0] * side && i != dudDeepestOpponent) {
+      deepestOpponentPosition = opponentPlayerImages[i].position;
     }
   }
 
@@ -233,7 +231,7 @@ void AI_GetBestDribbleMovement(Match *match, int thisPlayerID, const MentalImage
   std::vector<Player*> opponents;
   AI_GetClosestPlayers(match->GetTeam(abs(team->GetID() - 1)), myPos, false, opponents, 5);
   for (unsigned int i = 0; i < opponents.size(); i++) {
-    opponentPlayerImages.push_back(mentalImage->GetPlayerImage(opponents.at(i)->GetID()));
+    opponentPlayerImages.push_back(mentalImage->GetPlayerImage(opponents[i]->GetID()));
   }
 
   float nearBackline = NormalizedClamp(fabs(player->GetPosition().coords[0]) / pitchHalfW, 0.0f, 1.0f);
@@ -249,7 +247,7 @@ void AI_GetBestDribbleMovement(Match *match, int thisPlayerID, const MentalImage
 
   for (unsigned int i = 0; i < opponentPlayerImages.size(); i++) {
 
-    const PlayerImage &oppImg = opponentPlayerImages.at(i);
+    const PlayerImage &oppImg = opponentPlayerImages[i];
 
     ForceSpot spot;
     Vector3 oppPos = oppImg.position + oppImg.movement * future_sec;
@@ -260,15 +258,6 @@ void AI_GetBestDribbleMovement(Match *match, int thisPlayerID, const MentalImage
     spot.scale = 10.0f;//16.0f;
     spot.exp = 1.0f;//0.7f;
     forceField.push_back(spot);
-
-    if (GetDebugMode() == e_DebugMode_AI && team->GetID() == 0) {
-      int scrX, scrY;
-      GetDebugOverlayCoord(match, spot.origin, scrX, scrY);
-      //GetDebugOverlay()->DrawLine(line, color, 240);
-      Vector3 color(255, 100, 100);
-      //GetDebugOverlay()->PutPixel(scrX, scrY, color, 255);
-      GetDebugOverlay()->DrawRectangle(scrX - 1, scrY - 1, 3, 3, color, 255);
-    }
   }
 
   // sideline / backline
@@ -318,7 +307,7 @@ Vector3 AI_GetForceFieldMovement(const std::vector<ForceSpot> &forceField, const
 
   for (unsigned int i = 0; i < forceField.size(); i++) {
 
-    const ForceSpot &forceSpot = forceField.at(i);
+    const ForceSpot &forceSpot = forceField[i];
 
     float distance, intensity;
 
@@ -350,7 +339,7 @@ Vector3 AI_GetForceFieldMovement(const std::vector<ForceSpot> &forceField, const
   if (cumulForce == 0.0f) return 0; else return (cumulVec / cumulForce) * sprintVelocity;
 }
 
-TimeNeeded AI_GetTimeNeededForDistance_ms(const Vector3 &playerPos, const Vector3 &playerMovement, const Vector3 &targetPos, float maxVelocity, bool precise, int maxTime_ms, bool debug) {
+TimeNeeded AI_GetTimeNeededForDistance_ms(const Vector3 &playerPos, const Vector3 &playerMovement, const Vector3 &targetPos, float maxVelocity, bool precise, int maxTime_ms) {
 
   TimeNeeded result;
 
@@ -435,14 +424,12 @@ TimeNeeded AI_GetTimeNeededForDistance_ms(const Vector3 &playerPos, const Vector
 
       float targetDistance = (targetPos - currentPos).GetSquaredLength();
       //if (currentTime_ms > 1000 && currentTime_ms % 100 == 0) printf("currentTime_ms: %i, targetDistance: %f, currentMovementLength: %f, bias: %f, radius: %f, changeTime_ms: %i\n", currentTime_ms, targetDistance, currentMovement.GetLength(), bias, radius, changeTime_ms);
-      //if (debug) if (maxTime_ms != -1 && currentTime_ms == (unsigned int)maxTime_ms) printf("CANNOT GO FURTHER: %i\n", currentTime_ms);
       if ((targetDistance < radius_optimistic * radius_optimistic || (maxTime_ms != -1 && currentTime_ms > (unsigned int)maxTime_ms)) && !foundOptimisticTime) {
         result.optimistic_ms = currentTime_ms;
         foundOptimisticTime = true;
       }
       if (targetDistance < radius_usual*radius_usual || (maxTime_ms != -1 && currentTime_ms > (unsigned int)maxTime_ms)) {
         //currentTime_ms += int(round(((targetPos - currentPos).GetLength() / radius) * 40.0));
-        //if (debug) printf("ACTUALLY FOUND AT: %i\n", currentTime_ms);
         resultingRadius_usual = radius_usual;
         result.usual_ms = currentTime_ms;
         break;
@@ -524,11 +511,6 @@ unsigned int AI_GetToBallMovement(Match *match, const MentalImage *mentalImage, 
   float desiredVsPerpendicularDot = adaptedDesiredDirection.GetDotProduct((playerBallShortestTargetPos - playerPos).GetNormalized(0));
   //if (desiredVsPerpendicularDot < 0.3f) movementWeight = 1.0f; else perpendicularWeight = 1.0f;
   float desiredVsPerpendicularBias = pow(NormalizedClamp(desiredVsPerpendicularDot, 0.0f, 1.0f), 0.5f);
-  // if (player->GetDebug()) {
-  //   SetGreenDebugPilon(playerPos + (playerBallShortestTargetPos - playerPos).GetNormalized(0) * 5.0f);
-  //   SetYellowDebugPilon(playerPos + adaptedDesiredDirection.GetNormalized(0) * 5.0f);
-  //   printf("desired vs perpendicular bias: %f\n", desiredVsPerpendicularBias);
-  // }
   desiredVsPerpendicularBias = desiredVsPerpendicularBias * 0.5f + 0.5f;
   movementWeight = (1.0f - desiredVsPerpendicularBias);
   perpendicularWeight = desiredVsPerpendicularBias;
@@ -556,8 +538,6 @@ unsigned int AI_GetToBallMovement(Match *match, const MentalImage *mentalImage, 
     int timeNeeded_ms = 0;
     int time_ms = 0;
   };
-
-  //if (player->GetDebug()) SetBlueDebugPilon(playerPos + desiredMovement);
 
   PossibleChoice bestChoice;
 
@@ -619,7 +599,6 @@ unsigned int AI_GetToBallMovement(Match *match, const MentalImage *mentalImage, 
       */
       //if (dot >= 0.0f) forced = true; // force <= perpendicular
       float justInTimeFactor = clamp(player->GetTimeNeededToGetToBall_ms() / (float)time_ms, 0.0f, 1.0f); // lower == more time to spare
-      //if (player->GetDebug()) printf("justInTimeFactor: %f\n", justInTimeFactor);
       if (justInTimeFactor < 0.35f) forced = true; // takes too long relative to how long it could take
       //LANCHANGE if (dot > 0.45f) forced = true; // too shallow angle, just go to ball already
       if (dot > 0.0f) forced = true; // too shallow angle, just go to ball already
@@ -720,9 +699,6 @@ unsigned int AI_GetToBallMovement(Match *match, const MentalImage *mentalImage, 
 
   // combine!
   bestLookAt = playerPos + lookAtBall.GetRotated2D(clamp(lookAtDesiredDir.GetAngle2D(lookAtBall) * 1.0f, -0.25f * pi, 0.25f * pi)) * 10.0f;
-  // if (player->GetDebug()) SetYellowDebugPilon(playerPos + lookAtBall * 5.0f);
-  // if (player->GetDebug()) SetRedDebugPilon(playerPos + lookAtDesiredDir * 5.0f);
-
   return bestChoice.time_ms;
 }
 
@@ -750,8 +726,6 @@ unsigned int AI_GetBallControlMovement(const MentalImage *mentalImage, Player *p
 
   bestDirection = autoDirection * autoDirectionBias + manualDirection * (1.0f - autoDirectionBias);
   bestDirection.Normalize(player->GetDirectionVec());
-  //SetRedDebugPilon(player->GetPosition() + bestDirection * 2.0f);
-
 
   // look direction
   Vector3 bestLookDirection = bestDirection;
@@ -803,12 +777,12 @@ Player *AI_GetClosestPlayer(Team *team, const Vector3 &position, bool onlyAICont
   Player *closestPlayer = 0;
 
   for (unsigned int i = 0; i < players.size(); i++) {
-    if (players.at(i)->IsActive() && players.at(i) != except) {
-      float distance = (players.at(i)->GetPosition() - position).GetLength();
+    if (players[i]->IsActive() && players[i] != except) {
+      float distance = (players[i]->GetPosition() - position).GetLength();
       if (distance < closestDistance) {
-        if (!onlyAIControlled || !team->IsHumanControlled(players.at(i)->GetID())) {
+        if (!onlyAIControlled || !team->IsHumanControlled(players[i]->GetID())) {
           closestDistance = distance;
-          closestPlayer = players.at(i);
+          closestPlayer = players[i];
         }
       }
     }
@@ -827,11 +801,11 @@ void AI_GetClosestPlayers(Team *team, const Vector3 &position, bool onlyAIContro
   //printf("total players: %i\n", players.size());
 
   for (unsigned int i = 0; i < players.size(); i++) {
-    if (players.at(i)->IsActive()) {
-      float distance = (players.at(i)->GetPosition() - position).GetLength();
+    if (players[i]->IsActive()) {
+      float distance = (players[i]->GetPosition() - position).GetLength();
       if ((!onlyAIControlled) ||
-          ( onlyAIControlled && !team->IsHumanControlled(players.at(i)->GetID()))) {
-        tmpResult.insert(std::pair<float, Player*>(distance, players.at(i)));
+          ( onlyAIControlled && !team->IsHumanControlled(players[i]->GetID()))) {
+        tmpResult.insert(std::pair<float, Player*>(distance, players[i]));
       }
     }
   }
@@ -869,13 +843,6 @@ Player *AI_GetBestSwitchTargetPlayer(Match *match, Team *team, const Vector3 &de
 
   Vector3 resultingPosition = defensePosition * (1.0f - offenseBias) + offensePosition * offenseBias;
 
-  if (team->GetID() == 0) {
-    if (Verbose()) printf("SWITCH: offenseBias: %f\n", offenseBias);
-  //   actionPosition.Print();
-  //   defensePosition.Print();
-  //   offensePosition.Print();
-  //   resultingPosition.Print();
-  }
   assert(offenseBias >= 0.0f && offenseBias <= 1.0f);
 
   // get sorted list of closest players
@@ -900,12 +867,12 @@ Player *AI_GetBestSwitchTargetPlayer(Match *match, Team *team, const Vector3 &de
   float tooLateDistance = 1.0f;
 
   Player *designated = match->GetDesignatedPossessionPlayer();
-  if (designated->GetTeamID() != team->GetID()) {
+  if (designated->GetTeam() != team) {
     Player *opp = designated;
     Vector3 goalPos = Vector3(team->GetSide() * pitchHalfW, 0.0f, 0.0f);
     float oppGoalDist = (goalPos - (opp->GetPosition() + opp->GetMovement() * 0.5f)).GetLength();
     for (unsigned int i = 0; i < teamPlayers.size(); i++) {
-      float mateGoalDist = (goalPos - (teamPlayers.at(i)->GetPosition() + teamPlayers.at(i)->GetMovement() * 0.5f)).GetLength();
+      float mateGoalDist = (goalPos - (teamPlayers[i]->GetPosition() + teamPlayers[i]->GetMovement() * 0.5f)).GetLength();
       if (mateGoalDist < oppGoalDist + tooLateDistance + clamp(oppGoalDist * 0.1f, 0.0f, 3.0f)) { // doesn't matter much when opp is still far away from goal
         bestPlayerIndex = i;
         break;
@@ -957,7 +924,6 @@ void AI_GetPass(Player *player, e_FunctionType passType, const Vector3 &inputDir
     playerPos = player->GetTouchPos().Get2D();
   }
   Vector3 manualTarget = playerPos + inputDirection * clamp(inputPower * 60.0f, 1.0f, 100.0f);
-  //if (player->GetDebug()) SetGreenDebugPilon(manualTarget);
 
   std::vector<Player*> players;
   player->GetTeam()->GetActivePlayers(players);
@@ -993,15 +959,15 @@ void AI_GetPass(Player *player, e_FunctionType passType, const Vector3 &inputDir
     autoTarget = playerPos;
 
     for (int i = 0; i < (signed int)players.size(); i++) {
-      if (players.at(i) != player/* && players.at(i)->IsActive()*/) {
+      if (players[i] != player/* && players[i]->IsActive()*/) {
 
-        float passDuration = 0.3f + (players.at(i)->GetPosition() - playerPos).GetLength() * 0.05f; // educated guess
+        float passDuration = 0.3f + (players[i]->GetPosition() - playerPos).GetLength() * 0.05f; // educated guess
         passDuration = std::pow(clamp(passDuration, 0.0f, 1.0f), 0.7f) *
                        0.7f;  // after this time, the player is supposed to have
                               // been able to stop
 
-        Vector3 targetPos = players.at(i)->GetPosition() +
-                            players.at(i)->GetMovement() * passDuration; // correct for pass duration
+        Vector3 targetPos = players[i]->GetPosition() +
+                            players[i]->GetMovement() * passDuration; // correct for pass duration
         // rate
         float distanceRating =
             std::pow(NormalizedClamp((targetPos - manualTarget).GetLength(),
@@ -1012,7 +978,7 @@ void AI_GetPass(Player *player, e_FunctionType passType, const Vector3 &inputDir
         float angleRating = fabs((targetPos - playerPos).GetNormalized(0).GetAngle2D(inputDirection) / (1.0f * pi)) * 1.0f;
         if (distanceRating + angleRating < bestRating) {
           bestRating = distanceRating + angleRating;
-          bestTargetPlayer = players.at(i);
+          bestTargetPlayer = players[i];
           autoTarget = targetPos;
         }
       }
@@ -1022,11 +988,6 @@ void AI_GetPass(Player *player, e_FunctionType passType, const Vector3 &inputDir
 
   targetPlayer = bestTargetPlayer;
   assert(targetPlayer);
-  //printf("target: %i\n", (int)targetPlayer);
-  //if (player->GetDebug())
-  //SetGreenDebugPilon(targetPlayer->GetPosition());
-  //if (player->GetDebug())
-  //SetYellowDebugPilon(manualTarget);
 
   Vector3 autoTargetRel = autoTarget - playerPos;
   Vector3 manualTargetRel = manualTarget - playerPos;
@@ -1074,8 +1035,6 @@ void AI_GetPass(Player *player, e_FunctionType passType, const Vector3 &inputDir
   }
   Vector3 resultingTargetRel = (autoTargetRel.GetNormalized(0) * adaptedAutoDirectionBias + manualTargetRel.GetNormalized(0) * (1.0f - adaptedAutoDirectionBias)).GetNormalized(manualTarget);
   resultingTargetRel *= float(autoTargetRel.GetLength() * adaptedAutoPowerBias + manualTargetRel.GetLength() * (1.0f - adaptedAutoPowerBias));
-  //if (player->GetDebug()) SetRedDebugPilon(playerPos + resultingTargetRel);
-  //SetGreenDebugPilon(playerPos);
 
   AI_GetAutoPass(passType, resultingTargetRel, resultingDirection, resultingPower);
 }
@@ -1094,8 +1053,6 @@ Vector3 AI_GetShotDirection(Player *player, const Vector3 &inputDirection, float
 
   goalPos.coords[1] = sideFactor * goalHalfWidth * 0.9f * player->GetTeam()->GetSide();
   Vector3 autoDirection = (goalPos - (player->GetPosition() + player->GetMovement() * 0.12f)).GetNormalized(0);
-
-  //SetYellowDebugPilon(goalPos);
 
   return (manualDirection * (1.0f - autoDirectionBias) + autoDirection * autoDirectionBias).GetNormalized(inputDirection);
 }

@@ -131,8 +131,6 @@ namespace blunted {
       virtual void HDRCaptureOverallBrightness();
       virtual float HDRGetOverallBrightness();
 
-      void operator()();
-
     protected:
       SDL_GLContext context;
       SDL_Window* window;

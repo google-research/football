@@ -38,10 +38,9 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
-#include <boost/thread/mutex.hpp>
 #include <boost/thread/condition.hpp>
-#include <boost/signal.hpp>
-#include <boost/signals/slot.hpp>
+#include <boost/signals2.hpp>
+#include <boost/signals2/slot.hpp>
 #include <boost/bind.hpp>
 #include "backtrace.h"
 
@@ -89,8 +88,6 @@ struct Position {
   // Returns environment coordinates, ie [-1,1] for x (0),
   // [-0.42,0.42] for y (1).
   float env_coord(int index) const;
-  // Returns game coordinates.
-  float game_coord(int index) const;
   std::string debug();
  private:
   float value[3];
@@ -120,8 +117,8 @@ enum e_GameMode {
 };
 
 enum e_Team {
-  e_Home,
-  e_Away,
+  e_Left,
+  e_Right,
 };
 
 // Information about the player (available from python).
@@ -165,11 +162,11 @@ struct SharedInfo {
   Position ball_position;
   Position ball_direction;
   Position ball_rotation;
-  std::vector<PlayerInfo> home_team;
-  std::vector<PlayerInfo> away_team;
-  std::vector<ControllerInfo> home_controllers;
-  std::vector<ControllerInfo> away_controllers;
-  int home_goals, away_goals;
+  std::vector<PlayerInfo> left_team;
+  std::vector<PlayerInfo> right_team;
+  std::vector<ControllerInfo> left_controllers;
+  std::vector<ControllerInfo> right_controllers;
+  int left_goals, right_goals;
   e_GameMode game_mode;
   bool is_in_play = false;
   int ball_owned_team = 0;

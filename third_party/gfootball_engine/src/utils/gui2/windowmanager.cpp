@@ -87,15 +87,15 @@ namespace blunted {
 
   void Gui2WindowManager::Exit() {
     for (unsigned int i = 0; i < pendingDelete.size(); i++) {
-      pendingDelete.at(i)->Exit();
-      delete pendingDelete.at(i);
+      pendingDelete[i]->Exit();
+      delete pendingDelete[i];
     }
     pendingDelete.clear();
 
     std::vector < boost::intrusive_ptr<Image2D> > images;
     root->GetImages(images);
     for (unsigned int i = 0; i < images.size(); i++) {
-      boost::intrusive_ptr<Image2D> &image = images.at(i);
+      boost::intrusive_ptr<Image2D> &image = images[i];
       if (image != boost::intrusive_ptr<Image2D>()) {
         Log(e_Warning, "Gui2WindowManager", "Exit", "GUI2 image still here on wm exit: " + image->GetName());
       }
@@ -103,10 +103,6 @@ namespace blunted {
 
     root->Exit();
     delete root;
-  }
-
-  Gui2View *Gui2WindowManager::GetFocus() {
-    return focus;
   }
 
   void Gui2WindowManager::SetFocus(Gui2View *view) {
@@ -124,8 +120,8 @@ namespace blunted {
 
   void Gui2WindowManager::Process() {
     for (int i = 0; i < (signed int)pendingDelete.size(); i++) {
-      pendingDelete.at(i)->Exit();
-      delete pendingDelete.at(i);
+      pendingDelete[i]->Exit();
+      delete pendingDelete[i];
     }
     pendingDelete.clear();
 
@@ -199,7 +195,7 @@ namespace blunted {
     std::vector < boost::intrusive_ptr<Image2D> > images;
     view->GetImages(images);
     for (unsigned int i = 0; i < images.size(); i++) {
-      boost::intrusive_ptr<Image2D> &image = images.at(i);
+      boost::intrusive_ptr<Image2D> &image = images[i];
       if (image != boost::intrusive_ptr<Image2D>()) {
         float x_percent, y_percent;
         int x, y, w, h;
@@ -214,14 +210,6 @@ namespace blunted {
     scene2D->DeleteObject(image);
   }
 
-  void Gui2WindowManager::BlackoutBackground(bool onOff) {
-    if (onOff) {
-      blackoutBackground->Enable();
-    } else {
-      blackoutBackground->Disable();
-    }
-  }
-
   void Gui2WindowManager::MarkForDeletion(Gui2View *view) {
     pendingDelete.push_back(view);
   }
@@ -230,7 +218,7 @@ namespace blunted {
     std::vector < boost::intrusive_ptr<Image2D> > images;
     view->GetImages(images);
     for (unsigned int i = 0; i < images.size(); i++) {
-      boost::intrusive_ptr<Image2D> &image = images.at(i);
+      boost::intrusive_ptr<Image2D> &image = images[i];
       if (image != boost::intrusive_ptr<Image2D>()) {
         image->Enable();
       }
@@ -241,7 +229,7 @@ namespace blunted {
     std::vector < boost::intrusive_ptr<Image2D> > images;
     view->GetImages(images);
     for (unsigned int i = 0; i < images.size(); i++) {
-      boost::intrusive_ptr<Image2D> &image = images.at(i);
+      boost::intrusive_ptr<Image2D> &image = images[i];
       if (image != boost::intrusive_ptr<Image2D>()) {
         image->Disable();
       }

@@ -31,18 +31,14 @@ int PlayerBase::playerCount = 0;
 int PlayerBase::stablePlayerCount = 0;
 
 PlayerBase::PlayerBase(Match *match, PlayerData *playerData) : match(match), playerData(playerData), id(playerCount++), stable_id(stablePlayerCount++), humanoid(0), controller(0), externalController(0), isActive(false) {
-  debug = false;
   lastTouchTime_ms = 0;
   lastTouchType = e_TouchType_None;
   fatigueFactorInv = 1.0;
 }
 
 PlayerBase::~PlayerBase() {
-  if (Verbose()) printf("exiting playerbase.. ");
   if (isActive) Deactivate();
-  if (Verbose()) printf("deleting humanoid.. ");
   if (humanoid) delete humanoid;
-  if (Verbose()) printf("done\n");
 }
 
 void PlayerBase::Deactivate() {
@@ -82,14 +78,6 @@ HumanController *PlayerBase::GetExternalController() {
   return externalController;
 }
 
-void PlayerBase::SetDebug(bool state) {
-  debug = state;
-}
-
-bool PlayerBase::GetDebug() const {
-  if (IsReleaseVersion()) return false; else return debug;
-}
-
 void PlayerBase::Process() {
   if (isActive) {
     if (externalController) externalController->Process(); else controller->Process();
@@ -112,7 +100,7 @@ void PlayerBase::Put() {
   humanoid->Put();
 }
 
-float PlayerBase::GetStat(const char *name) const {
+float PlayerBase::GetStat(PlayerStat name) const {
   return playerData->GetStat(name);
 }
 

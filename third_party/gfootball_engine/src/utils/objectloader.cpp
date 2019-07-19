@@ -38,19 +38,12 @@ namespace blunted {
 
     XMLLoader loader;
     const XMLTree objectTree = loader.LoadFile(filename);
-    // printf("\n\n");
-    // loader.PrintTree(objectTree);
-    // printf("\n\n");
     boost::intrusive_ptr<Node> result = LoadObjectImpl(scene3D, filename, objectTree.children.begin()->second, offset);
-    // printf("\n\n");
-    // result->PrintTree();
-    // printf("\n\n");
     return result;
   }
 
   boost::intrusive_ptr<Node> ObjectLoader::LoadObjectImpl(boost::shared_ptr<Scene3D> scene3D, const std::string &nodename, const XMLTree &objectTree, const Vector3 &offset) const {
 
-    //printf("processing node: %s\n", nodename.c_str());
     boost::intrusive_ptr<Node> objNode(new Node("objectnode: " + nodename));
 
     std::string dirpart = nodename.substr(0, nodename.find_last_of('/') + 1);

@@ -46,33 +46,6 @@ namespace blunted {
     return tree;
   }
 
-  std::string XMLLoader::GetSource(const XMLTree &source, int depth) const {
-    std::string result;
-
-    std::multimap<std::string, XMLTree>::const_iterator iter = source.children.begin();
-    if (iter == source.children.end()) {
-      if (source.value != "") {
-        for (int i = 0; i < depth; i++) result.append("\t");
-        result.append(source.value);
-        result.append("\n");
-      }
-    } else {
-      while (iter != source.children.end()) {
-        for (int i = 0; i < depth; i++) result.append("\t");
-        result.append("<" + (*iter).first + ">\n");
-
-        result.append(GetSource((*iter).second, depth + 1));
-
-        for (int i = 0; i < depth; i++) result.append("\t");
-        result.append("</" + (*iter).first + ">\n");
-
-        iter++;
-      }
-    }
-
-    return result;
-  }
-
   void XMLLoader::BuildTree(XMLTree &tree, const std::string &source) {
 
     size_t index_end = 0;

@@ -34,9 +34,7 @@ GameTask::GameTask() {
 }
 
 GameTask::~GameTask() {
-  if (Verbose()) printf("exiting gametask.. ");
   Exit();
-  if (Verbose()) printf("done\n");
 }
 
 void GameTask::Exit() {
@@ -55,67 +53,37 @@ void GameTask::Action(e_GameTaskMessage message) {
 
     case e_GameTaskMessage_StartMatch:
       {
-        if (Verbose()) printf("*gametaskmessage: starting match\n");
 
         randomize(GetScenarioConfig().game_engine_random_seed);
 
-        //GetGraphicsSystem()->getPhaseMutex.lock();
         MatchData *matchData = GetMenuTask()->GetMatchData();
         assert(matchData);
         Match *tmpMatch = new Match(matchData, GetControllers());
-
-        //matchLifetimeMutex.lock();
-        //matchPutBufferMutex.lock();
         assert(!match);
         match = tmpMatch;
         GetScheduler()->ResetTaskSequenceTime("game");
-        //matchPutBufferMutex.unlock();
-        //matchLifetimeMutex.unlock();
-        //GetGraphicsSystem()->getPhaseMutex.unlock();
       }
       break;
 
     case e_GameTaskMessage_StopMatch:
-      if (Verbose()) printf("*gametaskmessage: stopping match\n");
-
-      //GetGraphicsSystem()->getPhaseMutex.lock();
-      //matchLifetimeMutex.lock();
-      //matchPutBufferMutex.lock();
-      //assert(match);
       if (match) {
         match->Exit();
         delete match;
         match = 0;
       }
-      //matchPutBufferMutex.unlock();
-      //matchLifetimeMutex.unlock();
-      //GetGraphicsSystem()->getPhaseMutex.unlock();
       break;
 
     case e_GameTaskMessage_StartMenuScene:
-      if (Verbose()) printf("*gametaskmessage: starting menu scene\n");
-
-      //GetGraphicsSystem()->getPhaseMutex.lock();
-      //menuSceneLifetimeMutex.lock();
       assert(!menuScene);
       menuScene = new MenuScene();
       GetScheduler()->ResetTaskSequenceTime("game");
-      //menuSceneLifetimeMutex.unlock();
-      //GetGraphicsSystem()->getPhaseMutex.unlock();
       break;
 
     case e_GameTaskMessage_StopMenuScene:
-      if (Verbose()) printf("*gametaskmessage: stopping menu scene\n");
-
-      //GetGraphicsSystem()->getPhaseMutex.lock();
-      //menuSceneLifetimeMutex.lock();
-      //assert(menuScene);
       if (menuScene) {
         delete menuScene;
         menuScene = 0;
       }
-      //menuSceneLifetimeMutex.unlock();
-      //GetGraphicsSystem()->getPhaseMutex.unlock();
       break;
 
     default:
@@ -134,15 +102,12 @@ void GameTask::GetPhase() {
 void GameTask::ProcessPhase() {
 
   for (unsigned int i = 0; i < GetControllers().size(); i++) {
-    GetControllers().at(i)->Process();
+    GetControllers()[i]->Process();
   }
 
   if (match) {
     match->Process();
-
-    //matchPutBufferMutex.lock();
     match->PreparePutBuffers();
-    //matchPutBufferMutex.unlock();
   }
 
   if (menuScene) {

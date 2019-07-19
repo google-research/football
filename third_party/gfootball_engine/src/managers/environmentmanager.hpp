@@ -21,7 +21,6 @@
 #include "../defines.hpp"
 
 #include "../types/singleton.hpp"
-#include "../types/lockable.hpp"
 
 namespace blunted {
 
@@ -31,14 +30,10 @@ namespace blunted {
       EnvironmentManager();
       virtual ~EnvironmentManager();
 
-      void SignalQuit();
-      bool GetQuit();
-
       unsigned long GetTime_ms();
       void IncrementTime_ms(int duration);
 
-    protected:
-      bool quit = false;
+     protected:
       unsigned long currentTime_ms = 0;
   };
 

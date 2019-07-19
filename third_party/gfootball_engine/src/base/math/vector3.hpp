@@ -107,8 +107,6 @@ namespace blunted {
       // assume direction vector to be units per sec, assume time to be in milliseconds
       void Extrapolate(const Vector3 &direction, unsigned long time);
 
-      void Print() const;
-
       real coords[3];
 
     protected:

@@ -21,9 +21,6 @@
 
 #include "../../main.hpp"
 
-#include "phasemenu.hpp"
-#include "gameover.hpp"
-
 #include "../../onthepitch/match.hpp"
 
 using namespace blunted;
@@ -46,19 +43,10 @@ GamePage::GamePage(Gui2WindowManager *windowManager, const Gui2PageData &pageDat
 GamePage::~GamePage() {
 
 
-
   if (match) {
-    //GetGameTask()->matchLifetimeMutex.lock();
-    //if (GetGameTask()->GetMatch() != 0) {
-
-      if (Verbose()) printf("disconnecting signals\n");
-
-      match->sig_OnMatchPhaseChange.disconnect(boost::bind(&GamePage::GoMatchPhasePage, this));
-      match->sig_OnExtendedReplayMoment.disconnect(boost::bind(&GamePage::GoExtendedReplayPage, this));
-      match->sig_OnGameOver.disconnect(boost::bind(&GamePage::GoGameOverPage, this));
-
-    //}
-    //GetGameTask()->matchLifetimeMutex.unlock();
+    match->sig_OnMatchPhaseChange.disconnect(boost::bind(&GamePage::GoMatchPhasePage, this));
+    match->sig_OnExtendedReplayMoment.disconnect(boost::bind(&GamePage::GoExtendedReplayPage, this));
+    match->sig_OnGameOver.disconnect(boost::bind(&GamePage::GoGameOverPage, this));
   }
 
 }
@@ -70,8 +58,6 @@ void GamePage::Process() {
     if (GetGameTask()->GetMatch() != 0) {
 
       match = GetGameTask()->GetMatch();
-
-      if (Verbose()) printf("connecting signals\n");
 
       match->sig_OnMatchPhaseChange.connect(boost::bind(&GamePage::GoMatchPhasePage, this));
       match->sig_OnExtendedReplayMoment.connect(boost::bind(&GamePage::GoExtendedReplayPage, this));
@@ -95,16 +81,15 @@ void GamePage::GoMatchPhasePage() {
 
   Properties properties;
   properties.Set("nextphase", (int)nextPhase);
-  CreatePage((int)e_PageID_MatchPhase, properties);
+  //CreatePage((int)e_PageID_MatchPhase, properties);
 
 }
 
 void GamePage::GoGameOverPage() {
-  CreatePage((int)e_PageID_GameOver);
+  //CreatePage((int)e_PageID_GameOver);
 }
 
 void GamePage::ProcessWindowingEvent(WindowingEvent *event) {
-  if (Verbose()) if (event->IsEscape()) printf("escape!\n");
   event->Ignore();
 }
 
@@ -122,8 +107,6 @@ void GamePage::ProcessKeyboardEvent(KeyboardEvent *event) {
       }
     }
 
-    if (Verbose()) printf("controller index %i (keyboard) pressed start\n", controllerID);
-
     int teamID = 0;
     const std::vector<SideSelection> sides = GetMenuTask()->GetControllerSetup();
     for (unsigned int s = 0; s < sides.size(); s++) {
@@ -133,54 +116,10 @@ void GamePage::ProcessKeyboardEvent(KeyboardEvent *event) {
       }
     }
 
-    if (Verbose()) printf ("team belonging to this controller seems to be %i\n", teamID);
-
     Properties properties;
     properties.Set("teamID", teamID);
-    CreatePage((int)e_PageID_Ingame, properties);
+    //CreatePage((int)e_PageID_Ingame, properties);
     return;
-  }
-
-  event->Ignore();
-}
-
-void GamePage::ProcessJoystickEvent(JoystickEvent *event) {
-
-  // oof, the problem is that we are using a GUI joystick event to find out what ingame HID controller pressed <start>.
-  // I think we need a new system in which the game doesn't use its own input system, but uses the GUI one.
-  // for now, this hax will have to do
-
-  const std::vector<IHIDevice*> &controllers = GetControllers();
-  for (unsigned int c = 0; c < controllers.size(); c++) {
-
-    if (controllers.at(c)->GetDeviceType() == e_HIDeviceType_Gamepad) {
-      HIDGamepad *gamepad = static_cast<HIDGamepad*>(controllers.at(c));
-      int joyID = gamepad->GetGamepadID(); // these should be the same IDs the GUI system uses as joyID
-
-      if (event->GetButton(joyID, gamepad->GetControllerMapping(gamepad->GetFunctionMapping(e_ButtonFunction_Start)))) {
-
-        if (Verbose()) printf("controller index %i, gamepad/joy ID %i pressed start\n", c, joyID);
-
-        // check which team this controller belongs to
-        int teamID = 0;
-        const std::vector<SideSelection> sides = GetMenuTask()->GetControllerSetup();
-        for (unsigned int s = 0; s < sides.size(); s++) {
-          if (sides.at(s).controllerID == (signed int)c) {
-            teamID = int(round(sides.at(s).side * 0.5 + 0.5));
-            break;
-          }
-        }
-
-        if (Verbose()) printf ("team belonging to this controller seems to be %i\n", teamID);
-
-        Properties properties;
-        properties.Set("teamID", teamID);
-        CreatePage((int)e_PageID_Ingame, properties);
-        return;
-      }
-
-    }
-
   }
 
   event->Ignore();

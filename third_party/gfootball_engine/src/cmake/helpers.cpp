@@ -13,9 +13,7 @@
 
 #include "helpers.h"
 
-bool FindDataDir() {
-  return false;
-}
+std::string FindDataDir() { return ""; }
 
 std::string FindFontFile() {
   return "";

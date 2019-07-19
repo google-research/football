@@ -48,19 +48,4 @@ namespace blunted {
 
   KeyboardEvent::~KeyboardEvent() {
   }
-
-
-  // JOYSTICK EVENT
-
-  JoystickEvent::JoystickEvent() : Gui2Event(e_Gui2EventType_Joystick) {
-    for (int j = 0; j < UserEventManager::GetInstance().GetJoystickCount(); j++) {
-      for (int i = 0; i < _JOYSTICK_MAXBUTTONS; i++) {
-        button[j][i] = false;
-      }
-    }
-  }
-
-  JoystickEvent::~JoystickEvent() {
-  }
-
 }

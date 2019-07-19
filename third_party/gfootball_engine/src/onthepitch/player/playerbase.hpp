@@ -33,18 +33,16 @@ class PlayerBase {
     PlayerBase(Match *match, PlayerData *playerData);
     virtual ~PlayerBase();
 
-    int GetID() const { return id; }
-    int GetStableID() const { return stable_id; }
-    const PlayerData* GetPlayerData() { return playerData; }
+    inline int GetID() const { return id; }
+    inline int GetStableID() const { return stable_id; }
+    inline const PlayerData* GetPlayerData() { return playerData; }
 
-    bool IsActive() { return isActive; }
+    inline bool IsActive() { return isActive; }
 
     // get ready for some action
     virtual void Activate(boost::intrusive_ptr<Node> humanoidSourceNode, boost::intrusive_ptr<Node> fullbodySourceNode, std::map<Vector3, Vector3> &colorCoords, boost::intrusive_ptr < Resource<Surface> > kit, boost::shared_ptr<AnimCollection> animCollection, bool lazyPlayer) = 0;
     // go back to bench/take a shower
     virtual void Deactivate();
-
-    void SetKit(boost::intrusive_ptr < Resource<Surface> > newKit) { humanoid->SetKit(newKit); }
 
     void ResetPosition(const Vector3 &newPos, const Vector3 &focusPos) { humanoid->ResetPosition(newPos, focusPos); }
     void OffsetPosition(const Vector3 &offset) { humanoid->OffsetPosition(offset); }
@@ -72,9 +70,6 @@ class PlayerBase {
     void SetExternalController(HumanController *externalController);
     HumanController *GetExternalController();
 
-    void SetDebug(bool state);
-    bool GetDebug() const;
-
     boost::intrusive_ptr<Node> GetHumanoidNode() { return humanoid->GetHumanoidNode(); }
     boost::intrusive_ptr<Node> GetFullbodyNode() { return humanoid->GetFullbodyNode(); }
 
@@ -85,11 +80,10 @@ class PlayerBase {
     virtual void FetchPutBuffers(unsigned long putTime_ms);
     void Put();
 
-    void UpdateFullbodyNodes() { humanoid->UpdateFullbodyNodes(); }
     bool NeedsModelUpdate() { return humanoid->NeedsModelUpdate(); }
     void UpdateFullbodyModel() { humanoid->UpdateFullbodyModel(); }
 
-    virtual float GetStat(const char *name) const;
+    virtual float GetStat(PlayerStat name) const;
     float GetVelocityMultiplier() const;
     float GetMaxVelocity() const;
 
@@ -120,8 +114,6 @@ class PlayerBase {
     const PlayerData* const playerData;
     const int id = 0;
     const int stable_id = 0;
-
-    bool debug = false;
 
     HumanoidBase *humanoid;
     IController *controller;

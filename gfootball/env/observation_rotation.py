@@ -77,8 +77,8 @@ def rotate_sticky_actions(sticky_actions_state, config):
     action_to_state[sticky_actions[i]] = sticky_actions_state[i]
   rotated_sticky_actions = []
   for i in range(len(sticky_actions)):
-    rotated_sticky_actions.append(action_to_state[flip_action(
-        sticky_actions[i])])
+    rotated_sticky_actions.append(action_to_state[flip_single_action(
+        sticky_actions[i], config)])
   return rotated_sticky_actions
 
 
@@ -93,54 +93,62 @@ def flip_observation(observation, config):
   flipped_observation['ball_owned_team'] = 1 - observation[
       'ball_owned_team'] if observation['ball_owned_team'] > -1 else -1
   flipped_observation['ball_owned_player'] = observation['ball_owned_player']
-  flipped_observation['home_team'] = rotate_points(observation['away_team'])
-  flipped_observation['home_team_direction'] = rotate_points(
-      observation['away_team_direction'])
-  flipped_observation['home_team_tired_factor'] = observation[
-      'away_team_tired_factor']
-  flipped_observation['home_team_active'] = observation[
-      'away_team_active']
-  flipped_observation['home_team_yellow_card'] = observation[
-      'away_team_yellow_card']
-  flipped_observation['home_team_roles'] = observation['away_team_roles']
-  flipped_observation['away_team'] = rotate_points(observation['home_team'])
-  flipped_observation['away_team_direction'] = rotate_points(
-      observation['home_team_direction'])
-  flipped_observation['away_team_tired_factor'] = observation[
-      'home_team_tired_factor']
-  flipped_observation['away_team_active'] = observation[
-      'home_team_active']
-  flipped_observation['away_team_yellow_card'] = observation[
-      'home_team_yellow_card']
-  flipped_observation['away_team_roles'] = observation['home_team_roles']
+  flipped_observation['left_team'] = rotate_points(observation['right_team'])
+  flipped_observation['left_team_direction'] = rotate_points(
+      observation['right_team_direction'])
+  flipped_observation['left_team_tired_factor'] = observation[
+      'right_team_tired_factor']
+  flipped_observation['left_team_active'] = observation[
+      'right_team_active']
+  flipped_observation['left_team_yellow_card'] = observation[
+      'right_team_yellow_card']
+  flipped_observation['left_team_roles'] = observation['right_team_roles']
+  flipped_observation['right_team'] = rotate_points(observation['left_team'])
+  flipped_observation['right_team_direction'] = rotate_points(
+      observation['left_team_direction'])
+  flipped_observation['right_team_tired_factor'] = observation[
+      'left_team_tired_factor']
+  flipped_observation['right_team_active'] = observation[
+      'left_team_active']
+  flipped_observation['right_team_yellow_card'] = observation[
+      'left_team_yellow_card']
+  flipped_observation['right_team_roles'] = observation['left_team_roles']
   flipped_observation['score'] = [
       observation['score'][1], observation['score'][0]
   ]
   flipped_observation['game_mode'] = observation['game_mode']
   flipped_observation['steps_left'] = observation['steps_left']
   flipped_observation['active'] = observation['opponent_active']
-  flipped_observation['sticky_actions'] = rotate_sticky_actions(
-      observation['opponent_sticky_actions'], config)
+  flipped_observation['sticky_actions'] = [
+      rotate_sticky_actions(sticky, config)
+      for sticky in observation['opponent_sticky_actions']]
   return flipped_observation
 
 
-def flip_action(action):
+def flip_single_action(action, config):
   """Actions corresponding to the field rotated by 180 degrees."""
-  if action == football_action_set.core_action_left:
-    return football_action_set.core_action_right
-  if action == football_action_set.core_action_top_left:
-    return football_action_set.core_action_bottom_right
-  if action == football_action_set.core_action_top:
-    return football_action_set.core_action_bottom
-  if action == football_action_set.core_action_top_right:
-    return football_action_set.core_action_bottom_left
-  if action == football_action_set.core_action_right:
-    return football_action_set.core_action_left
-  if action == football_action_set.core_action_bottom_right:
-    return football_action_set.core_action_top_left
-  if action == football_action_set.core_action_bottom:
-    return football_action_set.core_action_top
-  if action == football_action_set.core_action_bottom_left:
-    return football_action_set.core_action_top_right
-
+  action = football_action_set.named_action_from_action_set(
+      football_action_set.get_action_set(config), action)
+  if action == football_action_set.action_left:
+    return football_action_set.action_right
+  if action == football_action_set.action_top_left:
+    return football_action_set.action_bottom_right
+  if action == football_action_set.action_top:
+    return football_action_set.action_bottom
+  if action == football_action_set.action_top_right:
+    return football_action_set.action_bottom_left
+  if action == football_action_set.action_right:
+    return football_action_set.action_left
+  if action == football_action_set.action_bottom_right:
+    return football_action_set.action_top_left
+  if action == football_action_set.action_bottom:
+    return football_action_set.action_top
+  if action == football_action_set.action_bottom_left:
+    return football_action_set.action_top_right
   return action
+
+
+def flip_action(action, config):
+  if isinstance(action, np.ndarray) or isinstance(action, list):
+    return [flip_single_action(a, config) for a in action]
+  return flip_single_action(action, config)

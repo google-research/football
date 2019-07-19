@@ -46,9 +46,6 @@ const float _default_CameraHeight = 0.3f;
 const float _default_CameraFOV = 0.4f;
 const float _default_CameraAngleFactor = 0.0f;
 
-const float _default_Difficulty = 0.6f;
-const float _default_MatchDuration = 0.4f;
-
 const float _default_QuantizedDirectionBias = 0.0f;
 
 const float _default_AgilityFactor = 0.5f;
@@ -65,6 +62,7 @@ const float _default_Shot_AutoDirection = 0.2f;
 const float distanceToVelocityMultiplier = 2.6f; // for example: when we need to travel 4 meters, we need to go at velo 4 * distanceToVelocityMultiplier
 
 const unsigned int ballPredictionSize_ms = 3000;
+const unsigned int cachedPredictions = 100;
 const unsigned int ballHistorySize_ms = 4000;
 
 const float ballDistanceOptimizeThreshold = 10.0f;
@@ -78,14 +76,7 @@ const float defaultPlayerHeight = 1.92f;
 
 const int temporalSmoother_history_ms = 20;
 
-//#define dataSetSortable 1
-#ifdef dataSetSortable
-typedef std::list<int> DataSet;
-#else
-typedef std::deque<int> DataSet;
-#endif
-
-const SDL_Keycode defaultKeyIDs[18] = { SDLK_UP, SDLK_RIGHT, SDLK_DOWN, SDLK_LEFT, SDLK_w, SDLK_a, SDLK_s, SDLK_d, SDLK_w, SDLK_a, SDLK_s, SDLK_d, SDLK_q, SDLK_z, SDLK_e, SDLK_c, SDLK_F1, SDLK_RETURN };
+typedef std::vector<int> DataSet;
 
 class Player;
 
@@ -231,7 +222,6 @@ struct PlayerCommand {
 
 typedef std::vector<PlayerCommand> PlayerCommandQueue;
 
-std::string GetRoleName(e_PlayerRole playerRole);
 e_PlayerRole GetRoleFromString(const std::string &roleString);
 
 const float pitchHalfW = 55; // only inside side- and backlines
@@ -251,10 +241,10 @@ struct FormationEntry {
   // Constructor accepts environment coordinates.
   FormationEntry(float x, float y, e_PlayerRole role, bool lazy)
       : role(role),
-        lazy(lazy),
         databasePosition(x, y * FORMATION_Y_SCALE, 0),
         position(x, y * FORMATION_Y_SCALE, 0),
-        start_position(x, y * FORMATION_Y_SCALE, 0) {
+        start_position(x, y * FORMATION_Y_SCALE, 0),
+        lazy(lazy) {
   }
   bool operator == (const FormationEntry& f) const {
     return role == f.role &&
@@ -268,24 +258,26 @@ struct FormationEntry {
                    position.coords[2]);
   }
   e_PlayerRole role = e_PlayerRole_GK;
-  bool lazy = false; // Computer doesn't perform any actions for lazy player.
   Vector3 databasePosition;
   Vector3 position; // adapted to player role (combination of databasePosition and hardcoded role position)
   Vector3 start_position;
+  bool lazy = false; // Computer doesn't perform any actions for lazy player.
 };
 
 struct PlayerImage {
-  int teamID = 0;
-  signed int side = 0;
-  int playerID = 0;
-  Player *player;
   Vector3 position;
   Vector3 directionVec;
-  Vector3 bodyDirectionVec;
-  float velocity = 0.0f;
   Vector3 movement;
-  FormationEntry formationEntry;
+  Player *player;
+  float velocity = 0.0f;
   FormationEntry dynamicFormationEntry;
+};
+
+struct PlayerImagePosition {
+  PlayerImagePosition(const Vector3& position, const Vector3& movement, e_PlayerRole player_role) : position(position), movement(movement), player_role(player_role) {}
+  Vector3 position;
+  Vector3 movement;
+  e_PlayerRole player_role;
 };
 
 enum e_DecayType {
@@ -300,13 +292,10 @@ enum e_MagnetType {
 
 // forcefields consist of forcespots, representing a repelling or attracting force from a position, including linearity/etc parameters
 struct ForceSpot {
-  ForceSpot() {
-    exp = 1.0f;
-  }
   Vector3 origin;
   e_MagnetType magnetType;
   e_DecayType decayType;
-  float exp = 0.0f;
+  float exp = 1.0f;
   float power = 0.0f;
   float scale = 0.0f; // scaled #meters until effect is almost decimated
 };

@@ -67,20 +67,6 @@ namespace blunted {
 
   };
 
-  class TaskSequenceEntryLockThread {
-
-    public:
-      TaskSequenceEntryLockThread(boost::mutex &sequenceLock);
-      void operator()();
-      void Reset();
-      bool IsReady();
-
-    protected:
-      boost::mutex &sequenceLock;
-      Lockable<bool> isReady;
-
-  };
-
   class TaskSequenceEntry_Terminator : public ITaskSequenceEntry {
 
     public:

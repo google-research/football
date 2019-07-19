@@ -25,7 +25,6 @@
 #include "../../../base/log.hpp"
 #include "../../../utils/gui2/widgets/image.hpp"
 #include "../../../managers/environmentmanager.hpp"
-#include "../../../managers/usereventmanager.hpp"
 #include "../../../types/command.hpp"
 #include "../../../base/sdl_surface.hpp"
 #include "../../../base/utils.hpp"
@@ -115,7 +114,7 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
     mapping.glEnable(GL_TEXTURE_2D);
 
     for (unsigned int i = 0; i < overlay2DQueue.size(); i++) {
-      const Overlay2DQueueEntry &queueEntry = overlay2DQueue.at(i);
+      const Overlay2DQueueEntry &queueEntry = overlay2DQueue[i];
 
       /* fun!
       float xf = (context->w * 1.0) / 2.0 - 128  + sin(i       + i2 * 1.2) * 200  + sin(i * 0.4 + i2 * 0.6) * 100;
@@ -408,22 +407,11 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
     mapping.glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]);
 
 
-        //SDL_SetVideoMode(width, height, bpp, SDL_OPENGL/* | SDL_RESIZABLE*/ | (fullscreen ? SDL_FULLSCREEN : 0));
     if (!context) {
       std::string errorString = SDL_GetError();
       Log(e_FatalError, "OpenGLRenderer3D", "CreateContext", "Failed on SDL errwwwwor: " + errorString);
       return false;
     }
-
-
-    //std::string glVersionString = (char*)mapping.glGetString(GL_VERSION);
-    //Log(e_Notice, "OpenGLRenderer3D", "CreateContext", "Using OpenGL version " + glVersionString);
-
-//    int glVersion[2] = { 0, 0 };
-    //mapping.glGetIntegerv(GL_MAJOR_VERSION, &glVersion[0]);
-    //mapping.glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]);
-
-    //Log(e_Notice, "OpenGLRenderer3D", "CreateContext", "OpenGL major/minor " + int_to_str(glVersion[0]) + "." + int_to_str(glVersion[1]));
 
     bool higherThan32 = false;
     if (glVersion[0] < 4) {
@@ -439,7 +427,6 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
     bool success = true;//glXSwapIntervalSGI(-1); // anti-tear blah
 #endif
 
-    //SDL_ShowCursor(SDL_DISABLE);
     largest_supported_anisotropy = 2;
     mapping.glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &largest_supported_anisotropy);
     //largest_supported_anisotropy = clamp(largest_supported_anisotropy, 0, 8); // don't overdo it
@@ -503,7 +490,6 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
 
   int OpenGLRenderer3D::CreateView(float x_percent, float y_percent, float width_percent, float height_percent) {
 
-    Log(e_Notice, "OpenGLRenderer3D", "CreateView", "Creating new view, id " + int_to_str(views.size()));
 
     View view;
 
@@ -526,19 +512,13 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
     view.gBuffer_DepthTexID = CreateTexture(e_InternalPixelFormat_DepthComponent16, e_PixelFormat_DepthComponent, gBufWidth, gBufHeight, false, false, false, false, false);
     SetFrameBufferTexture2D(e_TargetAttachment_Depth, view.gBuffer_DepthTexID);
 
-    //view.gBuffer_AlbedoTexID = CreateTexture(e_InternalPixelFormat_RGBA8, e_PixelFormat_RGBA, gBufWidth, gBufHeight, false, false, false, false, false);
     view.gBuffer_AlbedoTexID = CreateTexture(e_InternalPixelFormat_RGBA16F, e_PixelFormat_RGBA, gBufWidth, gBufHeight, false, false, false, false, false);
-    //view.gBuffer_AlbedoTexID = CreateTexture(e_InternalPixelFormat_RGBA32F, e_PixelFormat_RGBA, gBufWidth, gBufHeight, false, false, false, false, false);
     SetFrameBufferTexture2D(e_TargetAttachment_Color0, view.gBuffer_AlbedoTexID);
 
-    //view.gBuffer_NormalTexID = CreateTexture(e_InternalPixelFormat_RGBA8, e_PixelFormat_RGBA, gBufWidth, gBufHeight, false, false, false, false, false);
     view.gBuffer_NormalTexID = CreateTexture(e_InternalPixelFormat_RGBA16F, e_PixelFormat_RGBA, gBufWidth, gBufHeight, false, false, false, false, false);
-    //view.gBuffer_NormalTexID = CreateTexture(e_InternalPixelFormat_RGBA32F, e_PixelFormat_RGBA, gBufWidth, gBufHeight, false, false, false, false);
     SetFrameBufferTexture2D(e_TargetAttachment_Color1, view.gBuffer_NormalTexID);
 
-    //view.gBuffer_AuxTexID = CreateTexture(e_InternalPixelFormat_RGBA8, e_PixelFormat_RGBA, gBufWidth, gBufHeight, false, false, false, false, false);
     view.gBuffer_AuxTexID = CreateTexture(e_InternalPixelFormat_RGBA16F, e_PixelFormat_RGBA, gBufWidth, gBufHeight, false, false, false, false, false);
-    //view.gBuffer_AuxTexID = CreateTexture(e_InternalPixelFormat_RGBA32F, e_PixelFormat_RGBA, gBufWidth, gBufHeight, false, false, false, false, false);
     SetFrameBufferTexture2D(e_TargetAttachment_Color2, view.gBuffer_AuxTexID);
 
     std::vector<e_TargetAttachment> targets;
@@ -565,18 +545,10 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
     view.accumBufferID = CreateFrameBuffer();
     BindFrameBuffer(view.accumBufferID);
 
-    //view.accumBuffer_DepthTexID = CreateTexture(e_InternalPixelFormat_DepthComponent32F, e_PixelFormat_DepthComponent, accumBufWidth, accumBufHeight, false, false, false, false);
-    //SetFrameBufferTexture2D(e_TargetAttachment_Depth, view.accumBuffer_DepthTexID);
-
-    //view.accumBuffer_AccumTexID = CreateTexture(e_InternalPixelFormat_RGB8, e_PixelFormat_RGB, accumBufWidth, accumBufHeight, false, false, false, false, false);
     view.accumBuffer_AccumTexID = CreateTexture(e_InternalPixelFormat_RGBA16F, e_PixelFormat_RGBA, accumBufWidth, accumBufHeight, false, false, false, false, false);
-    //view.accumBuffer_AccumTexID = CreateTexture(e_InternalPixelFormat_RGBA32F, e_PixelFormat_RGBA, accumBufWidth, accumBufHeight, false, false, false, false, false);
     SetFrameBufferTexture2D(e_TargetAttachment_Color0, view.accumBuffer_AccumTexID);
 
-    // Geforce GT 230 doesn't seem to be too happy about e_InternalPixelFormat_RGBA16 for some reason. Very slow framerates ensue
-    //view.accumBuffer_ModifierTexID = CreateTexture(e_InternalPixelFormat_RGBA8, e_PixelFormat_RGB, accumBufWidth, accumBufHeight, false, false, false, false, false);
     view.accumBuffer_ModifierTexID = CreateTexture(e_InternalPixelFormat_RGBA16F, e_PixelFormat_RGBA, accumBufWidth, accumBufHeight, false, false, false, false, false);
-    //view.accumBuffer_ModifierTexID = CreateTexture(e_InternalPixelFormat_RGBA32F, e_PixelFormat_RGBA, accumBufWidth, accumBufHeight, false, false, false, false, false);
     SetFrameBufferTexture2D(e_TargetAttachment_Color1, view.accumBuffer_ModifierTexID);
 
     targets.push_back(e_TargetAttachment_Color0);
@@ -603,8 +575,6 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
 
   void OpenGLRenderer3D::DeleteView(int viewID) {
 
-    Log(e_Notice, "OpenGLRenderer3D", "DeleteView", "Deleting view, id " + int_to_str(viewID));
-
     View *view = &views.at(viewID);
 
     BindFrameBuffer(view->gBufferID);
@@ -626,7 +596,6 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
 
     DeleteTexture(view->accumBuffer_AccumTexID);
     DeleteTexture(view->accumBuffer_ModifierTexID);
-    //printf("done deleting view %i\n", viewID);
   }
 
   // general
@@ -1677,7 +1646,6 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
   bool OpenGLRenderer3D::CheckFrameBufferStatus() {
     GLenum status = mapping.glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status == GL_FRAMEBUFFER_COMPLETE) {
-      Log(e_Notice, "OpenGLRenderer3D", "CheckFrameBufferStatus", "Framebuffer state #" + int_to_str(status));
       return true;
     } else {
       Log(e_FatalError, "OpenGLRenderer3D", "CheckFrameBufferStatus", "Framebuffer error state #" + int_to_str(status));
@@ -1713,7 +1681,7 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
   void OpenGLRenderer3D::SetRenderTargets(std::vector<e_TargetAttachment> targetAttachments) {
     GLenum targets[targetAttachments.size()];
     for (int i = 0; i < (signed int)targetAttachments.size(); i++) {
-      targets[i] = GetGLTargetAttachment(targetAttachments.at(i));
+      targets[i] = GetGLTargetAttachment(targetAttachments[i]);
     }
     mapping.glDrawBuffers(targetAttachments.size(), targets);
   }
@@ -1755,7 +1723,7 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
 
     std::string source_flat;
     for (int i = 0; i < (signed int)source.size(); i++) {
-      source_flat.append(source.at(i).c_str());
+      source_flat.append(source[i].c_str());
       source_flat.append("\n");
     }
 
@@ -1890,8 +1858,6 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
         average += samples[i];
       }
       average /= kernelSize;
-      printf("SSAO kernel average position: ");
-      average.Print();
       Vector3 newAverage;
       for (unsigned int i = 0; i < kernelSize; i++) {
         samples[i] -= average.Get2D();
@@ -1901,8 +1867,6 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
         newAverage += samples[i];
       }
       newAverage /= kernelSize;
-      printf("SSAO kernel average position (corrected): ");
-      newAverage.Print();
     }
 
   }
@@ -2181,17 +2145,4 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
   float OpenGLRenderer3D::HDRGetOverallBrightness() {
     return overallBrightness;
   }
-
-
-  constexpr char kHeadlessVideoDriverName[] = "headless";
-
-  // thread main loop
-
-  void OpenGLRenderer3D::operator()() {
-    std::string rendering = GetConfiguration()->Get("graphics3d_renderer", "opengl");
-    if (rendering != "opengl") {
-      setenv("SDL_VIDEODRIVER", kHeadlessVideoDriverName, true);
-    }
-  }
-
 }

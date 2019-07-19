@@ -336,7 +336,9 @@ void HumanController::RequestCommand(PlayerCommandQueue &commandQueue) {
     }
 
     // super cancel
-    if (hid->GetButton(e_ButtonFunction_Dribble) && hid->GetButton(e_ButtonFunction_Sprint)) {
+    if (match->IsInPlay() && !match->IsInSetPiece() &&
+        hid->GetButton(e_ButtonFunction_Dribble) &&
+        hid->GetButton(e_ButtonFunction_Sprint)) {
       if (!hasBestPossession) {
         command.desiredDirection = inputDirection;
         command.desiredVelocityFloat = inputVelocityFloat;

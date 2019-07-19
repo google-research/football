@@ -13,7 +13,6 @@
 
 set(BASE_HEADERS
    src/base/log.hpp
-   src/base/exception.hpp
    src/base/utils.hpp
    src/base/properties.hpp
    src/base/sdl_surface.hpp
@@ -36,7 +35,6 @@ set(BASE_MATH_HEADERS
 )
 
 set(BASE_SOURCES
-   src/base/exception.cpp
    src/base/sdl_surface.cpp
    src/base/utils.cpp
    src/base/properties.cpp
@@ -86,7 +84,6 @@ set(SYSTEMS_GRAPHICS_RESOURCES_HEADERS
 set(SYSTEMS_GRAPHICS_RENDERING_HEADERS
    src/systems/graphics/rendering/interface_renderer3d.hpp
    src/systems/graphics/rendering/opengl_renderer3d.hpp
-   src/systems/graphics/rendering/r3d_messages.hpp
 )
 
 set(SYSTEMS_GRAPHICS_SOURCES
@@ -99,7 +96,6 @@ set(SYSTEMS_GRAPHICS_SOURCES
    src/systems/graphics/graphics_scene.cpp
    src/systems/graphics/resources/vertexbuffer.cpp
    src/systems/graphics/resources/texture.cpp
-   src/systems/graphics/rendering/r3d_messages.cpp
    src/systems/graphics/rendering/opengl_renderer3d.cpp
    src/systems/graphics/graphics_system.cpp
 )
@@ -138,11 +134,9 @@ set(LOADERS_SOURCES
 )
 
 set(TYPES_HEADERS
-   src/types/trianglemesh.hpp
    src/types/subject.hpp
    src/types/spatial.hpp
    src/types/iusertask.hpp
-   src/types/lockable.hpp
    src/types/resource.hpp
    src/types/material.hpp
    src/types/observer.hpp
@@ -151,7 +145,6 @@ set(TYPES_HEADERS
    src/types/refcounted.hpp
    src/types/command.hpp
    src/types/loader.hpp
-   src/types/thread.hpp
    src/types/messagequeue.hpp
 )
 
@@ -159,7 +152,6 @@ set(TYPES_SOURCES
    src/types/iusertask.cpp
    src/types/spatial.cpp
    src/types/refcounted.cpp
-   src/types/trianglemesh.cpp
    src/types/observer.cpp
    src/types/command.cpp
 )
@@ -225,7 +217,6 @@ set(MANAGERS_HEADERS
    src/managers/resourcemanager.hpp
    src/managers/resourcemanagerpool.hpp
    src/managers/environmentmanager.hpp
-   src/managers/usereventmanager.hpp
    src/managers/scenemanager.hpp
    src/managers/systemmanager.hpp
 )
@@ -233,7 +224,6 @@ set(MANAGERS_HEADERS
 set(MANAGERS_SOURCES
    src/managers/scenemanager.cpp
    src/managers/resourcemanagerpool.cpp
-   src/managers/usereventmanager.cpp
    src/managers/environmentmanager.cpp
    src/managers/systemmanager.cpp
 )
@@ -245,7 +235,6 @@ set(UTILS_HEADERS
    src/utils/xmlloader.hpp
    src/utils/splitgeometry.hpp
    src/utils/orbitcamera.hpp
-   src/utils/text2d.hpp
    src/utils/directoryparser.hpp
 )
 
@@ -256,7 +245,6 @@ set(UTILS_EXT_HEADERS
 
 set(UTILS_SOURCES
    src/utils/database.cpp
-   src/utils/text2d.cpp
    src/utils/orbitcamera.cpp
    src/utils/animation.cpp
    src/utils/splitgeometry.cpp
@@ -276,42 +264,18 @@ set(UTILS_GUI2_HEADERS
 )
 
 set(UTILS_GUI2_WIDGETS_HEADERS
-   src/utils/gui2/widgets/slider.hpp
    src/utils/gui2/widgets/image.hpp
-   src/utils/gui2/widgets/dialog.hpp
-   src/utils/gui2/widgets/editline.hpp
    src/utils/gui2/widgets/caption.hpp
-   src/utils/gui2/widgets/filebrowser.hpp
-   src/utils/gui2/widgets/pulldown.hpp
    src/utils/gui2/widgets/frame.hpp
-   src/utils/gui2/widgets/iconselector.hpp
-   src/utils/gui2/widgets/capturekey.hpp
-   src/utils/gui2/widgets/scrollbar.hpp
-   src/utils/gui2/widgets/grid.hpp
-   src/utils/gui2/widgets/text.hpp
-   src/utils/gui2/widgets/menu.hpp
    src/utils/gui2/widgets/root.hpp
-   src/utils/gui2/widgets/button.hpp
 )
 
 set(UTILS_GUI2_SOURCES
    src/utils/gui2/style.cpp
    src/utils/gui2/widgets/caption.cpp
-   src/utils/gui2/widgets/menu.cpp
-   src/utils/gui2/widgets/editline.cpp
-   src/utils/gui2/widgets/button.cpp
    src/utils/gui2/widgets/image.cpp
-   src/utils/gui2/widgets/grid.cpp
    src/utils/gui2/widgets/root.cpp
-   src/utils/gui2/widgets/iconselector.cpp
    src/utils/gui2/widgets/frame.cpp
-   src/utils/gui2/widgets/filebrowser.cpp
-   src/utils/gui2/widgets/scrollbar.cpp
-   src/utils/gui2/widgets/capturekey.cpp
-   src/utils/gui2/widgets/text.cpp
-   src/utils/gui2/widgets/slider.cpp
-   src/utils/gui2/widgets/dialog.cpp
-   src/utils/gui2/widgets/pulldown.cpp
    src/utils/gui2/events.cpp
    src/utils/gui2/view.cpp
    src/utils/gui2/windowmanager.cpp
@@ -347,14 +311,6 @@ set(CLIENT_SOURCES
    src/client.cpp
 )
 
-set(LEAGUE_HEADERS
-   src/league/leaguecode.hpp
-)
-
-set(LEAGUE_SOURCES
-   src/league/leaguecode.cpp
-)
-
 set(CORE_HEADERS
    src/cmake/backtrace.h
    src/cmake/helpers.h
@@ -363,7 +319,6 @@ set(CORE_HEADERS
    src/main.hpp
    src/gametask.hpp
    src/synchronizationTask.hpp
-   src/dbquery.hpp
    src/misc/hungarian.h
 )
 
@@ -375,9 +330,7 @@ set(CORE_SOURCES
    src/gametask.cpp
    src/utils.cpp
    src/main.cpp
-   src/cmake/main.cpp
    src/synchronizationTask.cpp
-   src/dbquery.cpp
    src/gamedefines.cpp
 )
 
@@ -443,83 +396,24 @@ set(GAME_SOURCES
    src/onthepitch/teamAIcontroller.cpp
 )
 
-set(HID_HEADERS
-   src/hid/gamepad.hpp
-   src/hid/ihidevice.hpp
-   src/hid/keyboard.hpp
-)
-
-set(HID_SOURCES
-   src/hid/gamepad.cpp
-   src/hid/keyboard.cpp
-)
-
 set(MENU_HEADERS
-   src/menu/league/league_calendar.hpp
-   src/menu/league/league_standings.hpp
-   src/menu/league/league_team.hpp
-   src/menu/league/league.hpp
-   src/menu/league/league_management.hpp
-   src/menu/league/league_system.hpp
-   src/menu/league/league_inbox.hpp
-   src/menu/league/league_forward.hpp
-   src/menu/gameplan.hpp
-   src/menu/cameramenu.hpp
    src/menu/pagefactory.hpp
-   src/menu/widgets/gameplansubmenu.hpp
-   src/menu/widgets/planmap.hpp
-   src/menu/startmatch/matchoptions.hpp
    src/menu/startmatch/loadingmatch.hpp
-   src/menu/startmatch/teamselect.hpp
    src/menu/menutask.hpp
-   src/menu/settings.hpp
-   src/menu/controllerselect.hpp
-   src/menu/mainmenu.hpp
    src/menu/menuscene.hpp
-   src/menu/visualoptions.hpp
-   src/menu/credits.hpp
-   src/menu/ingame/phasemenu.hpp
-   src/menu/ingame/tacticsdebug.hpp
    src/menu/ingame/gamepage.hpp
-   src/menu/ingame/gameover.hpp
-   src/menu/ingame/ingame.hpp
-   src/menu/ingame/playerhud.hpp
    src/menu/ingame/scoreboard.hpp
    src/menu/ingame/radar.hpp
 )
 
 set(MENU_SOURCES
-   src/menu/credits.cpp
-   src/menu/league/league_system.cpp
-   src/menu/league/league_team.cpp
-   src/menu/league/league_management.cpp
-   src/menu/league/league.cpp
-   src/menu/league/league_calendar.cpp
-   src/menu/league/league_inbox.cpp
-   src/menu/league/league_forward.cpp
-   src/menu/league/league_standings.cpp
-   src/menu/gameplan.cpp
-   src/menu/widgets/planmap.cpp
-   src/menu/widgets/gameplansubmenu.cpp
-   src/menu/startmatch/teamselect.cpp
    src/menu/startmatch/loadingmatch.cpp
-   src/menu/startmatch/matchoptions.cpp
-   src/menu/visualoptions.cpp
    src/menu/pagefactory.cpp
    src/menu/menutask.cpp
-   src/menu/cameramenu.cpp
    src/menu/menuscene.cpp
-   src/menu/controllerselect.cpp
-   src/menu/mainmenu.cpp
    src/menu/ingame/radar.cpp
-   src/menu/ingame/tacticsdebug.cpp
    src/menu/ingame/gamepage.cpp
-   src/menu/ingame/gameover.cpp
-   src/menu/ingame/phasemenu.cpp
-   src/menu/ingame/ingame.cpp
    src/menu/ingame/scoreboard.cpp
-   src/menu/ingame/playerhud.cpp
-   src/menu/settings.cpp
 )
 
 set(DATA_HEADERS

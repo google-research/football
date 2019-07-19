@@ -27,5 +27,5 @@ void IController::SetPlayer(PlayerBase *player) {
 }
 
 int IController::GetReactionTime_ms() {
-  return int(std::round(80.0f - player->GetStat("physical_reaction") * 40.0f));
+  return int(std::round(80.0f - player->GetStat(physical_reaction) * 40.0f));
 }

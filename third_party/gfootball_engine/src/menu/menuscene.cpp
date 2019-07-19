@@ -25,8 +25,6 @@
 #include "../main.hpp"
 
 MenuScene::MenuScene() {
-  Log(e_Notice, "MenuScene", "MenuScene", "Starting MenuScene");
-
   seamless = false;
 
   containerNode = boost::intrusive_ptr<Node>(new Node("menuSceneNode"));
@@ -39,9 +37,6 @@ MenuScene::MenuScene() {
 
 
   // camera
-
-  Log(e_Notice, "MenuScene", "MenuScene", "Creating camera object");
-
   camera = static_pointer_cast<Camera>(ObjectFactory::GetInstance().CreateObject("camera_MenuScene", e_ObjectType_Camera));
   GetScene3D()->CreateSystemObjects(camera);
   camera->Init();
@@ -55,9 +50,6 @@ MenuScene::MenuScene() {
 
 
   // light
-
-  Log(e_Notice, "MenuScene", "MenuScene", "Creating light object");
-
   float mainLightBrightness = 0.0f;
   float hoverLightBrightness = 2.0f;
 
@@ -76,9 +68,6 @@ MenuScene::MenuScene() {
 
 
   // geometry
-
-  Log(e_Notice, "MenuScene", "MenuScene", "Creating geometry");
-
   boost::intrusive_ptr < Resource<GeometryData> > geometryData = ResourceManagerPool::getGeometryManager()->Fetch("media/objects/menu/background01.ase", true);
   geom = static_pointer_cast<Geometry>(ObjectFactory::GetInstance().CreateObject("geometry_menuscene", e_ObjectType_Geometry));
   GetScene3D()->CreateSystemObjects(geom);

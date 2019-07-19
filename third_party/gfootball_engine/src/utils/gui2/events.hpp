@@ -19,7 +19,6 @@
 #define _HPP_GUI2_EVENTS
 
 #include "../../base/math/vector3.hpp"
-#include "../../managers/usereventmanager.hpp"
 #include "wrap_SDL.h"
 #include "wrap_SDL_keyboard.h"
 #include <set>
@@ -30,7 +29,6 @@ namespace blunted {
     e_Gui2EventType_Windowing = 0,
     e_Gui2EventType_Mouse = 1,
     e_Gui2EventType_Keyboard = 2,
-    e_Gui2EventType_Joystick = 3,
     e_Gui2EventType_User = 100
   };
 
@@ -60,15 +58,9 @@ namespace blunted {
       WindowingEvent();
       virtual ~WindowingEvent();
 
-      bool IsActivate() { return activate; }
       bool IsEscape() { return escape; }
-      Vector3 GetDirection() { return direction; }
 
-      void SetActivate() { activate = true; }
-      void SetEscape() { escape = true; }
-      void SetDirection(const Vector3 &direction) { this->direction = direction; }
-
-    protected:
+     protected:
       bool activate = false;
       bool escape = false;
       Vector3 direction;
@@ -81,18 +73,9 @@ namespace blunted {
       KeyboardEvent();
       virtual ~KeyboardEvent();
 
-      const std::set<SDL_Keycode> &GetKeyOnce() const { return keyOnce; }
       bool GetKeyOnce(SDL_Keycode id) const { return keyOnce.count(id); }
-      void SetKeyOnce(SDL_Keycode id) { keyOnce.insert(id); }
-      bool GetKeyContinuous(SDL_Keycode id) const { return keyContinuous.count(id); }
-      void SetKeyContinuous(SDL_Keycode id) { keyContinuous.insert(id); }
-      bool GetKeyRepeated(SDL_Keycode id) const { return keyRepeated.count(id); }
-      void SetKeyRepeated(SDL_Keycode id) { keyRepeated.insert(id); }
-      std::set<SDL_Keycode> &GetKeysymOnce() { return keysymOnce; }
-      std::set<SDL_Keycode> &GetKeysymContinuous() { return keysymContinuous; }
-      std::set<SDL_Keycode> &GetKeysymRepeated() { return keysymRepeated; }
 
-    protected:
+     protected:
       std::set<SDL_Keycode> keysymOnce;
       std::set<SDL_Keycode> keysymContinuous;
       std::set<SDL_Keycode> keysymRepeated;
@@ -102,25 +85,6 @@ namespace blunted {
       std::set<SDL_Keycode> keyRepeated;
 
   };
-
-  class JoystickEvent : public Gui2Event {
-
-    public:
-      JoystickEvent();
-      virtual ~JoystickEvent();
-
-      bool GetButton(int joyID, int id) const { return button[joyID][id]; }
-      void SetButton(int joyID, int id) { button[joyID][id] = true; }
-      float GetAxis(int joyID, int id) const { return axes[joyID][id]; }
-      void SetAxis(int joyID, int id, float value) { this->axes[joyID][id] = value; }
-
-    protected:
-
-      bool button[_JOYSTICK_MAX][_JOYSTICK_MAXBUTTONS];
-      float axes[_JOYSTICK_MAX][_JOYSTICK_MAXAXES];
-
-  };
-
 }
 
 #endif

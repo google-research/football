@@ -22,7 +22,6 @@
 
 #include "../scene.hpp"
 #include "../object.hpp"
-#include "../../types/lockable.hpp"
 #include "../../base/properties.hpp"
 
 namespace blunted {

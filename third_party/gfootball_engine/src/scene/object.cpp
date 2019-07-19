@@ -25,8 +25,8 @@ namespace blunted {
     MustUpdateSpatialData clear;
     clear.haveTo = false;
     clear.excludeSystem = e_SystemType_None;
-    updateSpatialDataAfterPoke.SetData(clear);
-    pokePriority.SetData(0);
+    updateSpatialDataAfterPoke = clear;
+    pokePriority = 0;
     enabled = true;
   }
 
@@ -39,12 +39,12 @@ namespace blunted {
   Object::Object(const Object &src) : Subject<Interpreter>(), Spatial(src) {
     objectType = src.objectType;
     properties = src.properties;
-    requestProperties->AddProperties(src.requestProperties.GetData());
+    requestProperties.AddProperties(src.requestProperties);
 
     MustUpdateSpatialData clear;
     clear.haveTo = false;
     clear.excludeSystem = e_SystemType_None;
-    updateSpatialDataAfterPoke.SetData(clear);
+    updateSpatialDataAfterPoke = clear;
     pokePriority = src.GetPokePriority();
     enabled = src.enabled;
 
@@ -82,36 +82,28 @@ namespace blunted {
   }
 
   bool Object::RequestPropertyExists(const char *property) const {
-    requestProperties.Lock();
-    bool exists = requestProperties->Exists(property);
-    requestProperties.Unlock();
+    bool exists = requestProperties.Exists(property);
     return exists;
   }
 
   std::string Object::GetRequestProperty(const char *property) const {
-    requestProperties.Lock();
-    std::string result = requestProperties->Get(property);
-    requestProperties.Unlock();
+    std::string result = requestProperties.Get(property);
     return result;
   }
 
   void Object::AddRequestProperty(const char *property) {
-    requestProperties.Lock();
-    requestProperties->Set(property, "");
-    requestProperties.Unlock();
+    requestProperties.Set(property, "");
   }
 
   void Object::SetRequestProperty(const char *property, const char *value) {
-    requestProperties.Lock();
-    requestProperties->Set(property, value);
-    requestProperties.Unlock();
+    requestProperties.Set(property, value);
   }
 
   void Object::Synchronize() {
     boost::shared_ptr<Interpreter> result;
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      boost::intrusive_ptr<Interpreter> interpreter = static_pointer_cast<Interpreter>(observers.at(i));
+      boost::intrusive_ptr<Interpreter> interpreter = static_pointer_cast<Interpreter>(observers[i]);
       interpreter->OnSynchronize();
     }
   }
@@ -126,7 +118,7 @@ namespace blunted {
     boost::intrusive_ptr<Interpreter> result;
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      boost::intrusive_ptr<Interpreter> interpreter = static_pointer_cast<Interpreter>(observers.at(i));
+      boost::intrusive_ptr<Interpreter> interpreter = static_pointer_cast<Interpreter>(observers[i]);
       if (interpreter->GetSystemType() == targetSystemType) result = interpreter;
     }
     return result;

@@ -139,7 +139,7 @@ struct CrudeSelectionQuery {
   bool byTripType = false;
   int tripType = 0;
 
-  Properties properties;
+  VariableCache properties;
 };
 
 struct Quadrant {
@@ -149,7 +149,7 @@ struct Quadrant {
   radian angle;
 };
 
-void FillNodeMap(boost::intrusive_ptr<Node> targetNode, std::map < const std::string, boost::intrusive_ptr<Node> > &nodeMap);
+void FillNodeMap(boost::intrusive_ptr<Node> targetNode, NodeMap &nodeMap);
 
 class AnimCollection {
 
@@ -177,7 +177,7 @@ class AnimCollection {
 
   protected:
 
-    void _PrepareAnim(Animation *animation, boost::intrusive_ptr<Node> playerNode, const std::list < boost::intrusive_ptr<Object> > &bodyParts, const std::map < const std::string, boost::intrusive_ptr<Node> > &nodeMap, bool convertAngledDribbleToWalk = false);
+    void _PrepareAnim(Animation *animation, boost::intrusive_ptr<Node> playerNode, const std::list < boost::intrusive_ptr<Object> > &bodyParts, const NodeMap &nodeMap, bool convertAngledDribbleToWalk = false);
 
     bool _CheckFunctionType(e_DefString functionType, e_FunctionType queryFunctionType) const;
 

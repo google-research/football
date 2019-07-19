@@ -334,7 +334,7 @@ TeamData::TeamData(int teamDatabaseID, int playersTeamDatabaseID,
 
 TeamData::~TeamData() {
   for (int i = 0; i < (signed int)playerData.size(); i++) {
-    delete playerData.at(i);
+    delete playerData[i];
   }
 }
 
@@ -345,55 +345,4 @@ FormationEntry TeamData::GetFormationEntry(int num) {
 
 void TeamData::SetFormationEntry(int num, FormationEntry entry) {
   formation[num] = entry;
-}
-
-void TeamData::SwitchPlayers(int databaseID1, int databaseID2) {
-  int index1 = -1;
-  int index2 = -1;
-  for (int i = 0; i < (signed int)playerData.size(); i++) {
-    if (playerData.at(i)->GetDatabaseID() == databaseID1) index1 = i;
-    if (playerData.at(i)->GetDatabaseID() == databaseID2) index2 = i;
-  }
-  assert(index1 != -1);
-  assert(index2 != -1);
-  // printf("old id on index1 %i\n", playerData.at(index1)->GetDatabaseID());
-  // printf("swapping players %i and %i\n", index1, index2);
-  PlayerData *tmp = playerData.at(index1);
-  playerData.at(index1) = playerData.at(index2);
-  playerData.at(index2) = tmp;
-  // printf("new id on index1 %i\n", playerData.at(index1)->GetDatabaseID());
-}
-
-PlayerData *TeamData::GetPlayerDataByDatabaseID(int id) {
-  int index = -1;
-  for (int i = 0; i < (signed int)playerData.size(); i++) {
-    if (playerData.at(i)->GetDatabaseID() == id) {
-      index = i;
-      break;
-    }
-  }
-  assert(index != -1);
-  return playerData.at(index);
-}
-
-void TeamData::SaveLineup() {}
-
-void TeamData::SaveTactics() {
-  const map_Properties *userPropMap = tactics.userProperties.GetProperties();
-
-  map_Properties::const_iterator iter = userPropMap->begin();
-  std::string tactics_xml;
-  while (iter != userPropMap->end()) {
-    const std::string &tacticName = (*iter).first;
-    tactics_xml +=
-        "<" + tacticName + ">" +
-        real_to_str(tactics.userProperties.GetReal(tacticName.c_str())) + "</" +
-        tacticName + ">\n";
-    iter++;
-  }
-
-  DatabaseResult *result =
-      GetDB()->Query("update teams set tactics_xml = \"" + tactics_xml +
-                     "\" where id = " + int_to_str(GetDatabaseID()) + ";");
-  delete result;
 }

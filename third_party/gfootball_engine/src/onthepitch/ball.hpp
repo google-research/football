@@ -74,7 +74,7 @@ class Ball {
 
     void ResetSituation(const Vector3 &focusPos);
 
-  protected:
+  private:
     boost::shared_ptr<Scene3D> scene3D;
 
     boost::intrusive_ptr<Node> ballNode;
@@ -83,7 +83,8 @@ class Ball {
     Vector3 momentum;
     Quaternion rotation_ms;
 
-    Vector3 predictions[ballPredictionSize_ms / 10];
+    Vector3 predictions[ballPredictionSize_ms / 10 + cachedPredictions + 1];
+    int valid_predictions = 0;
     Quaternion orientPrediction;
 
     std::list<Vector3> ballPosHistory;

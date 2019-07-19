@@ -22,16 +22,18 @@ import pdb
 class Player(player_base.PlayerBase):
   """Player with actions coming from specific game replay."""
 
-  def __init__(self, config):
-    with open(config['param'], 'rb') as f:
+  def __init__(self, player_config, env_config):
+    player_base.PlayerBase.__init__(self, player_config)
+    with open(player_config['path'], 'rb') as f:
       self._replay = six.moves.cPickle.load(f)
     self._step = 0
-    self._player = config['index']
+    self._player = player_config['index']
 
   def take_action(self, observations):
     if self._step == len(self._replay):
       print("Replay finished.")
       exit(0)
-    step = self._replay[self._step]['debug']['action'][self._player]
+    step = self._replay[self._step]['debug']['action'][
+        self._player:self.num_controlled_players() + self._player]
     self._step += 1
     return step

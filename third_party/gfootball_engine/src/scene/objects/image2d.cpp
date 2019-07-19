@@ -41,7 +41,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IImage2DInterpreter *image2DInterpreter = static_cast<IImage2DInterpreter*>(observers.at(i).get());
+      IImage2DInterpreter *image2DInterpreter = static_cast<IImage2DInterpreter*>(observers[i].get());
       image2DInterpreter->OnUnload();
     }
 
@@ -63,7 +63,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IImage2DInterpreter *image2DInterpreter = static_cast<IImage2DInterpreter*>(observers.at(i).get());
+      IImage2DInterpreter *image2DInterpreter = static_cast<IImage2DInterpreter*>(observers[i].get());
       image2DInterpreter->OnLoad(image);
     }
 
@@ -81,7 +81,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IImage2DInterpreter *image2DInterpreter = static_cast<IImage2DInterpreter*>(observers.at(i).get());
+      IImage2DInterpreter *image2DInterpreter = static_cast<IImage2DInterpreter*>(observers[i].get());
       image2DInterpreter->OnMove(x, y);
     }
 
@@ -104,27 +104,6 @@ namespace blunted {
     return tmp;
   }
 
-  void Image2D::DrawLine(const Line &line, const Vector3 &color, int alpha) {
-    SDL_Surface *surface = image->GetResource()->GetData();
-    SDL_LockSurface(surface);
-
-    Uint32 color32;
-    if (SDL_ISPIXELFORMAT_ALPHA(surface->format->format))
-      color32 = SDL_MapRGBA(surface->format, int(std::floor(color.coords[0])),
-                            int(std::floor(color.coords[1])),
-                            int(std::floor(color.coords[2])), alpha);
-    else
-      color32 = SDL_MapRGB(surface->format, int(std::floor(color.coords[0])),
-                           int(std::floor(color.coords[1])),
-                           int(std::floor(color.coords[2])));
-
-    sdl_line(surface, line.GetVertex(0).coords[0], line.GetVertex(0).coords[1], line.GetVertex(1).coords[0], line.GetVertex(1).coords[1], color32);
-
-    SDL_UnlockSurface(surface);
-
-    //OnChange();
-  }
-
   void Image2D::DrawRectangle(int x, int y, int w, int h, const Vector3 &color, int alpha) {
     SDL_Surface *surface = image->GetResource()->GetData();
     //SDL_LockSurface(surface);
@@ -142,10 +121,6 @@ namespace blunted {
     sdl_rectangle_filled(surface, x, y, w, h, color32);
   }
 
-  void Image2D::SetAlpha(float alpha) {
-    image->GetResource()->SetAlpha(alpha);
-  }
-
   void Image2D::Resize(int w, int h) {
     image->GetResource()->Resize(w, h);
     size[0] = w;
@@ -157,7 +132,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IImage2DInterpreter *image2DInterpreter = static_cast<IImage2DInterpreter*>(observers.at(i).get());
+      IImage2DInterpreter *image2DInterpreter = static_cast<IImage2DInterpreter*>(observers[i].get());
       if (image2DInterpreter->GetSystemType() == targetSystemType) image2DInterpreter->OnPoke();
     }
 
@@ -169,7 +144,7 @@ namespace blunted {
   void Image2D::OnChange() {
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IImage2DInterpreter *image2DInterpreter = static_cast<IImage2DInterpreter*>(observers.at(i).get());
+      IImage2DInterpreter *image2DInterpreter = static_cast<IImage2DInterpreter*>(observers[i].get());
       image2DInterpreter->OnChange(image);
     }
   }

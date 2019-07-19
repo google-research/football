@@ -38,13 +38,4 @@ namespace blunted {
   unsigned long EnvironmentManager::GetTime_ms() {
     return currentTime_ms;
   }
-
-  void EnvironmentManager::SignalQuit() {
-    quit = true;
-  }
-
-  bool EnvironmentManager::GetQuit() {
-    return quit;
-  }
-
 }

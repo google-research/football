@@ -105,7 +105,7 @@ def get_frame(trace):
         field_coords=True,
         color=(255, 0, 0))
     writer.write('B')
-    for player_idx, player_coord in enumerate(trace['home_team']):
+    for player_idx, player_coord in enumerate(trace['left_team']):
       writer = TextWriter(
           frame,
           player_coord[0],
@@ -113,13 +113,13 @@ def get_frame(trace):
           field_coords=True,
           color=(0, 255, 0))
       letter = 'H'
-      if 'active' in trace and trace['active'] == player_idx:
+      if 'active' in trace and player_idx in trace['active']:
         letter = 'X'
-      elif 'home_agent_controlled_player' in trace and player_idx in trace[
-          'home_agent_controlled_player']:
+      elif 'left_agent_controlled_player' in trace and player_idx in trace[
+          'left_agent_controlled_player']:
         letter = 'X'
       writer.write(letter)
-    for player_idx, player_coord in enumerate(trace['away_team']):
+    for player_idx, player_coord in enumerate(trace['right_team']):
       writer = TextWriter(
           frame,
           player_coord[0],
@@ -127,10 +127,10 @@ def get_frame(trace):
           field_coords=True,
           color=(0, 0, 255))
       letter = 'A'
-      if 'opponent_active' in trace and trace['opponent_active'] == player_idx:
+      if 'opponent_active' in trace and player_idx in trace['opponent_active']:
         letter = 'Y'
-      elif 'away_agent_controlled_player' in trace and player_idx in trace[
-          'away_agent_controlled_player']:
+      elif 'right_agent_controlled_player' in trace and player_idx in trace[
+          'right_agent_controlled_player']:
         letter = 'Y'
       writer.write(letter)
   return frame
@@ -164,7 +164,7 @@ def write_dump(name, trace, skip_visuals=False, config={}):
       frame = cv2.resize(frame, frame_dim, interpolation=cv2.INTER_AREA)
       if config['display_game_stats']:
         writer = TextWriter(frame, 950 if HIGH_RES else 500)
-        writer.write('SCORE: %d - %d' % (o._score[0], o._score[1]))
+        writer.write('SCORE: %d - %d' % (o['score'][0], o['score'][1]))
         writer.write('BALL OWNED TEAM: %d' % (o['ball_owned_team']))
         writer.write('BALL OWNED PLAYER: %d' % (o['ball_owned_player']))
         writer.write('REWARD %.4f' % (o['reward']))
@@ -173,14 +173,18 @@ def write_dump(name, trace, skip_visuals=False, config={}):
         writer.write('FRAME: %d' % frame_cnt)
         writer.write('TIME: %f' % (o._time - time))
         sticky_actions = football_action_set.get_sticky_actions(config)
-        assert len(sticky_actions) == len(o['home_agent_sticky_actions'][0])
+        sticky_actions_field = 'left_agent_sticky_actions'
+        if len(o[sticky_actions_field]) == 0:
+          sticky_actions_field = 'right_agent_sticky_actions'
+        assert len(sticky_actions) == len(o[sticky_actions_field][0])
         active_direction = None
         for i in range(len(sticky_actions)):
           if sticky_actions[i]._directional:
-            if o['home_agent_sticky_actions'][0][i]:
+            if o[sticky_actions_field][0][i]:
               active_direction = sticky_actions[i]
           else:
-            writer.write('%s: %d' % (sticky_actions[i]._name, o['home_agent_sticky_actions'][0][i]))
+            writer.write('%s: %d' % (sticky_actions[i]._name,
+                                     o[sticky_actions_field][0][i]))
         writer.write('DIRECTION: %s' % ('NONE' if active_direction is None
                                         else active_direction._name))
         if 'action' in o._trace['debug']:
@@ -241,8 +245,7 @@ class ObservationState(object):
     self._additional_frames = []
     self._debugs = []
     self._time = timeit.default_timer()
-    self._away_defence_max_x = -10
-    self._score = [0, 0]
+    self._right_defence_max_x = -10
 
   def __getitem__(self, key):
     if key in self._trace:
@@ -258,27 +261,6 @@ class ObservationState(object):
       return True
     return key in self._trace['debug']
 
-  def debug(self):
-    logging.info('SCORE: ', self._score)
-
-  def _get_coordinates(self, o):
-    """Retrieves coordinates of an object in question.
-
-    Args:
-      o: Object name for which to retrieve coordinates from observations.
-
-    Returns:
-      Objects's coordinates.
-    """
-    if isinstance(o, str):
-      if o == 'active':
-        o = self['home_team'][self['active']]
-      else:
-        o = self[o]
-    if isinstance(o, list):
-      o = np.array(o)
-    return o
-
   def _distance(self, o1, o2):
     # We add 'z' dimension if not present, as ball has 3 dimensions, while
     # players have only 2.
@@ -287,17 +269,6 @@ class ObservationState(object):
     if len(o2) == 2:
       o2 = np.array([o2[0], o2[1], 0])
     return np.linalg.norm(o1 - o2)
-
-  def object_distance(self, object1, object2):
-    o1 = self._get_coordinates(object1)
-    o2 = self._get_coordinates(object2)
-    if o1.ndim == 1 and o2.ndim == 1:
-      return self._distance(o1, o2)
-    if o1.ndim == 2 and o2.ndim == 1:
-      return min([self._distance(o, o2) for o in o1])
-    if o1.ndim == 1 and o2.ndim == 2:
-      return min([self._distance(o, o1) for o in o2])
-    assert 'Not supported operation'
 
   def add_debug(self, text):
     self._debugs.append(text)

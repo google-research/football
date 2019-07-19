@@ -34,7 +34,6 @@
 #include "framework/scheduler.hpp"
 
 #include "managers/systemmanager.hpp"
-#include "managers/usereventmanager.hpp"
 #include "managers/environmentmanager.hpp"
 #include "managers/scenemanager.hpp"
 #include "managers/resourcemanager.hpp"
@@ -59,7 +58,6 @@ namespace blunted {
 
   SystemManager *systemManager;
   SceneManager *sceneManager;
-  UserEventManager *userEventManager;
   //ResourceManagerPool *resourceManagerPool;
 
   ObjectFactory *objectFactory;
@@ -67,10 +65,6 @@ namespace blunted {
   void RegisterObjectTypes(ObjectFactory* objectFactory);
 
   void Initialize(Properties &config) {
-
-    LogOpen();
-
-
     // initialize managers
 
     new EnvironmentManager();
@@ -83,9 +77,6 @@ namespace blunted {
 
     new ObjectFactory();
     objectFactory = ObjectFactory::GetInstancePtr();
-
-    new UserEventManager();
-    userEventManager = UserEventManager::GetInstancePtr();
 
     // initialize resource managers
 
@@ -106,47 +97,8 @@ namespace blunted {
 
   }
 
-  void PollEvent() {
-    SDL_Event event;
-    if (!SDL_PollEvent(&event)) {
-      return;
-    }
-    switch (event.type) {
-      case SDL_QUIT:
-        EnvironmentManager::GetInstance().SignalQuit();
-        break;
-
-      case SDL_KEYDOWN:
-        switch(event.key.keysym.sym) {
-          case SDLK_F12:
-            EnvironmentManager::GetInstance().SignalQuit();
-            break;
-          default:
-            break;
-        }
-        break;
-      default:
-        break;
-    }
-    UserEventManager::GetInstance().InputSDLEvent(event);
-  }
-
   void DoStep() {
-    PollEvent();
     scheduler->Run();
-  }
-
-  void Run() {
-    while (!EnvironmentManager::GetInstance().GetQuit()) {
-      PollEvent();
-      scheduler->Run();
-    }
-
-    // stop signaling systems
-    // also clears links to user tasks
-    scheduler->Exit();
-    delete scheduler;
-    scheduler = 0;
   }
 
   Scheduler *GetScheduler() {
@@ -155,7 +107,6 @@ namespace blunted {
   }
 
   void Exit() {
-    Log(e_Notice, "blunted", "Exit", "exiting scenemanager");
     SceneManager::GetInstance().Exit();
 
     objectFactory->Exit();
@@ -166,27 +117,14 @@ namespace blunted {
     aseLoader = 0;
     imageLoader = 0;
 
-    Log(e_Notice, "blunted", "Exit", "exiting systemmanager");
     SystemManager::GetInstance().Exit();
-    Log(e_Notice, "blunted", "Exit", "destroying systemmanager");
     SystemManager::GetInstance().Destroy();
 
-    Log(e_Notice, "blunted", "Exit", "exiting taskmanager");
-    Log(e_Notice, "blunted", "Exit", "destroying taskmanager");
-
-    Log(e_Notice, "blunted", "Exit", "destroying scenemanager");
     SceneManager::GetInstance().Destroy();
-
-    Log(e_Notice, "blunted", "Exit", "exiting usereventmanager");
-    UserEventManager::GetInstance().Exit();
-    Log(e_Notice, "blunted", "Exit", "destroying usereventmanager");
-    UserEventManager::GetInstance().Destroy();
     EnvironmentManager::GetInstance().Destroy();
 
     TTF_Quit();
     SDL_Quit();
-
-    LogClose();
   }
 
 

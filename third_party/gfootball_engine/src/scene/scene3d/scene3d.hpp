@@ -24,7 +24,6 @@
 
 #include "../scene.hpp"
 #include "../object.hpp"
-#include "../../types/lockable.hpp"
 
 #include "../../base/utils.hpp"
 
@@ -40,8 +39,6 @@ namespace blunted {
 
       virtual void Init();
       virtual void Exit(); // ATOMIC
-
-      void PrintTree();
 
       void AddNode(boost::intrusive_ptr<Node> node);
       void DeleteNode(boost::intrusive_ptr<Node> node);

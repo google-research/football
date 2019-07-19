@@ -43,7 +43,7 @@ namespace blunted {
   void Texture::DeleteTexture() {
     if (textureID != -1) {
       assert(renderer3D);
-      Renderer3DMessage_DeleteTexture(textureID).Handle(renderer3D);
+      renderer3D->DeleteTexture(textureID);
       textureID = -1;
     }
   }
@@ -64,9 +64,7 @@ namespace blunted {
     assert(textureID != -1);
 
     bool _alpha = SDL_ISPIXELFORMAT_ALPHA(image->format->format);
-    boost::intrusive_ptr<Renderer3DMessage_ResizeTexture> resizeTexture(new Renderer3DMessage_ResizeTexture(textureID, image, internalPixelFormat, pixelFormat, _alpha, mipmaps));
-    resizeTexture->Handle(renderer3D);
-    //resizeTexture->Wait();
+    renderer3D->ResizeTexture(textureID, image, internalPixelFormat, pixelFormat, _alpha, mipmaps);
   }
 
   void Texture::UpdateTexture(SDL_Surface *image, bool alpha, bool mipmaps) {
@@ -74,9 +72,7 @@ namespace blunted {
     assert(textureID != -1);
 
     bool _alpha = SDL_ISPIXELFORMAT_ALPHA(image->format->format);
-    boost::intrusive_ptr<Renderer3DMessage_UpdateTexture> updateTexture(new Renderer3DMessage_UpdateTexture(textureID, image, _alpha, mipmaps));
-    updateTexture->Handle(renderer3D);
-    //updateTexture->Wait();
+    renderer3D->UpdateTexture(textureID, image, _alpha, mipmaps);
   }
 
   int Texture::GetID() {

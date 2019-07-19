@@ -44,17 +44,15 @@ namespace blunted {
   static const Uint8 g_mask8 = 0x80;
   static const Uint8 b_mask8 = 0x40;
   static const Uint8 a_mask8 = 0x00;
-  #else
+#else
   static const Uint8 r_mask8 = 0x00;
   static const Uint8 g_mask8 = 0x40;
   static const Uint8 b_mask8 = 0x80;
   static const Uint8 a_mask8 = 0xC0;
-  #endif
+#endif
 
   SDL_Surface *CreateSDLSurface(int width, int height);
   Uint32 sdl_getpixel(const SDL_Surface *surface, int x, int y);
-  void sdl_line(SDL_Surface *surface, int x1, int y1, int x2, int y2,
-                Uint32 color);
   void sdl_rectangle_filled(SDL_Surface *surface, int x, int y, int width,
                             int height, Uint32 color);
 

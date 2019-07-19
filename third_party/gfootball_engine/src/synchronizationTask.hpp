@@ -15,7 +15,6 @@
 #define _HPP_FOOTBALL_SYNCHRONIZATIONTASK
 
 #include "types/iusertask.hpp"
-#include "types/thread.hpp"
 
 #include "onthepitch/match.hpp"
 #include "menu/menuscene.hpp"

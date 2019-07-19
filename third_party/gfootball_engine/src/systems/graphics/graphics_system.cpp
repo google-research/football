@@ -28,9 +28,7 @@
 
 namespace blunted {
 
-  GraphicsSystem::GraphicsSystem() : systemType(e_SystemType_Graphics) {
-    renderer3DTask = NULL;
-    task = NULL;
+  GraphicsSystem::GraphicsSystem() {
   }
 
   GraphicsSystem::~GraphicsSystem() {
@@ -48,15 +46,9 @@ namespace blunted {
     height = config.GetInt("context_y", 720);
     bpp = config.GetInt("context_bpp", 32);
     bool fullscreen = config.GetBool("context_fullscreen", false);
-    renderer3DTask->Run();
 
-    Renderer3DMessage_CreateContext op(width, height, bpp, fullscreen);
-    op.Handle(renderer3DTask);
-
-    if (!op.success) {
+    if (!static_cast<Renderer3D*>(renderer3DTask)->CreateContext(width, height, bpp, fullscreen)) {
       Log(e_FatalError, "GraphicsSystem", "Initialize", "Could not create context");
-    } else {
-      Log(e_Notice, "GraphicsSystem", "Initialize", "Created context, resolution " + int_to_str(width) + " * " + int_to_str(height) + " @ " + int_to_str(bpp) + " bpp");
     }
 
     task = new GraphicsTask(this);
@@ -72,9 +64,6 @@ namespace blunted {
     task = NULL;
 
     // shutdown renderer thread
-    Message_Shutdown().Handle(renderer3DTask);
-
-    renderer3DTask->Join();
     delete renderer3DTask;
     renderer3DTask = NULL;
   }

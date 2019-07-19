@@ -29,8 +29,6 @@ struct index3 {
 };
 
 void GetVertexColors(std::map<Vector3, Vector3> &colorCoords) {
-  if (Verbose()) printf("loading vertex colors.. ");
-
   std::vector<Vector3> vertices;
   std::vector<Vector3> colors;
   std::vector<index3> faces;
@@ -39,7 +37,8 @@ void GetVertexColors(std::map<Vector3, Vector3> &colorCoords) {
   char line[32767];
   std::ifstream file;
 
-  std::string filename = "media/objects/players/models/fullbody.ase";
+  std::string filename =
+      GetGameConfig().updatePath("media/objects/players/models/fullbody.ase");
 
   file.open(filename.c_str(), std::ios::in);
 
@@ -61,8 +60,8 @@ void GetVertexColors(std::map<Vector3, Vector3> &colorCoords) {
 
         for (unsigned int i = 0; i < colorFaces.size(); i++) {
           for (unsigned int v = 0; v < 3; v++) {
-            Vector3 coord = vertices.at(faces.at(i).index[v]);
-            Vector3 color = colors.at(colorFaces.at(i).index[v]);
+            Vector3 coord = vertices.at(faces[i].index[v]);
+            Vector3 color = colors.at(colorFaces[i].index[v]);
             if (colorCoords.find(coord) == colorCoords.end()) {
               colorCoords.insert(std::pair<Vector3, Vector3>(coord, color));
             } else {
@@ -122,8 +121,6 @@ void GetVertexColors(std::map<Vector3, Vector3> &colorCoords) {
   }
 
   file.close();
-
-  if (Verbose()) printf("1\n");
 }
 
 e_FunctionType StringToFunctionType(const std::string &fun) {
@@ -141,48 +138,6 @@ e_FunctionType StringToFunctionType(const std::string &fun) {
   if (fun.compare("sliding") == 0) return e_FunctionType_Sliding;
   if (fun.compare("special") == 0) return e_FunctionType_Special;
   return e_FunctionType_None;
-}
-
-std::string GetRoleName(e_PlayerRole playerRole) {
-  switch (playerRole) {
-    case e_PlayerRole_GK:
-      return "GK";
-      break;
-
-    case e_PlayerRole_CB:
-      return "CB";
-      break;
-    case e_PlayerRole_LB:
-      return "LB";
-      break;
-    case e_PlayerRole_RB:
-      return "RB";
-      break;
-
-    case e_PlayerRole_DM:
-      return "DM";
-      break;
-    case e_PlayerRole_CM:
-      return "CM";
-      break;
-    case e_PlayerRole_LM:
-      return "LM";
-      break;
-    case e_PlayerRole_RM:
-      return "RM";
-      break;
-    case e_PlayerRole_AM:
-      return "AM";
-      break;
-
-    case e_PlayerRole_CF:
-      return "CF";
-      break;
-
-    default:
-      return "undefined";
-      break;
-  }
 }
 
 e_PlayerRole GetRoleFromString(const std::string &roleString) {

@@ -30,7 +30,7 @@ def build_scenario(builder):
 
   builder.SetBallPosition(0.26, -0.11)
 
-  builder.SetTeam(Team.e_Home)
+  builder.SetTeam(Team.e_Left)
   builder.AddPlayer(-1.0, 0.0, e_PlayerRole_GK)
   builder.AddPlayer(-0.672, -0.19576, e_PlayerRole_LB)
   builder.AddPlayer(-0.75, -0.06356, e_PlayerRole_CB)
@@ -43,7 +43,7 @@ def build_scenario(builder):
   builder.AddPlayer(0.25, 0.1, e_PlayerRole_RM)
   builder.AddPlayer(0.35, 0.316102, e_PlayerRole_CF)
 
-  builder.SetTeam(Team.e_Away)
+  builder.SetTeam(Team.e_Right)
   builder.AddPlayer(-1.0, 0.0, e_PlayerRole_GK)
   builder.AddPlayer(0.128, -0.19576, e_PlayerRole_LB)
   builder.AddPlayer(-0.4, -0.06356, e_PlayerRole_CB)

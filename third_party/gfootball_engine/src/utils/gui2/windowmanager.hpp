@@ -42,7 +42,6 @@ namespace blunted {
       void Exit();
 
       Gui2Root *GetRoot() { return root; }
-      Gui2View *GetFocus();
       void SetFocus(Gui2View *view);
 
       void Process();
@@ -56,12 +55,11 @@ namespace blunted {
       void UpdateImagePosition(Gui2View *view) const;
       void RemoveImage(boost::intrusive_ptr<Image2D> image) const;
 
-      void BlackoutBackground(bool onOff);
-
       void MarkForDeletion(Gui2View *view);
 
-      void SetTimeStep_ms(unsigned long timeStep_ms) { this->timeStep_ms = timeStep_ms; };
-      unsigned long GetTimeStep_ms() { return timeStep_ms; };
+      void SetTimeStep_ms(unsigned long timeStep_ms) {
+        this->timeStep_ms = timeStep_ms;
+      };
 
       bool IsFocussed(Gui2View *view) { if (focus == view) return true; else return false; }
 

@@ -39,14 +39,6 @@ void DefaultOffenseStrategy::RequestInput(const MentalImage *mentalImage, Vector
   float staticPositionBias = curve(0.8f * actionDistance, 1.0f); // lower values = swap position with other players' formation positions more easily
   Vector3 desiredPosition = desiredPosition_static * staticPositionBias + desiredPosition_dynamic * (1.0f - staticPositionBias);
 
-  if (GetDebugMode() == e_DebugMode_AI) {
-    int scrX, scrY;
-    GetDebugOverlayCoord(match, desiredPosition, scrX, scrY);
-    Vector3 color(55, 55, 155);
-    if (team->GetID() == 1) color.Set(155, 55, 55);
-    GetDebugOverlay()->DrawRectangle(scrX - 2, scrY - 2, 4, 4, color);
-  }
-
   if (offensiveComponents) {
     // support position
     float attackBias = NormalizedClamp((controller->GetFadingTeamPossessionAmount() - 0.5f) * 1.0f, 0.1f, 0.6f);
@@ -68,14 +60,6 @@ void DefaultOffenseStrategy::RequestInput(const MentalImage *mentalImage, Vector
             clamp(1.3f - mindset - controller->GetFadingTeamPossessionAmount(),
                   0.0f, 1.0f),
             0.7f));
-  }
-
-  if (GetDebugMode() == e_DebugMode_AI) {
-    int scrX, scrY;
-    GetDebugOverlayCoord(match, desiredPosition, scrX, scrY);
-    Vector3 color(155, 155, 255);
-    if (team->GetID() == 1) color.Set(255, 155, 155);
-    GetDebugOverlay()->DrawRectangle(scrX - 5, scrY - 5, 10, 10, color);
   }
 
   direction = (desiredPosition - player->GetPosition()).GetNormalized(player->GetDirectionVec());

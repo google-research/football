@@ -29,11 +29,11 @@ def build_scenario(builder):
   builder.SetFlag('end_episode_on_possession_change', True)
   builder.SetBallPosition(0.02, 0.0)
 
-  builder.SetTeam(Team.e_Home)
+  builder.SetTeam(Team.e_Left)
   builder.AddPlayer(-1.0, 0.0, e_PlayerRole_GK)
   builder.AddPlayer(0.0, 0.0, e_PlayerRole_CB)
 
-  builder.SetTeam(Team.e_Away)
+  builder.SetTeam(Team.e_Right)
   builder.AddPlayer(1.0, 0.0, e_PlayerRole_GK)
   builder.AddPlayer(0.12, 0.2, e_PlayerRole_LB)
   builder.AddPlayer(0.12, 0.1, e_PlayerRole_CB)

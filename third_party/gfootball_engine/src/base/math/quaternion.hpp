@@ -34,7 +34,12 @@ namespace blunted {
   class Quaternion {
 
     public:
-      Quaternion();
+      inline Quaternion() {
+        elements[0] = 0;
+        elements[1] = 0;
+        elements[2] = 0;
+        elements[3] = 1;
+      }
       Quaternion(real x, real y, real z, real w);
       Quaternion(real values[4]);
       virtual ~Quaternion();
@@ -76,8 +81,6 @@ namespace blunted {
         return 2.0f * std::acos(clamp(this->GetDotProduct(to), -1.0f, 1.0f));
       }
       float MakeSameNeighborhood(const Quaternion &src); // returns dot product as added bonus! ;)
-
-      void Print() const;
 
       real elements[4];
 

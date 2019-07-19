@@ -31,14 +31,6 @@ namespace blunted {
   Line::~Line() {
   }
 
-
-  void Line::SetVertex(unsigned char pos, const real x, const real y, const real z) {
-    assert(pos < 2);
-    vertices[pos].coords[0] = x;
-    vertices[pos].coords[1] = y;
-    vertices[pos].coords[2] = z;
-  }
-
   void Line::SetVertex(unsigned char pos, const Vector3 &vec) {
     assert(pos < 2);
     vertices[pos] = vec;
@@ -47,26 +39,6 @@ namespace blunted {
   const Vector3 &Line::GetVertex(unsigned char pos) const {
     assert(pos < 2);
     return vertices[pos];
-  }
-
-  const AABB Line::GetAABB() const {
-    AABB aabb;
-
-    aabb.SetMinXYZ(Vector3(vertices[0].coords[0], vertices[0].coords[1], vertices[0].coords[2]));
-    aabb.SetMaxXYZ(Vector3(vertices[0].coords[0], vertices[0].coords[1], vertices[0].coords[2]));
-
-    for (int i = 1; i < 2; i++) {
-      if (vertices[i].coords[0] < aabb.minxyz.coords[0]) aabb.minxyz.coords[0] = vertices[i].coords[0];
-      if (vertices[i].coords[0] > aabb.maxxyz.coords[0]) aabb.maxxyz.coords[0] = vertices[i].coords[0];
-      if (vertices[i].coords[1] < aabb.minxyz.coords[1]) aabb.minxyz.coords[1] = vertices[i].coords[1];
-      if (vertices[i].coords[1] > aabb.maxxyz.coords[1]) aabb.maxxyz.coords[1] = vertices[i].coords[1];
-      if (vertices[i].coords[2] < aabb.minxyz.coords[2]) aabb.minxyz.coords[2] = vertices[i].coords[2];
-      if (vertices[i].coords[2] > aabb.maxxyz.coords[2]) aabb.maxxyz.coords[2] = vertices[i].coords[2];
-    }
-
-    aabb.MakeDirty();
-
-    return aabb;
   }
 
   // returns offset from p1 towards p2 (0 == p1, 1 == p2)

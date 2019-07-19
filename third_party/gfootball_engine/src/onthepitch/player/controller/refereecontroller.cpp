@@ -28,8 +28,6 @@ RefereeController::RefereeController(Match *match) : IController(match) {
 }
 
 RefereeController::~RefereeController() {
-  if (Verbose()) printf("exiting refereecontroller.. ");
-  if (Verbose()) printf("done\n");
 }
 
 PlayerOfficial *RefereeController::CastPlayer() { return static_cast<PlayerOfficial*>(player); }
@@ -59,7 +57,7 @@ void RefereeController::GetForceField(std::vector<ForceSpot> &forceField) {
   match->GetActiveTeamPlayers(1, players);
   for (unsigned int i = 0; i < players.size(); i++) {
     ForceSpot forceSpot;
-    forceSpot.origin = players.at(i)->GetPosition() + players.at(i)->GetMovement() * 0.4f;
+    forceSpot.origin = players[i]->GetPosition() + players[i]->GetMovement() * 0.4f;
     forceSpot.magnetType = e_MagnetType_Repel;
     forceSpot.decayType = e_DecayType_Variable;
     forceSpot.power = 0.5f;

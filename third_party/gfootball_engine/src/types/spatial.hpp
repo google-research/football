@@ -25,8 +25,6 @@
 #include "../base/math/vector3.hpp"
 #include "../base/math/quaternion.hpp"
 
-#include "../types/lockable.hpp"
-
 #include "../base/geometry/aabb.hpp"
 
 #include "../systems/isystem.hpp"

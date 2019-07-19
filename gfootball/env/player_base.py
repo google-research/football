@@ -19,9 +19,11 @@
 class PlayerBase(object):
   """Base player class."""
 
-  def can_play_right_to_left(self):
-    """Returns true whether player uses observations provided for doing step."""
-    return True
+  def __init__(self, player_config):
+    self._num_controlled_players = int(player_config.get('players', 1))
+
+  def num_controlled_players(self):
+    return self._num_controlled_players
 
   def reset(self):
     pass

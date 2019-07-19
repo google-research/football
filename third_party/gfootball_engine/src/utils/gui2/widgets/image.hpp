@@ -43,8 +43,6 @@ namespace blunted {
       virtual void SetSize(float new_width_percent, float new_height_percent);
       virtual void SetZoom(float zoomx, float zoomy);
 
-      boost::intrusive_ptr<Image2D> &GetImage2D() { return image; }
-
     protected:
       boost::intrusive_ptr<Image2D> image;
       boost::intrusive_ptr<Image2D> imageSource;

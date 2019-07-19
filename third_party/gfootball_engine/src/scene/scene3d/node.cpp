@@ -33,7 +33,7 @@ namespace blunted {
     std::vector < boost::intrusive_ptr<Node> > gatherNodes;
     source.GetNodes(gatherNodes);
     for (int i = 0; i < (signed int)gatherNodes.size(); i++) {
-      boost::intrusive_ptr<Node> copy(new Node(*gatherNodes.at(i).get(), postfix, scene3D));
+      boost::intrusive_ptr<Node> copy(new Node(*gatherNodes[i].get(), postfix, scene3D));
       AddNode(copy);
     }
 
@@ -54,71 +54,48 @@ namespace blunted {
   }
 
   void Node::Exit() {
-    //printf("node::exit exiting node %s\n", GetName().c_str());
-    //objects.Lock();
     int objCount = objects.size();
     for (int i = 0; i < objCount; i++) {
-      //printf("node::exit exiting object %s\n", objects.at(i)->GetName().c_str());
-      objects.at(i)->Exit();
+      objects[i]->Exit();
     }
     objects.clear();
-    //objects.Unlock();
-
-    //nodes.Lock();
     int nodeCount = nodes.size();
     for (int i = 0; i < nodeCount; i++) {
-      nodes.at(i)->Exit();
+      nodes[i]->Exit();
     }
     nodes.clear();
-    //nodes.Unlock();
   }
 
   void Node::AddNode(boost::intrusive_ptr<Node> node) {
-    //nodes.Lock();
     nodes.push_back(node);
     node->SetParent(this);
-    //printf("adding node: %s\n", node->GetName().c_str());
-
     node->RecursiveUpdateSpatialData(e_SpatialDataType_Both);
-
-    //nodes.Unlock();
-
     InvalidateBoundingVolume();
   }
 
   void Node::DeleteNode(boost::intrusive_ptr<Node> node) {
-    //nodes.Lock();
     std::vector < boost::intrusive_ptr<Node> >::iterator nodeIter = find(nodes.begin(), nodes.end(), node);
     if (nodeIter != nodes.end()) {
       (*nodeIter)->Exit();
       nodes.erase(nodeIter);
     }
-    //nodes.Unlock();
-
     InvalidateBoundingVolume();
   }
 
   void Node::GetNodes(std::vector < boost::intrusive_ptr<Node> > &gatherNodes, bool recurse) const {
-    //nodes.Lock();
     int nodesSize = nodes.size();
     for (int i = 0; i < nodesSize; i++) {
-      gatherNodes.push_back(nodes.at(i));
-      if (recurse) nodes.at(i)->GetNodes(gatherNodes, recurse);
+      gatherNodes.push_back(nodes[i]);
+      if (recurse) nodes[i]->GetNodes(gatherNodes, recurse);
     }
-    //nodes.Unlock();
   }
 
   void Node::AddObject(boost::intrusive_ptr<Object> object) {
     assert(object.get());
-    //objects.Lock();
     objects.push_back(object);
     object->SetParent(this);
 
     object->RecursiveUpdateSpatialData(e_SpatialDataType_Both);
-    //printf("adding object: %s\n", object->GetName().c_str());
-
-    //objects.Unlock();
-
     InvalidateBoundingVolume();
   }
 
@@ -136,170 +113,84 @@ namespace blunted {
   }
 
   void Node::DeleteObject(boost::intrusive_ptr<Object> object, bool exitObject) {
-    //objects.Lock();
-    // verbose printf("deleting object %s\n", object->GetName().c_str());
     std::vector < boost::intrusive_ptr<Object> >::iterator objIter = find(objects.begin(), objects.end(), object);
     if (objIter != objects.end()) {
-      // verbose printf("found!\n");
       if (exitObject) (*objIter)->Exit();
       (*objIter)->SetParent(0);
       objects.erase(objIter);
     } else Log(e_Error, "Node", "DeleteObject", "Object " + object->GetName() + " not found among node " + GetName() + "'s children!");
-    //objects.Unlock();
-
-    //aabb.Lock();
     aabb.dirty = true;
-    //aabb.Unlock();
-  }
-
-  void Node::RemoveObject(boost::intrusive_ptr<Object> object) {
-    DeleteObject(object, false);
-  }
-
-  void Node::GetSpatials(std::list < boost::intrusive_ptr<Spatial> > &gatherSpatials, bool recurse, int depth) const {
-    //objects.Lock();
-    int objectsSize = objects.size();
-    for (int i = 0; i < objectsSize; i++) {
-      gatherSpatials.push_back(objects.at(i));
-    }
-    //objects.Unlock();
-
-    if (recurse) {
-      //nodes.Lock();
-      int nodesSize = nodes.size();
-      for (int i = 0; i < nodesSize; i++) {
-        gatherSpatials.push_back(nodes.at(i));
-        nodes.at(i)->GetSpatials(gatherSpatials, recurse, depth + 1);
-      }
-      //nodes.Unlock();
-    }
   }
 
   void Node::GetObjects(std::list < boost::intrusive_ptr<Object> > &gatherObjects, bool recurse, int depth) const {
-    //objects.Lock();
     int objectsSize = objects.size();
     for (int i = 0; i < objectsSize; i++) {
-      gatherObjects.push_back(objects.at(i));
+      gatherObjects.push_back(objects[i]);
     }
-    //objects.Unlock();
-
     if (recurse) {
-      //nodes.Lock();
       int nodesSize = nodes.size();
       for (int i = 0; i < nodesSize; i++) {
-        nodes.at(i)->GetObjects(gatherObjects, recurse, depth + 1);
+        nodes[i]->GetObjects(gatherObjects, recurse, depth + 1);
       }
-      //nodes.Unlock();
     }
   }
 
   void Node::GetObjects(std::deque < boost::intrusive_ptr<Object> > &gatherObjects, const vector_Planes &bounding, bool recurse, int depth) const {
-    //objects.Lock();
     int objectsSize = objects.size();
     for (int i = 0; i < objectsSize; i++) {
-      if (objects.at(i)->GetAABB().Intersects(bounding)) gatherObjects.push_back(objects.at(i));
+      if (objects[i]->GetAABB().Intersects(bounding)) gatherObjects.push_back(objects[i]);
     }
-    //objects.Unlock();
-
     if (recurse) {
-      //nodes.Lock();
       int nodesSize = nodes.size();
       for (int i = 0; i < nodesSize; i++) {
-        if (nodes.at(i)->GetAABB().Intersects(bounding)) nodes.at(i)->GetObjects(gatherObjects, bounding, recurse, depth + 1);
+        if (nodes[i]->GetAABB().Intersects(bounding)) nodes[i]->GetObjects(gatherObjects, bounding, recurse, depth + 1);
       }
-      //nodes.Unlock();
     }
   }
 
   void Node::PokeObjects(e_ObjectType targetObjectType, e_SystemType targetSystemType) {
-    //objects.Lock();
     int objectsSize = objects.size();
     for (int i = 0; i < objectsSize; i++) {
-      if (objects.at(i)->IsEnabled()) if (objects.at(i)->GetObjectType() == targetObjectType) objects.at(i)->Poke(targetSystemType);
+      if (objects[i]->IsEnabled()) if (objects[i]->GetObjectType() == targetObjectType) objects[i]->Poke(targetSystemType);
     }
-    //objects.Unlock();
-
-    //nodes.Lock();
     int nodesSize = nodes.size();
     for (int i = 0; i < nodesSize; i++) {
-      nodes.at(i)->PokeObjects(targetObjectType, targetSystemType);
+      nodes[i]->PokeObjects(targetObjectType, targetSystemType);
     }
-    //nodes.Unlock();
   }
 
   void Node::RecursiveUpdateSpatialData(e_SpatialDataType spatialDataType, e_SystemType excludeSystem) {
 
     InvalidateSpatialData();
     InvalidateBoundingVolume();
-
-    //nodes.Lock();
     int nodesSize = nodes.size();
     for (int i = 0; i < nodesSize; i++) {
 
-      nodes.at(i)->RecursiveUpdateSpatialData(spatialDataType, excludeSystem);
+      nodes[i]->RecursiveUpdateSpatialData(spatialDataType, excludeSystem);
     }
-    //nodes.Unlock();
-
-    //objects.Lock();
     int objectsSize = objects.size();
     for (int i = 0; i < objectsSize; i++) {
-      //if (objects.at(i)->GetLocalMode() != e_LocalMode_Absolute)
-      objects.at(i)->RecursiveUpdateSpatialData(spatialDataType, excludeSystem);
+      objects[i]->RecursiveUpdateSpatialData(spatialDataType, excludeSystem);
     }
-    //objects.Unlock();
-  }
-
-  void Node::PrintTree(int recursionDepth) {
-    //nodes.Lock();
-    int nodesSize = nodes.size();
-    for (int i = 0; i < nodesSize; i++) {
-      for (int space = 0; space < recursionDepth; space++) printf("|     ");
-      printf("|-----[NODE] %s\n", nodes.at(i)->GetName().c_str());
-      nodes.at(i)->PrintTree(recursionDepth + 1);
-    }
-    //nodes.Unlock();
-    //objects.Lock();
-    int objectsSize = objects.size();
-    for (int i = 0; i < objectsSize; i++) {
-      for (int space = 0; space < recursionDepth; space++) printf("|     ");
-      printf("|-----%s\n", objects.at(i)->GetName().c_str());
-    }
-    //objects.Unlock();
   }
 
   AABB Node::GetAABB() const {
     AABB tmp;
-
-    //aabb.Lock();
-
     if (aabb.dirty == true) {
-
       tmp.Reset();
-      //aabb.Unlock();
-
-      //nodes.Lock();
       int nodesSize = nodes.size();
       for (int i = 0; i < nodesSize; i++) {
-        tmp += (nodes.at(i)->GetAABB());
+        tmp += (nodes[i]->GetAABB());
       }
-      //nodes.Unlock();
-
-      //objects.Lock();
       int objectsSize = objects.size();
       for (int i = 0; i < objectsSize; i++) {
-        tmp += (objects.at(i)->GetAABB());
+        tmp += (objects[i]->GetAABB());
       }
-      //objects.Unlock();
-
-      //aabb.Lock();
       aabb.dirty = false;
       aabb.aabb = tmp;
     } else {
       tmp = aabb.aabb;
     }
-
-    //aabb.Unlock();
-
     return tmp;
   }
 

@@ -22,7 +22,6 @@
 #include "../utils/objectloader.hpp"
 #include "../scene/objectfactory.hpp"
 
-#include "../managers/usereventmanager.hpp"
 #include "../managers/resourcemanagerpool.hpp"
 
 #include "match.hpp"
@@ -42,8 +41,6 @@ Ball::Ball(Match *match) : match(match) {
   ballTouchesNet = false;
 
   scene3D = GetScene3D();
-
-  Log(e_Notice, "Ball", "Ball", "Loading ball object");
 
   ObjectLoader loader;
   ballNode = loader.LoadObject(scene3D, "media/objects/balls/generic.object");
@@ -76,7 +73,7 @@ Vector3 Ball::GetRotation() {
 }
 
 void Ball::Touch(const Vector3 &target) {
-
+  valid_predictions = 0;
   if (positionBuffer.coords[2] < 0.11f) positionBuffer.coords[2] = 0.11f;
 
   SetMomentum(target);
@@ -90,6 +87,7 @@ void Ball::Touch(const Vector3 &target) {
 }
 
 void Ball::SetPosition(const Vector3 &target) {
+  valid_predictions = 0;
   positionBuffer.Set(target);
   momentum.Set(0);
   SetRotation(0, 0, 0, 1.0);
@@ -139,15 +137,21 @@ BallSpatialInfo Ball::CalculatePrediction() {
   bool groundRotationEffects_enabled = true;
   bool swerve_enabled = true;
 
-  float timeStep = 0.01f;//0.001f; // seconds
-  bool autoDegrade_timeStep = false;
+  const float timeStep = 0.01f;//0.001f; // seconds
 
-  //printf("timestep: %i\n", int(timeStep * 1000.0f));
   bool firstTime = true;
+  bool use_cache = false;
 
   ballTouchesNet = false;
 
-  for (unsigned int predictTime_ms = int(timeStep * 1000.0f); predictTime_ms < ballPredictionSize_ms; predictTime_ms += int(timeStep * 1000.0f)) {
+  for (unsigned int predictTime_ms = int(timeStep * 1000.0f); predictTime_ms < ballPredictionSize_ms + cachedPredictions * 10; predictTime_ms += int(timeStep * 1000.0f)) {
+    // Originally game was recomputing ball's prediction for 300 steps into the
+    // future, which was expensive. Now we cache 100 additional steps and if
+    // the ball was not touched etc. we just shift predictions by one.
+    if (use_cache) {
+      predictions[predictTime_ms / 10] = predictions[predictTime_ms / 10 + 1];
+      continue;
+    }
 
     float frictionFactor = 0.0f;
 
@@ -490,22 +494,18 @@ BallSpatialInfo Ball::CalculatePrediction() {
 
     nextOrientation = rotationPredictTimeStepped * nextOrientation;
 
-    if (predictTime_ms % 10 == 0) {
-
-      if (autoDegrade_timeStep) {
-        if (predictTime_ms == 100) timeStep = 0.005f;
-        if (predictTime_ms == 200) timeStep = 0.01f;
-        //if (predictTime_ms == 2000) timeStep = 0.04f; can't go above 0.01f, would leave open spaces in array
-      }
-
-      predictions[predictTime_ms / 10] = nextPos;
-    }
-
     if (predictTime_ms == 10) {
       newMomentum = momentumPredict;
       newRotation_ms = rotationPredict_ms;
       orientPrediction = nextOrientation;
+      if (valid_predictions > 0 && predictions[2] == nextPos) {
+        valid_predictions--;
+        use_cache = true;
+      } else {
+        valid_predictions = cachedPredictions;
+      }
     }
+    predictions[predictTime_ms / 10] = nextPos;
 
     firstTime = false;
   }
@@ -570,6 +570,7 @@ void Ball::ResetSituation(const Vector3 &focusPos) {
   previousMomentum = Vector3(0);
   previousPosition = Vector3(focusPos + Vector3(0, 0, 0.11));
   positionBuffer = Vector3(focusPos + Vector3(0, 0, 0.11));
+  valid_predictions = 0;
   orientationBuffer = QUATERNION_IDENTITY;
   ballTouchesNet = false;
 }

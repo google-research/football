@@ -12,3 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Google Research Football."""
+
+from gfootball.env import scenario_builder
+
+import gym
+from gym.envs.registration import register
+
+
+for env_name in scenario_builder.all_scenarios():
+  register(
+      id='GFootball-{env_name}-SMM-v0'.format(env_name=env_name),
+      entry_point='gfootball.env:create_environment',
+      kwargs={
+          'env_name': env_name,
+          'representation': 'extracted'
+      },
+  )
+
+  register(
+      id='GFootball-{env_name}-Pixels-v0'.format(env_name=env_name),
+      entry_point='gfootball.env:create_environment',
+      kwargs={
+          'env_name': env_name,
+          'representation': 'pixels'
+      },
+  )

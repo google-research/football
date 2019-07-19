@@ -28,8 +28,6 @@ PlayerOfficial::PlayerOfficial(e_OfficialType officialType, Match *match, Player
 }
 
 PlayerOfficial::~PlayerOfficial() {
-  if (Verbose()) printf("exiting playerofficial.. ");
-  if (Verbose()) printf("done\n");
 }
 
 HumanoidBase *PlayerOfficial::CastHumanoid() { return static_cast<HumanoidBase*>(humanoid); }

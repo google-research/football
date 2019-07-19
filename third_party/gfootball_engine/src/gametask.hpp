@@ -19,13 +19,9 @@
 #define _HPP_FOOTBALL_GAMETASK
 
 #include "types/iusertask.hpp"
-#include "types/thread.hpp"
 
 #include "onthepitch/match.hpp"
 #include "menu/menuscene.hpp"
-
-#include "hid/keyboard.hpp"
-#include "hid/gamepad.hpp"
 
 #include "menu/menutask.hpp"
 
@@ -60,17 +56,10 @@ class GameTask : public IUserTask {
 
     virtual std::string GetName() const { return "game"; }
 
-    //boost::mutex matchLifetimeMutex;
-
   protected:
     Match *match;
     MenuScene *menuScene;
-
-    //boost::timed_mutex matchPutBufferMutex;
-    //boost::mutex menuSceneLifetimeMutex;
-
     boost::shared_ptr<Scene3D> scene3D;
-
 };
 
 #endif

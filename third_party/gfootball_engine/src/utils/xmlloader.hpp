@@ -39,7 +39,6 @@ namespace blunted {
 
       XMLTree LoadFile(const std::string &filename);
       XMLTree Load(const std::string &file);
-      std::string GetSource(const XMLTree &source, int depth = 0) const;
 
      protected:
       void BuildTree(XMLTree &tree, const std::string &source);

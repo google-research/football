@@ -18,10 +18,11 @@
 #include "geometry.hpp"
 
 #include "../../base/log.hpp"
-
+#include "../../main.hpp"
+#include "../../managers/resourcemanagerpool.hpp"
 #include "../../systems/isystemobject.hpp"
 
-#include "../../managers/resourcemanagerpool.hpp"
+#include "../../main.hpp"
 
 namespace blunted {
 
@@ -47,7 +48,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IGeometryInterpreter *geometryInterpreter = static_cast<IGeometryInterpreter*>(observers.at(i).get());
+      IGeometryInterpreter *geometryInterpreter = static_cast<IGeometryInterpreter*>(observers[i].get());
       geometryInterpreter->OnUnload();
     }
 
@@ -66,7 +67,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IGeometryInterpreter *geometryInterpreter = static_cast<IGeometryInterpreter*>(observers.at(i).get());
+      IGeometryInterpreter *geometryInterpreter = static_cast<IGeometryInterpreter*>(observers[i].get());
       geometryInterpreter->OnLoad(this);
     }
 
@@ -75,10 +76,12 @@ namespace blunted {
   }
 
   void Geometry::OnUpdateGeometryData(bool updateMaterials) {
-
+    if (!GetScenarioConfig().render) {
+      return;
+    }
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IGeometryInterpreter *geometryInterpreter = static_cast<IGeometryInterpreter*>(observers.at(i).get());
+      IGeometryInterpreter *geometryInterpreter = static_cast<IGeometryInterpreter*>(observers[i].get());
       geometryInterpreter->OnUpdateGeometry(this, updateMaterials);
     }
 
@@ -95,35 +98,34 @@ namespace blunted {
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
 
-      IGeometryInterpreter *geometryInterpreter = static_cast<IGeometryInterpreter*>(observers.at(i).get());
+      IGeometryInterpreter *geometryInterpreter = static_cast<IGeometryInterpreter*>(observers[i].get());
       if (geometryInterpreter->GetSystemType() == targetSystemType) geometryInterpreter->OnPoke();
     }
 
 
     // did a system object feedback a new pos/rot?
-    updateSpatialDataAfterPoke.Lock();
 
-    if (updateSpatialDataAfterPoke.data.haveTo == true) {
-      RecursiveUpdateSpatialData(e_SpatialDataType_Both, updateSpatialDataAfterPoke.data.excludeSystem);
+    if (updateSpatialDataAfterPoke.haveTo == true) {
+      RecursiveUpdateSpatialData(e_SpatialDataType_Both, updateSpatialDataAfterPoke.excludeSystem);
       MustUpdateSpatialData clear;
       clear.haveTo = false;
       clear.excludeSystem = e_SystemType_None;
-      updateSpatialDataAfterPoke.data = clear;
+      updateSpatialDataAfterPoke = clear;
     }
-    updateSpatialDataAfterPoke.Unlock();
   }
 
   void Geometry::RecursiveUpdateSpatialData(e_SpatialDataType spatialDataType, e_SystemType excludeSystem) {
-
     InvalidateSpatialData();
     InvalidateBoundingVolume();
 
+    if (!GetScenarioConfig().render) {
+      return;
+    }
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      //printf("%i %i\n", observers.at(i)->GetSystemType(), excludeSystem);
-      if (observers.at(i)->GetSystemType() != excludeSystem) {
-        IGeometryInterpreter *geometryInterpreter = static_cast<IGeometryInterpreter*>(observers.at(i).get());
+      if (observers[i]->GetSystemType() != excludeSystem) {
+        IGeometryInterpreter *geometryInterpreter = static_cast<IGeometryInterpreter*>(observers[i].get());
         if (spatialDataType == e_SpatialDataType_Position) {
           geometryInterpreter->OnMove(GetDerivedPosition());
         }
@@ -138,15 +140,9 @@ namespace blunted {
         }
       }
     }
-
-
-    //Object::RecursiveUpdateSpatialData(spatialDataType);
   }
 
   AABB Geometry::GetAABB() const {
-
-    //aabb.Lock();
-
     if (aabb.dirty == true) {
       assert(geometryData->GetResource());
       aabb.aabb = geometryData->GetResource()->GetAABB() * GetDerivedRotation() + GetDerivedPosition();
@@ -154,20 +150,7 @@ namespace blunted {
     }
 
     AABB tmp = aabb.aabb;
-
-    //aabb.Unlock();
-
     return tmp;
-  }
-
-  void Geometry::ApplyForceAtRelativePosition(float force, const Vector3 &direction, const Vector3 &position) {
-
-    int observersSize = observers.size();
-    for (int i = 0; i < observersSize; i++) {
-      IGeometryInterpreter *geometryInterpreter = static_cast<IGeometryInterpreter*>(observers.at(i).get());
-      geometryInterpreter->ApplyForceAtRelativePosition(force, direction, position);
-    }
-
   }
 
 }

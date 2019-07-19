@@ -51,8 +51,8 @@ namespace blunted {
 
     if (teamID == 0) {
       for (unsigned int i = 0; i < team1avatars.size(); i++) {
-        team1avatars.at(i)->Exit();
-        delete team1avatars.at(i);
+        team1avatars[i]->Exit();
+        delete team1avatars[i];
       }
       team1avatars.clear();
       for (unsigned int i = 0; i < playerCount; i++) {
@@ -67,8 +67,8 @@ namespace blunted {
     // oof ugly c/p'ed code
     if (teamID == 1) {
       for (unsigned int i = 0; i < team2avatars.size(); i++) {
-        team2avatars.at(i)->Exit();
-        delete team2avatars.at(i);
+        team2avatars[i]->Exit();
+        delete team2avatars[i];
       }
       team2avatars.clear();
       for (unsigned int i = 0; i < playerCount; i++) {
@@ -104,21 +104,21 @@ namespace blunted {
     ball->SetZPriority(1); // ball on top
 
     for (unsigned int i = 0; i < team1players.size(); i++) {
-      Vector3 position = team1players.at(i)->GetPosition();
+      Vector3 position = team1players[i]->GetPosition();
       Vector3 pos2d = position * Vector3(1 / (pitchHalfW * 2), - (1 / (pitchHalfH * 2)), 0);
       pos2d = pos2d + Vector3(0.5, 0.5, 0);
       pos2d = pos2d * Vector3(0.96f, 0.96f, 0) + Vector3(0.02f, 0.02f, 0); // margin
 
-      team1avatars.at(i)->SetPosition(pos2d.coords[0] * width_percent - 0.6f, pos2d.coords[1] * height_percent - 0.8f);
+      team1avatars[i]->SetPosition(pos2d.coords[0] * width_percent - 0.6f, pos2d.coords[1] * height_percent - 0.8f);
     }
 
     for (unsigned int i = 0; i < team2players.size(); i++) {
-      Vector3 position = team2players.at(i)->GetPosition();
+      Vector3 position = team2players[i]->GetPosition();
       Vector3 pos2d = position * Vector3(1 / (pitchHalfW * 2), - (1 / (pitchHalfH * 2)), 0);
       pos2d = pos2d + Vector3(0.5, 0.5, 0);
       pos2d = pos2d * Vector3(0.96f, 0.96f, 0) + Vector3(0.02f, 0.02f, 0); // margin
 
-      team2avatars.at(i)->SetPosition(pos2d.coords[0] * width_percent - 0.6f, pos2d.coords[1] * height_percent - 0.8f);
+      team2avatars[i]->SetPosition(pos2d.coords[0] * width_percent - 0.6f, pos2d.coords[1] * height_percent - 0.8f);
     }
 
   }

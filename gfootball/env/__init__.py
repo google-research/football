@@ -19,9 +19,9 @@ from __future__ import division
 from __future__ import print_function
 
 
-from baselines.common.atari_wrappers import FrameStack
 from gfootball.env import config
 from gfootball.env import football_env
+from gfootball.env import observation_preprocessing
 from gfootball.env import wrappers
 
 
@@ -37,7 +37,12 @@ def create_environment(env_name='',
                        logdir='',
                        data_dir=None,
                        font_file=None,
-                       away_player=None):
+                       right_players=None,
+                       number_of_players_agent_controls=1,
+                       enable_sides_swap=False,
+                       channel_dimensions=(
+                           observation_preprocessing.SMM_WIDTH,
+                           observation_preprocessing.SMM_HEIGHT)):
   """Creates a Google Research Football environment.
 
   Args:
@@ -52,31 +57,34 @@ def create_environment(env_name='',
     representation: String to define the representation used to build
       the observation. It can be one of the following:
       'pixels': the observation is the rendered view of the football field
-        downsampled to w=96, h=72. The observation size is: 72x96x3
-        (or 72x96x12 when "stacked" is True).
+        downsampled to 'channel_dimensions'. The observation size is:
+        'channel_dimensions'x3 (or 'channel_dimensions'x12 when "stacked" is
+        True).
       'pixels_gray': the observation is the rendered view of the football field
-        in gray scale and downsampled to w=96, h=72. The observation size is
-        72x96x1 (or 72x96x4 when stacked is True).
+        in gray scale and downsampled to 'channel_dimensions'. The observation
+        size is 'channel_dimensions'x1 (or 'channel_dimensions'x4 when stacked
+        is True).
       'extracted': also referred to as super minimap. The observation is
-        composed of 4 planes of size w=96, h=72.
-        Its size is then 72x96x4 (or 72x96x16 when stacked is True).
-        The first plane P holds the position of the 11 player of the home
+        composed of 4 planes of size 'channel_dimensions'.
+        Its size is then 'channel_dimensions'x4 (or 'channel_dimensions'x16 when
+        stacked is True).
+        The first plane P holds the position of the 11 player of the left
         team, P[y,x] is one if there is a player at position (x,y), otherwise,
         its value is zero.
         The second plane holds in the same way the position of the 11 players
-        of the away team.
-        The third plane holds the active player of the home team.
+        of the right team.
+        The third plane holds the active player of the left team.
         The last plane holds the position of the ball.
       'simple115': the observation is a vector of size 115. It holds:
          - the ball_position and the ball_direction as (x,y,z)
          - one hot encoding of who controls the ball.
-           [1, 0, 0]: nobody, [0, 1, 0]: home team, [0, 0, 1]: away team.
+           [1, 0, 0]: nobody, [0, 1, 0]: left team, [0, 0, 1]: right team.
          - one hot encoding of size 11 to indicate who is the active player
-           in the home team.
-         - 11 (x,y) positions for each player of the home team.
-         - 11 (x,y) motion vectors for each player of the home team.
-         - 11 (x,y) positions for each player of the away team.
-         - 11 (x,y) motion vectors for each player of the away team.
+           in the left team.
+         - 11 (x,y) positions for each player of the left team.
+         - 11 (x,y) motion vectors for each player of the left team.
+         - 11 (x,y) positions for each player of the right team.
+         - 11 (x,y) motion vectors for each player of the right team.
          - one hot encoding of the game mode. Vector of size 7 with the
            following meaning:
            {NormalMode, KickOffMode, GoalKickMode, FreeKickMode,
@@ -99,23 +107,30 @@ def create_environment(env_name='',
        Safe to leave as the default value.
     font_file: location of the game font file
        Safe to leave as the default value.
-    away_player: Away player (adversary) to use in the environment.
+    right_players: A list of right players (adversary) to use in the environment.
        Reserved for future usage to provide an opponent to train against.
        (which could be used for self-play).
-
+    number_of_players_agent_controls: Number of players an agent controls.
+    enable_sides_swap: Whether to randomly pick a field side at the beginning of
+       each episode for the team that the agent controls.
+    channel_dimensions: (width, height) tuple that represents the dimensions of
+       SMM or pixels representation.
   Returns:
     Google Research Football environment.
   """
   assert env_name
-  away_players = [away_player] if away_player else []
+  if right_players is None:
+    right_players = []
   c = config.Config({
+      'enable_sides_swap': enable_sides_swap,
       'dump_full_episodes': enable_full_episode_videos,
       'dump_scores': enable_goal_videos,
+      'left_players': [('agent:players=%d' % number_of_players_agent_controls)],
       'level': env_name,
       'render': render,
       'tracesdir': logdir,
       'write_video': write_video,
-      'away_players': away_players,
+      'right_players': right_players,
   })
   if data_dir:
     c['data_dir'] = data_dir
@@ -127,15 +142,19 @@ def create_environment(env_name='',
   if with_checkpoints:
     env = wrappers.CheckpointRewardWrapper(env)
   if representation.startswith('pixels'):
-    env = wrappers.PixelsStateWrapper(env, 'gray' in representation)
-  elif representation == 'simple21':
-    env = wrappers.Simple21StateWrapper(env)
+    env = wrappers.PixelsStateWrapper(env, 'gray' in representation,
+                                      channel_dimensions)
   elif representation == 'simple115':
     env = wrappers.Simple115StateWrapper(env)
   elif representation == 'extracted':
-    env = wrappers.SMMWrapper(env)
+    env = wrappers.SMMWrapper(env, channel_dimensions)
   else:
     raise ValueError('Unsupported representation: {}'.format(representation))
+  if number_of_players_agent_controls == 1:
+    env = wrappers.SingleAgentWrapper(env)
   if stacked:
+    # Import FrameStack here to avoid unconditional dependence on baselines.
+    from baselines.common.atari_wrappers import FrameStack
     env = FrameStack(env, 4)
+
   return env

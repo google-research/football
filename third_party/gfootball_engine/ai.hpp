@@ -31,14 +31,6 @@ namespace bp = boost::python;
 class AIControlledKeyboard;
 class GameTask;
 
-struct Step {
-  int team_id = 0;
-  int player_id = 0;
-  bool has_possession = false;
-  Position player_position;
-  std::string debug();
-};
-
 typedef std::vector<std::string> StringVector;
 
 // Game environment. This is the class that can be used directly from Python.
@@ -47,12 +39,6 @@ struct GameEnv {
   // Start the game (in separate process).
   std::string start_game(GameConfig game_config);
 
-  // Crashes causing crash-dump.
-  void crash();
-
-  // Is there a pending crash in progress.
-  bool pending_crash();
-
   // Get the current state of the game (observation).
   SharedInfo get_info();
 
@@ -60,19 +46,13 @@ struct GameEnv {
   PyObject* get_frame();
 
   // Executes the action inside the game.
-  void action(int action, bool home_team, int player);
+  void action(int action, bool left_team, int player);
   void reset(ScenarioConfig game_config);
-
-  void stop();
   void step();
 
-  // Gets the list of available actions.
-  StringVector get_actions();
- private:
+  private:
   void do_step(int count = 1);
   void getObservations();
-  void commandExecuted();
-  void sendObservations();
 
   AIControlledKeyboard* keyboard_;
   GameTask* game_;

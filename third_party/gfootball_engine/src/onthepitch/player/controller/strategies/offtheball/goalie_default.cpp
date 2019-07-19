@@ -224,7 +224,7 @@ void GoalieDefaultStrategy::CalculateIfBallIsBoundForGoal(const MentalImage *men
 
   int side = team->GetSide();
 
-  float panic = 1.02f + (1.0f - (CastPlayer()->GetStat("mental_defensivepositioning") * 0.6f + CastPlayer()->GetStat("mental_vision") * 0.4f)) * 0.5f;
+  float panic = 1.02f + (1.0f - (CastPlayer()->GetStat(mental_defensivepositioning) * 0.6f + CastPlayer()->GetStat(mental_vision) * 0.4f)) * 0.5f;
   if (mentalImage->GetBallPrediction(4000).coords[0] * side > pitchHalfW && (player->GetPosition() - mentalImage->GetBallPrediction(250)).GetLength() < 32.0f) { // only if ball is close enough (cpu optimization)
 
 /* 3d version

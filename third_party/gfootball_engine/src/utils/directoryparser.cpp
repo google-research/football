@@ -18,6 +18,7 @@
 #include "directoryparser.hpp"
 
 #include "../base/log.hpp"
+#include "../main.hpp"
 
 namespace fs = boost::filesystem;
 
@@ -30,6 +31,7 @@ namespace blunted {
   }
 
   void DirectoryParser::Parse(boost::filesystem::path path, const std::string &extension, std::vector<std::string> &files, bool recurse) {
+    path = GetGameConfig().updatePath(path.string());
     if (!fs::exists(path) || !fs::is_directory(path)) Log(e_Error, "DirectoryParser", "Parse", "Could not open directory " + path.string() + " for reading");
 
     fs::directory_iterator dirIter(path);

@@ -36,7 +36,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      ICameraInterpreter *CameraInterpreter = static_cast<ICameraInterpreter*>(observers.at(i).get());
+      ICameraInterpreter *CameraInterpreter = static_cast<ICameraInterpreter*>(observers[i].get());
       CameraInterpreter->OnLoad(properties);
     }
 
@@ -46,7 +46,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      ICameraInterpreter *CameraInterpreter = static_cast<ICameraInterpreter*>(observers.at(i).get());
+      ICameraInterpreter *CameraInterpreter = static_cast<ICameraInterpreter*>(observers[i].get());
       CameraInterpreter->OnUnload();
     }
 
@@ -60,7 +60,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      ICameraInterpreter *CameraInterpreter = static_cast<ICameraInterpreter*>(observers.at(i).get());
+      ICameraInterpreter *CameraInterpreter = static_cast<ICameraInterpreter*>(observers[i].get());
       CameraInterpreter->SetFOV(fov);
     }
 
@@ -73,7 +73,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      ICameraInterpreter *CameraInterpreter = static_cast<ICameraInterpreter*>(observers.at(i).get());
+      ICameraInterpreter *CameraInterpreter = static_cast<ICameraInterpreter*>(observers[i].get());
       CameraInterpreter->SetCapping(nearCap, farCap);
     }
 
@@ -83,7 +83,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      ICameraInterpreter *CameraInterpreter = static_cast<ICameraInterpreter*>(observers.at(i).get());
+      ICameraInterpreter *CameraInterpreter = static_cast<ICameraInterpreter*>(observers[i].get());
       CameraInterpreter->EnqueueView(GetName(), visibleGeometry, visibleLights, skyboxes);
     }
 
@@ -93,7 +93,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      ICameraInterpreter *CameraInterpreter = static_cast<ICameraInterpreter*>(observers.at(i).get());
+      ICameraInterpreter *CameraInterpreter = static_cast<ICameraInterpreter*>(observers[i].get());
       if (CameraInterpreter->GetSystemType() == targetSystemType) CameraInterpreter->OnPoke();
     }
 
@@ -105,8 +105,8 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      if (observers.at(i)->GetSystemType() != excludeSystem) {
-        ICameraInterpreter *cameraInterpreter = static_cast<ICameraInterpreter*>(observers.at(i).get());
+      if (observers[i]->GetSystemType() != excludeSystem) {
+        ICameraInterpreter *cameraInterpreter = static_cast<ICameraInterpreter*>(observers[i].get());
         cameraInterpreter->OnSpatialChange(GetDerivedPosition(), GetDerivedRotation());
       }
     }

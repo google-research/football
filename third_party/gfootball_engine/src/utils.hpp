@@ -35,6 +35,32 @@ int GetVelocityID(e_Velocity velo, bool treatDribbleAsWalk = false);
 
 // stats fiddling
 
+enum PlayerStat {
+  physical_balance,
+  physical_reaction,
+  physical_acceleration,
+  physical_velocity,
+  physical_stamina,
+  physical_agility,
+  physical_shotpower,
+  technical_standingtackle,
+  technical_slidingtackle,
+  technical_ballcontrol,
+  technical_dribble,
+  technical_shortpass,
+  technical_highpass,
+  technical_header,
+  technical_shot,
+  technical_volley,
+  mental_calmness,
+  mental_workrate,
+  mental_resilience,
+  mental_defensivepositioning,
+  mental_offensivepositioning,
+  mental_vision,
+  player_stat_max
+};
+
 enum e_PositionName {
   e_PositionName_GK,
   e_PositionName_SW,
@@ -53,7 +79,7 @@ struct WeightedPosition {
 };
 
 struct Stat {
-  std::string name;
+  PlayerStat name;
   float value = 0.0f;
 };
 
@@ -62,13 +88,6 @@ enum e_DevelopmentCurveType {
   e_DevelopmentCurveType_Normal,
   e_DevelopmentCurveType_Late
 };
-
-// converts FM positions string into weighted positions vector
-void GetWeightedPositions(const std::string &positionString, std::vector<WeightedPosition> &weightedPositions);
-
-void InitDefaultProfiles();
-void GetDefaultProfile(const std::vector<WeightedPosition> &weightedPositions, std::vector<Stat> &averageProfile);
-std::string GetProfileString(const std::vector<Stat> &profileStats);
 
 float CalculateStat(float baseStat, float profileStat, float age, e_DevelopmentCurveType developmentCurveType);
 /* ^ above one supersedes these

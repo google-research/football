@@ -110,7 +110,7 @@ class Player : public PlayerBase {
     void SendOff();
 
     float GetStaminaStat() const;
-    virtual float GetStat(const char *name) const;
+    virtual float GetStat(PlayerStat name) const;
 
     virtual void ResetSituation(const Vector3 &focusPos);
 
@@ -136,7 +136,6 @@ class Player : public PlayerBase {
     TacticalPlayerSituation tacticalSituation;
 
     bool buf_nameCaptionShowCondition = false;
-    bool buf_debugCaptionShowCondition = false;
     std::string buf_nameCaption;
     std::string buf_debugCaption;
     Vector3 buf_nameCaptionPos;

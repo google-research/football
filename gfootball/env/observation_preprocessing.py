@@ -28,7 +28,7 @@ from six.moves import range
 SMM_WIDTH = 96
 SMM_HEIGHT = 72
 
-SMM_LAYERS = ['home_team', 'away_team', 'active', 'ball']
+SMM_LAYERS = ['left_team', 'right_team', 'ball', 'active']
 
 # Normalized minimap coordinates
 MINIMAP_NORM_X_MIN = -1.0
@@ -37,25 +37,61 @@ MINIMAP_NORM_Y_MIN = -1.0 / 2.25
 MINIMAP_NORM_Y_MAX = 1.0 / 2.25
 
 
-def generate_smm(observation):
-  """Returns minimap observation given the raw features.
+def get_smm_layers(config):
+  if config and config['enable_sides_swap']:
+    return [] + SMM_LAYERS + ['is_active_left']
+  return SMM_LAYERS
+
+
+def mark_points(frame, points):
+  """Draw dots corresponding to 'points'.
+
+  Args:
+    frame: 2-d matrix representing one SMM channel ([y, x])
+    points: a list of (x, y) coordinates to be marked
+  """
+  for p in range(len(points) // 2):
+    x = int((points[p * 2] - MINIMAP_NORM_X_MIN) /
+            (MINIMAP_NORM_X_MAX - MINIMAP_NORM_X_MIN) * frame.shape[1])
+    y = int((points[p * 2 + 1] - MINIMAP_NORM_Y_MIN) /
+            (MINIMAP_NORM_Y_MAX - MINIMAP_NORM_Y_MIN) * frame.shape[0])
+    x = max(0, min(frame.shape[1] - 1, x))
+    y = max(0, min(frame.shape[0] - 1, y))
+    frame[y, x] = 255
+
+
+def generate_smm(observation, config=None,
+                 channel_dimensions=(SMM_WIDTH, SMM_HEIGHT)):
+  """Returns a list of minimap observations given the raw features for each
+  active player.
 
   Args:
     observation: raw features from the environment
+    channel_dimensions: resolution of SMM to generate
+    config: environment config
+
+  Returns:
+    (N, H, W, C) - shaped np array representing SMM. N stands for the number of
+    players we are controlling.
   """
-  frame = np.zeros((SMM_HEIGHT, SMM_WIDTH, len(SMM_LAYERS)), dtype=np.uint8)
-  for index, layer in enumerate(SMM_LAYERS):
-    if layer not in observation:
-      continue
-    points = np.array(observation[layer]).reshape(-1)
-    for p in range(len(points) // 2):
-      x = int(
-          (points[p * 2] - MINIMAP_NORM_X_MIN) /
-          (MINIMAP_NORM_X_MAX - MINIMAP_NORM_X_MIN) * SMM_WIDTH)
-      y = int(
-          (points[p * 2 + 1] - MINIMAP_NORM_Y_MIN) /
-          (MINIMAP_NORM_Y_MAX - MINIMAP_NORM_Y_MIN) * SMM_HEIGHT)
-      x = max(0, min(SMM_WIDTH - 1, x))
-      y = max(0, min(SMM_HEIGHT - 1, y))
-      frame[y, x, index] = 255
+  active = observation['active']
+  frame = np.zeros((len(active), channel_dimensions[1], channel_dimensions[0],
+                    len(get_smm_layers(config))), dtype=np.uint8)
+  for a_index, a in enumerate(active):
+    for index, layer in enumerate(get_smm_layers(config)):
+      if layer not in observation:
+        continue
+      if layer == 'active':
+        if a == -1:
+          continue
+        team = ('right_team' if ('is_active_left' in observation and
+                                 not observation['is_active_left'])
+                else 'left_team')
+        mark_points(frame[a_index, :, :, index],
+                    np.array(observation[team][a]).reshape(-1))
+      elif layer == 'is_active_left':
+        frame[a_index, :, :, index] = 1 if observation[layer] else 0
+      else:
+        mark_points(frame[a_index, :, :, index],
+                    np.array(observation[layer]).reshape(-1))
   return frame

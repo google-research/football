@@ -48,14 +48,13 @@ class Team {
     Player *GetPlayer(int playerID);
     FormationEntry GetFormationEntry(int playerID);
     void SetFormationEntry(int playerID, FormationEntry entry);
-    const std::vector<Player*> &GetAllPlayers() { return players; }
+    const std::vector<Player *> &GetAllPlayers() { return players; }
     void GetAllPlayers(std::vector<Player*> &allPlayers) { allPlayers.insert(allPlayers.end(), players.begin(), players.end()); }
-    void GetActivePlayers(std::vector<Player*> &activePlayers);
+    void GetActivePlayers(std::vector<Player *> &activePlayers);
     int GetActivePlayersCount() const;
 
     unsigned int GetHumanGamerCount() const { return humanGamers.size(); }
     void AddHumanGamer(IHIDevice *hid, e_PlayerColor color);
-    HumanGamer* GetHumanGamer(int index) const { return humanGamers[index]; }
     void DeleteHumanGamers();
     e_PlayerColor GetPlayerColor(int playerID);
     bool IsHumanControlled(int playerID);
@@ -66,6 +65,7 @@ class Team {
     int GetTimeNeededToGetToBall_ms() const;
     signed int GetBestPossessionPlayerID();
     Player *GetDesignatedTeamPossessionPlayer() { return designatedTeamPossessionPlayer; }
+    void UpdateDesignatedTeamPossessionPlayer();
     Player *GetBestPossessionPlayer();
     float GetTeamPossessionAmount() const;
     float GetFadingTeamPossessionAmount() const;
@@ -100,8 +100,6 @@ class Team {
     void UpdateSwitch();
 
     Player *GetGoalie();
-
-    void SetKitNumber(int num);
 
   protected:
     int id = 0;

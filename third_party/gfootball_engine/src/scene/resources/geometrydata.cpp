@@ -31,18 +31,18 @@ namespace blunted {
   GeometryData::~GeometryData() {
     //printf("ANNIHILATING TMESH\n");
     for (unsigned int i = 0; i < triangleMeshes.size(); i++) {
-      delete [] triangleMeshes.at(i).vertices;
+      delete [] triangleMeshes[i].vertices;
     }
   }
 
   GeometryData::GeometryData(const GeometryData &src) {
     for (unsigned int i = 0; i < src.triangleMeshes.size(); i++) {
       // shallow copy
-      MaterializedTriangleMesh mesh = src.triangleMeshes.at(i);
+      MaterializedTriangleMesh mesh = src.triangleMeshes[i];
 
       // 'deepen' vertices
-      mesh.vertices = new float[src.triangleMeshes.at(i).verticesDataSize];
-      memcpy(mesh.vertices, src.triangleMeshes.at(i).vertices, src.triangleMeshes.at(i).verticesDataSize * sizeof(float));
+      mesh.vertices = new float[src.triangleMeshes[i].verticesDataSize];
+      memcpy(mesh.vertices, src.triangleMeshes[i].vertices, src.triangleMeshes[i].verticesDataSize * sizeof(float));
 
       triangleMeshes.push_back(mesh);
     }
@@ -75,7 +75,7 @@ namespace blunted {
     if (aabb.dirty) {
       aabb.aabb.Reset();
       for (int i = 0; i < (signed int)triangleMeshes.size(); i++) {
-        aabb.aabb += GetTriangleMeshAABB(triangleMeshes.at(i).vertices, triangleMeshes.at(i).verticesDataSize, triangleMeshes.at(i).indices);
+        aabb.aabb += GetTriangleMeshAABB(triangleMeshes[i].vertices, triangleMeshes[i].verticesDataSize, triangleMeshes[i].indices);
       }
       aabb.dirty = false;
     }

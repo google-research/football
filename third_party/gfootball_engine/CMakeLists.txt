@@ -24,7 +24,6 @@ if(UNIX)
 endif(UNIX)
 SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS} -fPIC -g -O3 -no-pie -L/usr/X11/lib -lX11 -lSDL2")
 SET(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -fPIC -O3 -g -no-pie -L/usr/X11/lib -lX11 -lSDL2")
-add_definitions(-DBOOST_SIGNALS_NO_DEPRECATION_WARNING)
 
 # Find needed libraries
 FIND_PACKAGE(OpenGL REQUIRED)
@@ -78,7 +77,7 @@ endif()
 
 message("Using python_boost: ${BOOST_PYTHON_VERSION}")
 
-FIND_PACKAGE(Boost REQUIRED COMPONENTS system thread signals filesystem ${BOOST_PYTHON_VERSION})
+FIND_PACKAGE(Boost REQUIRED COMPONENTS system thread filesystem ${BOOST_PYTHON_VERSION})
 include_directories(${Boost_INCLUDE_DIR})
 
 include_directories(${PYTHON_INCLUDE_DIR})
@@ -127,13 +126,11 @@ add_library(blunted2 ${BLUNTED_CORE_SOURCES} ${LIBS_SOURCES} ${BLUNTED_CORE_HEAD
 
 # Compile it as multiple static libraries (note: not compiling physics,
 # as not used by gameplayfootball)
-add_library(leaguelib ${LEAGUE_SOURCES} ${LEAGUE_HEADERS})
 add_library(gamelib ${GAME_SOURCES} ${GAME_HEADERS})
-add_library(hidlib ${HID_SOURCES} ${HID_HEADERS})
 add_library(menulib ${MENU_SOURCES} ${MENU_HEADERS})
 add_library(datalib ${DATA_SOURCES} ${DATA_HEADERS})
 
-set(LIBRARIES gamelib hidlib menulib datalib leaguelib glee
+set(LIBRARIES gamelib menulib datalib glee
    blunted2 rt ${Boost_LIBRARIES} ${PYTHON_LIBRARY}
    ${SDL2_IMAGE_LIBRARIES} ${SDL2_TTF_LIBRARIES} ${SDL2_GFX_LIBRARIES}
    ${SDL2_LIBRARY} ${SGE_LIBRARY} dl m sqlite3 ${OPENGL_LIBRARIES})

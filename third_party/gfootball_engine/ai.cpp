@@ -27,7 +27,6 @@
 #include "ai.hpp"
 #include "ai/ai_keyboard.hpp"
 #include "gametask.hpp"
-#include "hid/keyboard.hpp"
 #include "helpers.h"
 
 
@@ -78,13 +77,13 @@ void setConfig(ScenarioConfig scenario_config) {
   std::vector<SideSelection> setup = GetMenuTask()->GetControllerSetup();
   CHECK(setup.size() == 2 * MAX_PLAYERS);
   int controller = 0;
-  for (int x = 0; x < scenario_config.home_agents; x++) {
+  for (int x = 0; x < scenario_config.left_agents; x++) {
     setup[controller++].side = -1;
   }
   while (controller < MAX_PLAYERS) {
     setup[controller++].side = 0;
   }
-  for (int x = 0; x < scenario_config.away_agents; x++) {
+  for (int x = 0; x < scenario_config.right_agents; x++) {
     setup[controller++].side = 1;
   }
   while (controller < 2 * MAX_PLAYERS) {
@@ -97,20 +96,18 @@ std::string GameEnv::start_game(GameConfig game_config) {
   // feenableexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
   GetGameConfig() = game_config;
   std::cout << std::unitbuf;
-  if (!FindDataDir()) {
-    chdir(game_config.data_dir.c_str());
+  string data_dir = FindDataDir();
+  if (!data_dir.empty()) {
+    GetGameConfig().data_dir = data_dir;
   }
   string font_file = FindFontFile();
   if (font_file.empty()) {
     font_file = game_config.font_file;
   }
   Properties* config = new Properties();
-  config->Set("match_difficulty", game_config.game_difficulty);
   config->Set("match_duration", 0.027);
   config->Set("font_filename", font_file);
   config->Set("physics_frametime_ms", 1);
-  // Skip all the initial cut scenes.
-  config->SetBool("quick_start", true);
   config->Set("game", 0);
   // Enable AI.
   config->SetBool("ai_keyboard", true);
@@ -144,8 +141,8 @@ PyObject* GameEnv::get_frame() {
   return str;
 }
 
-void GameEnv::action(int action, bool home_team, int player) {
-  int controller_id = player + (home_team ? 0 : 11);
+void GameEnv::action(int action, bool left_team, int player) {
+  int controller_id = player + (left_team ? 0 : 11);
   auto controller = static_cast<AIControlledKeyboard*>(GetControllers()[controller_id]);
   switch (Action(action)) {
     case game_idle:
@@ -322,16 +319,16 @@ BOOST_PYTHON_MODULE(_gameplayfootball) {
       .def_readonly("ball_position", &SharedInfo::ball_position)
       .def_readonly("ball_rotation", &SharedInfo::ball_rotation)
       .def_readonly("ball_direction", &SharedInfo::ball_direction)
-      .def_readonly("home_team", &SharedInfo::home_team)
-      .def_readonly("away_team", &SharedInfo::away_team)
-      .def_readonly("home_goals", &SharedInfo::home_goals)
-      .def_readonly("away_goals", &SharedInfo::away_goals)
+      .def_readonly("left_team", &SharedInfo::left_team)
+      .def_readonly("right_team", &SharedInfo::right_team)
+      .def_readonly("left_goals", &SharedInfo::left_goals)
+      .def_readonly("right_goals", &SharedInfo::right_goals)
       .def_readonly("is_in_play", &SharedInfo::is_in_play)
       .def_readonly("done", &SharedInfo::done)
       .def_readonly("ball_owned_team", &SharedInfo::ball_owned_team)
       .def_readonly("ball_owned_player", &SharedInfo::ball_owned_player)
-      .add_property("home_controllers", &SharedInfo::home_controllers)
-      .add_property("away_controllers", &SharedInfo::away_controllers)
+      .add_property("left_controllers", &SharedInfo::left_controllers)
+      .add_property("right_controllers", &SharedInfo::right_controllers)
       .def_readonly("game_mode", &SharedInfo::game_mode);
 
   class_<GameEnv>("GameEnv")
@@ -349,27 +346,28 @@ BOOST_PYTHON_MODULE(_gameplayfootball) {
   ;
 
   class_<GameConfig>("GameConfig")
-      .def_readwrite("log_notice", &GameConfig::log_notice)
       .def_readwrite("high_quality", &GameConfig::high_quality)
       .def_readwrite("render_mode", &GameConfig::render_mode)
       .def_readwrite("data_dir", &GameConfig::data_dir)
       .def_readwrite("font_file", &GameConfig::font_file)
-      .def_readwrite("game_difficulty", &GameConfig::game_difficulty)
       .def_readwrite("physics_steps_per_frame",
                      &GameConfig::physics_steps_per_frame);
 
   class_<ScenarioConfig>("ScenarioConfig")
-     .def_readwrite("ball_position", &ScenarioConfig::ball_position)
-     .def_readwrite("home_team", &ScenarioConfig::home_team)
-     .def_readwrite("away_team", &ScenarioConfig::away_team)
-     .def_readwrite("home_agents", &ScenarioConfig::home_agents)
-     .def_readwrite("away_agents", &ScenarioConfig::away_agents)
-     .def_readwrite("use_magnet", &ScenarioConfig::use_magnet)
-     .def_readwrite("game_engine_random_seed",
-                    &ScenarioConfig::game_engine_random_seed)
-     .def_readwrite("offsides", &ScenarioConfig::offsides)
-     .def_readwrite("real_time", &ScenarioConfig::real_time)
-  ;
+      .def_readwrite("ball_position", &ScenarioConfig::ball_position)
+      .def_readwrite("left_team", &ScenarioConfig::left_team)
+      .def_readwrite("right_team", &ScenarioConfig::right_team)
+      .def_readwrite("left_agents", &ScenarioConfig::left_agents)
+      .def_readwrite("right_agents", &ScenarioConfig::right_agents)
+      .def_readwrite("use_magnet", &ScenarioConfig::use_magnet)
+      .def_readwrite("game_engine_random_seed",
+                     &ScenarioConfig::game_engine_random_seed)
+      .def_readwrite("offsides", &ScenarioConfig::offsides)
+      .def_readwrite("real_time", &ScenarioConfig::real_time)
+      .def_readwrite("render", &ScenarioConfig::render)
+      .def_readwrite("game_difficulty", &ScenarioConfig::game_difficulty)
+      .def_readwrite("kickoff_for_goal_loosing_team",
+                     &ScenarioConfig::kickoff_for_goal_loosing_team);
 
   class_<std::vector<FormationEntry> >("FormationEntryVec").def(
       vector_indexing_suite<std::vector<FormationEntry> >());
@@ -441,6 +439,6 @@ BOOST_PYTHON_MODULE(_gameplayfootball) {
     .value("release_dribble", Action::game_release_dribble);
 
   enum_<e_Team>("e_Team")
-      .value("e_Home", e_Team::e_Home)
-      .value("e_Away", e_Team::e_Away);
+      .value("e_Left", e_Team::e_Left)
+      .value("e_Right", e_Team::e_Right);
 }

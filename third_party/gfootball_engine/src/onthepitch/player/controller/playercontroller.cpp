@@ -528,7 +528,7 @@ void PlayerController::_MovementCommand(PlayerCommandQueue &commandQueue, bool f
     }
 
 
-  } else if (match->GetDesignatedPossessionPlayer()->GetTeamID() != team->GetID()) {
+  } else if (match->GetDesignatedPossessionPlayer()->GetTeam() != team) {
 
 
     // OTHER TEAM IS IN BALL CONTROL, DEM BASTERDS
@@ -611,7 +611,7 @@ void PlayerController::_CalculateSituation() {
   oppTeamHasPossession = match->GetTeam(abs(team->GetID() - 1))->HasPossession();
   oppTeamHasUniquePossession = match->GetTeam(abs(team->GetID() - 1))->HasUniquePossession();
   hasBestChanceOfPossession = team->GetDesignatedTeamPossessionPlayer() == player;
-  teamHasBestPossession = match->GetBestPossessionTeamID() == team->GetID();
+  teamHasBestPossession = match->GetBestPossessionTeam() == team;
   possessionAmount = (float)(match->GetTeam(abs(team->GetID() - 1))->GetTimeNeededToGetToBall_ms() + 200) / (float)(_timeNeeded_ms + 200);
   teamPossessionAmount = team->GetTeamPossessionAmount();
   fadingTeamPossessionAmount = team->GetFadingTeamPossessionAmount();

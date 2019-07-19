@@ -32,26 +32,22 @@ namespace blunted {
   }
 
   void SceneManager::Exit() {
-    boost::mutex::scoped_lock blah(scenes.mutex);
-    for (int i = 0; i < (signed int)scenes.data.size(); i++) {
-      scenes.data.at(i)->Exit();
+    for (int i = 0; i < (signed int)scenes.size(); i++) {
+      scenes[i]->Exit();
     }
-    scenes.data.clear();
+    scenes.clear();
   }
 
   void SceneManager::RegisterScene(boost::shared_ptr<IScene> scene) {
-    scenes.Lock();
-    scenes.data.push_back(scene);
-    scenes.Unlock();
+    scenes.push_back(scene);
     SystemManager::GetInstance().CreateSystemScenes(scene);
   }
 
   boost::shared_ptr<IScene> SceneManager::GetScene(const std::string &name, bool &success) {
-    boost::mutex::scoped_lock blah(scenes.mutex);
-    for (int i = 0; i < (signed int)scenes.data.size(); i++) {
-      if (scenes.data.at(i)->GetName() == name) {
+    for (int i = 0; i < (signed int)scenes.size(); i++) {
+      if (scenes[i]->GetName() == name) {
         success = true;
-        return scenes.data.at(i);
+        return scenes[i];
       }
     }
     success = false;

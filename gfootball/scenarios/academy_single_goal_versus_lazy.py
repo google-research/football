@@ -33,7 +33,7 @@ def build_scenario(builder):
   builder.SetFlag('end_episode_on_possession_change', True)
   builder.SetBallPosition(-0.48, -0.06356)
 
-  builder.SetTeam(Team.e_Home)
+  builder.SetTeam(Team.e_Left)
   builder.AddPlayer(-1.000000, 0.000000, e_PlayerRole_GK)
   builder.AddPlayer(0.000000, 0.020000, e_PlayerRole_RM)
   builder.AddPlayer(0.000000, -0.020000, e_PlayerRole_CF)
@@ -46,8 +46,8 @@ def build_scenario(builder):
   builder.AddPlayer(-0.184212, 0.105680, e_PlayerRole_CM)
   builder.AddPlayer(-0.010000, -0.21610, e_PlayerRole_LM)
 
-  # All away players are lazy (i.e., they don't move, except the keeper)
-  builder.SetTeam(Team.e_Away)
+  # All right players are lazy (i.e., they don't move, except the keeper)
+  builder.SetTeam(Team.e_Right)
   builder.AddPlayer(-1.000000, 0.000000, e_PlayerRole_GK)
   builder.AddPlayer(-0.050000, 0.000000, e_PlayerRole_RM, True)
   builder.AddPlayer(-0.010000, 0.216102, e_PlayerRole_CF, True)

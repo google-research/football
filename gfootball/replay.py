@@ -34,7 +34,7 @@ import os
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string('trace_file', '', 'Trace file to replay')
-flags.DEFINE_integer('fps', 50, 'How many frames per second to render')
+flags.DEFINE_integer('fps', 10, 'How many frames per second to render')
 
 
 def modify_trace(replay):
@@ -49,7 +49,7 @@ def modify_trace(replay):
   for f in replay:
     trace.append(f)
     idle_step = copy.deepcopy(f)
-    idle_step['debug']['action'] = [football_action_set.core_action_idle
+    idle_step['debug']['action'] = [football_action_set.action_idle
                                    ] * len(f['debug']['action'])
     for _ in range(empty_steps):
       trace.append(idle_step)
@@ -69,9 +69,10 @@ def main(_):
   assert replay[0]['debug']['frame_cnt'] == 1, (
       'Trace does not start from the beginning of the episode, can not replay')
   cfg = config.Config(replay[0]['debug']['config'])
-  player_type = 'replay={}'.format(temp_path)
-  cfg['home_players'] = [player_type] * len(cfg['home_players'])
-  cfg['away_players'] = [player_type] * len(cfg['away_players'])
+  player_type = 'replay:path={},players={}'.format(
+      temp_path, len(replay[0]['debug']['action']))
+  cfg['left_players'] = [player_type] * len(cfg['left_players'])
+  cfg['right_players'] = [player_type] * len(cfg['right_players'])
   cfg.update({
       'physics_steps_per_frame': int(100 / FLAGS.fps),
       'real_time': False,
@@ -80,7 +81,7 @@ def main(_):
       'write_video': True
   })
   env = football_env.FootballEnv(cfg)
-  env.reset(cfg)
+  env.reset()
   done = False
   try:
     while not done:

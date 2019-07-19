@@ -68,8 +68,6 @@ namespace blunted {
       Scheduler();
       virtual ~Scheduler();
 
-      void Exit();
-
       int GetSequenceCount();
       void RegisterTaskSequence(boost::shared_ptr<TaskSequence> sequence);
       void ResetTaskSequenceTime(const std::string &name);

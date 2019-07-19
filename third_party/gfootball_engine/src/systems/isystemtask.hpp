@@ -18,14 +18,13 @@
 #ifndef _HPP_SYSTEMS_IFACE_TASK
 #define _HPP_SYSTEMS_IFACE_TASK
 
-#include "../types/thread.hpp"
 #include "../types/command.hpp"
 #include "../base/properties.hpp"
 #include "../base/log.hpp"
 
 namespace blunted {
 
-  class ISystemTask : public Thread {
+  class ISystemTask {
 
     public:
       ISystemTask() {

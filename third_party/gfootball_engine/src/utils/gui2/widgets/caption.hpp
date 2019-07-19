@@ -41,12 +41,10 @@ namespace blunted {
       virtual void Redraw();
 
       void SetCaption(const std::string &newCaption);
-      std::string GetCaption() { return caption; }
 
       float GetTextWidthPercent() { return textWidth_percent; }
-      float GetTextWidthPercent(int subStrLength);
 
-    protected:
+     protected:
       boost::intrusive_ptr<Image2D> image;
 
       std::string caption;

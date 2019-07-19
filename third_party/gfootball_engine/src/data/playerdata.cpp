@@ -25,6 +25,34 @@
 
 #include "../main.hpp"
 
+PlayerStat PlayerStatFromString(const std::string& name) {
+  if (name == "physical_balance") return physical_balance;
+  if (name == "physical_reaction") return physical_reaction;
+  if (name == "physical_acceleration") return physical_acceleration;
+  if (name == "physical_velocity") return physical_velocity;
+  if (name == "physical_stamina") return physical_stamina;
+  if (name == "physical_agility") return physical_agility;
+  if (name == "physical_shotpower") return physical_shotpower;
+  if (name == "technical_standingtackle") return technical_standingtackle;
+  if (name == "technical_slidingtackle") return technical_slidingtackle;
+  if (name == "technical_ballcontrol") return technical_ballcontrol;
+  if (name == "technical_dribble") return technical_dribble;
+  if (name == "technical_shortpass") return technical_shortpass;
+  if (name == "technical_highpass") return technical_highpass;
+  if (name == "technical_header") return technical_header;
+  if (name == "technical_shot") return technical_shot;
+  if (name == "technical_volley") return technical_volley;
+  if (name == "mental_calmness") return mental_calmness;
+  if (name == "mental_workrate") return mental_workrate;
+  if (name == "mental_resilience") return mental_resilience;
+  if (name == "mental_defensivepositioning") return mental_defensivepositioning;
+  if (name == "mental_offensivepositioning") return mental_offensivepositioning;
+  if (name == "mental_vision") return mental_vision;
+  if (name == "player_stat_max") return player_stat_max;
+  Log(e_FatalError, "PlayerStatFromString", "", name);
+  return player_stat_max;
+}
+
 PlayerData::PlayerData(int playerDatabaseID) : databaseID(playerDatabaseID) {
   DatabaseResult *result = GetDB()->Query("select firstname, lastname, base_stat, profile_xml, age, skincolor, hairstyle, haircolor, height from players where id = " + int_to_str(databaseID) + " limit 1");
 
@@ -64,7 +92,7 @@ PlayerData::PlayerData(int playerDatabaseID) : databaseID(playerDatabaseID) {
     float value = CalculateStat(baseStat, profileStat, age, e_DevelopmentCurveType_Normal);
     //printf("base: %f; profile: %f; result: %f\n", baseStat, profileStat, value);
 
-    stats.Set((*iter).first.c_str(), value);
+    stats.Set(PlayerStatFromString((*iter).first), value);
     iter++;
   }
   UpdateValues();
@@ -77,42 +105,35 @@ PlayerData::PlayerData() {
   hairColor = "darkblonde";
   height = 1.8f;
 
-  stats.Set("physical_balance", 0.6);
-  stats.Set("physical_reaction", 0.6);
-  stats.Set("physical_acceleration", 0.6);
-  stats.Set("physical_velocity", 0.6);
-  stats.Set("physical_stamina", 0.6);
-  stats.Set("physical_agility", 0.6);
-  stats.Set("physical_shotpower", 0.6);
-  stats.Set("technical_standingtackle", 0.6);
-  stats.Set("technical_slidingtackle", 0.6);
-  stats.Set("technical_ballcontrol", 0.6);
-  stats.Set("technical_dribble", 0.6);
-  stats.Set("technical_shortpass", 0.6);
-  stats.Set("technical_highpass", 0.6);
-  stats.Set("technical_header", 0.6);
-  stats.Set("technical_shot", 0.6);
-  stats.Set("technical_volley", 0.6);
-  stats.Set("mental_calmness", 0.6);
-  stats.Set("mental_workrate", 0.6);
-  stats.Set("mental_resilience", 0.6);
-  stats.Set("mental_defensivepositioning", 0.6);
-  stats.Set("mental_offensivepositioning", 0.6);
-  stats.Set("mental_vision", 0.6);
+  stats.Set(physical_balance, 0.6);
+  stats.Set(physical_reaction, 0.6);
+  stats.Set(physical_acceleration, 0.6);
+  stats.Set(PlayerStat::physical_velocity, 0.6);
+  stats.Set(physical_stamina, 0.6);
+  stats.Set(physical_agility, 0.6);
+  stats.Set(physical_shotpower, 0.6);
+  stats.Set(technical_standingtackle, 0.6);
+  stats.Set(technical_slidingtackle, 0.6);
+  stats.Set(technical_ballcontrol, 0.6);
+  stats.Set(technical_dribble, 0.6);
+  stats.Set(technical_shortpass, 0.6);
+  stats.Set(technical_highpass, 0.6);
+  stats.Set(technical_header, 0.6);
+  stats.Set(technical_shot, 0.6);
+  stats.Set(technical_volley, 0.6);
+  stats.Set(mental_calmness, 0.6);
+  stats.Set(mental_workrate, 0.6);
+  stats.Set(mental_resilience, 0.6);
+  stats.Set(mental_defensivepositioning, 0.6);
+  stats.Set(mental_offensivepositioning, 0.6);
+  stats.Set(mental_vision, 0.6);
   UpdateValues();
 }
 
 void PlayerData::UpdateValues() {
-  physical_velocity = GetStat("physical_velocity");
+  physical_velocity = GetStat(PlayerStat::physical_velocity);
 }
 
 
 PlayerData::~PlayerData() {
-}
-
-float PlayerData::GetStat(const char *name) const {
-  bool exists = stats.Exists(name);
-  if (!exists) printf("Stat named '%s' does not exist!\n", name);
-  assert(exists);
-  return stats.GetReal(name, 1.0f);
 }

@@ -28,9 +28,6 @@ class MentalImage;
 class Team;
 class Player;
 
-struct PreRating { // for optimization: first calculate everything but passrating, since that one is slow to calculate. cull results before rating pass freedom
-};
-
 class ElizaController : public PlayerController {
 
   public:
@@ -56,8 +53,8 @@ class ElizaController : public PlayerController {
 
     void _AddPass(std::vector<PlayerCommand> &commandQueue, Player *target, e_FunctionType passType);
     void _AddPanicPass(std::vector<PlayerCommand> &commandQueue);
-    float _GetPassingOdds(Player *targetPlayer, e_FunctionType passType, const std::vector<PlayerImage> &opponentPlayerImages, float ballVelocityMultiplier = 1.0f);
-    float _GetPassingOdds(const Vector3 &target, e_FunctionType passType, const std::vector<PlayerImage> &opponentPlayerImages, float ballVelocityMultiplier = 1.0f);
+    float _GetPassingOdds(Player *targetPlayer, e_FunctionType passType, const std::vector<PlayerImagePosition> &opponentPlayerImages, float ballVelocityMultiplier = 1.0f);
+    float _GetPassingOdds(const Vector3 &target, e_FunctionType passType, const std::vector<PlayerImagePosition> &opponentPlayerImages, float ballVelocityMultiplier = 1.0f);
     void _AddCelebration(std::vector<PlayerCommand> &commandQueue);
 
     Strategy *defenseStrategy;

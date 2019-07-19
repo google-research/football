@@ -51,11 +51,6 @@ namespace blunted {
     }
   }
 
-  void sdl_line(SDL_Surface *surface, int x1, int y1, int x2, int y2, Uint32 color) {
-   // sge_Line(surface, x1, y1, x2, y2, color);
-    //sge_AALine(surface, x1, y1, x2, y2, color);
-  }
-
   void sdl_rectangle_filled(SDL_Surface *surface, int x, int y, int width, int height, Uint32 color) {
     SDL_Rect rect;
     rect.x = x;

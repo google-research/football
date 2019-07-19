@@ -36,7 +36,6 @@ class GamePage : public Gui2Page {
 
     virtual void ProcessWindowingEvent(WindowingEvent *event);
     virtual void ProcessKeyboardEvent(KeyboardEvent *event);
-    virtual void ProcessJoystickEvent(JoystickEvent *event);
 
     void GoExtendedReplayPage();
     void GoMatchPhasePage();

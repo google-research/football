@@ -25,10 +25,11 @@ import numpy as np
 
 class Player(player_base.PlayerBase):
 
-  def __init__(self, config):
+  def __init__(self, player_config, env_config):
+    player_base.PlayerBase.__init__(self, player_config)
     self._observation = None
     self._last_observation = None
-    self._last_action = football_action_set.core_action_idle
+    self._last_action = football_action_set.action_idle
     self._shoot_distance = 0.15
 
   def _object_distance(self, object1, object2):
@@ -38,14 +39,14 @@ class Player(player_base.PlayerBase):
   def _direction_action(self, delta):
     """For required movement direction vector returns appropriate action."""
     all_directions = [
-        football_action_set.core_action_top,
-        football_action_set.core_action_top_left,
-        football_action_set.core_action_left,
-        football_action_set.core_action_bottom_left,
-        football_action_set.core_action_bottom,
-        football_action_set.core_action_bottom_right,
-        football_action_set.core_action_right,
-        football_action_set.core_action_top_right
+        football_action_set.action_top,
+        football_action_set.action_top_left,
+        football_action_set.action_left,
+        football_action_set.action_bottom_left,
+        football_action_set.action_bottom,
+        football_action_set.action_bottom_right,
+        football_action_set.action_right,
+        football_action_set.action_top_right
     ]
     all_directions_vec = [(0, -1), (-1, -1), (-1, 0), (-1, 1), (0, 1), (1, 1),
                           (1, 0), (1, -1)]
@@ -65,7 +66,8 @@ class Player(player_base.PlayerBase):
       Closest opponent."""
     min_d = None
     closest = None
-    for p in self._observation['away_team']:
+    for p in self._observation[
+        'right_team' if self._observation['is_active_left'] else 'left_team']:
       d = self._object_distance(o, p)
       if min_d is None or d < min_d:
         min_d = d
@@ -85,7 +87,8 @@ class Player(player_base.PlayerBase):
     delta = target - o
     min_d = None
     closest = None
-    for p in self._observation['away_team']:
+    for p in self._observation[
+        'right_team' if self._observation['is_active_left'] else 'left_team']:
       delta_opp = p - o
       if np.dot(delta, delta_opp) <= 0:
         continue
@@ -130,7 +133,8 @@ class Player(player_base.PlayerBase):
     """
     best_score = None
     best_target = None
-    for player in self._observation['home_team']:
+    for player in self._observation[
+        'left_team' if self._observation['is_active_left'] else 'right_team']:
       if self._object_distance(player, active) > 0.3:
         continue
       score = self._score_pass_target(active, player)
@@ -161,23 +165,25 @@ class Player(player_base.PlayerBase):
 
   def _get_action(self):
     """Returns action to perform for the current observations."""
-    active = self._observation['home_team'][self._observation['active']]
+    is_active_left = self._observation['is_active_left']
+    active = self._observation['left_team' if is_active_left else 'right_team'][
+        self._observation['active'][0]]
     # Corner etc. - just pass the ball
     if self._observation['game_mode'] != 0:
-      return football_action_set.core_action_long_pass
+      return football_action_set.action_long_pass
 
-    if self._observation['ball_owned_team'] != 0:
-      if self._last_action == football_action_set.core_action_pressure:
-        return football_action_set.core_action_sprint
-      return football_action_set.core_action_pressure
+    if self._observation['ball_owned_team'] == (1 if is_active_left else 0):
+      if self._last_action == football_action_set.action_pressure:
+        return football_action_set.action_sprint
+      return football_action_set.action_pressure
 
-    move_target = [0, 0]
+    target_x = 0.85 if is_active_left else -0.85
 
     if (self._shoot_distance >
-        np.linalg.norm(self._observation['ball'][:2] - [0.85, 0])):
-      return football_action_set.core_action_shot
+        np.linalg.norm(self._observation['ball'][:2] - [target_x, 0])):
+      return football_action_set.action_shot
 
-    move_target = [0.85, 0]
+    move_target = [target_x, 0]
     # Compute run direction.
     move_action = self._direction_action(move_target - active)
 
@@ -197,12 +203,14 @@ class Player(player_base.PlayerBase):
         delta = best_pass_target - active
         direction_action = self._direction_action(delta)
         if self._last_action == direction_action:
-          return football_action_set.core_action_short_pass
+          return football_action_set.action_short_pass
         else:
           return direction_action
     return move_action
 
   def take_action(self, observations):
+    assert len(observations['active']
+              ) == 1, 'Bot does not support multiple player control'
     self._last_observation = self._observation
     self._observation = observations
     if not self._last_observation:

@@ -28,13 +28,9 @@ namespace blunted {
   }
 
   VertexBuffer::~VertexBuffer() {
-    //printf("ERASING VERTEXBUFFER ID #%i.. ", vertexBufferID);
-
     if (vertexBufferID.bufferID != -1) {
-      Renderer3DMessage_DeleteVertexBuffer(vertexBufferID).Handle(renderer3D);
+      renderer3D->DeleteVertexBuffer(vertexBufferID);
     }
-
-    //printf("[done]\n");
   }
 
   void VertexBuffer::SetTriangleMesh(const std::vector<float>& vertices, unsigned int verticesDataSize, std::vector<unsigned int> indices) {
@@ -59,10 +55,8 @@ namespace blunted {
 
     // changed size? delete vbo first!
     if (vertexBufferID.bufferID != -1 && sizeChanged) {
-      Renderer3DMessage_DeleteVertexBuffer(vertexBufferID).Handle(renderer3D);
+      renderer3D->DeleteVertexBuffer(vertexBufferID);
       vertexBufferID.bufferID = -1;
-
-      //printf("deletele\n");
     }
 
     if (vertexBufferID.bufferID == -1) {
@@ -71,7 +65,7 @@ namespace blunted {
       if (dynamicBuffer) usage = e_VertexBufferUsage_DynamicDraw;
       vertexBufferID = renderer3D->CreateVertexBuffer(&vertices[0], verticesDataSize, indices, usage);
     } else {
-      Renderer3DMessage_UpdateVertexBuffer(vertexBufferID, &vertices[0], verticesDataSize).Handle(renderer3D);
+      renderer3D->UpdateVertexBuffer(vertexBufferID, vertices.data(), verticesDataSize);
     }
 
     sizeChanged = false;

@@ -23,17 +23,12 @@
 namespace blunted {
 
   enum e_LogType {
-    e_Notice,
     e_Warning,
     e_Error,
     e_FatalError
   };
 
-  typedef boost::signal < void(e_LogType, std::string, std::string, std::string) > signal_LogCallback;
-
-  void LogOpen();
-  void LogClose();
-
+  typedef boost::signals2::signal < void(e_LogType, std::string, std::string, std::string) > signal_LogCallback;
   void Log(e_LogType logType, std::string className, std::string methodName, std::string message);
 
 }

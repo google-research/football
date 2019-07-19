@@ -23,7 +23,6 @@
 #include "../base/log.hpp"
 #include "../base/utils.hpp"
 
-#include "../types/lockable.hpp"
 #include "../types/loader.hpp"
 
 #include "../managers/environmentmanager.hpp"

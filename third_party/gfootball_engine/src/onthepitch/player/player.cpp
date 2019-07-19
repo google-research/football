@@ -58,11 +58,9 @@ Player::Player(Team *team, PlayerData *playerData) : PlayerBase(team->GetMatch()
 }
 
 Player::~Player() {
-  if (Verbose()) printf("exiting player.. ");
   if (nameCaption) menuTask->GetWindowManager()->MarkForDeletion(nameCaption);
   if (debugCaption) menuTask->GetWindowManager()->MarkForDeletion(debugCaption);
   menuTask.reset();
-  if (Verbose()) printf("done\n");
 }
 
 Humanoid *Player::CastHumanoid() { return static_cast<Humanoid*>(humanoid); }
@@ -92,9 +90,6 @@ void Player::Activate(boost::intrusive_ptr<Node> humanoidSourceNode, boost::intr
   CastController()->LoadStrategies();
 
   buf_nameCaptionShowCondition = false;
-  buf_debugCaptionShowCondition = false;
-  if (GetDebugMode() != e_DebugMode_Off) buf_nameCaptionShowCondition = true;
-  if (GetDebugMode() != e_DebugMode_Off) buf_debugCaptionShowCondition = true;
 
   nameCaption = new Gui2Caption(GetMenuTask()->GetWindowManager(), "game_player_name_" + int_to_str(id), 0, 0, 1, 2.0, playerData->GetLastName());
   nameCaption->SetTransparency(0.3f);
@@ -120,6 +115,7 @@ void Player::Deactivate() {
   }
 
   PlayerBase::Deactivate();
+  GetTeam()->UpdateDesignatedTeamPossessionPlayer();
 }
 
 FormationEntry Player::GetFormationEntry() {
@@ -191,28 +187,12 @@ void Player::UpdatePossessionStats(bool onInterval) {
   float previousDist = 0; // debug
   for (unsigned int ms = startTime_ms; ms < ballPredictionSize_ms; ms += timeStep_ms) {
     if (match->GetBall()->Predict(ms).coords[2] < 1.5f) {
-      TimeNeeded result = AI_GetTimeNeededForDistance_ms(GetPosition(), GetMovement(), match->GetBall()->Predict(ms).Get2D(), GetMaxVelocity(), precise, ms, GetDebug());
+      TimeNeeded result = AI_GetTimeNeededForDistance_ms(GetPosition(), GetMovement(), match->GetBall()->Predict(ms).Get2D(), GetMaxVelocity(), precise, ms);
       unsigned int timeNeeded = result.usual_ms;
       unsigned int timeNeeded_optimistic = result.optimistic_ms;
 
-      // // debug
-      // if (GetDebug()) {
-      //   float dist = (match->GetBall()->Predict(ms).Get2D() - GetPosition()).GetLength();
-      //   if (dist > previousDist) {
-      //     SetGreenDebugPilon(dudVec);
-      //     SetYellowDebugPilon(dudVec + (match->GetBall()->Predict(ms).Get2D() - GetPosition()).GetNormalized(0) * dud);
-      //     previousDist = 1000000;
-      //   } else {
-      //     previousDist = dist;
-      //   }
-      // }
-
       if (timeNeeded_optimistic <= ms) {
         if (ms < timeNeededToGetToBall_optimistic_ms) timeNeededToGetToBall_optimistic_ms = ms;
-        //foundOptimisticTime = true;
-        if (GetDebug()) {
-          //SetRedDebugPilon(GetPosition() + Vector3(timeNeededToGetToBall_optimistic_ms / 100.0f, 0.0f, 0.05f));
-        }
       }
 
       if (timeNeeded <= ms) {
@@ -223,21 +203,10 @@ void Player::UpdatePossessionStats(bool onInterval) {
           ms = previous_ms;
           timeStep_ms = 10;
           refine = true;
-          //if (GetDebug()) printf("refining..\n");
-
-        // found!
+          // found!
         } else {
 
           timeNeededToGetToBall_ms = ms;
-          if (GetDebug()) {
-            //printf("timestep: %i, resultRadius: %f, ballDistance: %f\n", timeStep_ms, dud, (match->GetBall()->Predict(0) - GetPosition()).GetLength());
-            //printf("time needed: %u\n", timeNeededToGetToBall_ms);
-            //SetGreenDebugPilon(GetPosition() + Vector3(timeNeededToGetToBall_ms / 100.0f, 0.0f, 0.0f));
-            //printf("found!\n");
-          }
-          if (team->GetDesignatedTeamPossessionPlayer() == this && team->GetID() == 1) {
-            //SetYellowDebugPilon(GetPosition() + Vector3(timeNeededToGetToBall_ms / 100.0f, 0.0f, 0.0f));
-          }
           break;
 
         }
@@ -253,7 +222,7 @@ void Player::UpdatePossessionStats(bool onInterval) {
           int(std::round((balldist / maxBallVelo) * 1000.0f));
       timeStep_ms = clamp(timeToGo_ms, 10, 500);
       // round to 10s
-      timeStep_ms = int(std::floor(timeStep_ms / 10.0f)) * 10;
+      timeStep_ms = (timeStep_ms / 10) * 10;
     } else timeStep_ms = 10;
 
     previous_ms = ms;
@@ -305,8 +274,6 @@ float Player::GetClosestOpponentDistance() const {
 
 void Player::Process() {
 
-  //if (GetDebug()) SetGreenDebugPilon(GetPosition() + GetMovement());
-
   if (isActive) {
 
     desiredTimeToBall_ms = std::max(desiredTimeToBall_ms - 10, 0);
@@ -316,7 +283,6 @@ void Player::Process() {
     if (match->IsInPlay()) {
       if (match->GetActualTime_ms() % 1000 == 0) {
         positionHistoryPerSecond.push_back(GetPosition());
-        //if (GetDebug()) printf("average velo (5): %f, (50): %f\n", GetAverageVelocity(5), GetAverageVelocity(50));
       }
       if (hasPossession) possessionDuration_ms += 10; else possessionDuration_ms = 0;
       if ((match->GetActualTime_ms() + GetStableID() * 10) % 100 == 0) {
@@ -333,22 +299,11 @@ void Player::Process() {
     float distance = (posAfter - posBefore).GetLength();
     fatigueFactorInv -= distance * 0.00003f * (2.0f - GetStaminaStat()) * (1.0f / match->GetMatchDurationFactor());
     fatigueFactorInv = clamp(fatigueFactorInv, 0.01f, 1.0f);
-    //if (GetDebug() && match->GetActualTime_ms() % 1000 == 0) printf("fatigue: %f\n", GetFatigueFactorInv());
-
     // Don't send off the last player on the team.
     if (cards > 1 && cardEffectiveTime_ms <= match->GetActualTime_ms()
         && GetTeam()->GetActivePlayersCount() > 1) {
       SendOff();
     }
-
-/*
-    if (HasPossession() && GetDebug()) {
-      SetSmallDebugCircle1(GetPosition());
-    } else if (GetDebug()) {
-      SetSmallDebugCircle1(Vector3(0, 0, -100));
-    }
-*/
-
   }
 
 }
@@ -357,10 +312,8 @@ void Player::PreparePutBuffers(unsigned long snapshotTime_ms) {
 
   PlayerBase::PreparePutBuffers(snapshotTime_ms);
 
-  if (GetDebugMode() == e_DebugMode_Off) {
-    buf_nameCaptionShowCondition = team->IsHumanControlled(id);
-    if (team->GetHumanGamerCount() == 0) buf_nameCaptionShowCondition = team->GetDesignatedTeamPossessionPlayer() == this;
-  }
+  buf_nameCaptionShowCondition = team->IsHumanControlled(id);
+  if (team->GetHumanGamerCount() == 0) buf_nameCaptionShowCondition = team->GetDesignatedTeamPossessionPlayer() == this;
   e_PlayerColor playerColor = team->GetPlayerColor(id);
   switch (playerColor) {
     case e_PlayerColor_Green:
@@ -384,10 +337,6 @@ void Player::PreparePutBuffers(unsigned long snapshotTime_ms) {
   };
 
   std::string name = playerData->GetLastName();
-  if (buf_debugCaptionShowCondition) {
-    //name.append(" " + GetRoleName(GetDynamicFormationEntry().role));
-    buf_debugCaption = GetRoleName(GetDynamicFormationEntry().role);
-  }
 
   buf_nameCaption = name;
 
@@ -411,7 +360,7 @@ void Player::FetchPutBuffers(unsigned long putTime_ms) {
   PlayerBase::FetchPutBuffers(putTime_ms);
 
   fetchedbuf_nameCaptionShowCondition = buf_nameCaptionShowCondition;
-  fetchedbuf_debugCaptionShowCondition = buf_debugCaptionShowCondition;
+  fetchedbuf_debugCaptionShowCondition = false;
   fetchedbuf_nameCaption = buf_nameCaption;
   fetchedbuf_debugCaption = buf_debugCaption;
   fetchedbuf_nameCaptionPos = buf_nameCaptionPos;
@@ -421,38 +370,6 @@ void Player::FetchPutBuffers(unsigned long putTime_ms) {
 }
 
 void Player::Put2D() {
-
-  if (GetDebugMode() == e_DebugMode_AI) {
-
-    if (GetManMarkingID() != -1 && team->GetID() == 1) {
-//      Vector3 p1 = GetProjectedCoord(GetGeomPosition().Get2D(), match->GetCamera());
-//      Vector3 p2 = GetProjectedCoord(match->GetPlayer(GetManMarkingID())->GetGeomPosition().Get2D(), match->GetCamera());
-      Vector3 color;
-      if (team->GetID() == 0) color = Vector3(255, 255, 255); else
-                              color = Vector3(225, 255, 225);
-
-      int x1, y1, x2, y2;//, dud1, dud2;
-//      GetMenuTask()->GetWindowManager()->GetCoordinates(p1.coords[0], p1.coords[1], 1, 1, x1, y1, dud1, dud2);
-//      GetMenuTask()->GetWindowManager()->GetCoordinates(p2.coords[0], p2.coords[1], 1, 1, x2, y2, dud1, dud2);
-
-      GetDebugOverlayCoord(match, GetGeomPosition(), x1, y1);
-      GetDebugOverlayCoord(match, match->GetPlayer(GetManMarkingID())->GetGeomPosition(), x2, y2);
-
-      Line line;
-      line.SetVertex(0, Vector3(x1, y1, 0));
-      line.SetVertex(1, Vector3(x2, y2, 0));
-      GetDebugOverlay()->DrawLine(line, color, 240);
-
-      /*
-      Triangle triangle;
-      triangle.SetVertex(0, Vector3(x1, y1, 0) + (Vector3(x2, y2, 0) - Vector3(x1, y1, 0)).GetRotated2D(0.5 * pi).GetNormalized(0) * 4);
-      triangle.SetVertex(1, Vector3(x1, y1, 0) + (Vector3(x2, y2, 0) - Vector3(x1, y1, 0)).GetRotated2D(-0.5 * pi).GetNormalized(0) * 4);
-      triangle.SetVertex(2, Vector3(x2, y2, 0));
-      GetDebugOverlay()->DrawTriangle(triangle, color, 180);
-      */
-    }
-  }
-
   if (fetchedbuf_nameCaptionShowCondition) {
     //Vector3 captionPos3D = fetchedbuf_nameCaptionPos;
     //Vector3 captionPos2D = GetProjectedCoord(captionPos3D, match->GetCamera());
@@ -528,20 +445,14 @@ void Player::SendOff() {
 }
 
 float Player::GetStaminaStat() const {
-  return playerData->GetStat("physical_stamina");
+  return playerData->GetStat(physical_stamina);
 }
 
-float Player::GetStat(const char *name) const {
-
-  //if (team->GetHumanGamerCount() != 0) return 1.0f;
-
+float Player::GetStat(PlayerStat name) const {
   float multiplier = 1.0f;
-  //if (team->GetID() == 0) multiplier = 0.5f; else multiplier = 1.0f;
   if (team->GetHumanGamerCount() == 0) multiplier = 0.3f + 0.7f * team->GetMatch()->GetMatchDifficulty();
   multiplier *= 0.7f + 0.3f * GetFatigueFactorInv();
 
-  if (playerData->GetStat(name) == 0.0f) printf("NULLSTAT: name: %s\n", name);
-  //printf("stat %s: %f * %f\n", name, playerData->GetStat(name), multiplier);
   return playerData->GetStat(name) * multiplier;
 }
 
@@ -572,13 +483,13 @@ void Player::_CalculateTacticalSituation() {
   // calculate how free the path forward is
   float time_sec = 0.5f;
   Vector3 checkPos = GetPosition() + Vector3(-team->GetSide(), 0, 0) * sprintVelocity * time_sec;
-  tacticalSituation.forwardSpaceRating = AI_CalculateFreeSpace(match, mentalImage, team->GetID(), checkPos, 5.0f, time_sec, true); // FREESPACE :D :D
+  tacticalSituation.forwardSpaceRating = AI_CalculateFreeSpace(match, mentalImage, team->GetID(), checkPos, 5.0f, time_sec); // FREESPACE :D :D
 
   // calculate the amount of space this player has
   //tacticalSituation.spaceRating = AI_CalculatePersonalFreeSpace(match, mentalImage, this, 8.0f, 8.0f, 0.2f);
   time_sec = 0.1f;
   checkPos = GetPosition() + GetMovement() * time_sec;
-  tacticalSituation.spaceRating = AI_CalculateFreeSpace(match, mentalImage, team->GetID(), checkPos, 5.0f, time_sec, true); // FREESPACE :D :D
+  tacticalSituation.spaceRating = AI_CalculateFreeSpace(match, mentalImage, team->GetID(), checkPos, 5.0f, time_sec); // FREESPACE :D :D
 
   // distance to opponent goal 0 .. 1 == farthest .. closest
   tacticalSituation.forwardRating = 1.0f - clamp((Vector3(pitchHalfW * -team->GetSide(), 0, 0) - GetPosition()).GetLength() / (pitchHalfW * 2.0f), 0.0f, 1.0f);

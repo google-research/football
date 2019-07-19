@@ -194,7 +194,7 @@ namespace blunted {
 
       // material
 
-      const Material *material = &triangleMeshes.at(i).material;
+      const Material *material = &triangleMeshes[i].material;
       Renderer3DMaterial r3dMaterial;
       LoadMaterials(renderer3D, material, r3dMaterial);
 
@@ -319,7 +319,7 @@ namespace blunted {
 
         // material
 
-        const Material *material = &triangleMeshes.at(i).material;
+        const Material *material = &triangleMeshes[i].material;
         Renderer3DMaterial r3dMaterial;
         LoadMaterials(renderer3D, material, r3dMaterial);
 

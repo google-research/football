@@ -25,8 +25,6 @@
 
 #include "animationextensions/footballanimationextension.hpp"
 
-std::string emptyString = "";
-
 namespace blunted {
 
 
@@ -49,7 +47,7 @@ namespace blunted {
   Animation::Animation(const Animation &src) {
     int animSize = src.nodeAnimations.size();
     for (int i = 0; i < animSize; i++) {
-      nodeAnimations.push_back(new NodeAnimation(*src.nodeAnimations.at(i)));
+      nodeAnimations.push_back(new NodeAnimation(*src.nodeAnimations[i]));
     }
 
     frameCount = src.frameCount;
@@ -116,18 +114,18 @@ namespace blunted {
     return frameCount;
   }
 
-  bool Animation::GetKeyFrame(std::string nodeName, int frame, Quaternion &orientation, Vector3 &position, bool getOrientation, bool getPosition) const {
+  bool Animation::GetKeyFrame(BodyPart nodeName, int frame, Quaternion &orientation, Vector3 &position) const {
     int animSize = nodeAnimations.size();
     for (int i = 0; i < animSize; i++) {
-      if (nodeAnimations.at(i)->nodeName == nodeName) {
-        GetInterpolatedValues(nodeAnimations.at(i)->animation, frame, orientation, position, getOrientation, getPosition);
-        return nodeAnimations.at(i)->animation.find(frame) != nodeAnimations.at(i)->animation.end();
+      if (nodeAnimations[i]->nodeName == nodeName) {
+        GetInterpolatedValues(nodeAnimations[i]->animation, frame, orientation, position);
+        return nodeAnimations[i]->animation.getFrame(frame) != nullptr;
       }
     }
     return false;
   }
 
-  void Animation::SetKeyFrame(std::string nodeName, int frame, const Quaternion &orientation, const Vector3 &position) {
+  void Animation::SetKeyFrame(BodyPart nodeName, int frame, const Quaternion &orientation, const Vector3 &position) {
     if (frame >= frameCount) frameCount = frame + 1;
 
     NodeAnimation *nodeAnimation = 0;
@@ -135,8 +133,8 @@ namespace blunted {
     // find node
     int animSize = nodeAnimations.size();
     for (int i = 0; i < animSize; i++) {
-      if (nodeAnimations.at(i)->nodeName == nodeName) {
-        nodeAnimation = nodeAnimations.at(i);
+      if (nodeAnimations[i]->nodeName == nodeName) {
+        nodeAnimation = nodeAnimations[i];
         break;
       }
     }
@@ -149,46 +147,45 @@ namespace blunted {
     }
 
     // find frame
-    const std::map<int, KeyFrame>::iterator animIter = nodeAnimation->animation.find(frame);
-    if (animIter != nodeAnimation->animation.end()) {
+    auto i = nodeAnimation->animation.getFrame(frame);
+    if (i) {
       // change
-      animIter->second.orientation = orientation;
-      animIter->second.position = position;
+      i->orientation = orientation;
+      i->position = position;
     } else {
       // insert
       KeyFrame keyFrame;
       keyFrame.orientation = orientation;
       keyFrame.position = position;
-      nodeAnimation->animation.insert(std::pair<int, KeyFrame>(frame, keyFrame));
+      nodeAnimation->animation.addFrame(std::pair<int, KeyFrame>(frame, keyFrame));
     }
 
     DirtyCache();
   }
 
-  void Animation::GetInterpolatedValues(const std::map<int, KeyFrame> &animation, int frame, Quaternion &orientation, Vector3 &position, bool getOrientation, bool getPosition) const {
-    std::vector<WeighedKey> weighedKeys;
+  void Animation::GetInterpolatedValues(const KeyFrames &animation, int frame, Quaternion &orientation, Vector3 &position) const {
+    WeighedKey weighedKeys[2];
+    int weighedKeysSize = 0;
 
 
     position = Vector3(0);
     orientation = QUATERNION_IDENTITY;
 
     if (frame > 0 && frame < GetFrameCount()) {
-      std::map<int, KeyFrame>::const_iterator animIter = animation.begin();
+      auto animIter = animation.d.begin();
 
-      while (animIter != animation.end()) {
+      while (animIter != animation.d.end()) {
 
         // still before current frame and yet encountered keys? clear them, we don't need earlier keys
-        if (animIter->first < frame && weighedKeys.size() > 0) weighedKeys.clear();
+        if (animIter->first < frame) weighedKeysSize = 0;
 
         // add key, hopefully this is the last one before our current frame, or the first after
-        WeighedKey key;
-        key.keyFrame = animIter->second;
-        key.frame = animIter->first;
-        weighedKeys.push_back(key);
+        weighedKeys[weighedKeysSize].keyFrame = &animIter->second;
+        weighedKeys[weighedKeysSize++].frame = animIter->first;
 
         // if this keyframe came after our current frame, we've got everything we need, so bail out
         if (animIter->first >= frame) {
-          animIter = animation.end();
+          animIter = animation.d.end();
         } else {
           animIter++;
         }
@@ -198,87 +195,77 @@ namespace blunted {
       // calculate its/their influence
       float bias = 0;
 
-      if (weighedKeys.size() == 1) {
+      if (weighedKeysSize == 1) {
 
-        WeighedKey &key = weighedKeys.at(0);
+        WeighedKey &key = weighedKeys[0];
         key.influence = 1;
 
-      } else if (weighedKeys.size() == 2) {
+      } else if (weighedKeysSize == 2) {
 
         // distance between keyframes and current frame
-        int distance = weighedKeys.at(1).frame - weighedKeys.at(0).frame;
-        int distance1 = frame - weighedKeys.at(0).frame;
-        int distance2 = weighedKeys.at(1).frame - frame;
-        float ratio1 = 1 - (distance1 * 1.0) / (distance * 1.0);
-        float ratio2 = 1 - (distance2 * 1.0) / (distance * 1.0);
-        weighedKeys.at(0).influence = ratio1;
-        weighedKeys.at(1).influence = ratio2;
+        int distance = weighedKeys[1].frame - weighedKeys[0].frame;
+        float distance1 = frame - weighedKeys[0].frame;
+        float distance2 = weighedKeys[1].frame - frame;
+        float ratio1 = 1 - distance1 / (distance * 1.0);
+        float ratio2 = 1 - distance2 / (distance * 1.0);
+        weighedKeys[0].influence = ratio1;
+        weighedKeys[1].influence = ratio2;
 
-        int relPosition = frame - weighedKeys.at(0).frame;
+        int relPosition = frame - weighedKeys[0].frame;
         bias = (relPosition * 1.0) / (distance * 1.0);
 
       }
 
-      if (getOrientation) {
-        if (weighedKeys.size() > 1) {
-          orientation = weighedKeys.at(0).keyFrame.orientation.GetSlerped(bias, weighedKeys.at(1).keyFrame.orientation);
-        } else {
-          orientation = weighedKeys.at(0).keyFrame.orientation;
-        }
+      if (weighedKeysSize > 1) {
+        orientation = weighedKeys[0].keyFrame->orientation.GetSlerped(bias, weighedKeys[1].keyFrame->orientation);
+        position = weighedKeys[0].keyFrame->position * weighedKeys[0].influence + weighedKeys[1].keyFrame->position * weighedKeys[1].influence;
+      } else {
+        orientation = weighedKeys[0].keyFrame->orientation;
+        position = weighedKeys[0].keyFrame->position * weighedKeys[0].influence;
       }
-
-      if (getPosition) {
-        for (unsigned int v = 0; v < weighedKeys.size(); v++) {
-          position += weighedKeys.at(v).keyFrame.position * weighedKeys.at(v).influence;
-        }
-      }
-
     } else if (frame >= GetFrameCount()) {
 
       // extrapolate beyond animation
       // remember, weighed keys are in reverse order here!
 
       // get last 2 keyframes
-      std::map<int, KeyFrame>::const_iterator animIter = animation.end();
-      while (animIter != animation.begin()) {
+      auto animIter = animation.d.end();
+      while (animIter != animation.d.begin()) {
         animIter--;
 
         // add key
-        WeighedKey key;
-        key.keyFrame = animIter->second;
-        key.frame = animIter->first;
-        weighedKeys.push_back(key);
+        weighedKeys[weighedKeysSize].keyFrame = &animIter->second;
+        weighedKeys[weighedKeysSize++].frame = animIter->first;
 
-        if (weighedKeys.size() == 2) {
-          animIter = animation.begin();
+        if (weighedKeysSize == 2) {
+          animIter = animation.d.begin();
         }
       }
-      if (weighedKeys.size() == 0) return; // should not happen
-      if (weighedKeys.size() == 1) {
-        if (getOrientation) orientation = weighedKeys.at(0).keyFrame.orientation;
-        if (getPosition) position = weighedKeys.at(0).keyFrame.position;
+      if (weighedKeysSize == 0) return; // should not happen
+      if (weighedKeysSize == 1) {
+        orientation = weighedKeys[0].keyFrame->orientation;
+        position = weighedKeys[0].keyFrame->position;
         return;
       }
       // extrapolate
       //position = weighedKeys.at(0).keyFrame.position; // ignore position
-      float dist1 = weighedKeys.at(0).frame - weighedKeys.at(1).frame;
-      float dist2 = frame - weighedKeys.at(0).frame;
+      float dist1 = weighedKeys[0].frame - weighedKeys[1].frame;
+      float dist2 = frame - weighedKeys[0].frame;
       float bias = 1 + ((1 / dist1) * dist2);
       // extrapolation through hax: bias > 1 doesn't really give proper results. however, it works for small angles so FUFUUFUUUU XD
       // (use slerp instead of lerp - lerp can't extrapolate at all)
       //bias = clamp(bias, 0.0f, 1.0f);
-      if (getOrientation) orientation = weighedKeys.at(1).keyFrame.orientation.GetSlerped(bias, weighedKeys.at(0).keyFrame.orientation);
-      if (getPosition) position = weighedKeys.at(1).keyFrame.position * (1 - bias) + weighedKeys.at(0).keyFrame.position * bias;
+      orientation = weighedKeys[1].keyFrame->orientation.GetSlerped(bias, weighedKeys[0].keyFrame->orientation);
+      position = weighedKeys[1].keyFrame->position * (1 - bias) + weighedKeys[0].keyFrame->position * bias;
 
     } else if (frame <= 0) {
 
       // extrapolate before animation
       // for now, just return first key
 
-      std::map<int, KeyFrame>::const_iterator animIter = animation.begin();
-      if (getOrientation) orientation = animIter->second.orientation;
-      if (getPosition) position = animIter->second.position;
-
+      auto animIter = animation.d.begin();
+      orientation = animIter->second.orientation;
+      position = animIter->second.position;
     }
 
   }
@@ -291,18 +278,18 @@ namespace blunted {
     if (GetIncomingVelocity() >= 1.8) return;
 
     // rotate player pos
-    std::map<int, KeyFrame> &player = nodeAnimations.at(0)->animation;
-    std::map<int, KeyFrame>::iterator animIter = player.begin();
-    while (animIter != player.end()) {
+    KeyFrames &player = nodeAnimations.at(0)->animation;
+    auto animIter = player.d.begin();
+    while (animIter != player.d.end()) {
       //animIter->second.position.Print();
       animIter->second.position.Rotate2D(-incomingBodyAngle);
       animIter++;
     }
 
     // rotate body dir
-    std::map<int, KeyFrame> &body = nodeAnimations.at(1)->animation;
-    animIter = body.begin();
-    while (animIter != body.end()) {
+    KeyFrames &body = nodeAnimations.at(1)->animation;
+    animIter = body.d.begin();
+    while (animIter != body.d.end()) {
       //animIter->second.position.Print();
       Quaternion rotation(QUATERNION_IDENTITY);
       Quaternion zRot;
@@ -330,7 +317,7 @@ namespace blunted {
     DirtyCache();
   }
 
-  void Animation::Apply(const std::map < const std::string, boost::intrusive_ptr<Node> > nodeMap, int frame, int timeOffset_ms, bool smooth, float smoothFactor, /*const boost::shared_ptr<Animation> previousAnimation, int smoothFrames, */const Vector3 &basePos, radian baseRot, std::map < std::string, BiasedOffset > &offsets, MovementHistory *movementHistory, int timeDiff_ms, bool noPos, bool updateSpatial) {
+  void Animation::Apply(const NodeMap& nodeMap, int frame, int timeOffset_ms, bool smooth, float smoothFactor, const Vector3 &basePos, radian baseRot, BiasedOffsets &offsets, MovementHistory *movementHistory, int timeDiff_ms, bool noPos, bool updateSpatial) {
 
     // simple keyframe-to-keyframe version
 
@@ -340,9 +327,7 @@ namespace blunted {
 
     for (const auto nodeAnimation : nodeAnimations) {
 
-      auto mapNode = nodeMap.find(nodeAnimation->nodeName);
-      assert(mapNode != nodeMap.end());
-
+      auto mapNode = nodeMap[nodeAnimation->nodeName];
       Quaternion orientation;
       Vector3 position;
 
@@ -353,23 +338,15 @@ namespace blunted {
       Vector3 position_pre, position_post;
       float bias = 0.5f;
       if (timeOffset_ms != -1) bias = clamp(timeOffset_ms / 10.0f, 0.0f, 1.0f);
-      int smoothFrames = 0;
-      if (smooth && 1 == 2) {
-        smoothFrames = 0;
-        if (GetAnimType() == e_DefString_Movement) smoothFrames = 1;
-        float factor = (smoothFrames * 2) + 1;
-        bias /= factor;
-        bias += 0.5f - ((1.0f / factor) * 0.5f); // center, then subtract half of new size
-      }
-      GetInterpolatedValues(nodeAnimation->animation, frame     - smoothFrames, orientation_pre , position_pre);
-      GetInterpolatedValues(nodeAnimation->animation, frame + 1 + smoothFrames, orientation_post, position_post);
+      GetInterpolatedValues(nodeAnimation->animation, frame, orientation_pre , position_pre);
+      GetInterpolatedValues(nodeAnimation->animation, frame + 1, orientation_post, position_post);
       orientation_pre.MakeSameNeighborhood(orientation_post);
       orientation = orientation_pre.GetLerped(bias, orientation_post).GetNormalized();
       position = position_pre * (1.0f - bias) + position_post * bias;
 
 
 
-      if (nodeAnimation->nodeName.compare("player") == 0) {
+      if (nodeAnimation->nodeName == player) {
         if (noPos) {
           position.coords[0] = 0;
           position.coords[1] = 0;
@@ -377,7 +354,7 @@ namespace blunted {
           position.Rotate2D(baseRot);
         }
       }
-      if (nodeAnimation->nodeName.compare("body") == 0) {
+      if (nodeAnimation->nodeName == body) {
         Quaternion rotZ;
         rotZ.SetAngleAxis(baseRot, Vector3(0, 0, 1));
         orientation = rotZ * orientation;
@@ -385,13 +362,13 @@ namespace blunted {
       }
 
       // offset
-      std::map < std::string, BiasedOffset >::iterator iter = offsets.find(nodeAnimation->nodeName);
-      if (iter != offsets.end()) {
-        iter->second.orientation.MakeSameNeighborhood(orientation);
-        if (iter->second.isRelative) {
-          orientation = orientation.GetLerped(iter->second.bias, iter->second.orientation * orientation).GetNormalized();
+      BiasedOffset& offset = offsets[nodeAnimation->nodeName];
+      if (offset.bias != 0.0) {
+        offset.orientation.MakeSameNeighborhood(orientation);
+        if (offset.isRelative) {
+          orientation = orientation.GetLerped(offset.bias, offset.orientation * orientation).GetNormalized();
         } else {
-          orientation = orientation.GetLerped(iter->second.bias, iter->second.orientation).GetNormalized();
+          orientation = orientation.GetLerped(offset.bias, offset.orientation).GetNormalized();
         }
       }
 
@@ -406,7 +383,7 @@ namespace blunted {
         MovementHistoryEntry *movementHistoryEntry = 0;
 
         for (unsigned int node = 0; node < movementHistory->size(); node++) {
-          if (movementHistory->at(node).nodeName.compare(nodeAnimation->nodeName) == 0) {
+          if (movementHistory->at(node).nodeName == nodeAnimation->nodeName) {
             movementHistoryEntry = &movementHistory->at(node);
           }
         }
@@ -424,10 +401,10 @@ namespace blunted {
             std::pow(curve(1.0f - NormalizedClamp(frame, 0, 8), 1.0f), 0.5f);
         float currentBias = 0.0f + beginBias * smoothFactor * 0.5f;
 
-        if (nodeAnimation->nodeName.compare("player") != 0) {
+        if (nodeAnimation->nodeName != player) {
 
           const Quaternion &previousOrientation = movementHistoryEntry->orientation;
-          Quaternion currentOrientation = mapNode->second->GetRotation();
+          Quaternion currentOrientation = mapNode->GetRotation();
           currentOrientation.MakeSameNeighborhood(previousOrientation);
 
           if (timeDiff_ms > 0) {
@@ -562,12 +539,12 @@ namespace blunted {
                                         ((float)timeDiff_ms * 0.001f);
               radian maxAngle_per_second = 7.5f * pi;//5.5f * pi;
               //if (nodeAnimation->nodeName.compare("body") == 0) maxAngle_per_second *= 0.8f;
-              if (nodeAnimation->nodeName.compare("left_elbow") == 0) maxAngle_per_second *= 1.2f;
-              else if (nodeAnimation->nodeName.compare("right_elbow") == 0) maxAngle_per_second *= 1.2f;
-              else if (nodeAnimation->nodeName.compare("left_knee") == 0) maxAngle_per_second *= 1.2f;
-              else if (nodeAnimation->nodeName.compare("right_knee") == 0) maxAngle_per_second *= 1.2f;
-              else if (nodeAnimation->nodeName.compare("left_ankle") == 0) maxAngle_per_second *= 1.6f;
-              else if (nodeAnimation->nodeName.compare("right_ankle") == 0) maxAngle_per_second *= 1.6f;
+              if (nodeAnimation->nodeName == left_elbow) maxAngle_per_second *= 1.2f;
+              else if (nodeAnimation->nodeName == right_elbow) maxAngle_per_second *= 1.2f;
+              else if (nodeAnimation->nodeName == left_knee) maxAngle_per_second *= 1.2f;
+              else if (nodeAnimation->nodeName == right_knee) maxAngle_per_second *= 1.2f;
+              else if (nodeAnimation->nodeName == left_ankle) maxAngle_per_second *= 1.6f;
+              else if (nodeAnimation->nodeName == right_ankle) maxAngle_per_second *= 1.6f;
               maxAngle_per_second = (0.3f + 0.7f * (1.0f - beginBias)) * maxAngle_per_second;
               //if (nodeAnimation->nodeName.compare("body") == 0) maxAngle_per_second = 3.0f * pi;
               if (angle_per_second > maxAngle_per_second) {
@@ -616,10 +593,10 @@ namespace blunted {
 
         }
 
-        else if (nodeAnimation->nodeName.compare("player") == 0) {
+        else if (nodeAnimation->nodeName == player) {
 
           const Vector3 &previousPosition = movementHistoryEntry->position;
-          Vector3 currentPosition = mapNode->second->GetPosition();
+          Vector3 currentPosition = mapNode->GetPosition();
 
           if (timeDiff_ms > 0 && beginBias > 0.01f) {
 
@@ -653,7 +630,7 @@ namespace blunted {
   // old version, use for now, until new version above is finished
 
             float maxMetersPerSec = 2.8f;//1.8f
-            if (GetVariable("outgoing_special_state").compare("") != 0) maxMetersPerSec = 6.0f;
+            if (GetVariableCache().outgoing_special_state().compare("") != 0) maxMetersPerSec = 6.0f;
             volatile float allowedDistance = maxMetersPerSec * ((float)timeDiff_ms * 0.001f);
 
             float newZ = position.coords[2] + basePos.coords[2];
@@ -677,23 +654,23 @@ namespace blunted {
       } // smoothing
 
 
-      if (nodeAnimation->nodeName.compare("player") != 0) {
-        Quaternion currentOrientation = mapNode->second->GetRotation();
+      if (nodeAnimation->nodeName != player) {
+        Quaternion currentOrientation = mapNode->GetRotation();
         orientation.MakeSameNeighborhood(currentOrientation);
-        mapNode->second->SetRotation(orientation, false);
-      } else if (nodeAnimation->nodeName.compare("player") == 0) {
-        mapNode->second->SetPosition(position + basePos, false);
+        mapNode->SetRotation(orientation, false);
+      } else if (nodeAnimation->nodeName == player) {
+        mapNode->SetPosition(position + basePos, false);
       }
 
     }
 
-    if (updateSpatial) (*nodeMap.find(nodeAnimations.at(0)->nodeName)).second->RecursiveUpdateSpatialData(e_SpatialDataType_Both);
+    if (updateSpatial) (*nodeMap[nodeAnimations.at(0)->nodeName]).RecursiveUpdateSpatialData(e_SpatialDataType_Both);
   }
 
   Vector3 Animation::GetTranslation() const {
     if (cache_translation_dirty) {
-      cache_translation = ((--nodeAnimations.at(0)->animation.end())->second.position -
-                           nodeAnimations.at(0)->animation.begin()->second.position);
+      cache_translation = ((--nodeAnimations.at(0)->animation.d.end())->second.position -
+                           nodeAnimations.at(0)->animation.d.begin()->second.position);
       cache_translation.coords[2] = 0;
       cache_translation_dirty = false;
     }
@@ -703,11 +680,11 @@ namespace blunted {
   Vector3 Animation::GetIncomingMovement() const {
 
     if (cache_incomingMovement_dirty) {
-      if (nodeAnimations.at(0)->animation.size() > 1) {
-        cache_incomingMovement = ((++nodeAnimations.at(0)->animation.begin())->second.position -
-                                  nodeAnimations.at(0)->animation.begin()->second.position) /
-                                 ((++nodeAnimations.at(0)->animation.begin())->first -
-                                  nodeAnimations.at(0)->animation.begin()->first * 1.0) * 100;
+      if (nodeAnimations.at(0)->animation.d.size() > 1) {
+        cache_incomingMovement = ((++nodeAnimations.at(0)->animation.d.begin())->second.position -
+                                  nodeAnimations.at(0)->animation.d.begin()->second.position) /
+                                 ((++nodeAnimations.at(0)->animation.d.begin())->first -
+                                  nodeAnimations.at(0)->animation.d.begin()->first * 1.0) * 100;
         cache_incomingMovement.coords[2] = 0;
       } else {
         cache_incomingMovement = Vector3(0);
@@ -719,11 +696,11 @@ namespace blunted {
 
   float Animation::GetIncomingVelocity() const {
     if (cache_incomingVelocity_dirty) {
-      if (nodeAnimations.at(0)->animation.size() > 1) {
-        Vector3 result = ((++nodeAnimations.at(0)->animation.begin())->second.position -
-                          nodeAnimations.at(0)->animation.begin()->second.position) /
-                         ((++nodeAnimations.at(0)->animation.begin())->first -
-                          nodeAnimations.at(0)->animation.begin()->first * 1.0) * 100;
+      if (nodeAnimations.at(0)->animation.d.size() > 1) {
+        Vector3 result = ((++nodeAnimations.at(0)->animation.d.begin())->second.position -
+                          nodeAnimations.at(0)->animation.d.begin()->second.position) /
+                         ((++nodeAnimations.at(0)->animation.d.begin())->first -
+                          nodeAnimations.at(0)->animation.d.begin()->first * 1.0) * 100;
         result.coords[2] = 0;
         cache_incomingVelocity = result.GetLength();
         if (cache_incomingVelocity < 1.8) cache_incomingVelocity = 0;
@@ -741,11 +718,11 @@ namespace blunted {
   Vector3 Animation::GetOutgoingMovement() const {
     if (cache_outgoingMovement_dirty) {
 
-      if (nodeAnimations.at(0)->animation.size() > 1) {
-        cache_outgoingMovement = ((--nodeAnimations.at(0)->animation.end())->second.position -
-                                  (--(--nodeAnimations.at(0)->animation.end()))->second.position) /
-                                 ((--nodeAnimations.at(0)->animation.end())->first -
-                                  (--(--nodeAnimations.at(0)->animation.end()))->first * 1.0) * 100;
+      if (nodeAnimations.at(0)->animation.d.size() > 1) {
+        cache_outgoingMovement = ((--nodeAnimations.at(0)->animation.d.end())->second.position -
+                                  (--(--nodeAnimations.at(0)->animation.d.end()))->second.position) /
+                                 ((--nodeAnimations.at(0)->animation.d.end())->first -
+                                  (--(--nodeAnimations.at(0)->animation.d.end()))->first * 1.0) * 100;
         cache_outgoingMovement.coords[2] = 0;
       } else {
         cache_outgoingMovement = Vector3(0);
@@ -782,11 +759,11 @@ namespace blunted {
 
   float Animation::GetOutgoingVelocity() const {
     if (cache_outgoingVelocity_dirty) {
-      if (nodeAnimations.at(0)->animation.size() > 1) {
-        Vector3 result = ((--nodeAnimations.at(0)->animation.end())->second.position -
-                          (--(--nodeAnimations.at(0)->animation.end()))->second.position) /
-                         ((--nodeAnimations.at(0)->animation.end())->first -
-                          (--(--nodeAnimations.at(0)->animation.end()))->first * 1.0) * 100;
+      if (nodeAnimations.at(0)->animation.d.size() > 1) {
+        Vector3 result = ((--nodeAnimations.at(0)->animation.d.end())->second.position -
+                          (--(--nodeAnimations.at(0)->animation.d.end()))->second.position) /
+                         ((--nodeAnimations.at(0)->animation.d.end())->first -
+                          (--(--nodeAnimations.at(0)->animation.d.end()))->first * 1.0) * 100;
         result.coords[2] = 0;
         cache_outgoingVelocity = result.GetLength();
         if (cache_outgoingVelocity < 1.8) cache_outgoingVelocity = 0.0;
@@ -807,14 +784,14 @@ namespace blunted {
         //if (nodeAnimations.at(0)->animation.size() > 1) {
 
         // full player rotation - last move
-        Vector3 lastMoveVector = (--nodeAnimations.at(0)->animation.end())->second.position -
-                                 (--(--nodeAnimations.at(0)->animation.end()))->second.position;
+        Vector3 lastMoveVector = (--nodeAnimations.at(0)->animation.d.end())->second.position -
+                                 (--(--nodeAnimations.at(0)->animation.d.end()))->second.position;
         cache_angle = FixAngle(lastMoveVector.GetAngle2D(), true);
 
         // if angle is close to 180 degrees, we can't be sure if we want 180 or -180 deg. use body angle as hint.
         if (cache_angle < -0.95f * pi || cache_angle > 0.95f * pi) {
           radian x, y, z;
-          (--(nodeAnimations.at(1)->animation.end()))->second.orientation.GetAngles(x, y, z);
+          (--(nodeAnimations.at(1)->animation.d.end()))->second.orientation.GetAngles(x, y, z);
           if (signSide(cache_angle) != signSide(z)) {
             cache_angle = pi * 0.99f * signSide(z);
           } else {
@@ -824,10 +801,10 @@ namespace blunted {
 
       } else {
 
-        if (nodeAnimations.at(1)->animation.size() > 0) {
+        if (nodeAnimations.at(1)->animation.d.size() > 0) {
           // body rotation
           radian x, y, z;
-          (--(nodeAnimations.at(1)->animation.end()))->second.orientation.GetAngles(x, y, z);
+          (--(nodeAnimations.at(1)->animation.d.end()))->second.orientation.GetAngles(x, y, z);
           cache_angle = z;
 
           // lying on the ground? (buggy)
@@ -853,11 +830,11 @@ namespace blunted {
 
   radian Animation::GetIncomingBodyAngle() const {
     if (cache_incomingBodyAngle_dirty) {
-      if (nodeAnimations.at(1)->animation.size() > 0) {
+      if (nodeAnimations.at(1)->animation.d.size() > 0) {
 
         // body rotation
         radian x, y, z;
-        (nodeAnimations.at(1)->animation.begin())->second.orientation.GetAngles(x, y, z);
+        (nodeAnimations.at(1)->animation.d.begin())->second.orientation.GetAngles(x, y, z);
         cache_incomingBodyAngle = z;
 
         // lying on the ground? (buggy)
@@ -883,11 +860,11 @@ namespace blunted {
   radian Animation::GetOutgoingBodyAngle() const {
     if (cache_outgoingBodyAngle_dirty || cache_angle_dirty || cache_outgoingVelocity_dirty) {
       if (GetOutgoingVelocity() >= 1.8) {
-        if (nodeAnimations.at(1)->animation.size() > 0) {
+        if (nodeAnimations.at(1)->animation.d.size() > 0) {
 
           // body rotation
           radian x, y, z;
-          (--(nodeAnimations.at(1)->animation.end()))->second.orientation.GetAngles(x, y, z);
+          (--(nodeAnimations.at(1)->animation.d.end()))->second.orientation.GetAngles(x, y, z);
           cache_outgoingBodyAngle = z;
 
 /* impossible while moving, right?
@@ -945,11 +922,10 @@ namespace blunted {
   void Animation::Reset() {
     int animSize = nodeAnimations.size();
     for (int i = 0; i < animSize; i++) {
-      delete nodeAnimations.at(i);
+      delete nodeAnimations[i];
     }
 
     customData.reset();
-    variableCache.clear();
     nodeAnimations.clear();
     extensions.clear();
     frameCount = 0;
@@ -985,7 +961,7 @@ namespace blunted {
           key += 4;
         }
 
-        SetKeyFrame(file.at(line).at(0), frame, orientation, position);
+        SetKeyFrame(BodyPartFromString(file.at(line).at(0)), frame, orientation, position);
       }
     }
   }
@@ -1000,7 +976,7 @@ namespace blunted {
     int lastLine = 0;
     for (unsigned int i = 0; i < file.size(); i++) {
       std::vector<std::string> tokenizedLine;
-      tokenize(file.at(i), tokenizedLine, ",");
+      tokenize(file[i], tokenizedLine, ",");
       if (tokenizedLine.at(0) == "extension" || tokenizedLine.at(0).substr(0, 1) == "<") break;
       tokenizedFile.push_back(tokenizedLine);
       lastLine = i + 1;
@@ -1013,7 +989,7 @@ namespace blunted {
 
     for (unsigned int i = lastLine; i < file.size(); i++) {
       std::vector<std::string> tokenizedLine;
-      tokenize(file.at(i), tokenizedLine, ",");
+      tokenize(file[i], tokenizedLine, ",");
       std::map < std::string, boost::shared_ptr<AnimationExtension> >::iterator extensionIter;
       if (tokenizedLine.at(0) == "extension") {
         tokenizedLines.push_back(tokenizedLine);
@@ -1026,7 +1002,7 @@ namespace blunted {
     // additional xml data
     std::string xmlData;
     for (unsigned int i = lastLine; i < file.size(); i++) {
-      xmlData.append(file.at(i));
+      xmlData.append(file[i]);
     }
     XMLLoader xmlLoader;
     customData = boost::shared_ptr<XMLTree>(new XMLTree(xmlLoader.Load(xmlData)));
@@ -1034,8 +1010,8 @@ namespace blunted {
     // load extension data
     for (unsigned int i = 0; i < tokenizedLines.size(); i++) {
       std::map < std::string, boost::shared_ptr<AnimationExtension> >::iterator extensionIter;
-      extensionIter = extensions.find(tokenizedLines.at(i).at(1));
-      if (extensionIter != extensions.end()) (*extensionIter).second->Load(tokenizedLines.at(i));
+      extensionIter = extensions.find(tokenizedLines[i].at(1));
+      if (extensionIter != extensions.end()) (*extensionIter).second->Load(tokenizedLines[i]);
     }
 
     std::multimap<std::string, XMLTree>::iterator iter = customData->children.find("bumpdirection");
@@ -1065,7 +1041,7 @@ namespace blunted {
     // create variable cache
     iter = customData->children.begin();
     while (iter != customData->children.end()) {
-      variableCache[(*iter).first] = (*iter).second.value;
+      variableCache.set((*iter).first, (*iter).second.value);
       iter++;
     }
 
@@ -1091,7 +1067,7 @@ namespace blunted {
     mapping["catch"] = e_DefString_Catch;
     mapping["outgoing_retain_state"] = e_DefString_OutgoingRetainState;
     mapping["incoming_retain_state"] = e_DefString_IncomingRetainState;
-    cache_AnimType_str = variableCache.find("type")->second;
+    cache_AnimType_str = variableCache.get("type");
     cache_AnimType = mapping[cache_AnimType_str];
 
     ConvertToStartFacingForwardIfIdle();
@@ -1104,16 +1080,16 @@ namespace blunted {
 
     for (unsigned int i = 0; i < nodeAnimations.size(); i++) {
 
-      if (nodeAnimations.at(i)->nodeName.substr(0, 4) == "left") {
+      if (BodyPartString(nodeAnimations[i]->nodeName).substr(0, 4) == "left") {
         // find counterpart
-        std::string needle = nodeAnimations.at(i)->nodeName;
+        std::string needle = BodyPartString(nodeAnimations[i]->nodeName);
         needle = needle.replace(0, 4, "right");
 
         for (unsigned int j = 0; j < nodeAnimations.size(); j++) {
-          if (nodeAnimations.at(j)->nodeName.compare(needle) == 0) {
+          if (BodyPartString(nodeAnimations.at(j)->nodeName).compare(needle) == 0) {
             // swap
-            std::map<int, KeyFrame> tmp = nodeAnimations.at(i)->animation;
-            nodeAnimations.at(i)->animation = nodeAnimations.at(j)->animation;
+            KeyFrames tmp = nodeAnimations[i]->animation;
+            nodeAnimations[i]->animation = nodeAnimations.at(j)->animation;
             nodeAnimations.at(j)->animation = tmp;
             break;
           }
@@ -1125,15 +1101,13 @@ namespace blunted {
 
     for (unsigned int i = 0; i < nodeAnimations.size(); i++) {
 
-      std::map<int, KeyFrame>::iterator keyIter = nodeAnimations.at(i)->animation.begin();
-      while (keyIter != nodeAnimations.at(i)->animation.end()) {
+      for (auto& keyIter : nodeAnimations[i]->animation.d) {
         if (i == 0) {
-          keyIter->second.position.coords[0] = -keyIter->second.position.coords[0];
+          keyIter.second.position.coords[0] = -keyIter.second.position.coords[0];
         } else {
-          keyIter->second.orientation.elements[1] = -keyIter->second.orientation.elements[1];
-          keyIter->second.orientation.elements[2] = -keyIter->second.orientation.elements[2];
+          keyIter.second.orientation.elements[1] = -keyIter.second.orientation.elements[1];
+          keyIter.second.orientation.elements[2] = -keyIter.second.orientation.elements[2];
         }
-        keyIter++;
       }
 
     }
@@ -1146,14 +1120,7 @@ namespace blunted {
     }
 
     // variables
-    for (auto varIter : variableCache) {
-      std::string &varData = varIter.second;
-      if (varData.substr(0, 4) == "left") {
-        varData = varData.replace(0, 4, "right");
-      } else if (varData.substr(0, 5) == "right") {
-        varData = varData.replace(0, 5, "left");
-      }
-    }
+    variableCache.mirror();
 
     Vector3 newBallDirVec = GetVariable("balldirection") != "" ? GetVectorFromString(GetVariable("balldirection")) * Vector3(-1, 1, 1) : 0;
     Vector3 newIncomingBallDirVec = GetVariable("incomingballdirection") != "" ? GetVectorFromString(GetVariable("incomingballdirection")) * Vector3(-1, 1, 1) : 0;
@@ -1177,17 +1144,8 @@ namespace blunted {
     return extensions.find(name)->second;
   }
 
-  const std::string &Animation::GetVariable(const char *name) const {
-
-    auto iter = variableCache.find(name);
-    //printf("looking for %s.. %s\n", name, variableCache.begin()->first);
-    if (iter != variableCache.end()) {
-      //printf("found %s\n", iter->second.c_str());
-      return iter->second;
-    } else {
-      //printf("found nothing\n");
-      return emptyString;
-    }
+  const std::string Animation::GetVariable(const char *name) const {
+    return variableCache.get(name);
   }
 
   void Animation::SetVariable(const std::string &name, const std::string &value) {
@@ -1198,11 +1156,6 @@ namespace blunted {
     }
 
     // flat list for speed, i guess, i should start documenting stuff earlier
-    auto iter2 = variableCache.find(name.c_str());
-    if (iter2 != variableCache.end()) {
-      iter2->second = value;
-    } else {
-      variableCache[name] = value;
-    }
+    variableCache.set(name, value);
   }
 }

@@ -46,8 +46,6 @@ namespace blunted {
       Vector3 GetSize() const;
       void DrawRectangle(int x, int y, int w, int h, const Vector3 &color,
                          int alpha = 255);
-      void DrawLine(const Line &line, const Vector3 &color, int alpha = 255);
-      void SetAlpha(float alpha);
       void Resize(int w, int h);
 
       virtual void Poke(e_SystemType targetSystemType);

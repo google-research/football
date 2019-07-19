@@ -35,8 +35,6 @@ namespace blunted {
 
       void Resize(int x, int y);  // 0 == dependent on other coord
 
-      void SetAlpha(float alpha);
-
     protected:
       SDL_Surface *surface;
 

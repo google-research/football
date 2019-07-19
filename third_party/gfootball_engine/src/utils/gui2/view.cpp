@@ -48,8 +48,8 @@ namespace blunted {
 
     std::vector<Gui2View*> childrenCopy = children; // need to make copy: child->Exit will remove itself from *this->children
     for (int i = (signed int)childrenCopy.size() - 1; i >= 0; i--) { // filo
-      childrenCopy.at(i)->Exit();
-      delete childrenCopy.at(i);
+      childrenCopy[i]->Exit();
+      delete childrenCopy[i];
     }
     children.clear();
 
@@ -58,7 +58,7 @@ namespace blunted {
     std::vector < boost::intrusive_ptr<Image2D> > images;
     GetImages(images);
     for (unsigned int i = 0; i < images.size(); i++) {
-      boost::intrusive_ptr<Image2D> &image = images.at(i);
+      boost::intrusive_ptr<Image2D> &image = images[i];
       if (image != boost::intrusive_ptr<Image2D>()) {
         windowManager->RemoveImage(image);
       }
@@ -155,10 +155,10 @@ namespace blunted {
     float x, y, w, h;
 
     for (unsigned int i = 0; i < children.size(); i++) {
-      children.at(i)->SnuglyFitSize(margin);
+      children[i]->SnuglyFitSize(margin);
 
-      children.at(i)->GetPosition(x, y);
-      children.at(i)->GetSize(w, h);
+      children[i]->GetPosition(x, y);
+      children[i]->GetSize(w, h);
       if (x + w > maxW) maxW = x + w;
       if (y + h > maxH) maxH = y + h;
     }
@@ -174,8 +174,8 @@ namespace blunted {
 
   void Gui2View::Process() {
     for (unsigned int i = 0; i < children.size(); i++) {
-      //printf("gui2view %s :: processing child %s\n", name.c_str(), children.at(i)->GetName().c_str());
-      children.at(i)->Process();
+      //printf("gui2view %s :: processing child %s\n", name.c_str(), children[i]->GetName().c_str());
+      children[i]->Process();
     }
   }
 
@@ -193,10 +193,6 @@ namespace blunted {
         ProcessKeyboardEvent(static_cast<KeyboardEvent*>(event));
         break;
 
-      case e_Gui2EventType_Joystick:
-        ProcessJoystickEvent(static_cast<JoystickEvent*>(event));
-        break;
-
       default:
         break;
 
@@ -212,10 +208,6 @@ namespace blunted {
   }
 
   void Gui2View::ProcessKeyboardEvent(KeyboardEvent *event) {
-    event->Ignore();
-  }
-
-  void Gui2View::ProcessJoystickEvent(JoystickEvent *event) {
     event->Ignore();
   }
 
@@ -275,7 +267,7 @@ namespace blunted {
     std::vector < boost::intrusive_ptr<Image2D> > images;
     GetImages(images);
     for (unsigned int i = 0; i < images.size(); i++) {
-      images.at(i)->SetPokePriority(prio);
+      images[i]->SetPokePriority(prio);
     }
   }
 }

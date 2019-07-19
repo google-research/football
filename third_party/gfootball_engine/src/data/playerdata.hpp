@@ -18,12 +18,32 @@
 #ifndef _HPP_PLAYERDATA
 #define _HPP_PLAYERDATA
 
+#include <stdlib.h>
 #include "../defines.hpp"
 
 #include "../gamedefines.hpp"
 #include "../utils.hpp"
 
 #include "../base/properties.hpp"
+#include "../base/utils.hpp"
+
+class PlayerProperties {
+ public:
+  PlayerProperties() {
+    for (int x = 0; x < player_stat_max; x++) {
+      data[x] = 1.0f;
+    }
+  }
+  void Set(PlayerStat name, real value) {
+    data[name] = atof(real_to_str(value).c_str());
+  }
+  real GetReal(PlayerStat name) const {
+    return data[name];
+  }
+
+ private:
+  real data[player_stat_max];
+};
 
 class PlayerData {
 
@@ -36,10 +56,8 @@ class PlayerData {
       firstName = first;
       lastName = last;
     }
-    std::string GetFirstName() const { return firstName; }
     std::string GetLastName() const { return lastName; }
-    int GetDatabaseID() const { return databaseID; }
-    float GetStat(const char *name)  const;
+    inline float GetStat(PlayerStat name) const { return stats.GetReal(name); }
     float get_physical_velocity() const { return physical_velocity; }
 
     int GetSkinColor() const { return skinColor; }
@@ -59,7 +77,7 @@ class PlayerData {
     float physical_velocity = 0.0;
   protected:
     int databaseID = 0;
-    Properties stats;
+    PlayerProperties stats;
 
     int skinColor = 0;
     std::string hairStyle;

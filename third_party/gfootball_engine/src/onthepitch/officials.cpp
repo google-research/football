@@ -67,7 +67,6 @@ Officials::Officials(Match *match, boost::intrusive_ptr<Node> fullbodySourceNode
 }
 
 Officials::~Officials() {
-  if (Verbose()) printf("exiting officials.. ");
   delete referee;
   delete linesmen[0];
   delete linesmen[1];
@@ -75,7 +74,6 @@ Officials::~Officials() {
 
   redCard.reset();
   yellowCard.reset();
-  if (Verbose()) printf("done\n");
 }
 
 void Officials::GetPlayers(std::vector<PlayerBase*> &players) {
@@ -86,7 +84,7 @@ void Officials::GetPlayers(std::vector<PlayerBase*> &players) {
 
 void Officials::Process() {
   referee->Process();
-  if (GetGameConfig().render_mode != e_Disabled) {
+  if (GetScenarioConfig().render) {
     linesmen[0]->Process();
     linesmen[1]->Process();
   }
@@ -105,21 +103,19 @@ void Officials::FetchPutBuffers(unsigned long putTime_ms) {
 }
 
 void Officials::Put() {
-  referee->Put();
-  if (GetGameConfig().render_mode != e_Disabled) {
+  if (GetScenarioConfig().render) {
+    referee->Put();
     linesmen[0]->Put();
     linesmen[1]->Put();
   }
 
-
   if (referee->GetCurrentFunctionType() == e_FunctionType_Special && (match->GetReferee()->GetCurrentFoulType() == 2 || match->GetReferee()->GetCurrentFoulType() == 3)) {
-    std::string bodyPartName = "right_elbow";
-    if (referee->GetCurrentAnim()->anim->GetName().find("mirror") != std::string::npos) bodyPartName = "left_elbow";
+    BodyPart bodyPartName = right_elbow;
+    if (referee->GetCurrentAnim()->anim->GetName().find("mirror") != std::string::npos) bodyPartName = left_elbow;
 
     const NodeMap &nodeMap = referee->GetNodeMap();
-    std::map < const std::string, boost::intrusive_ptr<Node> >::const_iterator bodyPartIter = nodeMap.find(bodyPartName);
-    if (bodyPartIter != nodeMap.end()) {
-      boost::intrusive_ptr<Spatial> bodyPart = bodyPartIter->second;
+    auto bodyPart = nodeMap[bodyPartName];
+    if (bodyPart) {
       Vector3 position = bodyPart->GetDerivedPosition() + bodyPart->GetDerivedRotation() * Vector3(0.04, 0, -0.25); // -0.4
       if (match->GetReferee()->GetCurrentFoulType() == 2) {
         yellowCard->SetPosition(position);

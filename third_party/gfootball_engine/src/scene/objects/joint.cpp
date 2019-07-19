@@ -32,7 +32,7 @@ namespace blunted {
   void Joint::Exit() { // ATOMIC
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers.at(i).get());
+      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers[i].get());
       jointInterpreter->OnUnload();
     }
 
@@ -42,7 +42,7 @@ namespace blunted {
   void Joint::Connect(boost::intrusive_ptr<Geometry> object1, boost::intrusive_ptr<Geometry> object2, const Vector3 &anchor, const Vector3 &axis1, const Vector3 &axis2) {
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers.at(i).get());
+      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers[i].get());
       jointInterpreter->OnLoad(this, object1, object2, anchor, axis1, axis2);
     }
   }
@@ -50,7 +50,7 @@ namespace blunted {
   void Joint::SetStops(radian lowStop, radian highStop, int paramNum) {
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers.at(i).get());
+      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers[i].get());
       jointInterpreter->SetStops(lowStop, highStop, paramNum);
     }
   }
@@ -59,7 +59,7 @@ namespace blunted {
   void Joint::SetVelocity(float velocity, int paramNum) {
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers.at(i).get());
+      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers[i].get());
       jointInterpreter->SetVelocity(velocity, paramNum);
     }
   }
@@ -68,7 +68,7 @@ namespace blunted {
   void Joint::SetMaxForce(float force, int paramNum) {
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers.at(i).get());
+      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers[i].get());
       jointInterpreter->SetMaxForce(force, paramNum);
     }
   }
@@ -76,7 +76,7 @@ namespace blunted {
   void Joint::SetConstraintForceMixing(float value, int paramNum) {
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers.at(i).get());
+      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers[i].get());
       jointInterpreter->SetConstraintForceMixing(value, paramNum);
     }
   }
@@ -84,7 +84,7 @@ namespace blunted {
   void Joint::SetErrorCorrection(float value, int paramNum) {
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers.at(i).get());
+      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers[i].get());
       jointInterpreter->SetErrorCorrection(value, paramNum);
     }
   }
@@ -93,7 +93,7 @@ namespace blunted {
   void Joint::SetSuspensionConstraintForceMixing(float value) {
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers.at(i).get());
+      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers[i].get());
       jointInterpreter->SetSuspensionConstraintForceMixing(value);
     }
   }
@@ -101,7 +101,7 @@ namespace blunted {
   void Joint::SetSuspensionErrorReduction(float value) {
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers.at(i).get());
+      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers[i].get());
       jointInterpreter->SetSuspensionErrorReduction(value);
     }
   }
@@ -109,7 +109,7 @@ namespace blunted {
   void Joint::Poke(e_SystemType targetSystemType) {
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers.at(i).get());
+      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers[i].get());
       if (jointInterpreter->GetSystemType() == targetSystemType) jointInterpreter->OnPoke();
     }
   }
@@ -120,7 +120,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers.at(i).get());
+      IJointInterpreter *jointInterpreter = static_cast<IJointInterpreter*>(observers[i].get());
       jointInterpreter->OnSpatialChange(GetDerivedPosition(), GetDerivedRotation());
     }
 

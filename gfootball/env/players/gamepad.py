@@ -23,26 +23,26 @@ from gfootball.env import football_action_set
 from gfootball.env import event_queue
 
 BUTTON_TO_ACTIONS = {
-    0: [football_action_set.core_action_short_pass,
-        football_action_set.core_action_pressure],
-    1: [football_action_set.core_action_shot,
-        football_action_set.core_action_team_pressure],
-    2: [football_action_set.core_action_high_pass,
-        football_action_set.core_action_sliding],
-    3: [football_action_set.core_action_long_pass,
-        football_action_set.core_action_keeper_rush],
-    4: [football_action_set.core_action_switch],
-    5: [football_action_set.core_action_dribble],
+    0: [football_action_set.action_short_pass,
+        football_action_set.action_pressure],
+    1: [football_action_set.action_shot,
+        football_action_set.action_team_pressure],
+    2: [football_action_set.action_high_pass,
+        football_action_set.action_sliding],
+    3: [football_action_set.action_long_pass,
+        football_action_set.action_keeper_rush],
+    4: [football_action_set.action_switch],
+    5: [football_action_set.action_dribble],
 }
 
 
 class Player(controller_base.Controller):
   """Player with actions coming from gamepad."""
 
-  def __init__(self, config):
-    controller_base.Controller.__init__(self)
+  def __init__(self, player_config, env_config):
+    controller_base.Controller.__init__(self, player_config)
     pygame.init()
-    self._index = config['player_gamepad']
+    self._index = player_config['player_gamepad']
     event_queue.add_controller('gamepad', self._index)
     pygame.joystick.init()
     if pygame.joystick.get_count() < self._index:
@@ -52,6 +52,8 @@ class Player(controller_base.Controller):
     self._joystick.init()
 
   def take_action(self, observations):
+    assert len(observations['active']
+              ) == 1, 'Gamepad does not support multiple player control'
     x_axis = self._joystick.get_axis(0)
     y_axis = self._joystick.get_axis(1)
     left = x_axis < -0.5
@@ -66,12 +68,12 @@ class Player(controller_base.Controller):
           active_buttons[a] = 1
       if (event.type == pygame.JOYAXISMOTION and event.axis == 5 and
           event.value > 0):
-        active_buttons[football_action_set.core_action_sprint] = 1
+        active_buttons[football_action_set.action_sprint] = 1
 
     for button, actions in BUTTON_TO_ACTIONS.items():
       if self._joystick.get_button(button):
         for a in actions:
           active_buttons[a] = 1
     if self._joystick.get_axis(5) > 0:
-      active_buttons[football_action_set.core_action_sprint] = 1
+      active_buttons[football_action_set.action_sprint] = 1
     return self.get_env_action(left, right, top, bottom, active_buttons)

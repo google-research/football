@@ -38,7 +38,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      ILightInterpreter *LightInterpreter = static_cast<ILightInterpreter*>(observers.at(i).get());
+      ILightInterpreter *LightInterpreter = static_cast<ILightInterpreter*>(observers[i].get());
       LightInterpreter->OnUnload();
     }
 
@@ -75,7 +75,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      ILightInterpreter *LightInterpreter = static_cast<ILightInterpreter*>(observers.at(i).get());
+      ILightInterpreter *LightInterpreter = static_cast<ILightInterpreter*>(observers[i].get());
       LightInterpreter->SetType(lightType);
     }
 
@@ -92,7 +92,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      ILightInterpreter *LightInterpreter = static_cast<ILightInterpreter*>(observers.at(i).get());
+      ILightInterpreter *LightInterpreter = static_cast<ILightInterpreter*>(observers[i].get());
       LightInterpreter->SetShadow(shadow);
     }
 
@@ -106,7 +106,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      ILightInterpreter *LightInterpreter = static_cast<ILightInterpreter*>(observers.at(i).get());
+      ILightInterpreter *LightInterpreter = static_cast<ILightInterpreter*>(observers[i].get());
       LightInterpreter->SetValues(color, radius);
     }
 
@@ -116,7 +116,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      ILightInterpreter *LightInterpreter = static_cast<ILightInterpreter*>(observers.at(i).get());
+      ILightInterpreter *LightInterpreter = static_cast<ILightInterpreter*>(observers[i].get());
       LightInterpreter->EnqueueShadowMap(camera, visibleGeometry);
     }
 
@@ -126,7 +126,7 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      ILightInterpreter *LightInterpreter = static_cast<ILightInterpreter*>(observers.at(i).get());
+      ILightInterpreter *LightInterpreter = static_cast<ILightInterpreter*>(observers[i].get());
       if (LightInterpreter->GetSystemType() == targetSystemType) LightInterpreter->OnPoke();
     }
 
@@ -139,8 +139,8 @@ namespace blunted {
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
-      if (observers.at(i)->GetSystemType() != excludeSystem) {
-        ILightInterpreter *lightInterpreter = static_cast<ILightInterpreter*>(observers.at(i).get());
+      if (observers[i]->GetSystemType() != excludeSystem) {
+        ILightInterpreter *lightInterpreter = static_cast<ILightInterpreter*>(observers[i].get());
         lightInterpreter->OnSpatialChange(GetDerivedPosition(), GetDerivedRotation());
       }
     }

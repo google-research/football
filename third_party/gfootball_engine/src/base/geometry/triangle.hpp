@@ -31,38 +31,64 @@ namespace blunted {
       Triangle();
       Triangle(const Triangle &triangle);
       Triangle(const Vector3 &v1, const Vector3 &v2, const Vector3 &v3);
-      virtual ~Triangle();
+      ~Triangle();
+      bool operator == (const Triangle &triangle) const;
 
-      virtual bool operator == (const Triangle &triangle) const;
+      inline void SetVertex(unsigned char pos, const Vector &vec) {
+        vertices[pos].coords[0] = vec.coords[0];
+        vertices[pos].coords[1] = vec.coords[1];
+        vertices[pos].coords[2] = vec.coords[2];
+      }
 
-      virtual void SetVertex(unsigned char pos, const real x, const real y, const real z);
-      virtual void SetVertex(unsigned char pos, const Vector3 &vec);
-      virtual void Translate(const real x, const real y, const real z);
-      virtual void SetTextureVertex(unsigned char pos, const real x, const real y, const real z);
-      virtual void SetTextureVertex(unsigned char texture_unit, unsigned char pos, const Vector3 &xyz);
-      virtual void SetTextureVertex(unsigned char texture_unit, unsigned char pos, const real x, const real y, const real z);
-      virtual void SetNormal(unsigned char pos, const real x, const real y, const real z);
-      virtual void SetNormal(unsigned char pos, const Vector3 &vec);
-      virtual void SetNormals(const real x, const real y, const real z);
-      virtual void SetNormals(const Vector3 &vec);
-      virtual const Vector3 &GetVertex(unsigned char pos) const;
-      virtual const Vector3 &GetTextureVertex(unsigned char pos) const;
-      virtual const Vector3 &GetTextureVertex(unsigned char texture_unit, unsigned char pos) const;
-      virtual const Vector3 &GetNormal(unsigned char pos) const;
-      virtual void Rewind();
-      virtual AABB GetAABB();
+      inline void SetTextureVertex(unsigned char texture_unit, unsigned char pos, const real x, const real y, const real z) {
+        textureVertices[pos][texture_unit].coords[0] = x;
+        textureVertices[pos][texture_unit].coords[1] = y;
+        textureVertices[pos][texture_unit].coords[2] = z;
+      }
+
+      inline void SetNormal(unsigned char pos, const real x, const real y, const real z) {
+        normals[pos].coords[0] = x;
+        normals[pos].coords[1] = y;
+        normals[pos].coords[2] = z;
+      }
+
+      inline void SetNormals(const Vector &vec) {
+        for (int i = 0; i < 3; i++) {
+          normals[i].coords[0] = vec.coords[0];
+          normals[i].coords[1] = vec.coords[1];
+          normals[i].coords[2] = vec.coords[2];
+        }
+      }
+
+      inline const Vector3 &GetVertex(unsigned char pos) const {
+        return vertices[pos];
+      }
+
+      inline const Vector3 &GetTextureVertex(unsigned char pos) const {
+        return GetTextureVertex(0, pos);
+      }
+
+      inline const Vector3 &GetTextureVertex(unsigned char texture_unit, unsigned char pos) const {
+        return textureVertices[pos][texture_unit];
+      }
+
+      inline const Vector3 &GetNormal(unsigned char pos) const {
+        return normals[pos];
+      }
 
       // ----- intersections
-      virtual void IntersectsPlane(bool intersects[], const Vector3 &pvector, const Vector3 &pnormal) const;
-      virtual bool IntersectsLine(const Line &u_ray) const;
-      virtual bool IntersectsLine(const Line &u_ray, Vector3 &intersectVec) const;
-      virtual bool IntersectsTriangle(const Triangle &triangle) const;
-      virtual bool IsCoplanar(const Vector3 &N, const Triangle &triangle) const;
+      bool IntersectsLine(const Line &u_ray, Vector3 &intersectVec) const;
 
       // ----- utility
-      virtual void CalculateTangents();
-      virtual const Vector3 &GetTangent(unsigned char pos) const;
-      virtual const Vector3 &GetBiTangent(unsigned char pos) const;
+      void CalculateTangents();
+
+      inline const Vector3 &GetTangent(unsigned char pos) const {
+        return tangents[pos];
+      }
+
+      inline const Vector3 &GetBiTangent(unsigned char pos) const {
+        return biTangents[pos];
+      }
 
     protected:
       Vector3 vertices[3];

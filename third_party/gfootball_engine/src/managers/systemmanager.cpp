@@ -36,7 +36,6 @@ namespace blunted {
     map_Systems::iterator s_iter = systems.begin();
     while (s_iter != systems.end()) {
       ISystem *system = s_iter->second;
-      Log(e_Notice, "SystemManager", "Exit", "Deleting system named '" + s_iter->first + "'");
       system->Exit();
       delete system;
       s_iter++;
@@ -50,7 +49,6 @@ namespace blunted {
       // property already exists, replace its value?
       return false;
     }
-    Log(e_Notice, "SystemManager", "RegisterSystem", "Added system named '" + systemName + "'");
     return true;
   }
 

@@ -37,7 +37,7 @@ class MentalImage {
     void TakeSnapshot();
 
     PlayerImage GetPlayerImage(int playerID) const;
-    void GetTeamPlayerImages(int teamID, int exceptPlayerID, std::vector<PlayerImage> &playerImages) const;
+    std::vector<PlayerImagePosition> GetTeamPlayerImages(int teamID) const;
 
     void UpdateBallPredictions();
     Vector3 GetBallPrediction(unsigned int time_ms) const;

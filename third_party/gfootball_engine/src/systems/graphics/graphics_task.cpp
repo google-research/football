@@ -34,8 +34,6 @@
 namespace blunted {
 
   GraphicsTask::GraphicsTask(GraphicsSystem *system) : ISystemTask(), graphicsSystem(system) {
-    swapBuffers = boost::intrusive_ptr<Renderer3DMessage_SwapBuffers>();
-    lastSwapTime_ms.SetData(EnvironmentManager::GetInstance().GetTime_ms());
   }
 
   GraphicsTask::~GraphicsTask() {
@@ -94,9 +92,16 @@ namespace blunted {
     boost::shared_ptr<IScene> scene = SceneManager::GetInstance().GetScene("scene3D", success);
     if (success) scene->PokeObjects(e_ObjectType_Camera, e_SystemType_Graphics);
     // render the Overlay2D queue
-    boost::intrusive_ptr<Renderer3DMessage_RenderOverlay2D> renderOverlay2D(new Renderer3DMessage_RenderOverlay2D(graphicsSystem->GetOverlay2DQueue()));
-    renderOverlay2D->Handle(renderer3D);
-
+    auto &overlay2DQueue = graphicsSystem->GetOverlay2DQueue();
+    bool isMessage = true;
+    std::vector<Overlay2DQueueEntry> queue;
+    while (isMessage) {
+      Overlay2DQueueEntry queueEntry = overlay2DQueue.GetMessage(isMessage);
+      if (isMessage) {
+        queue.push_back(queueEntry);
+      }
+    }
+    renderer3D->RenderOverlay2D(queue);
   }
 
   void GraphicsTask::PutPhase() {
@@ -105,8 +110,7 @@ namespace blunted {
     Renderer3D *renderer3D = graphicsSystem->GetRenderer3D();
 
     // swap the buffers and stare in awe
-    swapBuffers = new Renderer3DMessage_SwapBuffers();
-    swapBuffers->Handle(renderer3D);
+    renderer3D->SwapBuffers();
   }
 
   bool GraphicsTaskCommand_EnqueueView::Execute(void *caller) {

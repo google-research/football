@@ -36,8 +36,8 @@ namespace blunted {
   Properties::~Properties() {
   }
 
-  bool Properties::Exists(const char *name) const {
-    auto iter = properties.find(std::string(name));
+  bool Properties::Exists(const std::string &name) const {
+    auto iter = properties.find(name);
     if (iter == properties.end()) {
       return false;
     } else {
@@ -45,27 +45,27 @@ namespace blunted {
     }
   }
 
-  void Properties::Set(const char *name, const std::string &value) {
-    properties[std::string(name)] = value;
+  void Properties::Set(const std::string &name, const std::string &value) {
+    properties[name] = value;
   }
 
-  void Properties::SetInt(const char *name, int value) {
+  void Properties::SetInt(const std::string &name, int value) {
     std::string value_str = int_to_str(value);
     Set(name, value_str);
   }
 
-  void Properties::Set(const char *name, real value) {
+  void Properties::Set(const std::string &name, real value) {
     std::string value_str = real_to_str(value);
     Set(name, value_str);
   }
 
-  void Properties::SetBool(const char *name, bool value) {
+  void Properties::SetBool(const std::string &name, bool value) {
     std::string value_str = value ? "true" : "false";
     Set(name, value_str);
   }
 
-  const std::string &Properties::Get(const char *name, const std::string &defaultValue) const {
-    auto iter = properties.find(std::string(name));
+  const std::string &Properties::Get(const std::string &name, const std::string &defaultValue) const {
+    auto iter = properties.find(name);
     if (iter == properties.end()) {
       return defaultValue;
     } else {
@@ -73,8 +73,8 @@ namespace blunted {
     }
   }
 
-  bool Properties::GetBool(const char *name, bool defaultValue) const {
-    auto iter = properties.find(std::string(name));
+  bool Properties::GetBool(const std::string &name, bool defaultValue) const {
+    auto iter = properties.find(name);
     if (iter == properties.end()) {
       return defaultValue;
     } else {
@@ -82,8 +82,8 @@ namespace blunted {
     }
   }
 
-  real Properties::GetReal(const char *name, real defaultValue) const {
-    auto iter = properties.find(std::string(name));
+  real Properties::GetReal(const std::string& name, real defaultValue) const {
+    auto iter = properties.find(name);
     if (iter == properties.end()) {
       return defaultValue;
     } else {
@@ -91,8 +91,8 @@ namespace blunted {
     }
   }
 
-  int Properties::GetInt(const char *name, int defaultValue) const {
-    auto iter = properties.find(std::string(name));
+  int Properties::GetInt(const std::string &name, int defaultValue) const {
+    auto iter = properties.find(name);
     if (iter == properties.end()) {
       return defaultValue;
     } else {
@@ -126,37 +126,4 @@ namespace blunted {
     return &properties;
   }
 
-  void Properties::LoadFile(const std::string &filename) {
-    std::vector <std::string> content;
-    file_to_vector(filename, content);
-
-    int contentSize = content.size();
-    for (int i = 0; i < contentSize; i++) {
-      int param_start = content.at(i).find_first_of('"') + 1;
-      int param_end = content.at(i).find_first_of('"', param_start);
-      int value_start = content.at(i).find_first_of('"', param_end + 1) + 1;
-      int value_end = content.at(i).find_first_of('"', value_start);
-
-      std::string param, value;
-
-      if (param_start < param_end && value_start < value_end && param_end < value_start) {
-        param = content.at(i).substr(param_start, param_end - param_start);
-        value = content.at(i).substr(value_start, value_end - value_start);
-        this->Set(param.c_str(), value);
-      }
-    }
-  }
-
-  void Properties::SaveFile(const std::string &filename) const {
-    ofstream cfile;
-    cfile.open(filename.c_str(), ios::out);
-    map_Properties::const_iterator iter = properties.begin();
-    while (iter != properties.end()) {
-      std::string bla = "\"" + iter->first + "\" \"" + iter->second + "\"\n";
-      cfile << bla.c_str();
-
-      iter++;
-    }
-    cfile.close();
-  }
-}
+  }  // namespace blunted

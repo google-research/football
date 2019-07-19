@@ -49,24 +49,6 @@ enum e_ButtonFunction {
   e_ButtonFunction_Size
 };
 
-enum e_ControllerButton {
-  e_ControllerButton_Up,
-  e_ControllerButton_Right,
-  e_ControllerButton_Down,
-  e_ControllerButton_Left,
-  e_ControllerButton_Y,
-  e_ControllerButton_B,
-  e_ControllerButton_A,
-  e_ControllerButton_X,
-  e_ControllerButton_L1,
-  e_ControllerButton_L2,
-  e_ControllerButton_R1,
-  e_ControllerButton_R2,
-  e_ControllerButton_Select,
-  e_ControllerButton_Start,
-  e_ControllerButton_Size
-};
-
 class IHIDevice {
 
   public:
@@ -79,15 +61,13 @@ class IHIDevice {
     virtual void Process() = 0;
 
     virtual bool GetButton(e_ButtonFunction buttonFunction) = 0;
-    virtual float GetButtonValue(e_ButtonFunction buttonFunction) = 0; // for analog support
     virtual void SetButton(e_ButtonFunction buttonFunction, bool state) = 0;
     virtual bool GetPreviousButtonState(e_ButtonFunction buttonFunction) = 0;
     virtual Vector3 GetDirection() = 0;
 
     e_HIDeviceType GetDeviceType() const { return deviceType; }
-    std::string GetIdentifier() const { return identifier; }
 
-  protected:
+   protected:
     e_HIDeviceType deviceType;
     std::string identifier;
 };

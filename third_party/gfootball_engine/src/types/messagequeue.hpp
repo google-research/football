@@ -36,24 +36,19 @@ namespace blunted {
       virtual ~MessageQueue() {}
 
       inline void PushMessage(T message, bool notify = true) {
-        boost::mutex::scoped_lock lock(queue.mutex);
-        queue.data.push_back(message);
-        lock.unlock();
-        if (notify) NotifyWaiting(e_NotificationSubject_One);
+        queue.push_back(message);
+        if (notify) NotifyWaiting();
       }
 
-      inline void NotifyWaiting(e_NotificationSubject notificationSubject = e_NotificationSubject_All) {
-        boost::mutex::scoped_lock lock(queue.mutex);
-        if (notificationSubject == e_NotificationSubject_One) messageNotification.notify_one();
-        if (notificationSubject == e_NotificationSubject_All) messageNotification.notify_all();
+      inline void NotifyWaiting() {
+        messageNotification.notify_one();
       }
 
       inline T GetMessage(bool &MsgAvail) {
         T message;
-        boost::mutex::scoped_lock lock(queue.mutex);
-        if (queue.data.size() > 0) {
-          message = *queue.data.begin();
-          queue.data.pop_front();
+        if (queue.size() > 0) {
+          message = *queue.begin();
+          queue.pop_front();
           MsgAvail = true;
         } else {
           MsgAvail = false;
@@ -62,7 +57,7 @@ namespace blunted {
       }
 
     protected:
-      Lockable < std::list < T > > queue;
+      std::list < T > queue;
       boost::condition messageNotification;
 
   };

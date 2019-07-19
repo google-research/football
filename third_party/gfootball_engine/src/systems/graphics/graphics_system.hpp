@@ -20,6 +20,7 @@
 
 #include "../../defines.hpp"
 
+#include "../../types/messagequeue.hpp"
 #include "../../systems/isystem.hpp"
 #include "../../systems/isystemscene.hpp"
 #include "../../systems/graphics/rendering/opengl_renderer3d.hpp"
@@ -63,15 +64,15 @@ namespace blunted {
       //boost::mutex getPhaseMutex;
 
     protected:
-      const e_SystemType systemType;
+      const e_SystemType systemType = e_SystemType_Graphics;
 
       Renderer3D *renderer3DTask = 0;
 
-      GraphicsTask *task;
+      GraphicsTask *task = 0;
 
       MessageQueue<Overlay2DQueueEntry> overlay2DQueue;
 
-      int width, height, bpp;
+      int width = 0, height = 0, bpp = 0;
 
   };
 

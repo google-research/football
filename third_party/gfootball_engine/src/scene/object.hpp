@@ -78,12 +78,12 @@ namespace blunted {
 
       virtual void RecursiveUpdateSpatialData(e_SpatialDataType spatialDataType, e_SystemType excludeSystem = e_SystemType_None);
 
-      Lockable<MustUpdateSpatialData> updateSpatialDataAfterPoke;
+      MustUpdateSpatialData updateSpatialDataAfterPoke;
 
       virtual boost::intrusive_ptr<Interpreter> GetInterpreter(e_SystemType targetSystemType);
 
-      virtual void SetPokePriority(int prio) { pokePriority.SetData(prio); }
-      virtual int GetPokePriority() const { return pokePriority.GetData(); }
+      virtual void SetPokePriority(int prio) { pokePriority = prio; }
+      virtual int GetPokePriority() const { return pokePriority; }
 
       // set these before creating system objects
 
@@ -94,10 +94,10 @@ namespace blunted {
     protected:
       e_ObjectType objectType;
 
-      mutable Lockable<int> pokePriority;
+      mutable int pokePriority;
 
       // request these to be set by observing objects
-      mutable Lockable<Properties> requestProperties;
+      mutable Properties requestProperties;
 
       bool enabled = false;
 

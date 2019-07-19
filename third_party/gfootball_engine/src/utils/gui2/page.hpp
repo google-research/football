@@ -41,10 +41,7 @@ namespace blunted {
       void GoBack();
       virtual void ProcessWindowingEvent(WindowingEvent *event);
 
-      // moved to View class: boost::signal<void()> sig_OnClose;
-
-      void CreatePage(int pageID, void *data = 0);
-      void CreatePage(int pageID, const Properties &properties, void *data = 0);
+      // moved to View class: boost::signals2::signal<void()> sig_OnClose;
 
     protected:
       Gui2PageData pageData;

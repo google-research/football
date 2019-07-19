@@ -18,6 +18,7 @@
 import importlib
 import logging
 import os
+import pkgutil
 import random
 
 from absl import flags
@@ -33,8 +34,7 @@ FLAGS = flags.FLAGS
 def all_scenarios():
   path = os.path.abspath(__file__)
   path = os.path.join(os.path.dirname(os.path.dirname(path)), "scenarios")
-  return [f[:-3] for f in os.listdir(path) if
-          f.endswith(".py") and f != '__init__.py']
+  return [m.name for m in pkgutil.iter_modules([path])]
 
 class Scenario(object):
 
@@ -42,7 +42,13 @@ class Scenario(object):
     # Game config controls C++ engine and is derived from the main config.
     self._scenario_cfg = libgame.ScenarioConfig()
     self._config = config
-    self._active_team = Team.e_Home
+    self.SetFlag('swap_sides', False)
+    self.SetFlag('kickoff_for_goal_loosing_team', False)
+    if self._config['enable_sides_swap']:
+      self.SetFlag('swap_sides', random.choice([True, False]))
+      # Swapping sides also enabled kickoff_for_goal_loosing_team.
+      self.SetFlag('kickoff_for_goal_loosing_team', True)
+    self._active_team = Team.e_Left
     scenario = None
     try:
       scenario = importlib.import_module('gfootball.scenarios.{}'.format(config['level']))
@@ -51,10 +57,10 @@ class Scenario(object):
       logging.warning(e)
       exit(1)
     scenario.build_scenario(self)
-    self.SetTeam(libgame.e_Team.e_Home)
-    self._FakePlayersForEmptyTeam(self._scenario_cfg.home_team)
-    self.SetTeam(libgame.e_Team.e_Away)
-    self._FakePlayersForEmptyTeam(self._scenario_cfg.away_team)
+    self.SetTeam(libgame.e_Team.e_Left)
+    self._FakePlayersForEmptyTeam(self._scenario_cfg.left_team)
+    self.SetTeam(libgame.e_Team.e_Right)
+    self._FakePlayersForEmptyTeam(self._scenario_cfg.right_team)
     self._BuildScenarioConfig()
 
   def _FakePlayersForEmptyTeam(self, team):
@@ -64,10 +70,17 @@ class Scenario(object):
   def _BuildScenarioConfig(self):
     """Builds scenario config from gfootball.environment config."""
     self._scenario_cfg.real_time = self._config['real_time']
-    self._scenario_cfg.home_agents = len(self._config['home_players'])
-    self._scenario_cfg.away_agents = len(self._config['away_players'])
+    if self._config['swap_sides']:
+      self._scenario_cfg.left_agents = self._config.number_of_right_players()
+      self._scenario_cfg.right_agents = self._config.number_of_left_players()
+    else:
+      self._scenario_cfg.left_agents = self._config.number_of_left_players()
+      self._scenario_cfg.right_agents = self._config.number_of_right_players()
     self._scenario_cfg.offsides = self._config['offsides']
     self._scenario_cfg.render = self._config['render']
+    self._scenario_cfg.game_difficulty = self._config['game_difficulty']
+    if self._config['kickoff_for_goal_loosing_team']:
+      self._scenario_cfg.kickoff_for_goal_loosing_team = True
     # This is needed to record 'game_engine_random_seed' in the dump.
     if 'game_engine_random_seed' not in self._config._values:
       self._config.set_scenario_value('game_engine_random_seed',
@@ -93,10 +106,10 @@ class Scenario(object):
       lazy: Computer doesn't perform any automatic actions for lazy player.
     """
     player = Player(x, y, role, lazy)
-    if self._active_team == Team.e_Home:
-      self._scenario_cfg.home_team.append(player)
+    if self._active_team == Team.e_Left:
+      self._scenario_cfg.left_team.append(player)
     else:
-      self._scenario_cfg.away_team.append(player)
+      self._scenario_cfg.right_team.append(player)
 
   def SetBallPosition(self, ball_x, ball_y):
     self._scenario_cfg.ball_position[0] = ball_x

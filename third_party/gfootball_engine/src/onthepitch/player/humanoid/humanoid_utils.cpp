@@ -156,7 +156,6 @@ void GetDifficultyFactors(Match *match, Player *player, const Vector3 &positionO
                2.0f) *
       2.0f;
 
-  if (Verbose()) printf("distanceFactor: positionoffset: %f, ballbodyvelodiff: %f, fartheraway: %f, ", positionOffsetPenalty, ballBodyVeloPenalty, fartherAwayPenalty);
   distanceFactor += positionOffsetPenalty * 2.0f;
   distanceFactor += ballBodyVeloPenalty;
   distanceFactor += fartherAwayPenalty * 4.0f;
@@ -171,10 +170,9 @@ void GetDifficultyFactors(Match *match, Player *player, const Vector3 &positionO
     if (lastTouchPlayer) {
       float lastTouchBiasPenalty =
           std::pow(lastTouchPlayer->GetLastTouchBias(
-                       1000 - player->GetStat("physical_reaction") * 500),
+                       1000 - player->GetStat(physical_reaction) * 500),
                    0.6f) *
           5.0f;
-      if (Verbose()) printf("lastTouchBiasPenalty: %f, ", lastTouchBiasPenalty);
       distanceFactor += lastTouchBiasPenalty;
       heightFactor += lastTouchBiasPenalty;
       ballMovementFactor += lastTouchBiasPenalty * 0.1f;
@@ -182,27 +180,23 @@ void GetDifficultyFactors(Match *match, Player *player, const Vector3 &positionO
   }
   ballMovementFactor = clamp(ballMovementFactor, 0.0f, 0.9f);
 
-  float skillPenaltyMultiplier = (1.0f - player->GetStat("technical_ballcontrol") * 0.5f) * random(0.5f, 1.0f);
+  float skillPenaltyMultiplier = (1.0f - player->GetStat(technical_ballcontrol) * 0.5f) * random(0.5f, 1.0f);
   distanceFactor *= skillPenaltyMultiplier;
   heightFactor *= skillPenaltyMultiplier;
   ballMovementFactor *= skillPenaltyMultiplier;
   distanceFactor = clamp(distanceFactor, 0.0f, 1.0f);
   heightFactor = clamp(heightFactor, 0.0f, 1.0f);
   ballMovementFactor = clamp(ballMovementFactor, 0.0f, 1.0f);
-  if (Verbose()) printf("skill multiplier: %f.. makes for result: distancefactor: %f; heightfactor: %f; ballmovementfactor: %f\n", skillPenaltyMultiplier, distanceFactor, heightFactor, ballMovementFactor);
 }
 
 Vector3 GetBallControlVector(Ball *ball, Player *player, const Vector3 &nextStartPos, radian nextStartAngle, radian nextBodyAngle, const Vector3 &outgoingMovement, const Anim *currentAnim, int frameNum, const SpatialState &spatialState, const Vector3 &positionOffset, radian &xRot, radian &yRot, float ffoOffset) {
 
   // part of the resulting direction is physics, the other part is anim/controller. so originatingBias is only applied on the (1.0 - physicsBias) part of the result
   float physicsBias = 0.7f;
-  if (Verbose()) printf("ballctrl: ");
   if (!player->HasPossession()) {
-    if (Verbose()) printf("noposs");
     physicsBias = 0.9f;
   }
 
-  if (Verbose()) printf("\n");
   if (FloatToEnumVelocity(currentAnim->anim->GetOutgoingVelocity()) == e_Velocity_Idle) physicsBias = 1.0f;
 
   float explosivenessFactor = 0.6f;
@@ -238,7 +232,7 @@ Vector3 GetBallControlVector(Ball *ball, Player *player, const Vector3 &nextStar
 
   Vector3 FFOsrc = GetFrontOfFootOffsetRel(physicsVelocity, nextBodyAngle - spatialState.angle, ball->Predict(0).coords[2]);
   float annoyanceVeloFactor = curve(NormalizedClamp(currentAnim->anim->GetOutgoingVelocity(), idleVelocity, sprintVelocity), 0.7f); // do not apply effect to low velo's; makes it too chaotic
-  float opponentAnnoyanceFactor = (1.0f - NormalizedClamp(player->GetClosestOpponentDistance(), 0.5f, 1.5f)) * (1.0f - (player->GetStat("mental_calmness") * 0.5f + player->GetStat("physical_balance") * 0.3f)) * annoyanceVeloFactor;
+  float opponentAnnoyanceFactor = (1.0f - NormalizedClamp(player->GetClosestOpponentDistance(), 0.5f, 1.5f)) * (1.0f - (player->GetStat(mental_calmness) * 0.5f + player->GetStat(physical_balance) * 0.3f)) * annoyanceVeloFactor;
   Vector3 FFO = Vector3(0, -1, 0).GetRotated2D(nextBodyAngle) * (FFOsrc.GetLength() + ffoOffset + opponentAnnoyanceFactor * 3.0f); // positionOffset is already in ffoOffset (though only for trap atm)
   float heightFFOOffset = NormalizedClamp(ball->Predict(0).coords[2], 0.5f, 1.0f) * 0.5f; // bounce high balls off body - else they keep colliding inside body and stuff like that
   FFO += FFOsrc * heightFFOOffset * 0.5f +
@@ -278,7 +272,7 @@ Vector3 GetBallControlVector(Ball *ball, Player *player, const Vector3 &nextStar
   timeToGo += physicsDelayTime * physicsBias + desiredDelayTime * (1.0f - physicsBias);
   timeToGo += defaultTouchOffset_ms * 0.001f;//0.08f; // time into next anim where we want to hit the ball
 
-  float divisor = timeToGo * (0.38f + 0.02f * player->GetStat("technical_dribble")); // higher == closer
+  float divisor = timeToGo * (0.38f + 0.02f * player->GetStat(technical_dribble)); // higher == closer
   divisor *= 1.1f;
 
   // to get the ball to the planned position in timeToGo seconds, we need to do some pow() magic, since the ball also slows down faster at higher ball velos
@@ -292,8 +286,8 @@ Vector3 GetBallControlVector(Ball *ball, Player *player, const Vector3 &nextStar
   float height = clamp(0.1f + 1.5f * std::pow(power / 10.0f, 1.6f), 0.0f,
                        1.5f);  // power ~= 0 to 10
 
-  //if (player->GetDebug()) printf("tech ballctrl: %f\n", player->GetStat("technical_ballcontrol"));
-  float powerMultiplier = 1.2f - (player->GetStat("technical_ballcontrol") * 0.03f); // 1.24 .. * 0.1
+  //if (player->GetDebug()) printf("tech ballctrl: %f\n", player->GetStat(technical_ballcontrol));
+  float powerMultiplier = 1.2f - (player->GetStat(technical_ballcontrol) * 0.03f); // 1.24 .. * 0.1
   float veloBias = NormalizedClamp(velocity, walkVelocity, sprintVelocity - 0.8f); // this multiplier only applies to high velocities
   powerMultiplier = 1.0f * (1.0f - veloBias) + powerMultiplier * veloBias;
 
@@ -368,65 +362,52 @@ Vector3 GetShotVector(Match *match, Player *player, const Vector3 &nextStartPos,
   float playerDirDesiredDirPowerFactor =
       std::pow(directionFactor,
                0.8f);  // shooting sideways is still pretty easy to power up
-  if (Verbose()) printf("(power) playerDirDesiredDirPowerFactor: %f\n", playerDirDesiredDirPowerFactor);
 
   float playerVelocityPowerFactor =
       std::pow(NormalizedClamp(touchVelocity, 0.0f, sprintVelocity),
                0.3f);  // >= walk velo is optimum
-  if (Verbose()) printf("(power) playerVelocityPowerFactor: %f\n", playerVelocityPowerFactor);
 
   float positionOffsetPowerFactor = 1.0f - NormalizedClamp(positionOffset.GetLength(), 0.0f, 0.1f);
-  if (Verbose()) printf("(power) positionOffsetPowerFactor: %f\n", positionOffsetPowerFactor);
 
   float powerFactor = 1.0f *
                       (0.7f + playerDirDesiredDirPowerFactor * 0.3f) *
                       (0.7f + playerVelocityPowerFactor * 0.3f) *
                       (0.4f + positionOffsetPowerFactor * 0.6f);
   powerFactor = clamp(powerFactor, 0.0f, 1.0f);
-  if (Verbose()) printf("(power) RESULTING powerFactor: %f\n", powerFactor);
 
   float adaptedDesiredPower =
       45.0f *
       (0.7f +
        std::pow(currentAnim->originatingCommand.touchInfo.desiredPower, 0.5f) *
            0.3f);
-  if (Verbose()) printf("(power) adaptedDesiredPower: %f\n", adaptedDesiredPower);
 
   float animMaxPowerFactor = atof(currentAnim->anim->GetVariable("touch_maxpowerfactor").c_str());
   if (animMaxPowerFactor == 0.0f) animMaxPowerFactor = 1.0f;
-  if (Verbose()) printf("(power) animMaxPowerFactor: %f\n", animMaxPowerFactor);
 
-  float power = clamp(powerFactor * adaptedDesiredPower, 0.0f, (32.0f + player->GetStat("physical_shotpower") * 13.0f) * (0.2f + animMaxPowerFactor * 0.8f));
+  float power = clamp(powerFactor * adaptedDesiredPower, 0.0f, (32.0f + player->GetStat(physical_shotpower) * 13.0f) * (0.2f + animMaxPowerFactor * 0.8f));
 
   // add this after previous stat-clamp, because using the current ball movement is like an added (power) bonus that everybody profits from, even sucky players
   float playerMovBallMovPowerFactor = (touchMovement - ball->GetMovement()).GetLength();
   playerMovBallMovPowerFactor = NormalizedClamp(playerMovBallMovPowerFactor, 0.0f, 10.0f);
 
-  if (Verbose()) printf("(power) playerMovBallMovPowerFactor: %f\n", playerMovBallMovPowerFactor);
   power *= 1.0f + playerMovBallMovPowerFactor * 0.2f;
 
-  if (Verbose()) printf("(power) RESULTING power: %f (stat: %f)\n", power, player->GetStat("physical_shotpower"));
 
 
   // calculate difficulty, based on factors like desired power, player/ball movement, skill, positionoffset etcetera
 
   float playerDirDesiredDirEasinessFactor = std::pow(
       directionFactor, 0.8f);  // shooting sideways is still pretty easy to aim
-  if (Verbose()) printf("(ease) playerDirDesiredDirEasinessFactor: %f\n", playerDirDesiredDirEasinessFactor);
 
   float playerVelocityEasinessFactor = 1.0f - NormalizedClamp(fabs(touchVelocity - dribbleVelocity), 0.0f, 4.0f); // dribble velo is optimum
-  if (Verbose()) printf("(ease) playerVelocityEasinessFactor: %f\n", playerVelocityEasinessFactor);
 
   float positionOffsetEasinessFactor = 1.0f - NormalizedClamp(positionOffset.GetLength(), 0.0f, 0.1f);
-  if (Verbose()) printf("(ease) positionOffsetEasinessFactor: %f\n", positionOffsetEasinessFactor);
 
   float playerMovBallMovEasinessFactor = (touchMovement - ball->GetMovement()).GetLength();
-  playerMovBallMovEasinessFactor = 1.0f - playerMovBallMovPowerFactor * (0.5f - player->GetStat("technical_volley") * 0.3f);
-  if (Verbose()) printf("(ease) playerMovBallMovEasinessFactor: %f\n", playerMovBallMovEasinessFactor);
+  playerMovBallMovEasinessFactor = 1.0f - playerMovBallMovPowerFactor * (0.5f - player->GetStat(technical_volley) * 0.3f);
 
   float powerEasinessFactor = 1.0f - NormalizedClamp(power, 30.0f, 100.0f);
   powerEasinessFactor = curve(powerEasinessFactor, 1.0f);
-  if (Verbose()) printf("(ease) powerEasinessFactor: %f\n", powerEasinessFactor);
 
   float easinessFactor = 1.0f *
                          (0.4f + playerDirDesiredDirEasinessFactor * 0.6f) *
@@ -436,18 +417,10 @@ Vector3 GetShotVector(Match *match, Player *player, const Vector3 &nextStartPos,
                          (0.6f + powerEasinessFactor * 0.4f);
   float difficultyFactor = clamp(1.0f - easinessFactor, 0.0f, 1.0f);
 
-  if (Verbose()) printf("(ease) RESULTING difficultyFactor: %f\n", difficultyFactor);
-
-
   // best case result
 
   float desiredHeight = 0.05f;
   Vector3 desiredShot = (currentAnim->originatingCommand.touchInfo.desiredDirection.Get2D() + Vector3(0, 0, desiredHeight)).GetNormalized() * power;
-  if (Verbose()) {
-    desiredShot.Print();
-    printf("^ shot: desired\n");
-  }
-
 
   // worst case result
 
@@ -467,17 +440,12 @@ Vector3 GetShotVector(Match *match, Player *player, const Vector3 &nextStartPos,
       power * (1.0f - std::pow(difficultyFactor, 0.7f) * 0.5f);
 
   Vector3 worstCaseShot = (worstCaseDirection + Vector3(0, 0, worstCaseHeight)).GetNormalized() * worstCasePower;
-  if (Verbose()) {
-    worstCaseShot.Print();
-    printf("^ shot: worstcase\n");
-  }
-
 
   // actual result
 
   float worstCaseFactor = random(0.0f, 1.0f);
   worstCaseFactor =
-      std::pow(worstCaseFactor, player->GetStat("technical_shot") * 0.7f);
+      std::pow(worstCaseFactor, player->GetStat(technical_shot) * 0.7f);
 
   Vector3 shot = desiredShot * (1.0f - worstCaseFactor) +
                  worstCaseShot * worstCaseFactor;

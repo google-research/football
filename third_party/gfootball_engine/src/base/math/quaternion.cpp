@@ -31,13 +31,6 @@
 
 namespace blunted {
 
-  Quaternion::Quaternion() {
-    elements[0] = 0;
-    elements[1] = 0;
-    elements[2] = 0;
-    elements[3] = 1;
-  }
-
   Quaternion::Quaternion(real x, real y, real z, real w) {
     elements[0] = x;
     elements[1] = y;
@@ -409,7 +402,6 @@ namespace blunted {
     radian angle;
     GetAngleAxis(angle, axis);
 
-    //printf("angle: %f\n", angle);
     if (angle > pi) angle -= 2.0f * pi; // range -pi .. pi
 
     angle = std::fmod(angle * factor, 2.0f * pi);  // remove multiples of 2pi
@@ -426,10 +418,6 @@ namespace blunted {
       *this = -*this;
     }
     return dot;
-  }
-
-  void Quaternion::Print() const {
-    printf("%f, %f, %f, %f\n", elements[0], elements[1], elements[2], elements[3]);
   }
 
 }

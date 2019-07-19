@@ -22,8 +22,6 @@
 
 #include "../../types/iusertask.hpp"
 
-#include "../../scene/scene2d/scene2d.hpp"
-
 #include "windowmanager.hpp"
 
 namespace blunted {
@@ -42,29 +40,13 @@ namespace blunted {
 
       Gui2WindowManager *GetWindowManager() { return this->windowManager; }
 
-      void SetEventJoyButtons(int activate, int escape);
-
-      void EnableKeyboard() { keyboard = true; }
-      void DisableKeyboard() { keyboard = false; }
-      void SetActiveJoystickID(int joyID) { activeJoystick = joyID; }
-      int GetActiveJoystickID() const { return activeJoystick; }
+      void EnableKeyboard() {}
+      void SetActiveJoystickID(int joyID) {}
 
       virtual std::string GetName() const { return "gui2"; }
 
     protected:
-      boost::shared_ptr<Scene2D> scene2D;
-
       Gui2WindowManager *windowManager;
-
-      std::map<SDL_Keycode, TimedKeyPress> prevKeyState;
-      bool prevButtonState[_JOYSTICK_MAX][_JOYSTICK_MAXBUTTONS];
-      bool prevAxisState[_JOYSTICK_MAX][_JOYSTICK_MAXAXES];
-
-      int joyButtonActivate = 0;
-      int joyButtonEscape = 0;
-      int activeJoystick = 0;
-      bool keyboard = false;
-
   };
 
 }
