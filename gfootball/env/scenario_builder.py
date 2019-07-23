@@ -31,10 +31,18 @@ Team = libgame.e_Team
 
 FLAGS = flags.FLAGS
 
+
 def all_scenarios():
   path = os.path.abspath(__file__)
-  path = os.path.join(os.path.dirname(os.path.dirname(path)), "scenarios")
-  return [m.name for m in pkgutil.iter_modules([path])]
+  path = os.path.join(os.path.dirname(os.path.dirname(path)), 'scenarios')
+  scenarios = []
+  for m in pkgutil.iter_modules([path]):
+    if m.__class__ == tuple:
+      scenarios.append(m[1])
+    else:
+      scenarios.append(m.name)
+  return scenarios
+
 
 class Scenario(object):
 

@@ -58,9 +58,16 @@ def modify_trace(replay):
     trace.append(idle_step)
   return trace
 
+def build_players(dump_file, spec):
+  players = []
+  for player in spec:
+    player_type = 'replay:path={},players=1'.format(dump_file)
+    for _ in range(config.parse_number_of_players(player)):
+      players.append(player_type)
+  return players
 
-def main(_):
-  with open(FLAGS.trace_file, 'rb') as f:
+def replay(directory, dump, config_update={}):
+  with open(dump, 'rb') as f:
     replay = six.moves.cPickle.load(f)
   trace = modify_trace(replay)
   fd, temp_path = tempfile.mkstemp(suffix='.dump')
@@ -69,17 +76,15 @@ def main(_):
   assert replay[0]['debug']['frame_cnt'] == 1, (
       'Trace does not start from the beginning of the episode, can not replay')
   cfg = config.Config(replay[0]['debug']['config'])
-  player_type = 'replay:path={},players={}'.format(
-      temp_path, len(replay[0]['debug']['action']))
-  cfg['left_players'] = [player_type] * len(cfg['left_players'])
-  cfg['right_players'] = [player_type] * len(cfg['right_players'])
-  cfg.update({
-      'physics_steps_per_frame': int(100 / FLAGS.fps),
-      'real_time': False,
-      'render': True,
-      'tracesdir': '/tmp/dumps',
-      'write_video': True
-  })
+  cfg['left_players'] = build_players(temp_path, cfg['left_players'])
+  cfg['right_players'] = build_players(temp_path, cfg['right_players'])
+  config_update['physics_steps_per_frame'] = int(100 / FLAGS.fps)
+  config_update['real_time'] = False
+  if 'render' not in config_update:
+    config_update['render'] = True
+  config_update['tracesdir'] = directory
+  config_update['write_video'] = True
+  cfg.update(config_update)
   env = football_env.FootballEnv(cfg)
   env.reset()
   done = False
@@ -91,6 +96,8 @@ def main(_):
     exit(1)
   os.close(fd)
 
+def main(_):
+  replay('/tmp/dumps', FLAGS.trace_file)
 
 if __name__ == '__main__':
   app.run(main)

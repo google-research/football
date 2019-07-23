@@ -31,6 +31,7 @@ class Player(player_base.PlayerBase):
     self._last_observation = None
     self._last_action = football_action_set.action_idle
     self._shoot_distance = 0.15
+    self._pressure_enabled = False
 
   def _object_distance(self, object1, object2):
     """Computes distance between two objects."""
@@ -175,8 +176,12 @@ class Player(player_base.PlayerBase):
     if self._observation['ball_owned_team'] == (1 if is_active_left else 0):
       if self._last_action == football_action_set.action_pressure:
         return football_action_set.action_sprint
+      self._pressure_enabled = True
       return football_action_set.action_pressure
 
+    if self._pressure_enabled:
+      self._pressure_enabled = False
+      return football_action_set.action_release_pressure
     target_x = 0.85 if is_active_left else -0.85
 
     if (self._shoot_distance >

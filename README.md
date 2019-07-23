@@ -108,20 +108,20 @@ Environment exposes following `raw` observations:
     - `right_team_yellow_card` - same as for left team.
     - `right_team_active` - same as for left team.
     - `right_team_roles` - same as for left team.
-- Controlled player information:
-    - `active` - a list of {0..N-1} integer denoting indices of the controlled players. In most common case the list will contain just one element, but in multi-agent setup it will be more.
-    - `sticky_actions` - 11-elements vector of 0s or 1s denoting whether corresponding actions are active:
-        - `game_left`
-        - `game_top_left`
-        - `game_top`
-        - `game_top_right`
-        - `game_right`
-        - `game_bottom_right`
-        - `game_bottom`
-        - `game_bottom_left`
-        - `game_sprint`
-        - `game_keeper_rush`
-        - `game_dribble`
+- Controlled players information (M is the number of controlled players):
+    - `active` - M-elements list of {0..N-1} integers denoting indices of the controlled players. In most common case the list will contain just one element, but in multi-agent setup it will be more.
+    - `sticky_actions` - M-elements list of 11-elements vectors of 0s or 1s denoting whether corresponding action is active:
+        - `0` - `game_left`
+        - `1` - `game_top_left`
+        - `2` - `game_top`
+        - `3` - `game_top_right`
+        - `4` - `game_right`
+        - `5` - `game_bottom_right`
+        - `6` - `game_bottom`
+        - `7` - `game_bottom_left`
+        - `8` - `game_sprint`
+        - `9` - `game_keeper_rush`
+        - `10` - `game_dribble`
 - Match state:
     - `score` - pair of integers denoting number of goals for left and right teams, respectively.
     - `steps_left` - how many steps are left till the end of the match.
