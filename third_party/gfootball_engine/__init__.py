@@ -21,20 +21,19 @@ import logging
 import os
 import sys
 
+
+
 game_path = os.path.dirname(os.path.abspath(__file__))
 if game_path not in sys.path:
   sys.path.append(game_path)
 
-if (('/nonexistent/lib/python27.zip' in sys.path or
-     '/nonexistent/lib/python3.6' in sys.path) and
-    '/nonexistent/interpreter' not in sys.path):
-  gfootball_dir = os.path.dirname(os.path.abspath(__file__))
-  font_file = os.path.join(gfootball_dir, 'third_party/fonts')
-  if not 'GFOOTBALL_FONT' in os.environ:
-    os.environ['GFOOTBALL_FONT'] = font_file
-  data_dir = os.path.join(gfootball_dir, 'third_party/gfootball_engine')
-  if not 'GFOOTBALL_DATA_DIR' in os.environ:
-    os.environ['GFOOTBALL_DATA_DIR'] = data_dir
+gfootball_dir = os.path.dirname(os.path.abspath(__file__))
+font_file = os.path.join(gfootball_dir, 'fonts/AlegreyaSansSC-ExtraBold.ttf')
+if 'GFOOTBALL_FONT' not in os.environ:
+  os.environ['GFOOTBALL_FONT'] = font_file
+data_dir = os.path.join(gfootball_dir, 'data')
+if 'GFOOTBALL_DATA_DIR' not in os.environ:
+  os.environ['GFOOTBALL_DATA_DIR'] = data_dir
 
 try:
   from _gameplayfootball import *
@@ -44,7 +43,7 @@ except:
     logging.warning('Looks like game engine is not compiled, please run:')
     engine_path = os.path.abspath(os.path.dirname(__file__))
     logging.warning(
-        '  pushd {} && cmake . && make -j10 && popd'.format(game_path))
+        '  pushd {} && cmake . && make -j && popd'.format(game_path))
     logging.warning('  pushd {} && ln -s libgame.so '
                     '_gameplayfootball.so && popd'.format(engine_path))
   raise

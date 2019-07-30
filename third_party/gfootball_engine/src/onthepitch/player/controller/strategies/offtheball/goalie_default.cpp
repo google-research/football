@@ -174,8 +174,6 @@ void GoalieDefaultStrategy::RequestInput(const MentalImage *mentalImage, Vector3
     } else {
 
       // intercept ball
-
-
       maxVelocity = sprintVelocity;
 
       Line ballToGoal;

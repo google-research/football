@@ -19,10 +19,10 @@
 
 #include <cmath>
 
-#include "../base/utils.hpp"
-#include "../scene/objectfactory.hpp"
-#include "../managers/resourcemanagerpool.hpp"
 #include "../base/geometry/trianglemeshutils.hpp"
+#include "../base/utils.hpp"
+#include "../main.hpp"
+#include "../scene/objectfactory.hpp"
 
 namespace blunted {
 
@@ -66,7 +66,9 @@ namespace blunted {
     GeomIndex newIndex;
     newIndex.x = x;
     newIndex.y = y;
-    newIndex.geomData = ResourceManagerPool::getGeometryManager()->Fetch(name + " gridGeomData @ " + int_to_str(x) + ", " + int_to_str(y), false, false);
+    newIndex.geomData = GetContext().geometry_manager.Fetch(
+        name + " gridGeomData @ " + int_to_str(x) + ", " + int_to_str(y), false,
+        false);
     geomVec.push_back(newIndex);
 
     return newIndex.geomData;
@@ -98,7 +100,11 @@ namespace blunted {
     for (int i = 0; i < (signed int)geomVec.size(); i++) {
       float x = geomVec[i].x;
       float y = geomVec[i].y;
-      boost::intrusive_ptr<Geometry> geom = static_pointer_cast<Geometry>(ObjectFactory::GetInstance().CreateObject(source->GetName() + " gridGeom @ " + int_to_str(x) + ", " + int_to_str(y), e_ObjectType_Geometry));
+      boost::intrusive_ptr<Geometry> geom = static_pointer_cast<Geometry>(
+          GetContext().object_factory.CreateObject(
+              source->GetName() + " gridGeom @ " + int_to_str(x) + ", " +
+                  int_to_str(y),
+              e_ObjectType_Geometry));
       scene3D->CreateSystemObjects(geom);
       geom->SetGeometryData(geomVec[i].geomData);
       resultNode->AddObject(geom);

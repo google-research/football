@@ -20,7 +20,6 @@
 #include "main.hpp"
 
 #include "framework/scheduler.hpp"
-#include "managers/resourcemanagerpool.hpp"
 
 #include "blunted.hpp"
 
@@ -38,12 +37,8 @@ GameTask::~GameTask() {
 }
 
 void GameTask::Exit() {
-
   Action(e_GameTaskMessage_StopMatch);
   Action(e_GameTaskMessage_StopMenuScene);
-
-  ResourceManagerPool::CleanUp();
-
   scene3D.reset();
 }
 

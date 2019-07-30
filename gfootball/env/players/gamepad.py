@@ -52,8 +52,7 @@ class Player(controller_base.Controller):
     self._joystick.init()
 
   def take_action(self, observations):
-    assert len(observations['active']
-              ) == 1, 'Gamepad does not support multiple player control'
+    assert len(observations) == 1, 'Gamepad does not support multiple player control'
     x_axis = self._joystick.get_axis(0)
     y_axis = self._joystick.get_axis(1)
     left = x_axis < -0.5

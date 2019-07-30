@@ -37,6 +37,7 @@ def all_scenarios():
   path = os.path.join(os.path.dirname(os.path.dirname(path)), 'scenarios')
   scenarios = []
   for m in pkgutil.iter_modules([path]):
+    # There was API change in pkgutil between Python 3.5 and 3.6...
     if m.__class__ == tuple:
       scenarios.append(m[1])
     else:
@@ -52,10 +53,6 @@ class Scenario(object):
     self._config = config
     self.SetFlag('swap_sides', False)
     self.SetFlag('kickoff_for_goal_loosing_team', False)
-    if self._config['enable_sides_swap']:
-      self.SetFlag('swap_sides', random.choice([True, False]))
-      # Swapping sides also enabled kickoff_for_goal_loosing_team.
-      self.SetFlag('kickoff_for_goal_loosing_team', True)
     self._active_team = Team.e_Left
     scenario = None
     try:
@@ -65,6 +62,10 @@ class Scenario(object):
       logging.warning(e)
       exit(1)
     scenario.build_scenario(self)
+    if self._config['enable_sides_swap']:
+      self.SetFlag('swap_sides', random.choice([True, False]))
+      # Swapping sides also enabled kickoff_for_goal_loosing_team.
+      self.SetFlag('kickoff_for_goal_loosing_team', True)
     self.SetTeam(libgame.e_Team.e_Left)
     self._FakePlayersForEmptyTeam(self._scenario_cfg.left_team)
     self.SetTeam(libgame.e_Team.e_Right)

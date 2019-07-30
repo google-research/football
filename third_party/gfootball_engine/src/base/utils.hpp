@@ -58,7 +58,7 @@ namespace blunted {
 
   // ----- load .ase file into a tree
   s_tree *tree_load(std::string asefile);
-  s_tree *tree_readblock(std::ifstream &datafile);
+  s_tree *tree_readblock(const char*& datafile, int& len);
 
   // tree structure utility functions
   const s_treeentry *treeentry_find(const s_tree *tree, const std::string needle);

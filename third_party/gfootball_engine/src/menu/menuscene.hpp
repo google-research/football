@@ -28,11 +28,7 @@
 using namespace blunted;
 
 struct MenuSceneLocation {
-  MenuSceneLocation() {
-    position = Vector3(0.0f, 0.0f, 1.0f);
-    orientation = Quaternion(QUATERNION_IDENTITY);
-    timeStamp_ms = EnvironmentManager::GetInstance().GetTime_ms();
-  }
+  MenuSceneLocation();
   Vector3 position;
   Quaternion orientation;
   unsigned long timeStamp_ms = 0;

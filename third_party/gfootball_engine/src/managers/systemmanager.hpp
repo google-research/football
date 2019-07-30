@@ -20,8 +20,6 @@
 
 #include "../defines.hpp"
 
-#include "../types/singleton.hpp"
-
 namespace blunted {
 
   class ISystem;
@@ -32,7 +30,7 @@ namespace blunted {
 
   /// manages the registration of systems and the creation of their scenes and objects
 
-  class SystemManager : public Singleton<SystemManager> {
+  class SystemManager {
 
     public:
       SystemManager();

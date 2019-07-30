@@ -33,7 +33,7 @@ using namespace blunted;
 class PlayerBase;
 class Match;
 
-struct Joint {
+struct HJoint {
   boost::intrusive_ptr<Node> node;
   Vector3 position;
   Quaternion orientation;
@@ -298,7 +298,7 @@ class HumanoidBase {
     std::vector < std::vector<WeightedVertex> > weightedVerticesVec; // < subgeoms < vertices > >
     unsigned int fullbodySubgeomCount = 0;
     std::vector<int*> uniqueIndicesVec;
-    std::vector<Joint> joints;
+    std::vector<HJoint> joints;
     Vector3 fullbodyOffset;
     boost::intrusive_ptr<Node> fullbodyTargetNode;
 

@@ -19,8 +19,6 @@
 #include <cmath>
 
 #include "../scene/objectfactory.hpp"
-#include "../managers/resourcemanagerpool.hpp"
-
 #include "match.hpp"
 #include "AIsupport/AIfunctions.hpp"
 

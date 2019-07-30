@@ -23,10 +23,9 @@ from gfootball.env import football_env
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string(
-    'left_players', 'keyboard',
-    'Comma separated list of left players, single keyboard player by default')
-flags.DEFINE_string('right_players', '', 'List of right players')
+flags.DEFINE_string('players', 'keyboard:left_players=1',
+                    'Semicolon separated list of players, single keyboard '
+                    'player on the left by default')
 flags.DEFINE_string('level', '', 'Level to play')
 flags.DEFINE_enum('action_set', 'full', ['default', 'full'], 'Action set')
 flags.DEFINE_bool('real_time', True,
@@ -34,16 +33,13 @@ flags.DEFINE_bool('real_time', True,
 
 
 def main(_):
-  left_players = FLAGS.left_players.split(',') if FLAGS.left_players else ''
-  right_players = FLAGS.right_players.split(',') if FLAGS.right_players else ''
-  assert not (
-      'agent' in left_players or 'agent' in right_players
-  ), 'Player type \'agent\' can not be used with play_game. Use tfhub player.'
+  players = FLAGS.players.split(';') if FLAGS.players else ''
+  assert not (any(['agent' in player for player in players])
+             ), ('Player type \'agent\' can not be used with play_game.')
   cfg = config.Config({
       'action_set': FLAGS.action_set,
-      'right_players': right_players,
       'dump_full_episodes': True,
-      'left_players': left_players,
+      'players': players,
       'real_time': FLAGS.real_time,
       'render': True
   })

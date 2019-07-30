@@ -20,7 +20,6 @@
 
 #include "../gamedefines.hpp"
 #include "../main.hpp"
-#include "../managers/resourcemanagerpool.hpp"
 #include "../utils.hpp"
 #include "AIsupport/AIfunctions.hpp"
 #include "match.hpp"
@@ -103,7 +102,7 @@ void Team::InitPlayers(boost::intrusive_ptr<Node> fullbodyNode,
       } else {
         kitFilename = "media/objects/players/textures/goalie_kit.png";
       }
-      kit = ResourceManagerPool::getSurfaceManager()->Fetch(kitFilename);
+      kit = GetContext().surface_manager.Fetch(kitFilename);
       player->Activate(
           playerNode, playerData->GetModelId() ? fullbody2Node : fullbodyNode,
           colorCoords, kit, match->GetAnimCollection(), formation.lazy);

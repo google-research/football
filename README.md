@@ -7,7 +7,7 @@ This is not an official Google product.
 
 We'd like to thank Bastiaan Konings Schuiling, who authored and open-sourced the original version of this game.
 
-For more information, please look at our [paper (github)](https://github.com/google-research/football/blob/master/paper.pdf).
+For more information, please look at our [paper](https://arxiv.org/abs/1907.11180).
 
 Mailing list: https://groups.google.com/forum/#!forum/google-research-football
 
@@ -213,13 +213,12 @@ directory. Have a look at existing scenarios for example.
 ## Multiagent support
 Using play_game script (see 'Playing game yourself' section for details)
 it is possible to set up a game played between multiple agents.
-`left_players` and `right_players` command line parameters are
-the comma-separated lists of players on the left and right teams, respectively.
+`players` command line parameter is a comma-separated lists of players for both teams.
 For example, to play yourself using a gamepad with two lazy bots on your team
 against three bots you can run
-`python3 -m gfootball.play_game --left_players=gamepad,lazy:players=2 --right_players=bot,bot,bot`.
+`python3 -m gfootball.play_game --players=gamepad:left_players=1;lazy:left_players=2;bot:right_players=1;bot:right_players=1;bot:right_players=1`.
 
-Notice the use of `players=2` for the lazy player, bot player does not support it.
+Notice the use of `left_players=2` for the lazy player, bot player does not support it.
 
 You can implement your own player controlling multiple players by adding its implementation
 to the env/players directory (no other changes are needed).

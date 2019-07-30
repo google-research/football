@@ -22,8 +22,6 @@
 #include "../utils/objectloader.hpp"
 #include "../scene/objectfactory.hpp"
 
-#include "../managers/resourcemanagerpool.hpp"
-
 #include "match.hpp"
 
 #include "../main.hpp"

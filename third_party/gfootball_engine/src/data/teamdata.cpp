@@ -22,7 +22,6 @@
 
 #include "../base/utils.hpp"
 #include "../main.hpp"
-#include "../utils/database.hpp"
 
 Vector3 GetDefaultRolePosition(e_PlayerRole role) {
   switch (role) {
@@ -72,13 +71,6 @@ TeamData::TeamData(int teamDatabaseID, int playersTeamDatabaseID,
   formation.resize(f.empty() ? playerNum : f.size());
   int player_count = formation.size();
 
-  DatabaseResult *result = GetDB()->Query(
-      "select teams.name, teams.logo_url, teams.kit_url, teams.formation_xml, "
-      "teams.formation_factory_xml, teams.tactics_xml, "
-      "teams.tactics_factory_xml, teams.shortname, teams.color1, teams.color2 "
-      "from teams, leagues where teams.id = " +
-      int_to_str(databaseID) + " and leagues.id = teams.league_id limit 1");
-
   std::string formationString;
   std::string factoryFormationString;
   std::string factoryTacticsString;
@@ -89,30 +81,165 @@ TeamData::TeamData(int teamDatabaseID, int playersTeamDatabaseID,
 
   bool national = false;
 
-  for (unsigned int c = 0; c < result->data.at(0).size(); c++) {
-    if (result->header.at(c).compare("national") == 0)
-      national = (atoi(result->data.at(0).at(c).c_str()) == 0) ? false : true;
-
-    if (result->header.at(c).compare("name") == 0)
-      name = result->data.at(0).at(c);
-    if (result->header.at(c).compare("logo_url") == 0)
-      logo_url = result->data.at(0).at(c);
-    if (result->header.at(c).compare("kit_url") == 0)
-      kit_url = result->data.at(0).at(c);
-    if (result->header.at(c).compare("formation_xml") == 0)
-      formationString = result->data.at(0).at(c);
-    if (result->header.at(c).compare("formation_factory_xml") == 0)
-      factoryFormationString = result->data.at(0).at(c);
-    if (result->header.at(c).compare("tactics_xml") == 0)
-      tacticsString = result->data.at(0).at(c);
-    if (result->header.at(c).compare("tactics_factory_xml") == 0)
-      factoryTacticsString = result->data.at(0).at(c);
-    if (result->header.at(c).compare("shortname") == 0)
-      shortName = result->data.at(0).at(c);
-    if (result->header.at(c).compare("color1") == 0)
-      color1 = GetVectorFromString(result->data.at(0).at(c));
-    if (result->header.at(c).compare("color2") == 0)
-      color2 = GetVectorFromString(result->data.at(0).at(c));
+  switch (databaseID) {
+    case 3:
+      national = 0;
+      name = "Frequentists United";
+      logo_url = "images_teams/primeradivision/fcbarcelona_logo.png";
+      kit_url = "images_teams/primeradivision/fcbarcelona";
+      formationString =
+          "<p1><position> -1.0,  0.0 "
+          "</position><role>GK</role></p1><p2><position> -0.7,  "
+          "0.75</position><role>LB</role></p2><p3><position> -1.0,  "
+          "0.25</position><role>CB</role></p3><p4><position> -1.0, "
+          "-0.25</position><role>CB</role></p4><p5><position> -0.7, "
+          "-0.75</position><role>RB</role></p5><p6><position>  0.0,  0.5 "
+          "</position><role>CM</role></p6><p7><position> -0.2,  0.0 "
+          "</position><role>CM</role></p7><p8><position>  0.0, -0.5 "
+          "</position><role>CM</role></p8><p9><position>  0.6,  0.75 "
+          "</position><role>LM</role></p9><p10><position> 1.0,  0.0 "
+          "</position><role>CF</role></p10><p11><position> 0.6, -0.75 "
+          "</position><role>RM</role></p11>";
+      factoryFormationString =
+          "<p1><position> -1.0,  0.0 "
+          "</position><role>GK</role></p1><p2><position> -0.7,  "
+          "0.75</position><role>LB</role></p2><p3><position> -1.0,  "
+          "0.25</position><role>CB</role></p3><p4><position> -1.0, "
+          "-0.25</position><role>CB</role></p4><p5><position> -0.7, "
+          "-0.75</position><role>RB</role></p5><p6><position>  0.0,  0.5 "
+          "</position><role>CM</role></p6><p7><position> -0.2,  0.0 "
+          "</position><role>CM</role></p7><p8><position>  0.0, -0.5 "
+          "</position><role>CM</role></p8><p9><position>  0.6,  0.75 "
+          "</position><role>LM</role></p9><p10><position> 1.0,  0.0 "
+          "</position><role>CF</role></p10><p11><position> 0.6, -0.75 "
+          "</position><role>RM</role></p11>";
+      tacticsString =
+          "<dribble_centermagnet>0.720000</"
+          "dribble_centermagnet><dribble_offensiveness>0.500000</"
+          "dribble_offensiveness><position_defense_depth_factor>0.300000</"
+          "position_defense_depth_factor><position_defense_microfocus_strength>"
+          "0.960000</"
+          "position_defense_microfocus_strength><position_defense_"
+          "midfieldfocus>0.960000</"
+          "position_defense_midfieldfocus><position_defense_sidefocus_strength>"
+          "0.160000</"
+          "position_defense_sidefocus_strength><position_defense_width_factor>"
+          "0.700000</"
+          "position_defense_width_factor><position_offense_depth_factor>0."
+          "340000</"
+          "position_offense_depth_factor><position_offense_microfocus_strength>"
+          "0.920000</"
+          "position_offense_microfocus_strength><position_offense_"
+          "midfieldfocus>0.880000</"
+          "position_offense_midfieldfocus><position_offense_sidefocus_strength>"
+          "0.880000</"
+          "position_offense_sidefocus_strength><position_offense_width_factor>"
+          "0.740000</position_offense_width_factor>";
+      factoryTacticsString =
+          "<dribble_centermagnet>0.720000</"
+          "dribble_centermagnet><dribble_offensiveness>0.500000</"
+          "dribble_offensiveness><position_defense_depth_factor>0.300000</"
+          "position_defense_depth_factor><position_defense_microfocus_strength>"
+          "0.960000</"
+          "position_defense_microfocus_strength><position_defense_"
+          "midfieldfocus>0.960000</"
+          "position_defense_midfieldfocus><position_defense_sidefocus_strength>"
+          "0.160000</"
+          "position_defense_sidefocus_strength><position_defense_width_factor>"
+          "0.700000</"
+          "position_defense_width_factor><position_offense_depth_factor>0."
+          "340000</"
+          "position_offense_depth_factor><position_offense_microfocus_strength>"
+          "0.920000</"
+          "position_offense_microfocus_strength><position_offense_"
+          "midfieldfocus>0.880000</"
+          "position_offense_midfieldfocus><position_offense_sidefocus_strength>"
+          "0.880000</"
+          "position_offense_sidefocus_strength><position_offense_width_factor>"
+          "0.740000</position_offense_width_factor>";
+      shortName = "FRQ";
+      color1 = Vector3(255, 100, 100);
+      color2 = Vector3(100, 100, 255);
+      break;
+    case 8:
+      national = 0;
+      name = "Real Bayesians";
+      logo_url = "images_teams/primeradivision/realmadrid_logo.png";
+      kit_url = "images_teams/primeradivision/realmadrid";
+      formationString =
+          "<p1><position>-1.0,  "
+          "0.0</position><role>GK</role></p1><p2><position>-0.7,  "
+          "0.75</position><role>LB</role></p2><p3><position>-1.0,  "
+          "0.25</position><role>CB</role></p3><p4><position>-1.0, "
+          "-0.25</position><role>CB</role></p4><p5><position>-0.7, "
+          "-0.75</position><role>RB</role></p5><p6><position>-0.2,  "
+          "0.3</position><role>CM</role></p6><p7><position>-0.2, "
+          "-0.3</position><role>CM</role></p7><p8><position> 0.7,  "
+          "0.9</position><role>LM</role></p8><p9><position> 0.2,  "
+          "0.0</position><role>AM</role></p9><p10><position>0.7, "
+          "-0.9</position><role>RM</role></p10><p11><position>1.0,  "
+          "0.0</position><role>CF</role></p11>";
+      factoryFormationString =
+          "<p1><position>-1.0,  "
+          "0.0</position><role>GK</role></p1><p2><position>-0.7,  "
+          "0.75</position><role>LB</role></p2><p3><position>-1.0,  "
+          "0.25</position><role>CB</role></p3><p4><position>-1.0, "
+          "-0.25</position><role>CB</role></p4><p5><position>-0.7, "
+          "-0.75</position><role>RB</role></p5><p6><position>-0.2,  "
+          "0.3</position><role>CM</role></p6><p7><position>-0.2, "
+          "-0.3</position><role>CM</role></p7><p8><position> 0.7,  "
+          "0.9</position><role>LM</role></p8><p9><position> 0.2,  "
+          "0.0</position><role>AM</role></p9><p10><position>0.7, "
+          "-0.9</position><role>RM</role></p10><p11><position>1.0,  "
+          "0.0</position><role>CF</role></p11>";
+      tacticsString =
+          "<dribble_centermagnet>0.500000</"
+          "dribble_centermagnet><dribble_offensiveness>0.900000</"
+          "dribble_offensiveness><position_defense_depth_factor>0.180000</"
+          "position_defense_depth_factor><position_defense_microfocus_strength>"
+          "0.380000</"
+          "position_defense_microfocus_strength><position_defense_"
+          "midfieldfocus>0.660000</"
+          "position_defense_midfieldfocus><position_defense_sidefocus_strength>"
+          "0.760000</"
+          "position_defense_sidefocus_strength><position_defense_width_factor>"
+          "0.540000</"
+          "position_defense_width_factor><position_offense_depth_factor>0."
+          "900000</"
+          "position_offense_depth_factor><position_offense_microfocus_strength>"
+          "0.140000</"
+          "position_offense_microfocus_strength><position_offense_"
+          "midfieldfocus>0.740000</"
+          "position_offense_midfieldfocus><position_offense_sidefocus_strength>"
+          "0.960000</"
+          "position_offense_sidefocus_strength><position_offense_width_factor>"
+          "0.940000</position_offense_width_factor>";
+      factoryTacticsString =
+          "<dribble_centermagnet>0.500000</"
+          "dribble_centermagnet><dribble_offensiveness>0.900000</"
+          "dribble_offensiveness><position_defense_depth_factor>0.180000</"
+          "position_defense_depth_factor><position_defense_microfocus_strength>"
+          "0.380000</"
+          "position_defense_microfocus_strength><position_defense_"
+          "midfieldfocus>0.660000</"
+          "position_defense_midfieldfocus><position_defense_sidefocus_strength>"
+          "0.760000</"
+          "position_defense_sidefocus_strength><position_defense_width_factor>"
+          "0.540000</"
+          "position_defense_width_factor><position_offense_depth_factor>0."
+          "900000</"
+          "position_offense_depth_factor><position_offense_microfocus_strength>"
+          "0.140000</"
+          "position_offense_microfocus_strength><position_offense_"
+          "midfieldfocus>0.740000</"
+          "position_offense_midfieldfocus><position_offense_sidefocus_strength>"
+          "0.960000</"
+          "position_offense_sidefocus_strength><position_offense_width_factor>"
+          "0.940000</position_offense_width_factor>";
+      shortName = "RBA";
+      color1 = Vector3(255, 255, 255);
+      color2 = Vector3(50, 50, 126);
+      break;
   }
 
   if (shortName.compare("") == 0) {
@@ -121,8 +248,6 @@ TeamData::TeamData(int teamDatabaseID, int playersTeamDatabaseID,
                     shortName.end());
     shortName = boost::to_upper_copy(shortName.substr(0, 3));
   }
-
-  delete result;
 
   logo_url = "databases/default/" + logo_url;
   kit_url = "databases/default/" + kit_url;
@@ -219,85 +344,10 @@ TeamData::TeamData(int teamDatabaseID, int playersTeamDatabaseID,
 
   iter = tree.children.begin();
   while (iter != tree.children.end()) {
-    tactics.userProperties.Set((*iter).first.c_str(),
+    tactics.userProperties.Set((*iter).first,
                                atof((*iter).second.value.c_str()));
-    // printf("value name: %s, value: %f\n", (*iter).first.c_str(),
-    // atof((*iter).second.value.c_str()));
-
-    if ((*iter).first.compare("position_offense_depth_factor") == 0) {
-      tactics.humanReadableNames.Set((*iter).first.c_str(),
-                                     "attacking: team depth");
-      tactics.descriptions.Set(
-          (*iter).first.c_str(),
-          "how much vertical space the team takes up, during possession");
-    } else if ((*iter).first.compare("position_defense_depth_factor") == 0) {
-      tactics.humanReadableNames.Set((*iter).first.c_str(),
-                                     "defending: team depth");
-      tactics.descriptions.Set(
-          (*iter).first.c_str(),
-          "how much vertical space the team takes up, while defending");
-    } else if ((*iter).first.compare("position_offense_width_factor") == 0) {
-      tactics.humanReadableNames.Set((*iter).first.c_str(),
-                                     "attacking: team width");
-      tactics.descriptions.Set((*iter).first.c_str(),
-                               "horizontal team width during possession");
-    } else if ((*iter).first.compare("position_defense_width_factor") == 0) {
-      tactics.humanReadableNames.Set((*iter).first.c_str(),
-                                     "defending: team width");
-      tactics.descriptions.Set((*iter).first.c_str(),
-                               "horizontal team width while defending");
-    } else if ((*iter).first.compare("position_offense_midfieldfocus") == 0) {
-      tactics.humanReadableNames.Set((*iter).first.c_str(),
-                                     "attacking: midfield joins attack");
-      tactics.descriptions.Set((*iter).first.c_str(),
-                               "lower values: midfield stays back. higher "
-                               "values: midfield joins attack");
-    } else if ((*iter).first.compare("position_defense_midfieldfocus") == 0) {
-      tactics.humanReadableNames.Set((*iter).first.c_str(),
-                                     "defending: midfield stays high up");
-      tactics.descriptions.Set((*iter).first.c_str(),
-                               "lower values: midfield stays back. higher "
-                               "values: midfield stays higher up");
-    } else if ((*iter).first.compare("position_offense_sidefocus_strength") ==
-               0) {
-      tactics.humanReadableNames.Set((*iter).first.c_str(),
-                                     "attacking: forward drive");
-      tactics.descriptions.Set((*iter).first.c_str(), "");
-    } else if ((*iter).first.compare("position_defense_sidefocus_strength") ==
-               0) {
-      tactics.humanReadableNames.Set((*iter).first.c_str(),
-                                     "defending: backward drive");
-      tactics.descriptions.Set((*iter).first.c_str(), "");
-    } else if ((*iter).first.compare("position_offense_microfocus_strength") ==
-               0) {
-      tactics.humanReadableNames.Set((*iter).first.c_str(),
-                                     "attacking: compactness around ball");
-      tactics.descriptions.Set((*iter).first.c_str(), "");
-    } else if ((*iter).first.compare("position_defense_microfocus_strength") ==
-               0) {
-      tactics.humanReadableNames.Set((*iter).first.c_str(),
-                                     "defending: compactness around ball");
-      tactics.descriptions.Set((*iter).first.c_str(), "");
-    } else if ((*iter).first.compare("dribble_offensiveness") == 0) {
-      tactics.humanReadableNames.Set((*iter).first.c_str(),
-                                     "CPU player on the ball: offensiveness");
-      tactics.descriptions.Set((*iter).first.c_str(),
-                               "higher values mean more forward drive for the "
-                               "CPU player in possession.");
-    } else if ((*iter).first.compare("dribble_centermagnet") == 0) {
-      tactics.humanReadableNames.Set((*iter).first.c_str(),
-                                     "CPU player on the ball: prefer center");
-      tactics.descriptions.Set(
-          (*iter).first.c_str(),
-          "lower values: hug the sidelines more often. higher values: prefer "
-          "dribbling through the middle of the pitch");
-    }
-
     iter++;
   }
-  // printf("result:\n");
-  // tactics.userProperties.Print();
-
   // factory tactics
 
   tree = loader.Load(factoryTacticsString);
@@ -312,24 +362,18 @@ TeamData::TeamData(int teamDatabaseID, int playersTeamDatabaseID,
   }
 
   // load players
-
-  std::string order = "formationorder";
-  if (national) order = "nationalformationorder";
-
-  result = GetDB()->Query(
-      "select id from players where team_id = " +
-      int_to_str(playersTeamDatabaseID) + " or nationalteam_id = " +
-      int_to_str(playersTeamDatabaseID) + " order by " + order);
-  for (unsigned int r = 0; r < player_count; r++) {
-    // int playerDatabaseID = atoi(playerQuery.result[r * playerQuery.columns +
-    // c]);
-    int playerDatabaseID = atoi(result->data.at(r).at(0).c_str());
-    // printf("loading player %i\n", playerDatabaseID);
-    PlayerData *onePlayerData = new PlayerData(playerDatabaseID);
-    playerData.push_back(onePlayerData);
-  }
-
-  delete result;
+  playerData.push_back(new PlayerData(398));
+  playerData.push_back(new PlayerData(11));
+  playerData.push_back(new PlayerData(254));
+  playerData.push_back(new PlayerData(320));
+  playerData.push_back(new PlayerData(103));
+  playerData.push_back(new PlayerData(188));
+  playerData.push_back(new PlayerData(74));
+  playerData.push_back(new PlayerData(332));
+  playerData.push_back(new PlayerData(290));
+  playerData.push_back(new PlayerData(391));
+  playerData.push_back(new PlayerData(264));
+  playerData.resize(player_count);
 }
 
 TeamData::~TeamData() {

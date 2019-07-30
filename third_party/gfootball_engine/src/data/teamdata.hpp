@@ -32,8 +32,8 @@ struct TeamTactics {
   Properties factoryProperties;
   Properties userProperties;
 
-  Properties humanReadableNames;
-  Properties descriptions;
+  //Properties humanReadableNames;
+  //Properties descriptions;
 
 };
 

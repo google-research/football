@@ -13,22 +13,21 @@
 
 #undef NDEBUG
 
-#include <sys/prctl.h>
-#include <ctime>
-#include <iostream>
+#include "ai.hpp"
+
 #include <fenv.h>
-#include <ratio>
+#include <sys/prctl.h>
+#include <sys/wait.h>
+
+#include <cerrno>
 #include <chrono>
 #include <ctime>
-#include <cerrno>
-#include "managers/resourcemanagerpool.hpp"
+#include <iostream>
+#include <ratio>
 
-#include <sys/wait.h>
-#include "ai.hpp"
 #include "ai/ai_keyboard.hpp"
+#include "file.h"
 #include "gametask.hpp"
-#include "helpers.h"
-
 
 using namespace boost::python;
 using namespace boost::interprocess;
@@ -65,8 +64,7 @@ std::string Position::debug() {
          std::to_string(value[2]);
 }
 
-GameEnv::~GameEnv() {
-}
+GameEnv::~GameEnv() { }
 
 void setConfig(ScenarioConfig scenario_config) {
   scenario_config.ball_position.coords[0] =
@@ -93,20 +91,22 @@ void setConfig(ScenarioConfig scenario_config) {
 }
 
 std::string GameEnv::start_game(GameConfig game_config) {
+  context = new GameContext();
+  SetContext(context);
   // feenableexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
   GetGameConfig() = game_config;
   std::cout << std::unitbuf;
-  string data_dir = FindDataDir();
-  if (!data_dir.empty()) {
+
+  char* data_dir = getenv("GFOOTBALL_DATA_DIR");
+  if (data_dir) {
     GetGameConfig().data_dir = data_dir;
-  }
-  string font_file = FindFontFile();
-  if (font_file.empty()) {
-    font_file = game_config.font_file;
   }
   Properties* config = new Properties();
   config->Set("match_duration", 0.027);
-  config->Set("font_filename", font_file);
+  char* font_file = getenv("GFOOTBALL_FONT");
+  if (font_file) {
+    config->Set("font_filename", font_file);
+  }
   config->Set("physics_frametime_ms", 1);
   config->Set("game", 0);
   // Enable AI.
@@ -136,12 +136,14 @@ SharedInfo GameEnv::get_info() {
 }
 
 PyObject* GameEnv::get_frame() {
+  SetContext(context);
   const screenshoot& screen = GetGraphicsSystem()->GetScreen();
   PyObject* str = PyBytes_FromStringAndSize(screen.data(), screen.size());
   return str;
 }
 
 void GameEnv::action(int action, bool left_team, int player) {
+  SetContext(context);
   int controller_id = player + (left_team ? 0 : 11);
   auto controller = static_cast<AIControlledKeyboard*>(GetControllers()[controller_id]);
   switch (Action(action)) {
@@ -245,6 +247,9 @@ void GameEnv::action(int action, bool left_team, int player) {
 }
 
 void GameEnv::step() {
+  SetContext(context);
+  PyThreadState* _save = NULL;
+  Py_UNBLOCK_THREADS;
   // We do 10 environment steps per second, while game does 100 frames of
   // physics animation.
   int steps_to_do = GetGameConfig().physics_steps_per_frame;
@@ -272,16 +277,25 @@ void GameEnv::step() {
     set_rendering(GetScenarioConfig().render);
     do_step(1);
   }
+  Py_BLOCK_THREADS;
 }
 
 void GameEnv::reset(ScenarioConfig game_config) {
+  SetContext(context);
+  PyThreadState* _save = NULL;
+  Py_UNBLOCK_THREADS;
+  SetContext(context);
   setConfig(game_config);
   for (auto controller : GetControllers()) {
     controller->Reset();
   }
-  ResourceManagerPool::CleanUp();
+  context->geometry_manager.RemoveUnused();
+  context->surface_manager.RemoveUnused();
+  context->texture_manager.RemoveUnused();
+  context->vertices_manager.RemoveUnused();
   GetMenuTask()->SetMenuAction(e_MenuAction_Menu);
   do_step(1);
+  Py_BLOCK_THREADS;
 }
 
 BOOST_PYTHON_MODULE(_gameplayfootball) {
@@ -348,8 +362,6 @@ BOOST_PYTHON_MODULE(_gameplayfootball) {
   class_<GameConfig>("GameConfig")
       .def_readwrite("high_quality", &GameConfig::high_quality)
       .def_readwrite("render_mode", &GameConfig::render_mode)
-      .def_readwrite("data_dir", &GameConfig::data_dir)
-      .def_readwrite("font_file", &GameConfig::font_file)
       .def_readwrite("physics_steps_per_frame",
                      &GameConfig::physics_steps_per_frame);
 

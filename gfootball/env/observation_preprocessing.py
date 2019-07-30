@@ -39,7 +39,7 @@ MINIMAP_NORM_Y_MAX = 1.0 / 2.25
 
 def get_smm_layers(config):
   if config and config['enable_sides_swap']:
-    return [] + SMM_LAYERS + ['is_active_left']
+    return [] + SMM_LAYERS + ['is_left']
   return SMM_LAYERS
 
 
@@ -74,24 +74,23 @@ def generate_smm(observation, config=None,
     (N, H, W, C) - shaped np array representing SMM. N stands for the number of
     players we are controlling.
   """
-  active = observation['active']
-  frame = np.zeros((len(active), channel_dimensions[1], channel_dimensions[0],
-                    len(get_smm_layers(config))), dtype=np.uint8)
-  for a_index, a in enumerate(active):
+  frame = np.zeros((len(observation), channel_dimensions[1],
+                    channel_dimensions[0], len(get_smm_layers(config))),
+                   dtype=np.uint8)
+
+  for o_i, o in enumerate(observation):
     for index, layer in enumerate(get_smm_layers(config)):
-      if layer not in observation:
+      if layer not in o:
         continue
       if layer == 'active':
-        if a == -1:
+        if o[layer] == -1:
           continue
-        team = ('right_team' if ('is_active_left' in observation and
-                                 not observation['is_active_left'])
+        team = ('right_team' if ('is_left' in o and not o['is_left'])
                 else 'left_team')
-        mark_points(frame[a_index, :, :, index],
-                    np.array(observation[team][a]).reshape(-1))
-      elif layer == 'is_active_left':
-        frame[a_index, :, :, index] = 1 if observation[layer] else 0
+        mark_points(frame[o_i, :, :, index],
+                    np.array(o[team][o[layer]]).reshape(-1))
+      elif layer == 'is_left':
+        frame[o_i, :, :, index] = 1 if o[layer] else 0
       else:
-        mark_points(frame[a_index, :, :, index],
-                    np.array(observation[layer]).reshape(-1))
+        mark_points(frame[o_i, :, :, index], np.array(o[layer]).reshape(-1))
   return frame

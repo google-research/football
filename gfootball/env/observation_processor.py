@@ -207,7 +207,7 @@ def write_dump(name, trace, skip_visuals=False, config={}):
     os.close(fd)
     try:
       # For some reason sometimes the file is missing, so the code fails.
-      tf.gfile.Copy(temp_path, name + '.avi', overwrite=True)
+      tf.io.gfile.copy(temp_path, name + '.avi', overwrite=True)
       os.remove(temp_path)
     except:
       logging.info(traceback.format_exc())
@@ -218,7 +218,7 @@ def write_dump(name, trace, skip_visuals=False, config={}):
       temp_frames.append(o._trace['observation']['frame'])
       o._trace['observation']['frame'] = 'removed'
     to_pickle.append(o._trace)
-  with tf.gfile.Open(name + '.dump', 'wb') as f:
+  with tf.io.gfile.GFile(name + '.dump', 'wb') as f:
     six.moves.cPickle.dump(to_pickle, f)
   for o in trace:
     if 'frame' in o._trace['observation']:
@@ -368,7 +368,7 @@ class ObservationProcessor(object):
     config._last_dump = timeit.default_timer()
     if self._dump_directory is None:
       self._dump_directory = self._config['tracesdir']
-      tf.gfile.MakeDirs(self._dump_directory)
+      tf.io.gfile.makedirs(self._dump_directory)
     config._file_name = '{2}/{0}_{1}'.format(
         name,
         datetime.datetime.now().strftime('%Y%m%d-%H%M%S%f'),

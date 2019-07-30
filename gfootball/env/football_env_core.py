@@ -29,9 +29,9 @@ import numpy as np
 from six.moves import range
 import timeit
 
-_engine = None
-_engine_in_use = False
-_rendering_supported = False
+_unused_engines = []
+_unused_rendering_engine = None
+_active_rendering = False
 
 
 class FootballEnvCore(object):
@@ -42,10 +42,9 @@ class FootballEnvCore(object):
 
   @cfg.log
   def reset(self, trace):
-    global _engine
-    global _engine_in_use
-    global _rendering_supported
     """Reset environment for a new episode using a given config."""
+    global _unused_engines
+    global _unused_rendering_engine
     self._waiting_for_game_count = 0
     self._steps_time = 0
     self._step = 0
@@ -56,17 +55,19 @@ class FootballEnvCore(object):
     self._config.NewScenario()
     self._scenario_cfg = self._config.ScenarioConfig()
     if not self._env:
-      assert not _engine_in_use, ('Environment does not support multiple '
-                                  'instances of the game in the same process.')
-      if not _engine:
-        _engine = libgame.GameEnv()
-        _engine.start_game(self._config.GameConfig())
-        _rendering_supported = self._config['render']
+      if self._config['render']:
+        if _unused_rendering_engine:
+          self._env = _unused_rendering_engine
+          _unused_rendering_engine = None
+          self.rendering_in_use()
       else:
-        assert _rendering_supported or not self._config['render'], ('Enabling '
-            'rendering when initially it was disabled is not supported.')
-      _engine_in_use = True
-      self._env = _engine
+        if _unused_engines:
+          self._env = _unused_engines.pop()
+      if not self._env:
+        if self._config['render']:
+          self.rendering_in_use()
+        self._env = libgame.GameEnv()
+        self._env.start_game(self._config.GameConfig())
     self._left_controllers = []
     self._right_controllers = []
     for _ in range(self._scenario_cfg.left_agents):
@@ -80,10 +81,23 @@ class FootballEnvCore(object):
       self._env.step()
     return True
 
+  def rendering_in_use(self):
+    global _active_rendering
+    assert not _active_rendering, ('Environment does not support multiple '
+                                   'rendering instances in the same process.')
+    _active_rendering = True
+
   def close(self):
+    global _unused_engines
+    global _unused_rendering_engine
+    global _active_rendering
     if self._env:
-      global _engine_in_use
-      _engine_in_use = False
+      if self._config['render']:
+        assert not _unused_rendering_engine
+        _unused_rendering_engine = self._env
+        _active_rendering = False
+      else:
+        _unused_engines.append(self._env)
       self._env = None
 
   def __del__(self):

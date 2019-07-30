@@ -18,6 +18,7 @@
 #include "utils.hpp"
 
 #include "../main.hpp"
+#include "file.h"
 #include "log.hpp"
 #include "math/quaternion.hpp"
 #include "math/vector3.hpp"
@@ -36,27 +37,29 @@ namespace blunted {
 
   s_tree *tree_load(std::string asefile) {
     asefile = GetGameConfig().updatePath(asefile);
-    std::ifstream datafile(asefile.c_str(), std::ios::in);
-    if (datafile.fail()) {
-      Log(e_FatalError, "tree_load", "", "could not open " + asefile);
-      return NULL;
-    }
-
-    s_tree *tree = tree_readblock(datafile);
-
-    datafile.close();
-
+    const std::string &datafile = GetFile(asefile);
+    const char *data = datafile.c_str();
+    int len = datafile.size();
+    s_tree *tree = tree_readblock(data, len);
     return tree;
   }
 
-  s_tree *tree_readblock(std::ifstream &datafile) {
+  s_tree *tree_readblock(const char *&datafile, int &len) {
     s_tree *content = new s_tree();
 
     bool quit = false;
 
-    while (!datafile.eof() && quit == false) {
+    while (len > 0 && quit == false) {
       char tmp[2048];
-      datafile.getline(tmp, 2048);
+      int l = 0;
+      for (l = 0; datafile[0] != '\n'; l++) {
+        tmp[l] = datafile[0];
+        datafile++;
+        len--;
+      }
+      tmp[l] = 0;
+      datafile++;
+      len--;
       std::string line;
       line.assign(tmp);
       std::vector <std::string> tokens;
@@ -86,7 +89,7 @@ namespace blunted {
 
           if (tokens.at(tokens.size() - 1).compare("{") == 0) { // iterate
             entry->values.pop_back();
-            entry->subtree = tree_readblock(datafile);
+            entry->subtree = tree_readblock(datafile, len);
           }
           content->entries.push_back(entry);
         }
@@ -95,7 +98,6 @@ namespace blunted {
 
     return content;
   }
-
 
   // tree structure utility functions
 
@@ -148,46 +150,22 @@ namespace blunted {
   }
 
   std::string file_to_string(std::string filename) {
-    filename = GetGameConfig().updatePath(filename);
-
-    char line[1024];
-    std::ifstream file;
-
-    file.open(filename.c_str(), std::ios::in);
-
-    if (file.fail()) Log(e_FatalError, "utils", "file_to_vector", "file not found or empty: " + filename);
-
-    std::string source;
-    while (file.getline(line, 1024)) {
-      source.append(line);
-    }
-
-    // remove possible windows CR
-    source.erase( std::remove(source.begin(), source.end(), '\r'), source.end() );
-
-    file.close();
-
-    return source;
+    return GetFile(GetGameConfig().updatePath(filename));
   }
 
-  void file_to_vector(std::string filename, std::vector<std::string> &destination) {
-
-    char line[32767];
-    std::ifstream file;
-    filename = GetGameConfig().updatePath(filename);
-    file.open(filename.c_str(), std::ios::in);
-
-    if (file.fail()) Log(e_FatalError, "utils", "file_to_vector", "file not found or empty: " + filename);
-
-    while (file.getline(line, 32767)) {
-      std::string line_str;
-      line_str.assign(line);
-      // remove possible windows CR
-      line_str.erase( std::remove(line_str.begin(), line_str.end(), '\r'), line_str.end() );
-      destination.push_back(line_str);
+  void file_to_vector(std::string filename,
+                      std::vector<std::string> &destination) {
+    std::string file = GetFile(GetGameConfig().updatePath(filename));
+    int last_pos = 0;
+    for (int x = 0; x < file.length(); x++) {
+      if (file[x] == '\n') {
+        destination.push_back(file.substr(last_pos, x - last_pos));
+        last_pos = x + 1;
+      }
     }
-
-    file.close();
+    if (last_pos < file.length()) {
+      destination.push_back(file.substr(last_pos, file.length() - last_pos));
+    }
   }
 
   std::string get_file_name(const std::string &filename) {

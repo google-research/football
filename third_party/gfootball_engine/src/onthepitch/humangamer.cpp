@@ -19,8 +19,6 @@
 
 #include "team.hpp"
 
-#include "../managers/resourcemanagerpool.hpp"
-
 #include "../scene/objectfactory.hpp"
 
 #include "../main.hpp"

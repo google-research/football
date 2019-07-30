@@ -180,7 +180,9 @@ void GetDifficultyFactors(Match *match, Player *player, const Vector3 &positionO
   }
   ballMovementFactor = clamp(ballMovementFactor, 0.0f, 0.9f);
 
-  float skillPenaltyMultiplier = (1.0f - player->GetStat(technical_ballcontrol) * 0.5f) * random(0.5f, 1.0f);
+  float skillPenaltyMultiplier =
+      (1.0f - player->GetStat(technical_ballcontrol) * 0.5f) *
+      boostrandom(0.5f, 1.0f);
   distanceFactor *= skillPenaltyMultiplier;
   heightFactor *= skillPenaltyMultiplier;
   ballMovementFactor *= skillPenaltyMultiplier;
@@ -431,7 +433,10 @@ Vector3 GetShotVector(Match *match, Player *player, const Vector3 &nextStartPos,
   worstCaseDirection = (touchDirection * laggyDirectionBias + worstCaseDirection * (1.0f - laggyDirectionBias)).GetNormalized(0);
 
   // random dir
-  worstCaseDirection = worstCaseDirection + (Vector3(random(-1, 1), random(-1, 1), random(-1, 1)) * 0.5f * difficultyFactor);
+  worstCaseDirection =
+      worstCaseDirection +
+      (Vector3(boostrandom(-1, 1), boostrandom(-1, 1), boostrandom(-1, 1)) *
+       0.5f * difficultyFactor);
   worstCaseDirection.Normalize();
 
   float worstCaseHeight = curve(std::pow(difficultyFactor, 0.7f), 0.7f) * 0.7f;
@@ -443,7 +448,7 @@ Vector3 GetShotVector(Match *match, Player *player, const Vector3 &nextStartPos,
 
   // actual result
 
-  float worstCaseFactor = random(0.0f, 1.0f);
+  float worstCaseFactor = boostrandom(0.0f, 1.0f);
   worstCaseFactor =
       std::pow(worstCaseFactor, player->GetStat(technical_shot) * 0.7f);
 
@@ -457,8 +462,12 @@ Vector3 GetShotVector(Match *match, Player *player, const Vector3 &nextStartPos,
   float plannedCurveFactor = 0.7f;
 
   // forward/backward 'curve'
-  xRot = -currentAnim->originatingCommand.touchInfo.desiredDirection.coords[1] * 20.0f + (random(-20, 20) * randomCurveFactor);
-  yRot = -currentAnim->originatingCommand.touchInfo.desiredDirection.coords[0] * 20.0f + (random(-20, 20) * randomCurveFactor);
+  xRot = -currentAnim->originatingCommand.touchInfo.desiredDirection.coords[1] *
+             20.0f +
+         (boostrandom(-20, 20) * randomCurveFactor);
+  yRot = -currentAnim->originatingCommand.touchInfo.desiredDirection.coords[0] *
+             20.0f +
+         (boostrandom(-20, 20) * randomCurveFactor);
 
   // lateral curve
   radian bodyTouchAngle = spatialState.bodyDirectionVec.GetAngle2D(shot) / pi;
@@ -467,7 +476,7 @@ Vector3 GetShotVector(Match *match, Player *player, const Vector3 &nextStartPos,
   //printf("bodyTouchAngle: %f\n", bodyTouchAngle);
   radian amount = bodyTouchAngle * 0.25f;
   shot.Rotate2D(amount * (0.4f + 0.6f * NormalizedClamp(shot.GetLength(), 0.0f, 70.0f)));
-  zRot = amount * -420 + (random(-20, 20) * plannedCurveFactor);
+  zRot = amount * -420 + (boostrandom(-20, 20) * plannedCurveFactor);
 
   //SetRedDebugPilon(match->GetBall()->Predict(0).Get2D() + touchVec.Get2D() * 0.4f);
 

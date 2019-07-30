@@ -17,8 +17,6 @@
 
 #include "graphics_geometry.hpp"
 
-#include "../../../managers/resourcemanagerpool.hpp"
-
 #include "../graphics_scene.hpp"
 #include "../graphics_system.hpp"
 
@@ -77,9 +75,9 @@ namespace blunted {
       boost::intrusive_ptr < Resource<Surface> > surface = material->diffuseTexture;
 
       bool texAlreadyThere = false;
-      diffuseTexture =
-        ResourceManagerPool::getTextureManager()->
-          Fetch(surface->GetIdentString(), false, texAlreadyThere, true); // false == don't try to use loader
+      diffuseTexture = GetContext().texture_manager.Fetch(
+          surface->GetIdentString(), false, texAlreadyThere,
+          true);  // false == don't try to use loader
 
       if (!texAlreadyThere) {
         //printf("%s\n", surface->GetIdentString().c_str());
@@ -98,9 +96,9 @@ namespace blunted {
       boost::intrusive_ptr < Resource<Surface> > surface = material->normalTexture;
 
       bool texAlreadyThere = false;
-      normalTexture =
-        ResourceManagerPool::getTextureManager()->
-          Fetch(surface->GetIdentString(), false, texAlreadyThere, true); // false == don't try to use loader
+      normalTexture = GetContext().texture_manager.Fetch(
+          surface->GetIdentString(), false, texAlreadyThere,
+          true);  // false == don't try to use loader
 
       if (!texAlreadyThere) {
         SDL_Surface *image = surface->GetResource()->GetData();
@@ -114,9 +112,9 @@ namespace blunted {
       boost::intrusive_ptr < Resource<Surface> > surface = material->specularTexture;
 
       bool texAlreadyThere = false;
-      specularTexture =
-        ResourceManagerPool::getTextureManager()->
-          Fetch(surface->GetIdentString(), false, texAlreadyThere, true); // false == don't try to use loader
+      specularTexture = GetContext().texture_manager.Fetch(
+          surface->GetIdentString(), false, texAlreadyThere,
+          true);  // false == don't try to use loader
 
       if (!texAlreadyThere) {
         SDL_Surface *image = surface->GetResource()->GetData();
@@ -130,9 +128,9 @@ namespace blunted {
       boost::intrusive_ptr < Resource<Surface> > surface = material->illuminationTexture;
 
       bool texAlreadyThere = false;
-      illuminationTexture =
-        ResourceManagerPool::getTextureManager()->
-          Fetch(surface->GetIdentString(), false, texAlreadyThere, true); // false == don't try to use loader
+      illuminationTexture = GetContext().texture_manager.Fetch(
+          surface->GetIdentString(), false, texAlreadyThere,
+          true);  // false == don't try to use loader
 
       if (!texAlreadyThere) {
         SDL_Surface *image = surface->GetResource()->GetData();
@@ -163,10 +161,10 @@ namespace blunted {
 
     bool alreadyThere = false;
 
-    caller->vertexBuffer =
-      ResourceManagerPool::getVerticesManager()->
-        Fetch(resource->GetIdentString(), false, alreadyThere, true); // false == don't try to use loader
-    //printf("%s, %i\n", resource->GetIdentString().c_str(), alreadyThere);
+    caller->vertexBuffer = GetContext().vertices_manager.Fetch(
+        resource->GetIdentString(), false, alreadyThere,
+        true);  // false == don't try to use loader
+    // printf("%s, %i\n", resource->GetIdentString().c_str(), alreadyThere);
 
     std::vector < MaterializedTriangleMesh > triangleMeshes = resource->GetResource()->GetTriangleMeshes();
     Renderer3D *renderer3D = caller->GetGraphicsScene()->GetGraphicsSystem()->GetRenderer3D();

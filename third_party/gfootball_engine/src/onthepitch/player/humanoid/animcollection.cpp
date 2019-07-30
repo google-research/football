@@ -19,20 +19,13 @@
 
 #include <cmath>
 
-#include "../../../utils/directoryparser.hpp"
-
-#include "../../../utils/animationextensions/footballanimationextension.hpp"
-
-#include "../../../managers/resourcemanagerpool.hpp"
-
-#include "../../../utils/objectloader.hpp"
-#include "../../../scene/objectfactory.hpp"
-
-#include "humanoid_utils.hpp"
-
-#include "humanoid.hpp"
-
 #include "../../../main.hpp"
+#include "../../../scene/objectfactory.hpp"
+#include "../../../utils/animationextensions/footballanimationextension.hpp"
+#include "../../../utils/objectloader.hpp"
+#include "file.h"
+#include "humanoid.hpp"
+#include "humanoid_utils.hpp"
 
 void FillNodeMap(boost::intrusive_ptr<Node> targetNode, NodeMap &nodeMap) {
   nodeMap[BodyPartFromString(targetNode->GetName())] = targetNode;
@@ -354,9 +347,7 @@ void GenerateAutoAnims(const std::vector<Animation*> &templates, std::vector<Ani
   }
 }
 
-void AnimCollection::Load(boost::filesystem::path directory) {
-
-
+void AnimCollection::Load() {
   // load utility player to get things like foot position in the frames around the balltouch etc.
 
   ObjectLoader loader;
@@ -382,9 +373,8 @@ void AnimCollection::Load(boost::filesystem::path directory) {
 
   // auto generated anims
 
-  DirectoryParser parser;
   std::vector<std::string> files;
-  parser.Parse(directory / "/templates", "anim", files);
+  GetFiles("media/animations/templates", "anim", files);
   sort(files.begin(), files.end());
 
   std::vector<Animation*> templates;
@@ -420,7 +410,7 @@ void AnimCollection::Load(boost::filesystem::path directory) {
   // load all other animations
 
   files.clear();
-  parser.Parse(directory, "anim", files);
+  GetFiles("media/animations", "anim", files);
   sort(files.begin(), files.end());
 
   bool omitLuxuryAnims = true;

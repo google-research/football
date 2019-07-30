@@ -53,6 +53,7 @@ struct GameEnv {
   private:
   void do_step(int count = 1);
   void getObservations();
+  GameContext* context;
 
   AIControlledKeyboard* keyboard_;
   GameTask* game_;

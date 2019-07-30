@@ -27,11 +27,14 @@
 
 #include "systems/graphics/graphics_system.hpp"
 #include "synchronizationTask.hpp"
-
+#include "managers/systemmanager.hpp"
+#include "managers/scenemanager.hpp"
+#include "scene/objectfactory.hpp"
+#include "loaders/aseloader.hpp"
+#include "loaders/imageloader.hpp"
 #include "base/properties.hpp"
+#include <boost/random.hpp>
 
-#include "utils/database.hpp"
-#include <sqlite3.h>
 
 enum e_RenderingMode {
   e_Disabled,
@@ -46,8 +49,6 @@ struct GameConfig {
   e_RenderingMode render_mode = e_Onscreen;
   // Directory with textures and other resources.
   std::string data_dir;
-  // Font file used for rendering UI.
-  std::string font_file;
   // How many physics animation steps are done per single environment step.
   int physics_steps_per_frame = 10;
   std::string updatePath(const std::string& path) {
@@ -104,8 +105,53 @@ struct ScenarioConfig {
   }
 };
 
+struct GameContext {
+  GameContext() : rng(BaseGenerator(), Distribution()), rng_non_deterministic(BaseGenerator(), Distribution()) {}
+  GraphicsSystem *graphicsSystem = nullptr;
+  boost::shared_ptr<GameTask> gameTask;
+  boost::shared_ptr<MenuTask> menuTask;
+  boost::shared_ptr<TaskSequence> gameSequence;
+  boost::shared_ptr<TaskSequence> graphicsSequence;
+  boost::shared_ptr<Scene2D> scene2D;
+  boost::shared_ptr<Scene3D> scene3D;
+  boost::shared_ptr<SynchronizationTask> synchronizationTask;
+
+  Properties *config = nullptr;
+  ScenarioConfig scenario_config;
+  GameConfig game_config;
+  std::string font;
+  TTF_Font *defaultFont = nullptr;
+  TTF_Font *defaultOutlineFont = nullptr;
+
+  std::vector<IHIDevice*> controllers;
+  SystemManager system_manager;
+  ObjectFactory object_factory;
+  EnvironmentManager environment_manager;
+  ResourceManager<GeometryData> geometry_manager;
+  ResourceManager<Surface> surface_manager;
+  ResourceManager<Texture> texture_manager;
+  ResourceManager<VertexBuffer> vertices_manager;
+  ASELoader aseLoader;
+  ImageLoader imageLoader;
+  Scheduler scheduler;
+  SceneManager scene_manager;
+
+  typedef boost::mt19937 BaseGenerator;
+  typedef boost::uniform_real<float> Distribution;
+  typedef boost::variate_generator<BaseGenerator, Distribution> Generator;
+  Generator rng;
+
+  // Two random number generators are needed. One (deterministic when running
+  // in deterministic mode) to be used in places which generate deterministic
+  // game state. Second one is used in places which are optional and don't
+  // affect observations (like position of the sun).
+  Generator rng_non_deterministic;
+};
+
 class Match;
 
+void SetContext(GameContext* c);
+GameContext& GetContext();
 boost::shared_ptr<Scene2D> GetScene2D();
 boost::shared_ptr<Scene3D> GetScene3D();
 GraphicsSystem *GetGraphicsSystem();
@@ -113,8 +159,8 @@ boost::shared_ptr<GameTask> GetGameTask();
 boost::shared_ptr<MenuTask> GetMenuTask();
 boost::shared_ptr<SynchronizationTask> GetSynchronizationTask();
 
-Database *GetDB();
 Properties *GetConfiguration();
+SystemManager* GetSystemManager();
 ScenarioConfig& GetScenarioConfig();
 GameConfig& GetGameConfig();
 

@@ -18,11 +18,14 @@
 #include "menuscene.hpp"
 
 #include <cmath>
-
-#include "../managers/resourcemanagerpool.hpp"
 #include "../scene/objectfactory.hpp"
-
 #include "../main.hpp"
+
+MenuSceneLocation::MenuSceneLocation() {
+  position = Vector3(0.0f, 0.0f, 1.0f);
+  orientation = Quaternion(QUATERNION_IDENTITY);
+  timeStamp_ms = GetContext().environment_manager.GetTime_ms();
+}
 
 MenuScene::MenuScene() {
   seamless = false;
@@ -37,7 +40,8 @@ MenuScene::MenuScene() {
 
 
   // camera
-  camera = static_pointer_cast<Camera>(ObjectFactory::GetInstance().CreateObject("camera_MenuScene", e_ObjectType_Camera));
+  camera = static_pointer_cast<Camera>(GetContext().object_factory.CreateObject(
+      "camera_MenuScene", e_ObjectType_Camera));
   GetScene3D()->CreateSystemObjects(camera);
   camera->Init();
   camera->SetFOV(90);
@@ -54,7 +58,9 @@ MenuScene::MenuScene() {
   float hoverLightBrightness = 2.0f;
 
   for (int i = 0; i < 3; i++) {
-    hoverLights[i] = static_pointer_cast<Light>(ObjectFactory::GetInstance().CreateObject("light_MenuScene_hover" + int_to_str(i), e_ObjectType_Light));
+    hoverLights[i] =
+        static_pointer_cast<Light>(GetContext().object_factory.CreateObject(
+            "light_MenuScene_hover" + int_to_str(i), e_ObjectType_Light));
     GetScene3D()->CreateSystemObjects(hoverLights[i]);
     hoverLights[i]->SetShadow(false);
     hoverLights[i]->SetType(e_LightType_Point);
@@ -68,8 +74,11 @@ MenuScene::MenuScene() {
 
 
   // geometry
-  boost::intrusive_ptr < Resource<GeometryData> > geometryData = ResourceManagerPool::getGeometryManager()->Fetch("media/objects/menu/background01.ase", true);
-  geom = static_pointer_cast<Geometry>(ObjectFactory::GetInstance().CreateObject("geometry_menuscene", e_ObjectType_Geometry));
+  boost::intrusive_ptr<Resource<GeometryData> > geometryData =
+      GetContext().geometry_manager.Fetch("media/objects/menu/background01.ase",
+                                          true);
+  geom = static_pointer_cast<Geometry>(GetContext().object_factory.CreateObject(
+      "geometry_menuscene", e_ObjectType_Geometry));
   GetScene3D()->CreateSystemObjects(geom);
   geom->SetGeometryData(geometryData);
   geom->SetPosition(Vector3(0.0f, 0.0f, 0.0f));
@@ -90,7 +99,7 @@ void MenuScene::Get() {
 void MenuScene::Process() {
   // calculate position
 
-  unsigned long time_ms = EnvironmentManager::GetInstance().GetTime_ms();
+  unsigned long time_ms = GetContext().environment_manager.GetTime_ms();
 
   if (targetLocation.timeStamp_ms >= time_ms) {
     float bias = (time_ms - sourceLocation.timeStamp_ms) / (float)(targetLocation.timeStamp_ms - sourceLocation.timeStamp_ms);
@@ -146,7 +155,8 @@ void MenuScene::Put() {
 }
 
 void MenuScene::RandomizeTargetLocation() {
-  Vector3 dir = Vector3(0.0f, -1.0f, 0.0f).GetRotated2D(random(-1.0f * pi, 1.0f * pi));
+  Vector3 dir = Vector3(0.0f, -1.0f, 0.0f)
+                    .GetRotated2D(boostrandom(-1.0f * pi, 1.0f * pi));
   dir *= 0.5f;
 
   Vector3 targetPos;
@@ -160,19 +170,21 @@ void MenuScene::RandomizeTargetLocation() {
     if (targetPos1.GetLength() > targetPos2.GetLength()) targetPos = targetPos2;
   }
 
-  radian angle = random(-0.1f * pi, 0.1f * pi);
+  radian angle = boostrandom(-0.1f * pi, 0.1f * pi);
 
   SetTargetLocation(targetPos, angle);
 }
 
 void MenuScene::SetTargetLocation(const Vector3 &position, radian angle) {
   Quaternion orientation;
-  orientation.SetAngleAxis(angle, Vector3(random(-0.2f, 0.2f), random(-0.2f, 0.2f), -1.0f).GetNormalized());
+  orientation.SetAngleAxis(
+      angle, Vector3(boostrandom(-0.2f, 0.2f), boostrandom(-0.2f, 0.2f), -1.0f)
+                 .GetNormalized());
   SetTargetLocation(position, orientation);
 }
 
 void MenuScene::SetTargetLocation(const Vector3 &position, const Quaternion &orientation) {
-  sourceLocation.timeStamp_ms = EnvironmentManager::GetInstance().GetTime_ms();
+  sourceLocation.timeStamp_ms = GetContext().environment_manager.GetTime_ms();
   sourceLocation.position = currentPosition;
   sourceLocation.orientation = currentOrientation;
 

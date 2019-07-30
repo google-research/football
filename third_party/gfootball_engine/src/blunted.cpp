@@ -17,112 +17,55 @@
 
 #include "blunted.hpp"
 
-#include "framework/scheduler.hpp"
-
-#include "scene/objects/camera.hpp"
-#include "scene/objects/image2d.hpp"
-#include "scene/objects/geometry.hpp"
-#include "scene/objects/skybox.hpp"
-#include "scene/objects/light.hpp"
-#include "scene/objects/joint.hpp"
-
-#include "scene/objectfactory.hpp"
-
-#include "scene/resources/surface.hpp"
-#include "scene/resources/geometrydata.hpp"
-
-#include "framework/scheduler.hpp"
-
-#include "managers/systemmanager.hpp"
-#include "managers/environmentmanager.hpp"
-#include "managers/scenemanager.hpp"
-#include "managers/resourcemanager.hpp"
-#include "managers/resourcemanagerpool.hpp"
-
-#include "systems/isystem.hpp"
-
 #include "base/log.hpp"
-#include "base/utils.hpp"
 #include "base/properties.hpp"
-
+#include "base/utils.hpp"
+#include "framework/scheduler.hpp"
 #include "loaders/aseloader.hpp"
 #include "loaders/imageloader.hpp"
-
+#include "main.hpp"
+#include "managers/environmentmanager.hpp"
+#include "managers/resourcemanager.hpp"
+#include "managers/scenemanager.hpp"
+#include "managers/systemmanager.hpp"
+#include "scene/objectfactory.hpp"
+#include "scene/objects/camera.hpp"
+#include "scene/objects/geometry.hpp"
+#include "scene/objects/image2d.hpp"
+#include "scene/objects/joint.hpp"
+#include "scene/objects/light.hpp"
+#include "scene/objects/skybox.hpp"
+#include "scene/resources/geometrydata.hpp"
+#include "scene/resources/surface.hpp"
+#include "systems/isystem.hpp"
 #include "wrap_SDL_ttf.h"
 
 namespace blunted {
 
-  ASELoader *aseLoader;
-  ImageLoader *imageLoader;
-  Scheduler *scheduler;
-
-  SystemManager *systemManager;
-  SceneManager *sceneManager;
-  //ResourceManagerPool *resourceManagerPool;
-
-  ObjectFactory *objectFactory;
-
   void RegisterObjectTypes(ObjectFactory* objectFactory);
 
   void Initialize(Properties &config) {
-    // initialize managers
-
-    new EnvironmentManager();
-
-    new SystemManager();
-    systemManager = SystemManager::GetInstancePtr();
-
-    new SceneManager();
-    sceneManager = SceneManager::GetInstancePtr();
-
-    new ObjectFactory();
-    objectFactory = ObjectFactory::GetInstancePtr();
-
     // initialize resource managers
-
-    aseLoader = new ASELoader();
-    ResourceManagerPool::getGeometryManager()->RegisterLoader("ase", aseLoader);
-    imageLoader = new ImageLoader();
-    ResourceManagerPool::getSurfaceManager()->RegisterLoader("jpg", imageLoader);
-    ResourceManagerPool::getSurfaceManager()->RegisterLoader("png", imageLoader);
-    ResourceManagerPool::getSurfaceManager()->RegisterLoader("bmp", imageLoader);
+    GetContext().geometry_manager.RegisterLoader("ase",
+                                                 &GetContext().aseLoader);
+    GetContext().surface_manager.RegisterLoader("jpg",
+                                                &GetContext().imageLoader);
+    GetContext().surface_manager.RegisterLoader("png",
+                                                &GetContext().imageLoader);
+    GetContext().surface_manager.RegisterLoader("bmp",
+                                                &GetContext().imageLoader);
     TTF_Init();
-
-
-    // initialize scheduler
-
-    scheduler = new Scheduler();
-
-    RegisterObjectTypes(objectFactory);
-
+    RegisterObjectTypes(&GetContext().object_factory);
   }
 
-  void DoStep() {
-    scheduler->Run();
-  }
+  void DoStep() { GetContext().scheduler.Run(); }
 
-  Scheduler *GetScheduler() {
-    assert(scheduler);
-    return scheduler;
-  }
+  Scheduler *GetScheduler() { return &GetContext().scheduler; }
 
   void Exit() {
-    SceneManager::GetInstance().Exit();
-
-    objectFactory->Exit();
-    objectFactory->Destroy();
-
-    delete aseLoader;
-    delete imageLoader;
-    aseLoader = 0;
-    imageLoader = 0;
-
-    SystemManager::GetInstance().Exit();
-    SystemManager::GetInstance().Destroy();
-
-    SceneManager::GetInstance().Destroy();
-    EnvironmentManager::GetInstance().Destroy();
-
+    GetContext().scene_manager.Exit();
+    GetContext().object_factory.Exit();
+    GetContext().system_manager.Exit();
     TTF_Quit();
     SDL_Quit();
   }

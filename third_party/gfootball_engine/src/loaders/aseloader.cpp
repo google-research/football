@@ -17,14 +17,14 @@
 
 #include "aseloader.hpp"
 
+#include <fstream>
+
+#include "../base/geometry/triangle.hpp"
+#include "../base/geometry/trianglemeshutils.hpp"
 #include "../base/log.hpp"
 #include "../base/math/bluntmath.hpp"
 #include "../base/math/matrix3.hpp"
-#include "../base/geometry/trianglemeshutils.hpp"
-#include "../base/geometry/triangle.hpp"
-#include "../managers/resourcemanagerpool.hpp"
-
-#include <fstream>
+#include "../main.hpp"
 
 namespace blunted {
 
@@ -365,18 +365,22 @@ namespace blunted {
 
       // use texture filename as material name
       matname.assign(materialList.at(material_reference).maps[0]);
-      material.diffuseTexture = ResourceManagerPool::getSurfaceManager()->Fetch(matname, true, true);
+      material.diffuseTexture =
+          GetContext().surface_manager.Fetch(matname, true, true);
       matname.assign(materialList.at(material_reference).maps[1]);
       if (matname.length() > 0) {
-        material.normalTexture = ResourceManagerPool::getSurfaceManager()->Fetch(matname, true, true);
+        material.normalTexture =
+            GetContext().surface_manager.Fetch(matname, true, true);
       }
       matname.assign(materialList.at(material_reference).maps[2]);
       if (matname.length() > 0) {
-        material.specularTexture = ResourceManagerPool::getSurfaceManager()->Fetch(matname, true, true);
+        material.specularTexture =
+            GetContext().surface_manager.Fetch(matname, true, true);
       }
       matname.assign(materialList.at(material_reference).maps[3]);
       if (matname.length() > 0) {
-        material.illuminationTexture = ResourceManagerPool::getSurfaceManager()->Fetch(matname, true, true);
+        material.illuminationTexture =
+            GetContext().surface_manager.Fetch(matname, true, true);
       }
 
       material.shininess = atof(materialList.at(material_reference).shininess.c_str());

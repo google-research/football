@@ -30,12 +30,10 @@ class Player(player_base.PlayerBase):
     self._player = player_config['index']
 
   def take_action(self, observations):
-    assert len(observations['active']
-              ) == 1, 'Replay does not support multiple player control'
     if self._step == len(self._replay):
       print("Replay finished.")
       exit(0)
-    step = self._replay[self._step]['debug']['action'][
+    actions = self._replay[self._step]['debug']['action'][
         self._player:self.num_controlled_players() + self._player]
     self._step += 1
-    return step
+    return actions

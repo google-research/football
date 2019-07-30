@@ -29,8 +29,6 @@
 
 namespace blunted {
 
-  template<> ObjectFactory* Singleton<ObjectFactory>::singleton = 0;
-
   ObjectFactory::ObjectFactory() {
   }
 

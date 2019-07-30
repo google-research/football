@@ -412,7 +412,7 @@ void Player::Hide2D() {
 }
 
 void Player::SendOff() {
-  float x = random(0, 3);
+  float x = boostrandom(0, 3);
   std::string message;
   if (x < 1.0) {
     message = "an early shower for " + playerData->GetLastName() + "!";

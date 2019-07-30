@@ -687,7 +687,9 @@ void TeamAIController::PrepareSetPiece(e_GameMode setPiece, Team* other_team,
     case e_GameMode_KickOff:
       for (unsigned int i = 0; i < players.size(); i++) {
         Vector3 basePos = players[i]->GetFormationEntry().position * Vector3(-team->GetSide() * pitchHalfW * 0.6, -team->GetSide() * pitchHalfH * 0.6, 0);
-        basePos.coords[1] += random(-2.0f, 2.0f); // to stop people from bumping into each other and such
+        basePos.coords[1] += boostrandom(
+            -2.0f,
+            2.0f);  // to stop people from bumping into each other and such
         basePos.coords[0] *= 0.5;
         basePos.coords[0] += (pitchHalfW * 0.2) * team->GetSide();
         if (basePos.coords[0] * team->GetSide() < 0.5) basePos.coords[0] = 0.5 * team->GetSide(); // not allowed to stand on opp side

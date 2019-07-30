@@ -18,13 +18,13 @@
 #include "objectloader.hpp"
 
 #include "../base/utils.hpp"
-#include "../types/resource.hpp"
-#include "../scene/resources/geometrydata.hpp"
-#include "../scene/objects/geometry.hpp"
-#include "../scene/objects/light.hpp"
-#include "../scene/objects/joint.hpp"
-#include "../managers/resourcemanagerpool.hpp"
+#include "../main.hpp"
 #include "../scene/objectfactory.hpp"
+#include "../scene/objects/geometry.hpp"
+#include "../scene/objects/joint.hpp"
+#include "../scene/objects/light.hpp"
+#include "../scene/resources/geometrydata.hpp"
+#include "../types/resource.hpp"
 
 namespace blunted {
 
@@ -123,8 +123,10 @@ namespace blunted {
 
           iter++;
         }
-        boost::intrusive_ptr < Resource<GeometryData> > geometry = ResourceManagerPool::getGeometryManager()->Fetch(dirpart + aseFilename, true);
-        boost::intrusive_ptr<Geometry> object = static_pointer_cast<Geometry>(ObjectFactory::GetInstance().CreateObject(objectName, objectType));
+        boost::intrusive_ptr<Resource<GeometryData> > geometry =
+            GetContext().geometry_manager.Fetch(dirpart + aseFilename, true);
+        boost::intrusive_ptr<Geometry> object = static_pointer_cast<Geometry>(
+            GetContext().object_factory.CreateObject(objectName, objectType));
         if (properties.GetBool("dynamic")) geometry->GetResource()->SetDynamic(true);
 
         object->SetProperties(properties);
@@ -165,7 +167,8 @@ namespace blunted {
           iter++;
         }
 
-        boost::intrusive_ptr<Light> object = static_pointer_cast<Light>(ObjectFactory::GetInstance().CreateObject(objectName, objectType));
+        boost::intrusive_ptr<Light> object = static_pointer_cast<Light>(
+            GetContext().object_factory.CreateObject(objectName, objectType));
 
         //object->SetProperties(properties);
         scene3D->CreateSystemObjects(object);
@@ -223,7 +226,8 @@ namespace blunted {
           iter++;
         }
 
-        boost::intrusive_ptr<Joint> object = static_pointer_cast<Joint>(ObjectFactory::GetInstance().CreateObject(objectName, objectType));
+        boost::intrusive_ptr<Joint> object = static_pointer_cast<Joint>(
+            GetContext().object_factory.CreateObject(objectName, objectType));
         object->SetProperties(properties);
         scene3D->CreateSystemObjects(object);
         objNode->AddObject(object);

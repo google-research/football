@@ -11,8 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _BACKTRACE_H_
-#define _BACKTRACE_H_
+#ifndef _CMAKE_BACKTRACE_H_
+#define _CMAKE_BACKTRACE_H_
 
 static inline void print_stacktrace() {
 
@@ -20,4 +20,4 @@ static inline void print_stacktrace() {
 
 void install_stacktrace();
 
-#endif // _BACKTRACE_H_
+#endif  // _CMAKE_BACKTRACE_H_

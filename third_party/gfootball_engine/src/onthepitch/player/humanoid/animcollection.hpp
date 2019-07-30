@@ -159,7 +159,7 @@ class AnimCollection {
     virtual ~AnimCollection();
 
     void Clear();
-    void Load(boost::filesystem::path directory);
+    void Load();
 
     const std::vector < Animation* > &GetAnimations() const;
 

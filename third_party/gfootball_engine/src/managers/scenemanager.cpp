@@ -18,12 +18,10 @@
 #include "scenemanager.hpp"
 
 #include "../base/log.hpp"
-
+#include "../main.hpp"
 #include "../managers/systemmanager.hpp"
 
 namespace blunted {
-
-  template<> SceneManager* Singleton<SceneManager>::singleton = 0;
 
   SceneManager::SceneManager() {
   }
@@ -40,7 +38,7 @@ namespace blunted {
 
   void SceneManager::RegisterScene(boost::shared_ptr<IScene> scene) {
     scenes.push_back(scene);
-    SystemManager::GetInstance().CreateSystemScenes(scene);
+    GetSystemManager()->CreateSystemScenes(scene);
   }
 
   boost::shared_ptr<IScene> SceneManager::GetScene(const std::string &name, bool &success) {

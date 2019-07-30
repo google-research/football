@@ -42,7 +42,6 @@ class RllibGFootball(MultiAgentEnv):
   def __init__(self, num_agents):
     self.env = football_env.create_environment(
         env_name='test_example_multiagent', stacked=False,
-        with_checkpoints=False,
         logdir='/tmp/rllib_test',
         enable_goal_videos=False, enable_full_episode_videos=False, render=True,
         dump_frequency=0,

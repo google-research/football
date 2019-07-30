@@ -26,7 +26,6 @@
 #include "../main.hpp"
 
 #include "../framework/scheduler.hpp"
-#include "../managers/resourcemanagerpool.hpp"
 
 using namespace blunted;
 

@@ -22,6 +22,7 @@
 
 #include "base/log.hpp"
 #include "base/utils.hpp"
+#include "file.h"
 #include "main.hpp"
 
 struct index3 {
@@ -34,21 +35,14 @@ void GetVertexColors(std::map<Vector3, Vector3> &colorCoords) {
   std::vector<index3> faces;
   std::vector<index3> colorFaces;
 
-  char line[32767];
-  std::ifstream file;
-
-  std::string filename =
-      GetGameConfig().updatePath("media/objects/players/models/fullbody.ase");
-
-  file.open(filename.c_str(), std::ios::in);
-
-  if (file.fail())
-    Log(e_FatalError, "", "GetVertexColors",
-        "file not found or empty: " + filename);
-
-  while (file.getline(line, 32767)) {
-    std::string line_str;
-    line_str.assign(line);
+  std::string data = GetFile(GetGameConfig().updatePath("media/objects/players/models/fullbody.ase"));
+  int pos = 0;
+  int last_pos = 0;
+  while (pos < data.length()) {
+    while (pos < data.length() && data[pos] != '\n') pos++;
+    std::string line_str = data.substr(last_pos, pos - last_pos);
+    pos++;
+    last_pos = pos;
 
     std::vector<std::string> tokens;
     tokenize(line_str, tokens, " \t");
@@ -86,10 +80,6 @@ void GetVertexColors(std::map<Vector3, Vector3> &colorCoords) {
       }
 
       if (tokens.at(0).compare("*MESH_FACE") == 0) {
-        //        for (unsigned int x = 0; x < tokens.size(); x++) {
-        //          printf("%s - ", tokens.at(x).c_str());
-        //        }
-        //        printf("\n");
         assert(tokens.size() > 7);
         index3 bla;
         bla.index[0] = atoi(tokens.at(3).c_str());
@@ -119,8 +109,6 @@ void GetVertexColors(std::map<Vector3, Vector3> &colorCoords) {
       }
     }
   }
-
-  file.close();
 }
 
 e_FunctionType StringToFunctionType(const std::string &fun) {

@@ -140,7 +140,6 @@ set(TYPES_HEADERS
    src/types/resource.hpp
    src/types/material.hpp
    src/types/observer.hpp
-   src/types/singleton.hpp
    src/types/interpreter.hpp
    src/types/refcounted.hpp
    src/types/command.hpp
@@ -215,7 +214,6 @@ set(SCENE_SOURCES
 
 set(MANAGERS_HEADERS
    src/managers/resourcemanager.hpp
-   src/managers/resourcemanagerpool.hpp
    src/managers/environmentmanager.hpp
    src/managers/scenemanager.hpp
    src/managers/systemmanager.hpp
@@ -223,7 +221,6 @@ set(MANAGERS_HEADERS
 
 set(MANAGERS_SOURCES
    src/managers/scenemanager.cpp
-   src/managers/resourcemanagerpool.cpp
    src/managers/environmentmanager.cpp
    src/managers/systemmanager.cpp
 )
@@ -231,11 +228,9 @@ set(MANAGERS_SOURCES
 set(UTILS_HEADERS
    src/utils/animation.hpp
    src/utils/objectloader.hpp
-   src/utils/database.hpp
    src/utils/xmlloader.hpp
    src/utils/splitgeometry.hpp
    src/utils/orbitcamera.hpp
-   src/utils/directoryparser.hpp
 )
 
 set(UTILS_EXT_HEADERS
@@ -244,12 +239,10 @@ set(UTILS_EXT_HEADERS
 )
 
 set(UTILS_SOURCES
-   src/utils/database.cpp
    src/utils/orbitcamera.cpp
    src/utils/animation.cpp
    src/utils/splitgeometry.cpp
    src/utils/objectloader.cpp
-   src/utils/directoryparser.cpp
    src/utils/xmlloader.cpp
    src/utils/animationextensions/footballanimationextension.cpp
 )
@@ -313,7 +306,7 @@ set(CLIENT_SOURCES
 
 set(CORE_HEADERS
    src/cmake/backtrace.h
-   src/cmake/helpers.h
+   src/cmake/file.h
    src/gamedefines.hpp
    src/utils.hpp
    src/main.hpp
@@ -324,7 +317,7 @@ set(CORE_HEADERS
 
 set(CORE_SOURCES
    src/cmake/backtrace.cpp
-   src/cmake/helpers.cpp
+   src/cmake/file.cpp
    src/misc/perlin.cpp
    src/misc/hungarian.c
    src/gametask.cpp

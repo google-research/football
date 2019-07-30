@@ -29,8 +29,6 @@
 
 #include "../../../utils/animationextensions/footballanimationextension.hpp"
 
-#include "../../../managers/resourcemanagerpool.hpp"
-
 #include "../../../scene/objectfactory.hpp"
 
 const float bodyRotationSmoothingFactor = 1.0f;
@@ -44,8 +42,10 @@ void FillTemporalHumanoidNodes(boost::intrusive_ptr<Node> targetNode, std::vecto
   temporalHumanoidNode.cachedPosition = targetNode->GetPosition();
   temporalHumanoidNode.cachedOrientation = targetNode->GetRotation();
   // initial values, not sure if really needed
-  temporalHumanoidNode.position.SetValue(targetNode->GetPosition(), EnvironmentManager::GetInstance().GetTime_ms());
-  temporalHumanoidNode.orientation.SetValue(targetNode->GetRotation(), EnvironmentManager::GetInstance().GetTime_ms());
+  temporalHumanoidNode.position.SetValue(
+      targetNode->GetPosition(), GetContext().environment_manager.GetTime_ms());
+  temporalHumanoidNode.orientation.SetValue(
+      targetNode->GetRotation(), GetContext().environment_manager.GetTime_ms());
   temporalHumanoidNodes.push_back(temporalHumanoidNode);
 
   std::vector < boost::intrusive_ptr<Node> > gatherNodes;
@@ -119,7 +119,10 @@ HumanoidBase::HumanoidBase(PlayerBase *player, Match *match, boost::intrusive_pt
   humanoidNode->SetLocalMode(e_LocalMode_Absolute);
 
   boost::intrusive_ptr < Resource<Surface> > skin;
-  skin = ResourceManagerPool::getSurfaceManager()->Fetch("media/objects/players/textures/skin0" + int_to_str(player->GetPlayerData()->GetSkinColor()) + ".png", true, true);
+  skin = GetContext().surface_manager.Fetch(
+      "media/objects/players/textures/skin0" +
+          int_to_str(player->GetPlayerData()->GetSkinColor()) + ".png",
+      true, true);
 
   boost::intrusive_ptr<Node> bla2(new Node(*fullbodySourceNode.get(), int_to_str(player->GetID()), GetScene3D()));
   fullbodyNode = bla2;
@@ -155,8 +158,14 @@ HumanoidBase::HumanoidBase(PlayerBase *player, Match *match, boost::intrusive_pt
 
   // hairstyle
 
-  boost::intrusive_ptr < Resource<GeometryData> > geometry = ResourceManagerPool::getGeometryManager()->Fetch("media/objects/players/hairstyles/" + player->GetPlayerData()->GetHairStyle() + ".ase", true, true);
-  hairStyle = static_pointer_cast<Geometry>(ObjectFactory::GetInstance().CreateObject("hairstyle", e_ObjectType_Geometry));
+  boost::intrusive_ptr<Resource<GeometryData> > geometry =
+      GetContext().geometry_manager.Fetch(
+          "media/objects/players/hairstyles/" +
+              player->GetPlayerData()->GetHairStyle() + ".ase",
+          true, true);
+  hairStyle =
+      static_pointer_cast<Geometry>(GetContext().object_factory.CreateObject(
+          "hairstyle", e_ObjectType_Geometry));
 
   scene3D->CreateSystemObjects(hairStyle);
   hairStyle->SetLocalMode(e_LocalMode_Absolute);
@@ -164,7 +173,10 @@ HumanoidBase::HumanoidBase(PlayerBase *player, Match *match, boost::intrusive_pt
   fullbodyTargetNode->AddObject(hairStyle);
 
   boost::intrusive_ptr < Resource<Surface> > hairTexture;
-  hairTexture = ResourceManagerPool::getSurfaceManager()->Fetch("media/objects/players/textures/hair/" + player->GetPlayerData()->GetHairColor() + ".png", true, true);
+  hairTexture = GetContext().surface_manager.Fetch(
+      "media/objects/players/textures/hair/" +
+          player->GetPlayerData()->GetHairColor() + ".png",
+      true, true);
 
   std::vector < MaterializedTriangleMesh > &hairtmesh = hairStyle->GetGeometryData()->GetResource()->GetTriangleMeshesRef();
 
@@ -225,7 +237,7 @@ void HumanoidBase::PrepareFullbodyModel(std::map<Vector3, Vector3> &colorCoords)
   // joints
 
   for (unsigned int i = 0; i < jointsVec.size(); i++) {
-    Joint joint;
+    HJoint joint;
     joint.node = jointsVec[i];
     joint.origPos = jointsVec[i]->GetDerivedPosition();
     joints.push_back(joint);
@@ -709,10 +721,12 @@ void HumanoidBase::FetchPutBuffers(unsigned long putTime_ms) {
 }
 
 void HumanoidBase::Put() {
-
-  //unsigned long timeDiff_ms = match->GetTimeSincePreviousPut_ms();//EnvironmentManager::GetInstance().GetTime_ms() - match->GetPreviousTime_ms();
-  // the apply function doesn't know better than that it is displaying snapshot times, so continue this hoax into the timeDiff_ms value. then,
-  // the temporalsmoother will convert it to 'realtime' once again
+  // unsigned long timeDiff_ms =
+  // match->GetTimeSincePreviousPut_ms();//GetContext().environment_manager.GetTime_ms()
+  // - match->GetPreviousTime_ms();
+  // the apply function doesn't know better than that it is displaying snapshot
+  // times, so continue this hoax into the timeDiff_ms value. then, the
+  // temporalsmoother will convert it to 'realtime' once again
   unsigned long timeDiff_ms = fetchedbuf_animApplyBuffer.snapshotTime_ms - fetchedbuf_previousSnapshotTime_ms;
   timeDiff_ms = clamp(timeDiff_ms, 10, 50);
   fetchedbuf_previousSnapshotTime_ms = fetchedbuf_animApplyBuffer.snapshotTime_ms;
@@ -820,7 +834,8 @@ void HumanoidBase::ResetPosition(const Vector3 &newPos, const Vector3 &focusPos)
   currentAnim->anim = anims->GetAnim(currentAnim->id);
   currentAnim->positions.clear();
   currentAnim->positions = match->GetAnimPositionCache(currentAnim->anim);
-  currentAnim->frameNum = random(0, currentAnim->anim->GetEffectiveFrameCount() - 1);
+  currentAnim->frameNum =
+      boostrandom(0, currentAnim->anim->GetEffectiveFrameCount() - 1);
   currentAnim->radiusOffset = 0.0;
   currentAnim->touchFrame = -1;
   currentAnim->originatingInterrupt = e_InterruptAnim_None;

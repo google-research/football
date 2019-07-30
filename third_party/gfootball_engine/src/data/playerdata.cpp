@@ -19,8 +19,6 @@
 
 #include <cmath>
 
-#include "../utils/database.hpp"
-
 #include "../base/utils.hpp"
 
 #include "../main.hpp"
@@ -54,30 +52,381 @@ PlayerStat PlayerStatFromString(const std::string& name) {
 }
 
 PlayerData::PlayerData(int playerDatabaseID) : databaseID(playerDatabaseID) {
-  DatabaseResult *result = GetDB()->Query("select firstname, lastname, base_stat, profile_xml, age, skincolor, hairstyle, haircolor, height from players where id = " + int_to_str(databaseID) + " limit 1");
 
   std::string profileString;
   float baseStat = 0.0f;
   int age = 15;
 
-  skinColor = int(std::round(random(1, 4)));
+  skinColor = int(std::round(boostrandom(1, 4)));
   hairStyle = "short01";
   hairColor = "darkblonde";
   height = 1.8f;
 
-  for (unsigned int c = 0; c < result->data.at(0).size(); c++) {
-    if (result->header.at(c).compare("firstname") == 0) firstName = result->data.at(0).at(c);
-    if (result->header.at(c).compare("lastname") == 0) lastName = result->data.at(0).at(c);
-    if (result->header.at(c).compare("base_stat") == 0) baseStat = atof(result->data.at(0).at(c).c_str());
-    if (result->header.at(c).compare("profile_xml") == 0) profileString = result->data.at(0).at(c);
-    if (result->header.at(c).compare("age") == 0) age = atoi(result->data.at(0).at(c).c_str());
-    if (result->header.at(c).compare("skincolor") == 0) skinColor = atoi(result->data.at(0).at(c).c_str());
-    if (result->header.at(c).compare("hairstyle") == 0) hairStyle = result->data.at(0).at(c);
-    if (result->header.at(c).compare("haircolor") == 0) hairColor = result->data.at(0).at(c);
-    if (result->header.at(c).compare("height") == 0) height = atof(result->data.at(0).at(c).c_str());
+  switch (playerDatabaseID) {
+    case 398:
+      firstName = "Marc-Andr�";
+      lastName = "ten Stegosaur";
+      baseStat = 0.661913;
+      profileString =
+          "<physical_balance>0.650000</"
+          "physical_balance><physical_reaction>0.850000</"
+          "physical_reaction><physical_acceleration>0.550000</"
+          "physical_acceleration><physical_velocity>0.450000</"
+          "physical_velocity><physical_stamina>0.550000</"
+          "physical_stamina><physical_agility>0.650000</"
+          "physical_agility><physical_shotpower>0.650000</"
+          "physical_shotpower><technical_standingtackle>0.250000</"
+          "technical_standingtackle><technical_slidingtackle>0.250000</"
+          "technical_slidingtackle><technical_ballcontrol>0.350000</"
+          "technical_ballcontrol><technical_dribble>0.250000</"
+          "technical_dribble><technical_shortpass>0.650000</"
+          "technical_shortpass><technical_highpass>0.750000</"
+          "technical_highpass><technical_header>0.250000</"
+          "technical_header><technical_shot>0.350000</"
+          "technical_shot><technical_volley>0.250000</"
+          "technical_volley><mental_calmness>0.550000</"
+          "mental_calmness><mental_workrate>0.550000</"
+          "mental_workrate><mental_resilience>0.550000</"
+          "mental_resilience><mental_defensivepositioning>0.950000</"
+          "mental_defensivepositioning><mental_offensivepositioning>0.150000</"
+          "mental_offensivepositioning><mental_vision>0.550000</mental_vision>";
+      age = 22;
+      skinColor = 1;
+      hairStyle = "short02";
+      hairColor = "blonde";
+      height = 1.87;
+      break;
+    case 11:
+      firstName = "Jordi";
+      lastName = "Alblabla";
+      baseStat = 0.619111;
+      profileString =
+          "<physical_balance>0.569697</"
+          "physical_balance><physical_reaction>0.536364</"
+          "physical_reaction><physical_acceleration>0.536364</"
+          "physical_acceleration><physical_velocity>0.536364</"
+          "physical_velocity><physical_stamina>0.469697</"
+          "physical_stamina><physical_agility>0.536364</"
+          "physical_agility><physical_shotpower>0.569697</"
+          "physical_shotpower><technical_standingtackle>0.536364</"
+          "technical_standingtackle><technical_slidingtackle>0.536364</"
+          "technical_slidingtackle><technical_ballcontrol>0.503030</"
+          "technical_ballcontrol><technical_dribble>0.469697</"
+          "technical_dribble><technical_shortpass>0.569697</"
+          "technical_shortpass><technical_highpass>0.536364</"
+          "technical_highpass><technical_header>0.469697</"
+          "technical_header><technical_shot>0.436364</"
+          "technical_shot><technical_volley>0.303030</"
+          "technical_volley><mental_calmness>0.469697</"
+          "mental_calmness><mental_workrate>0.469697</"
+          "mental_workrate><mental_resilience>0.469697</"
+          "mental_resilience><mental_defensivepositioning>0.536364</"
+          "mental_defensivepositioning><mental_offensivepositioning>0.436364</"
+          "mental_offensivepositioning><mental_vision>0.503030</mental_vision>";
+      age = 25;
+      skinColor = 1;
+      hairStyle = "short02";
+      hairColor = "black";
+      height = 1.7;
+      break;
+    case 254:
+      firstName = "Javier";
+      lastName = "Masqueranus";
+      baseStat = 0.64269;
+      profileString =
+          "<physical_balance>0.713636</"
+          "physical_balance><physical_reaction>0.613636</"
+          "physical_reaction><physical_acceleration>0.463636</"
+          "physical_acceleration><physical_velocity>0.463636</"
+          "physical_velocity><physical_stamina>0.463636</"
+          "physical_stamina><physical_agility>0.463636</"
+          "physical_agility><physical_shotpower>0.563636</"
+          "physical_shotpower><technical_standingtackle>0.713636</"
+          "technical_standingtackle><technical_slidingtackle>0.663636</"
+          "technical_slidingtackle><technical_ballcontrol>0.463636</"
+          "technical_ballcontrol><technical_dribble>0.313636</"
+          "technical_dribble><technical_shortpass>0.563636</"
+          "technical_shortpass><technical_highpass>0.563636</"
+          "technical_highpass><technical_header>0.513636</"
+          "technical_header><technical_shot>0.313636</"
+          "technical_shot><technical_volley>0.213636</"
+          "technical_volley><mental_calmness>0.463636</"
+          "mental_calmness><mental_workrate>0.463636</"
+          "mental_workrate><mental_resilience>0.463636</"
+          "mental_resilience><mental_defensivepositioning>0.663636</"
+          "mental_defensivepositioning><mental_offensivepositioning>0.313636</"
+          "mental_offensivepositioning><mental_vision>0.563636</mental_vision>";
+      age = 30;
+      skinColor = 2;
+      hairStyle = "bald";
+      hairColor = "black";
+      height = 1.74;
+      break;
+    case 320:
+      firstName = "Gerard";
+      lastName = "Pitoresqué";
+      baseStat = 0.625396;
+      profileString =
+          "<physical_balance>0.736364</"
+          "physical_balance><physical_reaction>0.686364</"
+          "physical_reaction><physical_acceleration>0.486364</"
+          "physical_acceleration><physical_velocity>0.486364</"
+          "physical_velocity><physical_stamina>0.486364</"
+          "physical_stamina><physical_agility>0.436364</"
+          "physical_agility><physical_shotpower>0.636364</"
+          "physical_shotpower><technical_standingtackle>0.786364</"
+          "technical_standingtackle><technical_slidingtackle>0.786364</"
+          "technical_slidingtackle><technical_ballcontrol>0.386364</"
+          "technical_ballcontrol><technical_dribble>0.236364</"
+          "technical_dribble><technical_shortpass>0.436364</"
+          "technical_shortpass><technical_highpass>0.436364</"
+          "technical_highpass><technical_header>0.586364</"
+          "technical_header><technical_shot>0.236364</"
+          "technical_shot><technical_volley>0.186364</"
+          "technical_volley><mental_calmness>0.486364</"
+          "mental_calmness><mental_workrate>0.486364</"
+          "mental_workrate><mental_resilience>0.486364</"
+          "mental_resilience><mental_defensivepositioning>0.786364</"
+          "mental_defensivepositioning><mental_offensivepositioning>0.236364</"
+          "mental_offensivepositioning><mental_vision>0.486364</mental_vision>";
+      age = 27;
+      skinColor = 1;
+      hairStyle = "medium01";
+      hairColor = "black";
+      height = 1.93;
+      break;
+    case 103:
+      firstName = "";
+      lastName = "Danny Ballfs";
+      baseStat = 0.60786;
+      profileString =
+          "<physical_balance>0.562121</"
+          "physical_balance><physical_reaction>0.528788</"
+          "physical_reaction><physical_acceleration>0.528788</"
+          "physical_acceleration><physical_velocity>0.528788</"
+          "physical_velocity><physical_stamina>0.462121</"
+          "physical_stamina><physical_agility>0.495455</"
+          "physical_agility><physical_shotpower>0.528788</"
+          "physical_shotpower><technical_standingtackle>0.595455</"
+          "technical_standingtackle><technical_slidingtackle>0.562121</"
+          "technical_slidingtackle><technical_ballcontrol>0.528788</"
+          "technical_ballcontrol><technical_dribble>0.428788</"
+          "technical_dribble><technical_shortpass>0.628788</"
+          "technical_shortpass><technical_highpass>0.595455</"
+          "technical_highpass><technical_header>0.462121</"
+          "technical_header><technical_shot>0.362121</"
+          "technical_shot><technical_volley>0.262121</"
+          "technical_volley><mental_calmness>0.462121</"
+          "mental_calmness><mental_workrate>0.462121</"
+          "mental_workrate><mental_resilience>0.462121</"
+          "mental_resilience><mental_defensivepositioning>0.595455</"
+          "mental_defensivepositioning><mental_offensivepositioning>0.362121</"
+          "mental_offensivepositioning><mental_vision>0.595455</mental_vision>";
+      age = 31;
+      skinColor = 2;
+      hairStyle = "short01";
+      hairColor = "black";
+      height = 1.72;
+      break;
+    case 188:
+      firstName = "Andr�s";
+      lastName = "Ingestia";
+      baseStat = 0.68319;
+      profileString =
+          "<physical_balance>0.386364</"
+          "physical_balance><physical_reaction>0.486364</"
+          "physical_reaction><physical_acceleration>0.586364</"
+          "physical_acceleration><physical_velocity>0.586364</"
+          "physical_velocity><physical_stamina>0.486364</"
+          "physical_stamina><physical_agility>0.686364</"
+          "physical_agility><physical_shotpower>0.686364</"
+          "physical_shotpower><technical_standingtackle>0.186364</"
+          "technical_standingtackle><technical_slidingtackle>0.186364</"
+          "technical_slidingtackle><technical_ballcontrol>0.586364</"
+          "technical_ballcontrol><technical_dribble>0.686364</"
+          "technical_dribble><technical_shortpass>0.586364</"
+          "technical_shortpass><technical_highpass>0.486364</"
+          "technical_highpass><technical_header>0.386364</"
+          "technical_header><technical_shot>0.686364</"
+          "technical_shot><technical_volley>0.486364</"
+          "technical_volley><mental_calmness>0.486364</"
+          "mental_calmness><mental_workrate>0.486364</"
+          "mental_workrate><mental_resilience>0.486364</"
+          "mental_resilience><mental_defensivepositioning>0.286364</"
+          "mental_defensivepositioning><mental_offensivepositioning>0.686364</"
+          "mental_offensivepositioning><mental_vision>0.386364</mental_vision>";
+      age = 30;
+      skinColor = 1;
+      hairStyle = "short01";
+      hairColor = "black";
+      height = 1.71;
+      break;
+    case 74:
+      firstName = "Sergio";
+      lastName = "Buckets";
+      baseStat = 0.645507;
+      profileString =
+          "<physical_balance>0.663636</"
+          "physical_balance><physical_reaction>0.563636</"
+          "physical_reaction><physical_acceleration>0.463636</"
+          "physical_acceleration><physical_velocity>0.463636</"
+          "physical_velocity><physical_stamina>0.463636</"
+          "physical_stamina><physical_agility>0.463636</"
+          "physical_agility><physical_shotpower>0.563636</"
+          "physical_shotpower><technical_standingtackle>0.663636</"
+          "technical_standingtackle><technical_slidingtackle>0.563636</"
+          "technical_slidingtackle><technical_ballcontrol>0.463636</"
+          "technical_ballcontrol><technical_dribble>0.363636</"
+          "technical_dribble><technical_shortpass>0.663636</"
+          "technical_shortpass><technical_highpass>0.663636</"
+          "technical_highpass><technical_header>0.463636</"
+          "technical_header><technical_shot>0.363636</"
+          "technical_shot><technical_volley>0.263636</"
+          "technical_volley><mental_calmness>0.463636</"
+          "mental_calmness><mental_workrate>0.463636</"
+          "mental_workrate><mental_resilience>0.463636</"
+          "mental_resilience><mental_defensivepositioning>0.563636</"
+          "mental_defensivepositioning><mental_offensivepositioning>0.363636</"
+          "mental_offensivepositioning><mental_vision>0.563636</mental_vision>";
+      age = 26;
+      skinColor = 1;
+      hairStyle = "short02";
+      hairColor = "black";
+      height = 1.89;
+      break;
+    case 332:
+      firstName = "Ivan";
+      lastName = "Rattizić";
+      baseStat = 0.63531;
+      profileString =
+          "<physical_balance>0.525000</"
+          "physical_balance><physical_reaction>0.525000</"
+          "physical_reaction><physical_acceleration>0.525000</"
+          "physical_acceleration><physical_velocity>0.525000</"
+          "physical_velocity><physical_stamina>0.475000</"
+          "physical_stamina><physical_agility>0.575000</"
+          "physical_agility><physical_shotpower>0.625000</"
+          "physical_shotpower><technical_standingtackle>0.425000</"
+          "technical_standingtackle><technical_slidingtackle>0.375000</"
+          "technical_slidingtackle><technical_ballcontrol>0.525000</"
+          "technical_ballcontrol><technical_dribble>0.525000</"
+          "technical_dribble><technical_shortpass>0.625000</"
+          "technical_shortpass><technical_highpass>0.575000</"
+          "technical_highpass><technical_header>0.425000</"
+          "technical_header><technical_shot>0.525000</"
+          "technical_shot><technical_volley>0.375000</"
+          "technical_volley><mental_calmness>0.475000</"
+          "mental_calmness><mental_workrate>0.475000</"
+          "mental_workrate><mental_resilience>0.475000</"
+          "mental_resilience><mental_defensivepositioning>0.425000</"
+          "mental_defensivepositioning><mental_offensivepositioning>0.525000</"
+          "mental_offensivepositioning><mental_vision>0.475000</mental_vision>";
+      age = 26;
+      skinColor = 1;
+      hairStyle = "long01";
+      hairColor = "blonde";
+      height = 1.84;
+      break;
+    case 290:
+      firstName = "";
+      lastName = "Niemeyer";
+      baseStat = 0.716847;
+      profileString =
+          "<physical_balance>0.381818</"
+          "physical_balance><physical_reaction>0.481818</"
+          "physical_reaction><physical_acceleration>0.631818</"
+          "physical_acceleration><physical_velocity>0.631818</"
+          "physical_velocity><physical_stamina>0.481818</"
+          "physical_stamina><physical_agility>0.681818</"
+          "physical_agility><physical_shotpower>0.681818</"
+          "physical_shotpower><technical_standingtackle>0.181818</"
+          "technical_standingtackle><technical_slidingtackle>0.131818</"
+          "technical_slidingtackle><technical_ballcontrol>0.531818</"
+          "technical_ballcontrol><technical_dribble>0.731818</"
+          "technical_dribble><technical_shortpass>0.581818</"
+          "technical_shortpass><technical_highpass>0.531818</"
+          "technical_highpass><technical_header>0.381818</"
+          "technical_header><technical_shot>0.681818</"
+          "technical_shot><technical_volley>0.431818</"
+          "technical_volley><mental_calmness>0.481818</"
+          "mental_calmness><mental_workrate>0.481818</"
+          "mental_workrate><mental_resilience>0.481818</"
+          "mental_resilience><mental_defensivepositioning>0.256818</"
+          "mental_defensivepositioning><mental_offensivepositioning>0.706818</"
+          "mental_offensivepositioning><mental_vision>0.431818</mental_vision>";
+      age = 22;
+      skinColor = 2;
+      hairStyle = "medium01";
+      hairColor = "black";
+      height = 1.74;
+      break;
+    case 391:
+      firstName = "Luis";
+      lastName = "Sáreusz";
+      baseStat = 0.693097;
+      profileString =
+          "<physical_balance>0.381818</"
+          "physical_balance><physical_reaction>0.481818</"
+          "physical_reaction><physical_acceleration>0.631818</"
+          "physical_acceleration><physical_velocity>0.631818</"
+          "physical_velocity><physical_stamina>0.481818</"
+          "physical_stamina><physical_agility>0.681818</"
+          "physical_agility><physical_shotpower>0.681818</"
+          "physical_shotpower><technical_standingtackle>0.181818</"
+          "technical_standingtackle><technical_slidingtackle>0.131818</"
+          "technical_slidingtackle><technical_ballcontrol>0.531818</"
+          "technical_ballcontrol><technical_dribble>0.731818</"
+          "technical_dribble><technical_shortpass>0.581818</"
+          "technical_shortpass><technical_highpass>0.531818</"
+          "technical_highpass><technical_header>0.381818</"
+          "technical_header><technical_shot>0.681818</"
+          "technical_shot><technical_volley>0.431818</"
+          "technical_volley><mental_calmness>0.481818</"
+          "mental_calmness><mental_workrate>0.481818</"
+          "mental_workrate><mental_resilience>0.481818</"
+          "mental_resilience><mental_defensivepositioning>0.256818</"
+          "mental_defensivepositioning><mental_offensivepositioning>0.706818</"
+          "mental_offensivepositioning><mental_vision>0.431818</mental_vision>";
+      age = 27;
+      skinColor = 2;
+      hairStyle = "medium01";
+      hairColor = "black";
+      height = 1.81;
+      break;
+    case 264:
+      firstName = "Lionel";
+      lastName = "Messy";
+      baseStat = 0.718346;
+      profileString =
+          "<physical_balance>0.381818</"
+          "physical_balance><physical_reaction>0.481818</"
+          "physical_reaction><physical_acceleration>0.631818</"
+          "physical_acceleration><physical_velocity>0.631818</"
+          "physical_velocity><physical_stamina>0.481818</"
+          "physical_stamina><physical_agility>0.681818</"
+          "physical_agility><physical_shotpower>0.681818</"
+          "physical_shotpower><technical_standingtackle>0.181818</"
+          "technical_standingtackle><technical_slidingtackle>0.131818</"
+          "technical_slidingtackle><technical_ballcontrol>0.531818</"
+          "technical_ballcontrol><technical_dribble>0.731818</"
+          "technical_dribble><technical_shortpass>0.581818</"
+          "technical_shortpass><technical_highpass>0.531818</"
+          "technical_highpass><technical_header>0.381818</"
+          "technical_header><technical_shot>0.681818</"
+          "technical_shot><technical_volley>0.431818</"
+          "technical_volley><mental_calmness>0.481818</"
+          "mental_calmness><mental_workrate>0.481818</"
+          "mental_workrate><mental_resilience>0.481818</"
+          "mental_resilience><mental_defensivepositioning>0.256818</"
+          "mental_defensivepositioning><mental_offensivepositioning>0.706818</"
+          "mental_offensivepositioning><mental_vision>0.431818</mental_vision>";
+      age = 27;
+      skinColor = 1;
+      hairStyle = "short02";
+      hairColor = "black";
+      height = 1.69;
+      break;
   }
-
-  delete result;
 
   // get average stat for current age
 
@@ -100,7 +449,7 @@ PlayerData::PlayerData(int playerDatabaseID) : databaseID(playerDatabaseID) {
 
 PlayerData::PlayerData() {
   // officials, for example, use this constructor
-  skinColor = int(std::round(random(1, 4)));
+  skinColor = int(std::round(boostrandom(1, 4)));
   hairStyle = "short01";
   hairColor = "darkblonde";
   height = 1.8f;

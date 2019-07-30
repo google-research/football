@@ -22,11 +22,9 @@
 
 #include "object.hpp"
 
-#include "../types/singleton.hpp"
-
 namespace blunted {
 
-  class ObjectFactory : public Singleton<ObjectFactory> {
+  class ObjectFactory {
 
     public:
       ObjectFactory();

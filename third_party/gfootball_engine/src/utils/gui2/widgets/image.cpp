@@ -21,13 +21,17 @@
 
 #include "../main.hpp"
 #include "../windowmanager.hpp"
+#include "file.h"
 
 namespace blunted {
 
   SDL_Surface* IMG_LoadBmp(const std::string& file) {
     std::string name = GetGameConfig().updatePath(file);
     name = name.substr(0, name.length() - 4) + ".bmp";
-    auto image = SDL_LoadBMP(name.c_str());
+    std::string file_data = GetFile(name);
+    SDL_RWops *rw = SDL_RWFromConstMem(file_data.data(), file_data.size());
+    auto image = SDL_LoadBMP_RW(rw, 1);
+
     if (image->format->format == SDL_PIXELFORMAT_ARGB8888) {
       SDL_Surface* tmp = SDL_ConvertSurfaceFormat(image, SDL_PIXELFORMAT_ABGR8888, 0);
       SDL_FreeSurface(image);

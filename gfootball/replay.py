@@ -61,9 +61,10 @@ def modify_trace(replay):
 def build_players(dump_file, spec):
   players = []
   for player in spec:
-    player_type = 'replay:path={},players=1'.format(dump_file)
-    for _ in range(config.parse_number_of_players(player)):
-      players.append(player_type)
+    players.extend(['replay:path={},left_players=1'.format(
+        dump_file)] * config.count_left_players(player))
+    players.extend(['replay:path={},right_players=1'.format(
+        dump_file)] * config.count_right_players(player))
   return players
 
 def replay(directory, dump, config_update={}):
@@ -76,8 +77,7 @@ def replay(directory, dump, config_update={}):
   assert replay[0]['debug']['frame_cnt'] == 1, (
       'Trace does not start from the beginning of the episode, can not replay')
   cfg = config.Config(replay[0]['debug']['config'])
-  cfg['left_players'] = build_players(temp_path, cfg['left_players'])
-  cfg['right_players'] = build_players(temp_path, cfg['right_players'])
+  cfg['players'] = build_players(temp_path, cfg['players'])
   config_update['physics_steps_per_frame'] = int(100 / FLAGS.fps)
   config_update['real_time'] = False
   if 'render' not in config_update:

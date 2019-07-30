@@ -19,7 +19,6 @@
 
 #include "../scene/scene3d/scene3d.hpp"
 
-#include "../managers/resourcemanagerpool.hpp"
 #include "../utils/objectloader.hpp"
 #include "../scene/objectfactory.hpp"
 
@@ -51,15 +50,22 @@ Officials::Officials(Match *match, boost::intrusive_ptr<Node> fullbodySourceNode
   linesmen[0]->CastHumanoid()->ResetPosition(Vector3(25, -36.5, 0), Vector3(0));
   linesmen[1]->CastHumanoid()->ResetPosition(Vector3(-25, 36.5, 0), Vector3(0));
 
-  boost::intrusive_ptr < Resource<GeometryData> > geometry = ResourceManagerPool::getGeometryManager()->Fetch("media/objects/officials/yellowcard.ase", true);
-  yellowCard = static_pointer_cast<Geometry>(ObjectFactory::GetInstance().CreateObject("yellowcard", e_ObjectType_Geometry));
+  boost::intrusive_ptr<Resource<GeometryData> > geometry =
+      GetContext().geometry_manager.Fetch(
+          "media/objects/officials/yellowcard.ase", true);
+  yellowCard =
+      static_pointer_cast<Geometry>(GetContext().object_factory.CreateObject(
+          "yellowcard", e_ObjectType_Geometry));
   GetScene3D()->CreateSystemObjects(yellowCard);
   yellowCard->SetGeometryData(geometry);
   yellowCard->SetLocalMode(e_LocalMode_Absolute);
   yellowCard->SetPosition(Vector3(0, 0, -10));
 
-  geometry = ResourceManagerPool::getGeometryManager()->Fetch("media/objects/officials/redcard.ase", true);
-  redCard = static_pointer_cast<Geometry>(ObjectFactory::GetInstance().CreateObject("redcard", e_ObjectType_Geometry));
+  geometry = GetContext().geometry_manager.Fetch(
+      "media/objects/officials/redcard.ase", true);
+  redCard =
+      static_pointer_cast<Geometry>(GetContext().object_factory.CreateObject(
+          "redcard", e_ObjectType_Geometry));
   GetScene3D()->CreateSystemObjects(redCard);
   redCard->SetGeometryData(geometry);
   redCard->SetLocalMode(e_LocalMode_Absolute);

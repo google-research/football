@@ -61,8 +61,6 @@ namespace blunted {
 
       virtual std::string GetName() const { return "graphics"; }
 
-      //boost::mutex getPhaseMutex;
-
     protected:
       const e_SystemType systemType = e_SystemType_Graphics;
 

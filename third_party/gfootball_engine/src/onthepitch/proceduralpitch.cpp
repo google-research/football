@@ -25,7 +25,6 @@
 
 #include "../types/resource.hpp"
 #include "../systems/graphics/resources/texture.hpp"
-#include "../managers/resourcemanagerpool.hpp"
 
 #include "../main.hpp" // for getconfig
 
@@ -267,11 +266,18 @@ void CreateChunk(int i, int resX, int resY, int resSpecularX, int resSpecularY, 
   // find pitch texture
 
   bool alreadyThere = false;
-  boost::intrusive_ptr < Resource<Texture> > pitchDiffuseTex = ResourceManagerPool::getTextureManager()->Fetch("pitch_0" + int_to_str(i) + ".png", false, alreadyThere, true);
+  boost::intrusive_ptr<Resource<Texture> > pitchDiffuseTex =
+      GetContext().texture_manager.Fetch("pitch_0" + int_to_str(i) + ".png",
+                                         false, alreadyThere, true);
   assert(alreadyThere);
-  boost::intrusive_ptr < Resource<Texture> > pitchSpecularTex = ResourceManagerPool::getTextureManager()->Fetch("pitch_specular_0" + int_to_str(i) + ".png", false, alreadyThere, true);
+  boost::intrusive_ptr<Resource<Texture> > pitchSpecularTex =
+      GetContext().texture_manager.Fetch(
+          "pitch_specular_0" + int_to_str(i) + ".png", false, alreadyThere,
+          true);
   assert(alreadyThere);
-  boost::intrusive_ptr < Resource<Texture> > pitchNormalTex = ResourceManagerPool::getTextureManager()->Fetch("pitch_normal_0" + int_to_str(i) + ".png", false, alreadyThere, true);
+  boost::intrusive_ptr<Resource<Texture> > pitchNormalTex =
+      GetContext().texture_manager.Fetch(
+          "pitch_normal_0" + int_to_str(i) + ".png", false, alreadyThere, true);
   assert(alreadyThere);
 
 
@@ -377,7 +383,7 @@ void GeneratePitch(int resX, int resY, int resSpecularX, int resSpecularY, int r
   }
 
 //  boost::thread pitchThread[4];
-  float grassNormalRepeatMultiplier = (random(0, 1) > 0.5f) ? 1.0f : 0.5f;
+  float grassNormalRepeatMultiplier = (boostrandom(0, 1) > 0.5f) ? 1.0f : 0.5f;
   for (int i = 0; i < 4; i++) {
     CreateChunk(i + 1, resX, resY, resSpecularX, resSpecularY, resNormalX, resNormalY, grassNormalRepeatMultiplier);
   }

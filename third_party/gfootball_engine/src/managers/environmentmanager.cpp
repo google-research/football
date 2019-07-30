@@ -22,9 +22,6 @@
 
 namespace blunted {
 
-  template<> EnvironmentManager* Singleton<EnvironmentManager>::singleton = 0;
-
-
   EnvironmentManager::EnvironmentManager() {
   };
 

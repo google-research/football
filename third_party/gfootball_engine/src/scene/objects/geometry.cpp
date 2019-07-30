@@ -19,7 +19,6 @@
 
 #include "../../base/log.hpp"
 #include "../../main.hpp"
-#include "../../managers/resourcemanagerpool.hpp"
 #include "../../systems/isystemobject.hpp"
 
 #include "../../main.hpp"
@@ -35,8 +34,10 @@ namespace blunted {
       bool alreadyThere = false;
 
 
-      geometryData = (ResourceManagerPool::getGeometryManager()->FetchCopy(srcName, srcName + postfix, alreadyThere));
-      //geometryData = (ResourceManagerPool::getGeometryManager()->Fetch(srcName, false, alreadyThere, true));
+      geometryData = (GetContext().geometry_manager.FetchCopy(
+          srcName, srcName + postfix, alreadyThere));
+      // geometryData = (GetContext().geometry_manager.Fetch(srcName, false,
+      // alreadyThere, true));
     }
     InvalidateBoundingVolume();
   }

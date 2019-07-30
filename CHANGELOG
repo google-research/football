@@ -1,3 +1,16 @@
+Numbering scheme:
+Each environment release number is of the form vX.Y. X is the major version
+number, Y is the minor version number. Experiment results within the same X
+should not change, as modifications made to the environment are either
+new features or backward compatible bug fixes. We will maintain vX branches 
+pointing at the most recent vX.Y 
+
+v1.1
+- Add support for running multiple environment instances in a single process.
+- Replaced left_players and right_players with a single players flag. This allows for controling players in both teams by a single agent (useful for self-play).
+- Make ball_owned_player and ball_owned_team consistent (fix for https://github.com/google-research/football/issues/45).
+- Removed paper.pdf and references to it. The paper is now at https://arxiv.org/abs/1907.11180.
+
 v1.0 (released July 19th, 2019)
 - added support for multi agent training with run_multiagent_rllib.py example.
 - added enable_sides_swap parameter to create_environment, which enables random swapping of team sides for each episode. This is useful for self-play training.

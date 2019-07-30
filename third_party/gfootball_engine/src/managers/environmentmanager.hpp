@@ -20,11 +20,9 @@
 
 #include "../defines.hpp"
 
-#include "../types/singleton.hpp"
-
 namespace blunted {
 
-  class EnvironmentManager : public Singleton<EnvironmentManager> {
+  class EnvironmentManager {
 
     public:
       EnvironmentManager();

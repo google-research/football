@@ -17,10 +17,9 @@
 
 #include "graphics_overlay2d.hpp"
 
-#include "../../../managers/resourcemanagerpool.hpp"
-
 #include "../graphics_scene.hpp"
 #include "../graphics_system.hpp"
+#include "../main.hpp"
 
 namespace blunted {
 
@@ -47,9 +46,9 @@ namespace blunted {
 
     bool alreadyThere = false;
 
-    caller->texture =
-      ResourceManagerPool::getTextureManager()->
-        Fetch(surface->GetIdentString(), false, alreadyThere, true); // false == don't try to use loader
+    caller->texture = GetContext().texture_manager.Fetch(
+        surface->GetIdentString(), false, alreadyThere,
+        true);  // false == don't try to use loader
 
     SDL_Surface *image = surface->GetResource()->GetData();
 

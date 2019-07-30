@@ -35,8 +35,6 @@
 #include "../../../systems/graphics/graphics_scene.hpp"
 #include "../../../systems/graphics/graphics_system.hpp"
 
-#include "../../../managers/resourcemanagerpool.hpp"
-
 const bool animSmoothing = true;
 const float cheatFactor = 0.5f;
 const bool useContinuousBallCheck = true;
@@ -498,7 +496,12 @@ void Humanoid::Process() {
         radian xRot = 0;
         radian yRot = 0;
         Vector3 touchVec = GetTrapVector(match, CastPlayer(), nextStartPos, nextStartAngle, nextBodyAngle, CalculateOutgoingMovement(currentAnim->positions), currentAnim, currentAnim->frameNum, spatialState, decayingPositionOffset, xRot, yRot);
-        touchVec = touchVec * 0.5f + (match->GetBall()->Predict(0).Get2D() - spatialState.position).GetNormalized() * 4.0f + Vector3(0, 0, random(0.5f, 1.5f)); // was 1 .. 6
+        touchVec =
+            touchVec * 0.5f +
+            (match->GetBall()->Predict(0).Get2D() - spatialState.position)
+                    .GetNormalized() *
+                4.0f +
+            Vector3(0, 0, boostrandom(0.5f, 1.5f));  // was 1 .. 6
 
         touchVec = touchVec * (1.0f - bumpyRideBias) + currentBallVec * bumpyRideBias;
 
@@ -528,7 +531,13 @@ void Humanoid::Process() {
         } else {
           Vector3 currentBallMovement = match->GetBall()->GetMovement().Get2D();
           Vector3 playerMovement = spatialState.movement;
-          Vector3 touchVec = (-currentBallMovement * 0.1f + playerMovement * 2.0f + Vector3(-team->GetSide(), 0, 0) * 4.0f + Vector3(0, random(-1, 1), 0)).GetNormalized(0) * (currentBallMovement.GetLength() * 0.3f + playerMovement.GetLength() * 2.5f);
+          Vector3 touchVec =
+              (-currentBallMovement * 0.1f + playerMovement * 2.0f +
+               Vector3(-team->GetSide(), 0, 0) * 4.0f +
+               Vector3(0, boostrandom(-1, 1), 0))
+                  .GetNormalized(0) *
+              (currentBallMovement.GetLength() * 0.3f +
+               playerMovement.GetLength() * 2.5f);
           touchVec.coords[2] += 1.2f;
 
           touchVec = touchVec * (1.0f - bumpyRideBias) + currentBallVec * bumpyRideBias;
@@ -2057,7 +2066,8 @@ Vector3 Humanoid::GetBestPossibleTouch(const Vector3 &desiredTouch, e_FunctionTy
     Vector3 nativeTouch = animBallDirection.GetNormalized(resultTouch).Get2D() * resultTouch.GetLength() + resultTouch * Vector3(0, 0, 1);
     resultTouch = resultTouch * (1.0f - bias) + nativeTouch * bias;
   } else {
-    radian rotation = random(-0.5f * pi, 0.5f * pi) * std::min(randomRotation, 0.5f);
+    radian rotation =
+        boostrandom(-0.5f * pi, 0.5f * pi) * std::min(randomRotation, 0.5f);
     resultTouch.Rotate2D(rotation);
   }
 
@@ -2071,7 +2081,7 @@ Vector3 Humanoid::GetBestPossibleTouch(const Vector3 &desiredTouch, e_FunctionTy
   resultTouch = resultTouch * (1.0f - ballMovementFactor) +
                 match->GetBall()->GetMovement() * ballMovementFactor;
 
-  resultTouch.coords[2] += difficultyFactor * 5.0f * random(0.2f, 1.0f);
+  resultTouch.coords[2] += difficultyFactor * 5.0f * boostrandom(0.2f, 1.0f);
 
   return resultTouch;
 }

@@ -17,12 +17,10 @@
 
 #include "graphics_light.hpp"
 
+#include "../../../main.hpp"
 #include "../../../systems/graphics/rendering/r3d_messages.hpp"
-#include "../../../managers/resourcemanagerpool.hpp"
-
 #include "../graphics_scene.hpp"
 #include "../graphics_system.hpp"
-
 #include "graphics_geometry.hpp"
 
 namespace blunted {
@@ -149,8 +147,9 @@ namespace blunted {
       // does not yet exist
 
       ShadowMap map;
-      map.texture = ResourceManagerPool::getTextureManager()->
-                      Fetch(std::string(camera->GetName() + int_to_str(intptr_t(this))), false, false); // false == don't try to use loader
+      map.texture = GetContext().texture_manager.Fetch(
+          std::string(camera->GetName() + int_to_str(intptr_t(this))), false,
+          false);  // false == don't try to use loader
       if (map.texture->GetResource()->GetID() == -1) {
         Renderer3D *renderer3D = caller->GetGraphicsScene()->GetGraphicsSystem()->GetRenderer3D();
         map.texture->GetResource()->SetRenderer3D(renderer3D);

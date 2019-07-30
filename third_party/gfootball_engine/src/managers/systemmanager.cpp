@@ -24,8 +24,6 @@
 
 namespace blunted {
 
-  template<> SystemManager* Singleton<SystemManager>::singleton = 0;
-
   SystemManager::SystemManager() {
   }
 

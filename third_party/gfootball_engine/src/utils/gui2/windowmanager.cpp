@@ -19,10 +19,9 @@
 
 #include <cmath>
 
-#include "widgets/root.hpp"
-
-#include "../../managers/resourcemanagerpool.hpp"
+#include "../../main.hpp"
 #include "../../scene/objectfactory.hpp"
+#include "widgets/root.hpp"
 
 namespace blunted {
 
@@ -59,12 +58,16 @@ namespace blunted {
     scene2D->GetContextSize(contextW, contextH, bpp);
     SDL_Surface *sdlSurface = CreateSDLSurface(contextW, contextH);
 
-    boost::intrusive_ptr < Resource <Surface> > resource = ResourceManagerPool::getSurfaceManager()->Fetch("gui2_blackoutbackground", false, true);
+    boost::intrusive_ptr<Resource<Surface> > resource =
+        GetContext().surface_manager.Fetch("gui2_blackoutbackground", false,
+                                           true);
     Surface *surface = resource->GetResource();
 
     surface->SetData(sdlSurface);
 
-    blackoutBackground = boost::static_pointer_cast<Image2D>(ObjectFactory::GetInstance().CreateObject("gui2_blackoutbackground", e_ObjectType_Image2D));
+    blackoutBackground = boost::static_pointer_cast<Image2D>(
+        GetContext().object_factory.CreateObject("gui2_blackoutbackground",
+                                                 e_ObjectType_Image2D));
     scene2D->CreateSystemObjects(blackoutBackground);
     blackoutBackground->SetImage(resource);
     blackoutBackground->DrawRectangle(0, 0, contextW, contextH, Vector3(0, 0, 0), 255);
@@ -169,12 +172,14 @@ namespace blunted {
 
     SDL_Surface *sdlSurface = CreateSDLSurface(width, height);
 
-    boost::intrusive_ptr < Resource <Surface> > resource = ResourceManagerPool::getSurfaceManager()->Fetch(name, false, true);
+    boost::intrusive_ptr<Resource<Surface> > resource =
+        GetContext().surface_manager.Fetch(name, false, true);
     Surface *surface = resource->GetResource();
 
     surface->SetData(sdlSurface);
 
-    boost::intrusive_ptr<Image2D> image = boost::static_pointer_cast<Image2D>(ObjectFactory::GetInstance().CreateObject(name, e_ObjectType_Image2D));
+    boost::intrusive_ptr<Image2D> image = boost::static_pointer_cast<Image2D>(
+        GetContext().object_factory.CreateObject(name, e_ObjectType_Image2D));
     if (sceneRegister) scene2D->CreateSystemObjects(image);
     image->SetImage(resource);
 

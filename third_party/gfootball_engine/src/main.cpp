@@ -19,32 +19,23 @@
 #include <windows.h>
 #endif
 
-#include "main.hpp"
-
-#include "base/utils.hpp"
-#include "base/math/bluntmath.hpp"
-
-#include "scene/scene2d/scene2d.hpp"
-#include "scene/scene3d/scene3d.hpp"
-
-#include "managers/resourcemanagerpool.hpp"
-#include "utils/objectloader.hpp"
-#include "scene/objectfactory.hpp"
-
-#include "framework/scheduler.hpp"
-
-#include "managers/systemmanager.hpp"
-#include "managers/scenemanager.hpp"
-
-#include "base/log.hpp"
-
-#include "utils/orbitcamera.hpp"
-
-#include "wrap_SDL_ttf.h"
+#include <string>
 
 #include "ai/ai_keyboard.hpp"
-
-#include <string>
+#include "base/log.hpp"
+#include "base/math/bluntmath.hpp"
+#include "base/utils.hpp"
+#include "file.h"
+#include "framework/scheduler.hpp"
+#include "main.hpp"
+#include "managers/scenemanager.hpp"
+#include "managers/systemmanager.hpp"
+#include "scene/objectfactory.hpp"
+#include "scene/scene2d/scene2d.hpp"
+#include "scene/scene3d/scene3d.hpp"
+#include "utils/objectloader.hpp"
+#include "utils/orbitcamera.hpp"
+#include "wrap_SDL_ttf.h"
 
 using std::string;
 
@@ -54,75 +45,35 @@ using std::string;
 
 using namespace blunted;
 
-GraphicsSystem *graphicsSystem;
+thread_local GameContext* context;
 
-boost::shared_ptr<Scene2D> scene2D;
-boost::shared_ptr<Scene3D> scene3D;
+GameContext& GetContext() { return *context; }
 
-boost::shared_ptr<TaskSequence> graphicsSequence;
-boost::shared_ptr<TaskSequence> gameSequence;
+void SetContext(GameContext* c) { context = c; }
 
-boost::shared_ptr<GameTask> gameTask;
-boost::shared_ptr<MenuTask> menuTask;
-boost::shared_ptr<SynchronizationTask> synchronizationTask;
+boost::shared_ptr<Scene2D> GetScene2D() { return context->scene2D; }
 
-Database *db;
+boost::shared_ptr<Scene3D> GetScene3D() { return context->scene3D; }
 
-Properties *config;
-ScenarioConfig scenario_config;
-GameConfig game_config;
-TTF_Font *defaultFont;
-TTF_Font *defaultOutlineFont;
+GraphicsSystem* GetGraphicsSystem() { return context->graphicsSystem; }
 
-std::vector<IHIDevice*> controllers;
+boost::shared_ptr<GameTask> GetGameTask() { return context->gameTask; }
 
-std::string activeSaveDirectory;
-
-std::string configFile = "football.config";
-
-boost::shared_ptr<Scene2D> GetScene2D() {
-  return scene2D;
-}
-
-boost::shared_ptr<Scene3D> GetScene3D() {
-  return scene3D;
-}
-
-GraphicsSystem *GetGraphicsSystem() {
-  return graphicsSystem;
-}
-
-boost::shared_ptr<GameTask> GetGameTask() {
-  return gameTask;
-}
-
-boost::shared_ptr<MenuTask> GetMenuTask() {
-  return menuTask;
-}
+boost::shared_ptr<MenuTask> GetMenuTask() { return context->menuTask; }
 
 boost::shared_ptr<SynchronizationTask> GetSynchronizationTask() {
-  return synchronizationTask;
+  return context->synchronizationTask;
 }
 
-Database *GetDB() {
-  return db;
-}
+Properties* GetConfiguration() { return context->config; }
 
-Properties *GetConfiguration() {
-  return config;
-}
+SystemManager* GetSystemManager() { return &context->system_manager; }
 
-ScenarioConfig& GetScenarioConfig() {
-  return scenario_config;
-}
+ScenarioConfig& GetScenarioConfig() { return context->scenario_config; }
 
-GameConfig& GetGameConfig() {
-  return game_config;
-}
+GameConfig& GetGameConfig() { return context->game_config; }
 
-const std::vector<IHIDevice*> &GetControllers() {
-  return controllers;
-}
+const std::vector<IHIDevice*>& GetControllers() { return context->controllers; }
 
 void randomize(unsigned int seed) {
   srand(seed);
@@ -132,105 +83,113 @@ void randomize(unsigned int seed) {
 }
 
 void run_game(Properties* input_config) {
-  config = input_config;
+  context->config = input_config;
   auto& game_config = GetGameConfig();
 
-  Initialize(*config);
+  Initialize(*context->config);
   randomize(0);
 
-  int timeStep_ms = config->GetInt("physics_frametime_ms", 10);
-
-
-  // database
-
-  db = new Database();
-  bool dbSuccess =
-      db->Load(game_config.updatePath("databases/default/database.sqlite"));
-  if (!dbSuccess) Log(e_FatalError, "main", "()", "Could not open database");
-
+  int timeStep_ms = context->config->GetInt("physics_frametime_ms", 10);
 
   // initialize systems
 
-  SystemManager *systemManager = SystemManager::GetInstancePtr();
+  SystemManager* systemManager = &GetContext().system_manager;
 
-  graphicsSystem = new GraphicsSystem();
-  bool returnvalue = systemManager->RegisterSystem("GraphicsSystem", graphicsSystem);
+  context->graphicsSystem = new GraphicsSystem();
+  bool returnvalue =
+      systemManager->RegisterSystem("GraphicsSystem", context->graphicsSystem);
   if (!returnvalue) Log(e_FatalError, "football", "main", "Could not register GraphicsSystem");
-  graphicsSystem->Initialize(*config);
+  context->graphicsSystem->Initialize(*context->config);
 
   // init scenes
 
-  scene2D = boost::shared_ptr<Scene2D>(new Scene2D("scene2D", *config));
-  SceneManager::GetInstance().RegisterScene(scene2D);
+  context->scene2D =
+      boost::shared_ptr<Scene2D>(new Scene2D("scene2D", *context->config));
+  GetContext().scene_manager.RegisterScene(context->scene2D);
 
-  scene3D = boost::shared_ptr<Scene3D>(new Scene3D("scene3D"));
-  SceneManager::GetInstance().RegisterScene(scene3D);
+  context->scene3D = boost::shared_ptr<Scene3D>(new Scene3D("scene3D"));
+  GetContext().scene_manager.RegisterScene(context->scene3D);
 
   for (int x = 0; x < 2 * MAX_PLAYERS; x++) {
-    controllers.push_back(new AIControlledKeyboard());
+    context->controllers.push_back(new AIControlledKeyboard());
   }
   // sequences
 
-  gameTask = boost::shared_ptr<GameTask>(new GameTask());
-  std::string fontfilename = config->Get("font_filename", "media/fonts/alegreya/AlegreyaSansSC-ExtraBold.ttf");
-  defaultFont = TTF_OpenFont(fontfilename.c_str(), 32);
-  if (!defaultFont) Log(e_FatalError, "football", "main", "Could not load font " + fontfilename);
-  defaultOutlineFont = TTF_OpenFont(fontfilename.c_str(), 32);
-  TTF_SetFontOutline(defaultOutlineFont, 2);
-  menuTask = boost::shared_ptr<MenuTask>(new MenuTask(5.0f / 4.0f, 0, defaultFont, defaultOutlineFont, config));
+  context->gameTask = boost::shared_ptr<GameTask>(new GameTask());
+  std::string fontfilename = context->config->Get(
+      "font_filename", "media/fonts/alegreya/AlegreyaSansSC-ExtraBold.ttf");
+  context->font = GetFile(fontfilename);
+  context->defaultFont = TTF_OpenFontIndexRW(
+      SDL_RWFromConstMem(context->font.data(), context->font.size()), 0, 32, 0);
+  if (!context->defaultFont)
+    Log(e_FatalError, "football", "main",
+        "Could not load font " + fontfilename);
+  context->defaultOutlineFont = TTF_OpenFontIndexRW(
+      SDL_RWFromConstMem(context->font.data(), context->font.size()), 0, 32, 0);
+  TTF_SetFontOutline(context->defaultOutlineFont, 2);
+  context->menuTask = boost::shared_ptr<MenuTask>(
+      new MenuTask(5.0f / 4.0f, 0, context->defaultFont,
+                   context->defaultOutlineFont, context->config));
   // ME
   //if (controllers.size() > 1) menuTask->SetEventJoyButtons(static_cast<HIDGamepad*>(controllers.at(1))->GetControllerMapping(e_ControllerButton_A), static_cast<HIDGamepad*>(controllers.at(1))->GetControllerMapping(e_ControllerButton_B));
 
-
-  gameSequence = boost::shared_ptr<TaskSequence>(new TaskSequence("game", timeStep_ms, false));
+  context->gameSequence = boost::shared_ptr<TaskSequence>(
+      new TaskSequence("game", timeStep_ms, false));
 
   // note: the whole locking stuff is now happening from within some of the code, iirc, 't is all very ugly and unclear. sorry
 
   //gameSequence->AddLockEntry(graphicsGameMutex, e_LockAction_Lock);   // ---------- lock -----
 
-  synchronizationTask = boost::shared_ptr<SynchronizationTask>(new SynchronizationTask());
-  gameSequence->AddUserTaskEntry(synchronizationTask, e_TaskPhase_Get);
+  context->synchronizationTask =
+      boost::shared_ptr<SynchronizationTask>(new SynchronizationTask());
+  context->gameSequence->AddUserTaskEntry(context->synchronizationTask,
+                                          e_TaskPhase_Get);
 
-  gameSequence->AddUserTaskEntry(menuTask, e_TaskPhase_Get);
-  gameSequence->AddUserTaskEntry(menuTask, e_TaskPhase_Process);
-  gameSequence->AddUserTaskEntry(menuTask, e_TaskPhase_Put);
+  context->gameSequence->AddUserTaskEntry(context->menuTask, e_TaskPhase_Get);
+  context->gameSequence->AddUserTaskEntry(context->menuTask,
+                                          e_TaskPhase_Process);
+  context->gameSequence->AddUserTaskEntry(context->menuTask, e_TaskPhase_Put);
 
   //gameSequence->AddLockEntry(graphicsGameMutex, e_LockAction_Unlock); // ---------- unlock ---
 
-  gameSequence->AddUserTaskEntry(gameTask, e_TaskPhase_Get);
-  gameSequence->AddUserTaskEntry(gameTask, e_TaskPhase_Process);
-  gameSequence->AddUserTaskEntry(gameTask, e_TaskPhase_Put);
-  if (graphicsSystem && game_config.render_mode != e_Disabled) {
-    gameSequence->AddSystemTaskEntry(graphicsSystem, e_TaskPhase_Get);
-    gameSequence->AddSystemTaskEntry(graphicsSystem, e_TaskPhase_Process);
-    gameSequence->AddSystemTaskEntry(graphicsSystem, e_TaskPhase_Put);
+  context->gameSequence->AddUserTaskEntry(context->gameTask, e_TaskPhase_Get);
+  context->gameSequence->AddUserTaskEntry(context->gameTask,
+                                          e_TaskPhase_Process);
+  context->gameSequence->AddUserTaskEntry(context->gameTask, e_TaskPhase_Put);
+  if (context->graphicsSystem && game_config.render_mode != e_Disabled) {
+    context->gameSequence->AddSystemTaskEntry(context->graphicsSystem,
+                                              e_TaskPhase_Get);
+    context->gameSequence->AddSystemTaskEntry(context->graphicsSystem,
+                                              e_TaskPhase_Process);
+    context->gameSequence->AddSystemTaskEntry(context->graphicsSystem,
+                                              e_TaskPhase_Put);
   }
 
-  gameSequence->AddUserTaskEntry(synchronizationTask, e_TaskPhase_Put);
-  GetScheduler()->RegisterTaskSequence(gameSequence);
+  context->gameSequence->AddUserTaskEntry(context->synchronizationTask,
+                                          e_TaskPhase_Put);
+  GetScheduler()->RegisterTaskSequence(context->gameSequence);
 }
   // fire!
 
 void quit_game() {
-  gameTask.reset();
-  menuTask.reset();
+  context->gameTask.reset();
+  context->menuTask.reset();
 
-  gameSequence.reset();
-  graphicsSequence.reset();
+  context->gameSequence.reset();
+  context->graphicsSequence.reset();
 
-  scene2D.reset();
-  scene3D.reset();
+  context->scene2D.reset();
+  context->scene3D.reset();
 
-  for (unsigned int i = 0; i < controllers.size(); i++) {
-    delete controllers[i];
+  for (unsigned int i = 0; i < context->controllers.size(); i++) {
+    delete context->controllers[i];
   }
-  controllers.clear();
+  context->controllers.clear();
 
-  TTF_CloseFont(defaultFont);
-  TTF_CloseFont(defaultOutlineFont);
+  TTF_CloseFont(context->defaultFont);
+  TTF_CloseFont(context->defaultOutlineFont);
 
-  delete db;
-  delete config;
+  delete context->config;
 
   Exit();
 }

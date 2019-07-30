@@ -19,27 +19,11 @@
 
 #include <cmath>
 
-#include <boost/random.hpp>
+#include "../../main.hpp"
 
 namespace blunted {
 
   unsigned int fastrandseed = 0;
-  unsigned int max_uint = 0;
-
-  typedef boost::mt19937 BaseGenerator;
-  typedef boost::uniform_real<float> Distribution;
-  typedef boost::variate_generator<BaseGenerator, Distribution> Generator;
-  BaseGenerator base;
-  Distribution dist;
-  Generator rng(base, dist);
-
-  // Two random number generators are needed. One (deterministic when running
-  // in deterministic mode) to be used in places which generate deterministic
-  // game state. Second one is used in places which are optional and don't
-  // affect observations (like position of the sun).
-  BaseGenerator base2;
-  Distribution dist2;
-  Generator rng_non_deterministic(base2, dist2);
 
   real clamp(const real value, const real min, const real max) {
     assert(max >= min);
@@ -76,15 +60,13 @@ namespace blunted {
   }
 
   void randomseed(unsigned int seed) {
-    rng.engine().seed(seed);
-    rng_non_deterministic.engine().seed(seed);
+    GetContext().rng.engine().seed(seed);
+    GetContext().rng_non_deterministic.engine().seed(seed);
   }
 
-  inline real boostrandom() {
-    return rng();
-  }
+  inline real boostrandom() { return GetContext().rng(); }
 
-  real random(real min, real max) {
+  real boostrandom(real min, real max) {
     float stretch = max - min;
     real value = min + (boostrandom() * stretch);
     return value;
@@ -92,7 +74,7 @@ namespace blunted {
 
   real random_non_determ(real min, real max) {
     float stretch = max - min;
-    real value = min + (rng_non_deterministic() * stretch);
+    real value = min + (GetContext().rng_non_deterministic() * stretch);
     return value;
   }
 

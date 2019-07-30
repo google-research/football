@@ -17,9 +17,9 @@
 
 #include "node.hpp"
 
-#include "scene3d.hpp"
-
+#include "../../main.hpp"
 #include "../../scene/objectfactory.hpp"
+#include "scene3d.hpp"
 
 namespace blunted {
 
@@ -41,7 +41,8 @@ namespace blunted {
     source.GetObjects(gatherObjects, false);
     std::list < boost::intrusive_ptr<Object> >::iterator objectIter = gatherObjects.begin();
     while (objectIter != gatherObjects.end()) {
-      boost::intrusive_ptr<Object> objCopy = ObjectFactory::GetInstance().CopyObject((*objectIter), postfix);
+      boost::intrusive_ptr<Object> objCopy =
+          GetContext().object_factory.CopyObject((*objectIter), postfix);
       scene3D->CreateSystemObjects(objCopy);
       objCopy->Synchronize();
       AddObject(objCopy);

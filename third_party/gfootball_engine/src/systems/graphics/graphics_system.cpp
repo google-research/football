@@ -22,8 +22,6 @@
 #include "../../base/log.hpp"
 #include "../../base/utils.hpp"
 
-#include "../../managers/resourcemanagerpool.hpp"
-
 #include "rendering/r3d_messages.hpp"
 
 namespace blunted {

@@ -20,8 +20,6 @@
 #include "utils.hpp"
 
 #include "systems/graphics/resources/texture.hpp"
-#include "managers/resourcemanagerpool.hpp"
-
 #include <boost/algorithm/string.hpp>
 #include <cmath>
 
@@ -150,7 +148,6 @@ template <typename T> void TemporalSmoother<T>::SetValue(const T &data, unsigned
   TemporalValue<T> value;
   value.data = data;
   value.time_ms = valueTime_ms;
-  //printf("adding time: %lu\n", value.time_ms);
   values.push_back(value);
 }
 
@@ -165,7 +162,6 @@ template <typename T> T TemporalSmoother<T>::GetValue(unsigned long currentTime_
   //return (values.back()).data; // disable smoother
 
   unsigned long now_ms = currentTime_ms;
-  //unsigned long now_ms = (currentTime_ms == 0) ? EnvironmentManager::GetInstance().GetTime_ms() : currentTime_ms;
   unsigned long targetTime_ms = 0;
   if (history_ms <= now_ms) targetTime_ms = now_ms - history_ms; // this makes sure targetTime_ms won't become negative (and loop-around since it's an unsigned var)
 

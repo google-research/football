@@ -26,4 +26,4 @@ class Player(player_base.PlayerBase):
     player_base.PlayerBase.__init__(self, player_config)
 
   def take_action(self, observations):
-    return [football_action_set.action_idle] * len(observations['active'])
+    return [football_action_set.action_idle] * len(observations)

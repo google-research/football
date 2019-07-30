@@ -18,7 +18,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-
 from gfootball.env import config
 from gfootball.env import football_env
 from gfootball.env import observation_preprocessing
@@ -28,17 +27,16 @@ from gfootball.env import wrappers
 def create_environment(env_name='',
                        stacked=False,
                        representation='extracted',
-                       with_checkpoints=False,
+                       rewards='scoring',
                        enable_goal_videos=False,
                        enable_full_episode_videos=False,
                        render=False,
                        write_video=False,
                        dump_frequency=1,
                        logdir='',
-                       data_dir=None,
-                       font_file=None,
-                       right_players=None,
-                       number_of_players_agent_controls=1,
+                       extra_players=None,
+                       number_of_left_players_agent_controls=1,
+                       number_of_right_players_agent_controls=0,
                        enable_sides_swap=False,
                        channel_dimensions=(
                            observation_preprocessing.SMM_WIDTH,
@@ -91,9 +89,8 @@ def create_environment(env_name='',
             CornerMode, ThrowInMode, PenaltyMode}.
          Can only be used when the scenario is a flavor of normal game
          (i.e. 11 versus 11 players).
-    with_checkpoints: True to add intermediate checkpoint rewards to guide
-       the agent to move to the opponent goal.
-       If False, only scoring provides a reward.
+    rewards: Comma separated list of rewards to be added.
+       Currently supported rewards are 'scoring' and 'checkpoints'.
     enable_goal_videos: whether to dump traces up to 200 frames before goals.
     enable_full_episode_videos: whether to dump traces for every episode.
     render: whether to render game frames.
@@ -103,14 +100,13 @@ def create_environment(env_name='',
     dump_frequency: how often to write dumps/videos (in terms of # of episodes)
       Sub-sample the episodes for which we dump videos to save some disk space.
     logdir: directory holding the logs.
-    data_dir: location of the game engine data
-       Safe to leave as the default value.
-    font_file: location of the game font file
-       Safe to leave as the default value.
-    right_players: A list of right players (adversary) to use in the environment.
-       Reserved for future usage to provide an opponent to train against.
-       (which could be used for self-play).
-    number_of_players_agent_controls: Number of players an agent controls.
+    extra_players: A list of extra players to use in the environment.
+        Each player is defined by a string like:
+        "$player_name:left_players=?,right_players=?,$param1=?,$param2=?...."
+    number_of_left_players_agent_controls: Number of left players an agent
+        controls.
+    number_of_right_players_agent_controls: Number of right players an agent
+        controls.
     enable_sides_swap: Whether to randomly pick a field side at the beginning of
        each episode for the team that the agent controls.
     channel_dimensions: (width, height) tuple that represents the dimensions of
@@ -119,27 +115,26 @@ def create_environment(env_name='',
     Google Research Football environment.
   """
   assert env_name
-  if right_players is None:
-    right_players = []
+  players = [('agent:left_players=%d,right_players=%d' % (
+      number_of_left_players_agent_controls,
+      number_of_right_players_agent_controls))]
+  if extra_players is not None:
+    players.extend(extra_players)
   c = config.Config({
       'enable_sides_swap': enable_sides_swap,
       'dump_full_episodes': enable_full_episode_videos,
       'dump_scores': enable_goal_videos,
-      'left_players': [('agent:players=%d' % number_of_players_agent_controls)],
+      'players': players,
       'level': env_name,
       'render': render,
       'tracesdir': logdir,
       'write_video': write_video,
-      'right_players': right_players,
   })
-  if data_dir:
-    c['data_dir'] = data_dir
-  if font_file:
-    c['font_file'] = font_file
   env = football_env.FootballEnv(c)
   if dump_frequency > 1:
     env = wrappers.PeriodicDumpWriter(env, dump_frequency)
-  if with_checkpoints:
+  assert 'scoring' in rewards.split(',')
+  if 'checkpoints' in rewards.split(','):
     env = wrappers.CheckpointRewardWrapper(env)
   if representation.startswith('pixels'):
     env = wrappers.PixelsStateWrapper(env, 'gray' in representation,
@@ -150,8 +145,10 @@ def create_environment(env_name='',
     env = wrappers.SMMWrapper(env, channel_dimensions)
   else:
     raise ValueError('Unsupported representation: {}'.format(representation))
-  if number_of_players_agent_controls == 1:
-    env = wrappers.SingleAgentWrapper(env)
+  if (number_of_left_players_agent_controls +
+      number_of_right_players_agent_controls == 1):
+    env = wrappers.SingleAgentObservationWrapper(env)
+    env = wrappers.SingleAgentRewardWrapper(env)
   if stacked:
     # Import FrameStack here to avoid unconditional dependence on baselines.
     from baselines.common.atari_wrappers import FrameStack

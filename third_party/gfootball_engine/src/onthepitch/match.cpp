@@ -19,26 +19,18 @@
 
 #include <cmath>
 
-#include "../main.hpp"
-
-#include "proceduralpitch.hpp"
-
-#include "../scene/objectfactory.hpp"
-#include "../utils/splitgeometry.hpp"
-#include "../utils/directoryparser.hpp"
-#include "AIsupport/AIfunctions.hpp"
-#include "../scene/objects/light.hpp"
-
-#include "../managers/resourcemanagerpool.hpp"
-
 #include "../base/geometry/triangle.hpp"
-
-#include "player/playerofficial.hpp"
-
 #include "../base/log.hpp"
-
+#include "../main.hpp"
 #include "../menu/pagefactory.hpp"
 #include "../menu/startmatch/loadingmatch.hpp"
+#include "../scene/objectfactory.hpp"
+#include "../scene/objects/light.hpp"
+#include "../utils/splitgeometry.hpp"
+#include "AIsupport/AIfunctions.hpp"
+#include "file.h"
+#include "player/playerofficial.hpp"
+#include "proceduralpitch.hpp"
 
 const unsigned int replaySize_ms = 10000;
 const unsigned int camPosSize = 150;//180; //130
@@ -80,7 +72,7 @@ Match::Match(MatchData *matchData, const std::vector<IHIDevice*> &controllers) :
 
   if (!anims) {
     anims = boost::shared_ptr<AnimCollection>(new AnimCollection(GetScene3D()));
-    anims->Load("media/animations");
+    anims->Load();
     // cache animation positions
 
     const std::vector < Animation* > &animationsTmp = anims->GetAnimations();
@@ -130,7 +122,8 @@ Match::Match(MatchData *matchData, const std::vector<IHIDevice*> &controllers) :
   // officials
 
   std::string kitFilename = "media/objects/players/textures/referee_kit.png";
-  boost::intrusive_ptr < Resource<Surface> > kit = ResourceManagerPool::getSurfaceManager()->Fetch(kitFilename);
+  boost::intrusive_ptr<Resource<Surface> > kit =
+      GetContext().surface_manager.Fetch(kitFilename);
   officials = new Officials(this, fullbodyNode, colorCoords, kit, anims);
 
   dynamicNode->AddObject(officials->GetYellowCardGeom());
@@ -139,7 +132,8 @@ Match::Match(MatchData *matchData, const std::vector<IHIDevice*> &controllers) :
 
   // camera
 
-  camera = static_pointer_cast<Camera>(ObjectFactory::GetInstance().CreateObject("camera", e_ObjectType_Camera));
+  camera = static_pointer_cast<Camera>(
+      GetContext().object_factory.CreateObject("camera", e_ObjectType_Camera));
   GetScene3D()->CreateSystemObjects(camera);
   camera->Init();
 
@@ -227,10 +221,12 @@ Match::Match(MatchData *matchData, const std::vector<IHIDevice*> &controllers) :
   bestPossessionTeam = 0;
   SetMatchPhase(e_MatchPhase_PreMatch);
 
-  gameSequenceInfo = GetScheduler()->GetTaskSequenceInfo("game");
+  gameSequenceInfo = GetContext().scheduler.GetTaskSequenceInfo("game");
 
-  previousProcessTime_ms = EnvironmentManager::GetInstance().GetTime_ms() - gameSequenceInfo.startTime_ms;
-  previousPutTime_ms = EnvironmentManager::GetInstance().GetTime_ms() - gameSequenceInfo.startTime_ms;
+  previousProcessTime_ms = GetContext().environment_manager.GetTime_ms() -
+                           gameSequenceInfo.startTime_ms;
+  previousPutTime_ms = GetContext().environment_manager.GetTime_ms() -
+                       gameSequenceInfo.startTime_ms;
   timeSincePreviousProcess_ms = 0;
   timeSincePreviousPut_ms = 0;
 
@@ -319,9 +315,14 @@ void Match::SetRandomSunParams() {
 
   Vector3 sunPos = Vector3(-1.2f, 0.4f, 1.0f); // sane default
   float averageHeightMultiplier = 1.3f;
-  sunPos = Vector3(clamp(random(-1.7f, 1.7f), -1.0, 1.0), clamp(random(-1.7f, 1.7f), -1.0, 1.0), averageHeightMultiplier);
+  sunPos = Vector3(clamp(boostrandom(-1.7f, 1.7f), -1.0, 1.0),
+                   clamp(boostrandom(-1.7f, 1.7f), -1.0, 1.0),
+                   averageHeightMultiplier);
   sunPos.Normalize();
-  if (random(0, 1) > 0.5f && sunPos.coords[1] > 0.25f) sunPos.coords[1] = -sunPos.coords[1]; // sun more often on (default) camera side (coming from front == clearer lighting on players)
+  if (boostrandom(0, 1) > 0.5f && sunPos.coords[1] > 0.25f)
+    sunPos.coords[1] =
+        -sunPos.coords[1];  // sun more often on (default) camera side (coming
+                            // from front == clearer lighting on players)
   sunNode->GetObject("sun")->SetPosition(sunPos * 10000.0f);
 
   float defaultRadius = 1000000.0f;
@@ -335,7 +336,8 @@ void Match::SetRandomSunParams() {
       std::pow(NormalizedClamp(sunPos.coords[2], 0.5f, 1.0f), 1.2f);
   Vector3 sunColor = sunColorNoon * noonBias + sunColorDusk * (1.0f - noonBias);
 
-  Vector3 randomAddition(random(-0.1, 0.1), random(-0.1, 0.1), random(-0.1, 0.1));
+  Vector3 randomAddition(boostrandom(-0.1, 0.1), boostrandom(-0.1, 0.1),
+                         boostrandom(-0.1, 0.1));
   randomAddition *= 1.2f;
   sunColor += randomAddition;
 
@@ -345,14 +347,13 @@ void Match::SetRandomSunParams() {
 void Match::RandomizeAdboards(boost::intrusive_ptr<Node> stadiumNode) {
   // collect texture files
 
-  DirectoryParser parser;
   std::vector<std::string> files;
-  parser.Parse("media/textures/adboards", "bmp", files, false);
+  GetFiles("media/textures/adboards", "bmp", files);
   sort(files.begin(), files.end());
 
   std::vector < boost::intrusive_ptr < Resource<Surface> > > adboardSurfaces;
   for (unsigned int i = 0; i < files.size(); i++) {
-    adboardSurfaces.push_back(ResourceManagerPool::getSurfaceManager()->Fetch(files[i]));
+    adboardSurfaces.push_back(GetContext().surface_manager.Fetch(files[i]));
   }
   if (adboardSurfaces.empty()) return;
 
@@ -650,8 +651,8 @@ void Match::GetState(SharedInfo *state) {
       (ball->GetRotation() / GetGameConfig().physics_steps_per_frame).coords;
   state->ball_direction =
       (ball->GetMovement() / GetGameConfig().physics_steps_per_frame).coords;
-  state->ball_owned_team = GetLastTouchTeamID();
   state->ball_owned_player = -1;
+  state->ball_owned_team = -1;
   state->left_goals = GetScore(0);
   state->right_goals = GetScore(1);
   state->is_in_play = IsInPlay();
@@ -698,8 +699,10 @@ void Match::GetState(SharedInfo *state) {
         info.has_card = player->HasCards();
         info.is_active = player->IsActive();
         info.role = player->GetFormationEntry().role;
-        if (player->HasPossession()) {
+        if (player->HasPossession() && GetLastTouchTeamID() != -1 &&
+            GetLastTouchTeam()->GetLastTouchPlayer() == player) {
           state->ball_owned_player = team.size();
+          state->ball_owned_team = GetLastTouchTeamID();
         }
         team.push_back(info);
       }
@@ -713,8 +716,8 @@ void Match::Get() {
 }
 
 void Match::Process() {
-
-  unsigned long time_ms = EnvironmentManager::GetInstance().GetTime_ms() - gameSequenceInfo.startTime_ms;
+  unsigned long time_ms = GetContext().environment_manager.GetTime_ms() -
+                          gameSequenceInfo.startTime_ms;
   timeSincePreviousProcess_ms = time_ms - GetPreviousProcessTime_ms();
   previousProcessTime_ms = time_ms;
 
@@ -940,9 +943,9 @@ void Match::Process() {
 }
 
 void Match::PreparePutBuffers() {
-
-  gameSequenceInfo = GetScheduler()->GetTaskSequenceInfo("game");
-  unsigned long time_ms = EnvironmentManager::GetInstance().GetTime_ms() - gameSequenceInfo.startTime_ms;
+  gameSequenceInfo = GetContext().scheduler.GetTaskSequenceInfo("game");
+  unsigned long time_ms = GetContext().environment_manager.GetTime_ms() -
+                          gameSequenceInfo.startTime_ms;
   timeSincePreviousPreparePut_ms = time_ms - GetPreviousPreparePutTime_ms();
   previousPreparePutTime_ms = time_ms;
 
@@ -962,10 +965,12 @@ void Match::PreparePutBuffers() {
   buf_cameraNodeOrientation.SetValue(cameraNodeOrientation, snapshotTime_ms);
 
   // test fun!
-  //float xfun = sin((float)EnvironmentManager::GetInstance().GetTime_ms() * 0.001f) * 60;
-  //float xfun = sin((float)(EnvironmentManager::GetInstance().GetTime_ms() + PredictFrameTimeToGo_ms(7)) * 0.001f) * 60;
-  //float xfun = sin(snapshotTime_ms * 0.001f) * 60.0f;
-  //buf_cameraNodePosition.SetValue(cameraNodePosition + Vector3(xfun, 0, 0), snapshotTime_ms);
+  // float xfun = sin((float)GetContext().environment_manager.GetTime_ms() *
+  // 0.001f) * 60; float xfun =
+  // sin((float)(GetContext().environment_manager.GetTime_ms() +
+  // PredictFrameTimeToGo_ms(7)) * 0.001f) * 60; float xfun = sin(snapshotTime_ms
+  // * 0.001f) * 60.0f; buf_cameraNodePosition.SetValue(cameraNodePosition +
+  // Vector3(xfun, 0, 0), snapshotTime_ms);
   buf_cameraNodePosition.SetValue(cameraNodePosition, snapshotTime_ms);
 
   //printf("timetogo prediction: %i ms\n", PredictFrameTimeToGo_ms(7));
@@ -982,7 +987,8 @@ void Match::FetchPutBuffers() {
 
   if (GetIterations() < 1) return; // no processes done yet
 
-  unsigned long time_ms = EnvironmentManager::GetInstance().GetTime_ms() - gameSequenceInfo.startTime_ms;
+  unsigned long time_ms = GetContext().environment_manager.GetTime_ms() -
+                          gameSequenceInfo.startTime_ms;
   timeSincePreviousPut_ms = time_ms - GetPreviousPutTime_ms();
   previousPutTime_ms = time_ms;
   unsigned long putTime_ms = time_ms;// - gameSequenceInfo.startTime_ms; // test: + PredictFrameTimeToGo_ms(7) - 15;
@@ -1617,7 +1623,8 @@ void Match::CheckBallCollisions() {
     resultVector *= 0.7f;
 
     ball->Touch(resultVector);
-    ball->SetRotation(random(-30, 30), random(-30, 30), random(-30, 30), 0.5f * bias);
+    ball->SetRotation(boostrandom(-30, 30), boostrandom(-30, 30),
+                      boostrandom(-30, 30), 0.5f * bias);
     lastBodyBallCollisionTime_ms = actualTime_ms;
   }
 
