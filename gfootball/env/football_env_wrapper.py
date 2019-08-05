@@ -74,7 +74,6 @@ class FootballEnvWrapper(object):
     self._trace.update(trace)
     if done:
       self.write_dump('episode_done')
-    if done:
       self._env_state = 'game_done'
       fps = self._step_count / (debug['time'] - self._episode_start)
       game_fps = self._step_count / self._env._steps_time
