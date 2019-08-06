@@ -157,11 +157,6 @@ namespace blunted {
       screenshoot last_screen_;
 
   };
-
-#ifdef WIN32
-  static SDL_SysWMinfo wmInfo;
-#endif
-
 }
 
 #endif

@@ -79,7 +79,6 @@ void randomize(unsigned int seed) {
   srand(seed);
   rand(); // mingw32? buggy compiler? first value seems bogus
   randomseed(seed); // for the boost random
-  fastrandomseed(seed);
 }
 
 void run_game(Properties* input_config) {

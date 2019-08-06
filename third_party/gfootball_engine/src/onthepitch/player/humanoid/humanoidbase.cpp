@@ -31,9 +31,9 @@
 
 #include "../../../scene/objectfactory.hpp"
 
-const float bodyRotationSmoothingFactor = 1.0f;
-const float bodyRotationSmoothingMaxAngle = 0.25f * pi;
-const float initialReQueueDelayFrames = 32;
+constexpr float bodyRotationSmoothingFactor = 1.0f;
+constexpr float bodyRotationSmoothingMaxAngle = 0.25f * pi;
+constexpr float initialReQueueDelayFrames = 32;
 
 void FillTemporalHumanoidNodes(boost::intrusive_ptr<Node> targetNode, std::vector<TemporalHumanoidNode> &temporalHumanoidNodes) {
   //printf("%s\n", targetNode->GetName().c_str());

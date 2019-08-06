@@ -35,30 +35,30 @@
 #include "../../../systems/graphics/graphics_scene.hpp"
 #include "../../../systems/graphics/graphics_system.hpp"
 
-const bool animSmoothing = true;
-const float cheatFactor = 0.5f;
-const bool useContinuousBallCheck = true;
-const bool enableMovementSmuggle = true;
-const float cheatDiscardDistance = 0.02f; // don't 'display' this distance of cheat (looks better for small distances, but will look funny when too large, players 'missing' the ball and all. also has big influence on gameplay, since this influences player collisions etc)
-const float cheatDistanceBonus = 0.02f; // add extra allowed cheat distance (in meters). don't 'display' this distance of cheat (looks better for small distances, but will look funny when too large, players 'missing' the ball and all. also has big influence on gameplay, since this influences player collisions etc)
-const float cheatDiscardDistanceMultiplier = 0.4f; // lower == more snappy
-const float maxSmuggleDiscardDistance = 0.2f;
-const bool enableActionSmuggleDiscard = true;
-const bool forceFullActionSmuggleDiscard = false;
-const bool discardForwardSmuggle = true;
-const bool discardSidewaysSmuggle = false;
-const float bodyRotationSmoothingFactor = 1.0f;
-const float bodyRotationSmoothingMaxAngle = animSmoothing ? 0.25f * pi : 0.0f;
-const int initialReQueueDelayFrames = 22;
-const int minRemainingMovementReQueueFrames = 6; // after this # of frames remaining, just let anim finish; we're almost there anyway
-const int minRemainingTrapReQueueFrames = 6; // after this # of frames remaining to touchframe, just let anim finish; we're almost there anyway
-const int maxBallControlReQueueFrame = 8;
-const bool allowReQueue = true;
-const bool allowMovementReQueue = true;
-const bool allowBallControlReQueue = true;
-const bool allowTrapReQueue = true;
-const bool allowPreTouchRotationSmuggle = false;
-const bool enableControlledBallCollisions = true;
+constexpr bool animSmoothing = true;
+constexpr float cheatFactor = 0.5f;
+constexpr bool useContinuousBallCheck = true;
+constexpr bool enableMovementSmuggle = true;
+constexpr float cheatDiscardDistance = 0.02f; // don't 'display' this distance of cheat (looks better for small distances, but will look funny when too large, players 'missing' the ball and all. also has big influence on gameplay, since this influences player collisions etc)
+constexpr float cheatDistanceBonus = 0.02f; // add extra allowed cheat distance (in meters). don't 'display' this distance of cheat (looks better for small distances, but will look funny when too large, players 'missing' the ball and all. also has big influence on gameplay, since this influences player collisions etc)
+constexpr float cheatDiscardDistanceMultiplier = 0.4f; // lower == more snappy
+constexpr float maxSmuggleDiscardDistance = 0.2f;
+constexpr bool enableActionSmuggleDiscard = true;
+constexpr bool forceFullActionSmuggleDiscard = false;
+constexpr bool discardForwardSmuggle = true;
+constexpr bool discardSidewaysSmuggle = false;
+constexpr float bodyRotationSmoothingFactor = 1.0f;
+constexpr float bodyRotationSmoothingMaxAngle = animSmoothing ? 0.25f * pi : 0.0f;
+constexpr int initialReQueueDelayFrames = 22;
+constexpr int minRemainingMovementReQueueFrames = 6; // after this # of frames remaining, just let anim finish; we're almost there anyway
+constexpr int minRemainingTrapReQueueFrames = 6; // after this # of frames remaining to touchframe, just let anim finish; we're almost there anyway
+constexpr int maxBallControlReQueueFrame = 8;
+constexpr bool allowReQueue = true;
+constexpr bool allowMovementReQueue = true;
+constexpr bool allowBallControlReQueue = true;
+constexpr bool allowTrapReQueue = true;
+constexpr bool allowPreTouchRotationSmuggle = false;
+constexpr bool enableControlledBallCollisions = true;
 
 Humanoid::Humanoid(Player *player, boost::intrusive_ptr<Node> humanoidSourceNode, boost::intrusive_ptr<Node> fullbodySourceNode, std::map<Vector3, Vector3> &colorCoords, boost::shared_ptr<AnimCollection> animCollection, boost::intrusive_ptr<Node> fullbodyTargetNode, boost::intrusive_ptr < Resource<Surface> > kit, int bodyUpdatePhaseOffset) :
                   HumanoidBase(player, player->GetTeam()->GetMatch(), humanoidSourceNode, fullbodySourceNode, colorCoords, animCollection, fullbodyTargetNode, kit, bodyUpdatePhaseOffset) {

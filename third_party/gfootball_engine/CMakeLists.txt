@@ -19,11 +19,11 @@ project(gameplayfootball)
 set (CMAKE_CXX_STANDARD 14)
 
 if(UNIX)
-   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -g -O3 -no-pie -L/usr/X11/lib -lX11 -lSDL2")
-   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -g -O3 -no-pie -L/usr/X11/lib -lX11 -lSDL2")
+   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -g -O3 -L/usr/X11/lib -lX11 -lSDL2")
+   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -g -O3 -L/usr/X11/lib -lX11 -lSDL2")
 endif(UNIX)
-SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS} -fPIC -g -O3 -no-pie -L/usr/X11/lib -lX11 -lSDL2")
-SET(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -fPIC -O3 -g -no-pie -L/usr/X11/lib -lX11 -lSDL2")
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS} -fPIC -g -O3 -L/usr/X11/lib -lX11 -lSDL2")
+SET(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -fPIC -O3 -g -L/usr/X11/lib -lX11 -lSDL2")
 
 # Find needed libraries
 FIND_PACKAGE(OpenGL REQUIRED)

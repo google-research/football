@@ -186,8 +186,6 @@ struct SpatialState {
   e_Foot foot;
 };
 
-static const Vector3 emptyVec(0);
-
 class HumanoidBase {
 
   public:

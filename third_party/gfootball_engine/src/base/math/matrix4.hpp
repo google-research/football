@@ -33,7 +33,7 @@ namespace blunted {
 
     public:
       Matrix4();
-      Matrix4(real values[16]);
+      Matrix4(const real values[16]);
       virtual ~Matrix4();
 
       // ----- operator overloading

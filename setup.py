@@ -41,7 +41,7 @@ packages = find_packages() + find_packages('third_party')
 
 setup(
     name='gfootball',
-    version='1.1',
+    version='1.2',
     description=('Google Research Football - RL environment based on '
                  'open-source game Gameplay Football'),
     author='Google LLC',

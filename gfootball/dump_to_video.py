@@ -16,26 +16,16 @@
 
 from absl import app
 from absl import flags
-from gfootball.env import config
-from gfootball.env import observation_processor
-
-import six.moves.cPickle
+from gfootball.env import script_helpers
 
 FLAGS = flags.FLAGS
-flags.DEFINE_string('file', '', 'Dump file to render')
+flags.DEFINE_string('trace_file', None, 'Trace file to render')
+flags.mark_flag_as_required('trace_file')
 
 
 def main(_):
-  cfg = config.Config()
-  cfg['dump_full_episodes'] = True
-  cfg['write_video'] = True
-  cfg['display_game_stats'] = True
-  with open(FLAGS.file, 'rb') as f:
-    dump = six.moves.cPickle.load(f)
-  processor = observation_processor.ObservationProcessor(cfg)
-  for frame in dump:
-    processor.update(frame)
-  processor.write_dump('episode_done')
+  script_helpers.ScriptHelpers().dump_to_video(FLAGS.trace_file)
+
 
 if __name__ == '__main__':
   app.run(main)

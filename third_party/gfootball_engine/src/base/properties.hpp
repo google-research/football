@@ -42,7 +42,7 @@ namespace blunted {
       void SetBool(const std::string &name, bool value);
       const std::string &Get(
           const std::string &name,
-          const std::string &defaultValue = emptyString) const;
+          const std::string &defaultValue = "") const;
       bool GetBool(const std::string &name, bool defaultValue = false) const;
       real GetReal(const std::string &name, real defaultValue = 0) const;
       int GetInt(const std::string &name, int defaultValue = 0) const;
@@ -52,8 +52,6 @@ namespace blunted {
 
      protected:
       map_Properties properties;
-
-      static std::string emptyString;
   };
 
 }

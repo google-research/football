@@ -27,10 +27,7 @@
 
 #include "../../base/geometry/triangle.hpp"
 
-int PlayerBase::playerCount = 0;
-int PlayerBase::stablePlayerCount = 0;
-
-PlayerBase::PlayerBase(Match *match, PlayerData *playerData) : match(match), playerData(playerData), id(playerCount++), stable_id(stablePlayerCount++), humanoid(0), controller(0), externalController(0), isActive(false) {
+PlayerBase::PlayerBase(Match *match, PlayerData *playerData) : match(match), playerData(playerData), id(GetContext().playerCount++), stable_id(GetContext().stablePlayerCount++), humanoid(0), controller(0), externalController(0), isActive(false) {
   lastTouchTime_ms = 0;
   lastTouchType = e_TouchType_None;
   fatigueFactorInv = 1.0;

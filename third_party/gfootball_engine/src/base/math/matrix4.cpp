@@ -27,7 +27,7 @@ namespace blunted {
     }
   }
 
-  Matrix4::Matrix4(real values[16]) {
+  Matrix4::Matrix4(const real values[16]) {
     for (int i = 0; i < 16; i++) {
       elements[i] = values[i];
     }

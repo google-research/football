@@ -104,9 +104,6 @@ class PlayerBase {
     }
 
     virtual void ResetSituation(const Vector3 &focusPos);
-    static void resetPlayerCount() {
-      stablePlayerCount = 0;
-    }
 
   protected:
     Match *match;
@@ -123,9 +120,6 @@ class PlayerBase {
 
     unsigned long lastTouchTime_ms = 0;
     e_TouchType lastTouchType;
-
-    static int playerCount;
-    static int stablePlayerCount;
 
     float fatigueFactorInv = 0.0f;
 

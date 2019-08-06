@@ -23,9 +23,6 @@
 
 using namespace blunted;
 
-Uint32 GetPitchDiffuseColor(SDL_Surface *pitchSurf, float xCoord, float yCoord);
-Uint32 GetPitchSpecularColor(SDL_Surface *pitchSurf, float xCoord,
-                             float yCoord);
 void GeneratePitch(int resX, int resY, int resSpecularX, int resSpecularY,
                    int resNormalX, int resNormalY);
 

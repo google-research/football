@@ -2,8 +2,14 @@ Numbering scheme:
 Each environment release number is of the form vX.Y. X is the major version
 number, Y is the minor version number. Experiment results within the same X
 should not change, as modifications made to the environment are either
-new features or backward compatible bug fixes. We will maintain vX branches 
-pointing at the most recent vX.Y 
+new features or backward compatible bug fixes. We will maintain vX branches
+pointing at the most recent vX.Y.
+
+v1.2
+- Reduction of memory usage by the environment (https://github.com/google-research/football/issues/47).
+- Reduction of memory usage during compilation (https://github.com/google-research/football/issues/49).
+- Elimination of --no-pie compilation flag (https://github.com/google-research/football/issues/53).
+- Fix for broken wrappers.py (https://github.com/google-research/football/issues/54).
 
 v1.1
 - Add support for running multiple environment instances in a single process.

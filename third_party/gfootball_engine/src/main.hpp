@@ -146,6 +146,13 @@ struct GameContext {
   // game state. Second one is used in places which are optional and don't
   // affect observations (like position of the sun).
   Generator rng_non_deterministic;
+  bool already_loaded = false;
+  int playerCount = 0;
+  int stablePlayerCount = 0;
+  BiasedOffsets emptyOffsets;
+  boost::shared_ptr<AnimCollection> anims;
+  std::map<Animation*, std::vector<Vector3>> animPositionCache;
+  std::map<Vector3, Vector3> colorCoords;
 };
 
 class Match;

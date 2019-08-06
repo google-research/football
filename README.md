@@ -263,6 +263,12 @@ are controlled by the following set of flags:
     If rendering is disabled (`render` config flag), the video contains a simple
     episode animation.
 
+There are following scripts provided to operate on trace dumps:
+
+-  `dump_to_txt.py` - converts trace dump to human-readable form.
+-  `dump_to_video.py` - converts trace dump to a 2D representation video.
+-  `replay.py` - replays a given trace dump using environment.
+
 ## Frequent Problems & Solutions
 
 ### Rendering not working / "OpenGL version not equal to or higher than 3.2"

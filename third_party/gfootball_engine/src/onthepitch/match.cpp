@@ -32,22 +32,18 @@
 #include "player/playerofficial.hpp"
 #include "proceduralpitch.hpp"
 
-const unsigned int replaySize_ms = 10000;
-const unsigned int camPosSize = 150;//180; //130
+constexpr unsigned int replaySize_ms = 10000;
+constexpr unsigned int camPosSize = 150;//180; //130
 
-boost::shared_ptr<AnimCollection> anims;
-std::map < Animation*, std::vector<Vector3> > animPositionCache;
-
-boost::shared_ptr<AnimCollection> Match::GetAnimCollection() { return anims; }
-
-std::map<Vector3, Vector3> colorCoords;
+boost::shared_ptr<AnimCollection> Match::GetAnimCollection() { return GetContext().anims; }
 
 const std::vector<Vector3> &Match::GetAnimPositionCache(Animation *anim) const {
-  return animPositionCache.find(anim)->second;
+  return GetContext().animPositionCache.find(anim)->second;
 }
 
 Match::Match(MatchData *matchData, const std::vector<IHIDevice*> &controllers) : matchData(matchData), controllers(controllers) {
-  PlayerBase::resetPlayerCount();
+  auto& anims = GetContext().anims;
+  GetContext().stablePlayerCount = 0;
 
   // shared ptr to menutask, because menutask shouldn't die before match does
   menuTask = GetMenuTask();
@@ -89,9 +85,9 @@ Match::Match(MatchData *matchData, const std::vector<IHIDevice*> &controllers) :
         //position.Print();
       }
       //printf("\n");
-      animPositionCache.insert(std::pair < Animation*, std::vector<Vector3> >(someAnim, positions));
+      GetContext().animPositionCache.insert(std::pair < Animation*, std::vector<Vector3> >(someAnim, positions));
     }
-    GetVertexColors(colorCoords);
+    GetVertexColors(GetContext().colorCoords);
   }
 
 
@@ -110,8 +106,8 @@ Match::Match(MatchData *matchData, const std::vector<IHIDevice*> &controllers) :
 
   teams[0] = new Team(0, this, matchData->GetTeamData(0));
   teams[1] = new Team(1, this, matchData->GetTeamData(1));
-  teams[0]->InitPlayers(fullbodyNode, fullbody2Node, colorCoords);
-  teams[1]->InitPlayers(fullbodyNode, fullbody2Node, colorCoords);
+  teams[0]->InitPlayers(fullbodyNode, fullbody2Node, GetContext().colorCoords);
+  teams[1]->InitPlayers(fullbodyNode, fullbody2Node, GetContext().colorCoords);
 
   std::vector<Player*> activePlayers;
   teams[0]->GetActivePlayers(activePlayers);
@@ -124,7 +120,7 @@ Match::Match(MatchData *matchData, const std::vector<IHIDevice*> &controllers) :
   std::string kitFilename = "media/objects/players/textures/referee_kit.png";
   boost::intrusive_ptr<Resource<Surface> > kit =
       GetContext().surface_manager.Fetch(kitFilename);
-  officials = new Officials(this, fullbodyNode, colorCoords, kit, anims);
+  officials = new Officials(this, fullbodyNode, GetContext().colorCoords, kit, anims);
 
   dynamicNode->AddObject(officials->GetYellowCardGeom());
   dynamicNode->AddObject(officials->GetRedCardGeom());

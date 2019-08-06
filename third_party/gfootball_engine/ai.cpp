@@ -34,8 +34,6 @@ using namespace boost::interprocess;
 
 #define FRAME_SIZE (1280*720*3)
 
-boost::shared_ptr<GameTask> game_;
-
 using std::string;
 
 void GameEnv::do_step(int count) {
@@ -111,8 +109,6 @@ std::string GameEnv::start_game(GameConfig game_config) {
   config->Set("game", 0);
   // Enable AI.
   config->SetBool("ai_keyboard", true);
-  // Disable Audio (not needed and sometimes causes trouble).
-  config->SetBool("disable_audio", true);
   if (game_config.render_mode == e_Disabled) {
     config->Set("graphics3d_renderer", "mock");
   } else if (game_config.render_mode == e_Offscreen) {

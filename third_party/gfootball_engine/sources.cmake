@@ -341,7 +341,6 @@ set(GAME_HEADERS
    src/onthepitch/player/controller/elizacontroller.hpp
    src/onthepitch/player/controller/humancontroller.hpp
    src/onthepitch/player/controller/playercontroller.hpp
-   src/onthepitch/player/controller/strategies/special/celebration.hpp
    src/onthepitch/player/controller/strategies/strategy.hpp
    src/onthepitch/player/controller/strategies/offtheball/default_off.hpp
    src/onthepitch/player/controller/strategies/offtheball/default_def.hpp
@@ -372,7 +371,6 @@ set(GAME_SOURCES
    src/onthepitch/player/controller/icontroller.cpp
    src/onthepitch/player/controller/refereecontroller.cpp
    src/onthepitch/player/controller/elizacontroller.cpp
-   src/onthepitch/player/controller/strategies/special/celebration.cpp
    src/onthepitch/player/controller/strategies/strategy.cpp
    src/onthepitch/player/controller/strategies/offtheball/default_mid.cpp
    src/onthepitch/player/controller/strategies/offtheball/default_off.cpp

@@ -32,8 +32,6 @@ std::string now() {
 
 namespace blunted {
 
-  signal_LogCallback callback;
-
   void Log(e_LogType logType, std::string className, std::string methodName, std::string message) {
     std::string logTypeString;
 
@@ -51,7 +49,6 @@ namespace blunted {
 
     std::string date = now();
     date = date.substr(0, date.length() - 1);
-    callback(logType, className.c_str(), methodName.c_str(), message.c_str());
     printf("%s [%s] in [%s::%s]: %s\n", date.c_str(),
             logTypeString.c_str(), className.c_str(), methodName.c_str(),
             message.c_str());

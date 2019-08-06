@@ -66,18 +66,18 @@ class Simple115StateWrapper(gym.ObservationWrapper):
     self.observation_space = gym.spaces.Box(
         low=-1, high=1, shape=shape, dtype=np.float32)
 
-  def observation(self, obs):
+  def observation(self, observation):
     """Converts an observation into simple115 format.
 
     Args:
-      obs: observation that the environment returns
+      observation: observation that the environment returns
 
     Returns:
       (N, 155) shaped representation, where N stands for the number of players
       being controlled.
     """
     final_obs = []
-    for a in obs['active']:
+    for obs in observation:
       o = []
       o.extend(obs['left_team'].flatten())
       o.extend(obs['left_team_direction'].flatten())
@@ -103,7 +103,8 @@ class Simple115StateWrapper(gym.ObservationWrapper):
         o.extend([0, 0, 1])
 
       active = [0] * 11
-      active[a] = 1
+      if obs['active'] != -1:
+        active[obs['active']] = 1
       o.extend(active)
 
       game_mode = [0] * 7

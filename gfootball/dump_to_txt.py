@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 """Script converting dump file to human readable format.
 
    Example usage:
@@ -19,30 +20,28 @@
 
 """
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
+from gfootball.env import script_helpers
 
 from absl import app
 from absl import flags
 
-import six.moves.cPickle
-
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('dump', '', 'Trace file to convert')
-flags.DEFINE_string('output', '', 'Output txt file')
+flags.DEFINE_string('trace_file', None, 'Trace file to convert')
+flags.DEFINE_string('output', None, 'Output txt file')
 flags.DEFINE_bool('include_debug', True,
                   'Include debug information for each step')
+flags.mark_flag_as_required('trace_file')
+flags.mark_flag_as_required('output')
 
 
 def main(_):
-  with open(FLAGS.dump, 'rb') as f:
-    replay = six.moves.cPickle.load(f)
-  if not FLAGS.include_debug:
-    for s in replay:
-      if 'debug' in s:
-        del s['debug']
-  with open(FLAGS.output, 'w') as f:
-    f.write(str(replay))
+  script_helpers.ScriptHelpers().dump_to_txt(FLAGS.trace_file, FLAGS.output,
+                                             FLAGS.include_debug)
 
 
 if __name__ == '__main__':

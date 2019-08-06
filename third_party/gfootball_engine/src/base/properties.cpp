@@ -28,8 +28,6 @@ using namespace std;
 
 namespace blunted {
 
-  std::string Properties::emptyString = "";
-
   Properties::Properties() {
   }
 
