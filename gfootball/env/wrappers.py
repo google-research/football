@@ -123,7 +123,6 @@ class PixelsStateWrapper(gym.ObservationWrapper):
     gym.ObservationWrapper.__init__(self, env)
     self._grayscale = grayscale
     self._channel_dimensions = channel_dimensions
-    self._i=0
     self.observation_space = gym.spaces.Box(
         low=0, high=255,
         shape=(self.env.unwrapped._config.number_of_players_agent_controls(),
@@ -132,16 +131,18 @@ class PixelsStateWrapper(gym.ObservationWrapper):
         dtype=np.uint8)
 
   def observation(self, obs):
-    frame = obs['frame']
-    if self._grayscale:
-      frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-    frame = cv2.resize(frame, (self._channel_dimensions[0],
-                               self._channel_dimensions[1]),
-                       interpolation=cv2.INTER_AREA)
-    if self._grayscale:
-      frame = np.expand_dims(frame, -1)
-    return ([frame] *
-            self.env.unwrapped._config.number_of_players_agent_controls())
+    o = []
+    for observation in obs:
+      frame = observation['frame']
+      if self._grayscale:
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+      frame = cv2.resize(frame, (self._channel_dimensions[0],
+                                 self._channel_dimensions[1]),
+                         interpolation=cv2.INTER_AREA)
+      if self._grayscale:
+        frame = np.expand_dims(frame, -1)
+      o.append(frame)
+    return np.array(o, dtype=np.uint8)
 
 
 class SMMWrapper(gym.ObservationWrapper):
