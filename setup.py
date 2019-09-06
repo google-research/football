@@ -41,7 +41,7 @@ packages = find_packages() + find_packages('third_party')
 
 setup(
     name='gfootball',
-    version='1.3',
+    version='1.4',
     description=('Google Research Football - RL environment based on '
                  'open-source game Gameplay Football'),
     author='Google LLC',
@@ -56,11 +56,8 @@ setup(
         'opencv-python',
         'scipy',
         'gym',
+        'absl-py',
     ],
-    extras_require={
-        'tf_cpu': ['tensorflow<2.0'],
-        'tf_gpu': ['tensorflow-gpu<2.0'],
-    },
     include_package_data=True,
     keywords='gfootball reinforcement-learning python machine learning',
     ext_modules=[CMakeExtension('brainball_cpp_engine')],

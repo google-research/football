@@ -25,6 +25,7 @@ from baselines.bench import monitor
 from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
 from baselines.ppo2 import ppo2
 import gfootball.env as football_env
+from gfootball.examples import models  
 import tensorflow as tf
 
 
@@ -39,7 +40,8 @@ flags.DEFINE_enum('state', 'extracted_stacked', ['extracted',
 flags.DEFINE_enum('reward_experiment', 'scoring',
                   ['scoring', 'scoring,checkpoints'],
                   'Reward to be used for training.')
-flags.DEFINE_enum('policy', 'cnn', ['cnn', 'lstm', 'mlp'],
+flags.DEFINE_enum('policy', 'cnn', ['cnn', 'lstm', 'mlp', 'impala_cnn',
+                                    'gfootball_impala_cnn'],
                   'Policy architecture')
 flags.DEFINE_integer('num_timesteps', int(2e6),
                      'Number of timesteps to run for.')
@@ -62,6 +64,7 @@ flags.DEFINE_bool('dump_full_episodes', False,
                   'If True, trace is dumped after every episode.')
 flags.DEFINE_bool('dump_scores', False,
                   'If True, sampled traces after scoring are dumped.')
+flags.DEFINE_string('load_path', None, 'Path to load initial checkpoint from.')
 
 
 def create_single_football_env(seed):
@@ -105,7 +108,8 @@ def train():
              lr=FLAGS.lr,
              log_interval=1,
              save_interval=FLAGS.save_interval,
-             cliprange=FLAGS.cliprange)
+             cliprange=FLAGS.cliprange,
+             load_path=FLAGS.load_path)
 
 
 if __name__ == '__main__':

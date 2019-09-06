@@ -19,11 +19,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import collections
+import cv2
 from gfootball.env import observation_preprocessing
-import gfootball_engine as libgame
 import gym
 import numpy as np
-import cv2
 
 
 class PeriodicDumpWriter(gym.Wrapper):
@@ -153,10 +153,10 @@ class SMMWrapper(gym.ObservationWrapper):
                                    observation_preprocessing.SMM_HEIGHT)):
     gym.ObservationWrapper.__init__(self, env)
     self._channel_dimensions = channel_dimensions
-    shape=(self.env.unwrapped._config.number_of_players_agent_controls(),
-           channel_dimensions[1], channel_dimensions[0],
-           len(observation_preprocessing.get_smm_layers(
-               self.env.unwrapped._config)))
+    shape = (self.env.unwrapped._config.number_of_players_agent_controls(),
+             channel_dimensions[1], channel_dimensions[0],
+             len(observation_preprocessing.get_smm_layers(
+                 self.env.unwrapped._config)))
     self.observation_space = gym.spaces.Box(
         low=0, high=255, shape=shape, dtype=np.uint8)
 
@@ -246,3 +246,30 @@ class CheckpointRewardWrapper(gym.RewardWrapper):
         reward[rew_index] += self._checkpoint_reward
         self._collected_checkpoints[is_left_to_right] += 1
     return reward
+
+
+class FrameStack(gym.Wrapper):
+  """Stack k last observations."""
+
+  def __init__(self, env, k):
+    gym.Wrapper.__init__(self, env)
+    self.obs = collections.deque([], maxlen=k)
+    low = env.observation_space.low
+    high = env.observation_space.high
+    low = np.concatenate([low] * k, axis=-1)
+    high = np.concatenate([high] * k, axis=-1)
+    self.observation_space = gym.spaces.Box(
+        low=low, high=high, dtype=env.observation_space.dtype)
+
+  def reset(self):
+    observation = self.env.reset()
+    self.obs.extend([observation] * self.obs.maxlen)
+    return self._get_observation()
+
+  def step(self, action):
+    observation, reward, done, info = self.env.step(action)
+    self.obs.append(observation)
+    return self._get_observation(), reward, done, info
+
+  def _get_observation(self):
+    return np.concatenate(list(self.obs), axis=-1)

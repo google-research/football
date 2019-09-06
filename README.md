@@ -18,32 +18,37 @@ You can either install the code from github (newest version) or from pypi (stabl
   1. Install required apt packages with
   `sudo apt-get install git cmake build-essential libgl1-mesa-dev libsdl2-dev
   libsdl2-image-dev libsdl2-ttf-dev libsdl2-gfx-dev libboost-all-dev
-  libdirectfb-dev libst-dev mesa-utils xvfb x11vnc libsqlite3-dev
-  glee-dev libsdl-sge-dev python3-pip`
+  libdirectfb-dev libst-dev mesa-utils xvfb x11vnc glee-dev libsdl-sge-dev
+  python3-pip`
 
   1. Install gfootball python package from pypi:
 
-    - Use `pip3 install gfootball[tf_cpu]` if you want to use CPU version of TensorFlow.
-    - Use `pip3 install gfootball[tf_gpu]` if you want to use GPU version of TensorFlow.
+    - Use `pip3 install gfootball`
     - This command can run for couple of minutes, as it compiles the C++ environment in the background.
 
   OR install gfootball python package (run the commands from the main project directory):
 
     - `git clone https://github.com/google-research/football.git`
     - `cd football`
-    - Use `pip3 install .[tf_cpu]` if you want to use the CPU version of TensorFlow.
-    - Use `pip3 install .[tf_gpu]` if you want to use GPU version of TensorFlow.
+    - `pip3 install .`
     - This command can run for a couple of minutes, as it compiles the C++ environment in the background.
 
 ## Running experiments
-First, install newest OpenAI Baselines:
-`pip3 install git+https://github.com/openai/baselines.git@master`.
+Install additional dependencies:
+
+- TensorFlow: `pip3 install "tensorflow<2.0"` or
+  `pip3 install "tensorflow-gpu<2.0"`, depending on whether you want CPU or
+  GPU version;
+- Sonnet: `pip3 install dm-sonnet`;
+- OpenAI Baselines:
+  `pip3 install git+https://github.com/openai/baselines.git@master`.
 
 Then:
+
 - To run example PPO experiment on `academy_empty_goal` scenario, run
-`python3 -m gfootball.examples.run_ppo2 --level=academy_empty_goal_close`
+  `python3 -m gfootball.examples.run_ppo2 --level=academy_empty_goal_close`
 - To run on `academy_pass_and_shoot_with_keeper` scenario, run
-`python3 -m gfootball.examples.run_ppo2 --level=academy_pass_and_shoot_with_keeper`
+  `python3 -m gfootball.examples.run_ppo2 --level=academy_pass_and_shoot_with_keeper`
 
 In order to train with nice replays being saved, run
 `python3 -m gfootball.examples.run_ppo2 --dump_full_episodes=True --render=True`
@@ -54,11 +59,25 @@ base scenario and the left player is controlled by the keyboard. Different types
 of players are supported (gamepad, external bots, agents...). For possible
 options run `python3 -m gfootball.play_game -helpfull`.
 
+In particular, one can play against agent trained with `run_ppo2` script with
+the following command:
+`python3 -m gfootball.play_game --players "keyboard:left_players=1;ppo2_cnn:right_players=1,checkpoint=$YOUR_PATH"`
+
 Please note that playing
 the game is implemented through an environment, so human-controlled players use
 the same interface as the agents. One important fact is that there is a single
 action per 100 ms reported to the environment, which might cause a lag effect
 when playing.
+
+## Trained checkpoints
+We provide trained PPO checkpoints for the following scenarios:
+
+  - [11_vs_11_easy_stochastic](https://storage.googleapis.com/gfootball-public-bucket/trained_model_11_vs_11_easy_stochastic),
+  - [academy_run_to_score_with_keeper](https://storage.googleapis.com/gfootball-public-bucket/trained_model_academy_run_to_score_with_keeper).
+
+In order to see the checkpoints playing, run
+`python3 -m gfootball.play_game --players "ppo2_cnn:left_players=1,policy=gfootball_impala_cnn,checkpoint=$CHECKPOINT" --level=$LEVEL`,
+where `$CHECKPOINT` is the path to downloaded checkpoint.
 
 ### Keyboard mapping
 The game defines following keyboard mapping (for the `keyboard` player type):
@@ -238,7 +257,7 @@ A simple example of training multi-agent can be found in examples/run_multiagent
 
 ### GPU version
 1. Build with `docker build --build-arg DOCKER_BASE=tensorflow/tensorflow:1.12.0-gpu-py3 --build-arg DEVICE=gpu . -t gfootball`
-1. Enter the image with `nvidia-docker run -it gfootball bash`
+1. Enter the image with `nvidia-docker run -it gfootball bash` or `docker run --gpus all -it gfootball bash` for docker 19.03 or later.
 
 After entering the image, you can run sample training with `python3 -m gfootball.examples.run_ppo2`.
 Unfortunately, rendering is not supported inside the docker.

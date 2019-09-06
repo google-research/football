@@ -150,8 +150,6 @@ def create_environment(env_name='',
     env = wrappers.SingleAgentObservationWrapper(env)
     env = wrappers.SingleAgentRewardWrapper(env)
   if stacked:
-    # Import FrameStack here to avoid unconditional dependence on baselines.
-    from baselines.common.atari_wrappers import FrameStack
-    env = FrameStack(env, 4)
+    env = wrappers.FrameStack(env, 4)
 
   return env

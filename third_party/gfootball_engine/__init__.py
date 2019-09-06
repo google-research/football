@@ -43,7 +43,7 @@ except:
     logging.warning('Looks like game engine is not compiled, please run:')
     engine_path = os.path.abspath(os.path.dirname(__file__))
     logging.warning(
-        '  pushd {} && cmake . && make -j `nproc` && popd'.format(game_path))
-    logging.warning('  pushd {} && ln -s libgame.so '
+        '  pushd {} && cmake . && make -j `nproc` && popd'.format(game_path))
+    logging.warning('  pushd {} && ln -s libgame.so '
                     '_gameplayfootball.so && popd'.format(engine_path))
   raise

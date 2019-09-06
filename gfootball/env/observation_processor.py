@@ -23,6 +23,7 @@ import collections
 import datetime
 import logging
 import os
+import shutil
 import tempfile
 import timeit
 import traceback
@@ -34,9 +35,10 @@ import numpy as np
 from six.moves import range
 from six.moves import zip
 import six.moves.cPickle
-import tensorflow as tf
 
 REMOVED_FRAME = 'removed'
+
+WRITE_FILES = True
 
 try:
   import cv2
@@ -208,7 +210,8 @@ def write_dump(name, trace, skip_visuals=False, config={}):
     os.close(fd)
     try:
       # For some reason sometimes the file is missing, so the code fails.
-      tf.io.gfile.copy(temp_path, name + '.avi', overwrite=True)
+      if WRITE_FILES:
+        shutil.copy2(temp_path, name + '.avi')
       os.remove(temp_path)
     except:
       logging.info(traceback.format_exc())
@@ -219,8 +222,9 @@ def write_dump(name, trace, skip_visuals=False, config={}):
       temp_frames.append(o._trace['observation']['frame'])
       o._trace['observation']['frame'] = REMOVED_FRAME
     to_pickle.append(o._trace)
-  with tf.io.gfile.GFile(name + '.dump', 'wb') as f:
-    six.moves.cPickle.dump(to_pickle, f)
+  if WRITE_FILES:
+    with open(name + '.dump', 'wb') as f:
+      six.moves.cPickle.dump(to_pickle, f)
   for o in trace:
     if 'frame' in o._trace['observation']:
       o._trace['observation']['frame'] = temp_frames.pop(0)
@@ -356,7 +360,9 @@ class ObservationProcessor(object):
     config._last_dump = timeit.default_timer()
     if self._dump_directory is None:
       self._dump_directory = self._config['tracesdir']
-      tf.io.gfile.makedirs(self._dump_directory)
+      if WRITE_FILES:
+        if not os.path.exists(self._dump_directory):
+          os.makedirs(self._dump_directory)
     config._file_name = '{2}/{0}_{1}'.format(
         name,
         datetime.datetime.now().strftime('%Y%m%d-%H%M%S%f'),

@@ -5,6 +5,11 @@ should not change, as modifications made to the environment are either
 new features or backward compatible bug fixes. We will maintain vX branches
 pointing at the most recent vX.Y.
 
+v1.4
+- Added implementation of architecture 'gfootball_impala_cnn' used in the paper.
+- Added possibility of loading PPO checkpoints as players, added example checkpoints (for levels 11_vs_11_easy_stochastic and academy_run_to_score_with_keeper).
+- Removed TensorFlow dependency when running only the environment (but for training OpenAI baselines it's still needed)
+
 v1.3
 - Fix to pixel representation (https://github.com/google-research/football/issues/54,56,57).
 
