@@ -41,7 +41,7 @@ class ScriptHelpers(object):
     trace = []
     min_fps = replay[0]['debug']['config']['physics_steps_per_frame']
     assert fps % min_fps == 0, (
-        'Trace has to be rendered in framerate being multiple of {}'.formmat(
+        'Trace has to be rendered in framerate being multiple of {}'.format(
             min_fps))
     assert fps <= 100, ('Framerate of up to 100 is supported')
     empty_steps = int(fps / min_fps) - 1
