@@ -20,8 +20,6 @@
 
 #include "interface_renderer3d.hpp"
 
-#include <GLee.h>
-
 namespace blunted {
 
   class OpenGLRenderer3D : public Renderer3D {
@@ -145,9 +143,9 @@ namespace blunted {
 
       float overallBrightness = 0.0f;
 
-      GLfloat largest_supported_anisotropy = 0.0f;
+      float largest_supported_anisotropy = 0.0f;
 
-      std::map<std::string, GLint> uniformCache;
+      std::map<std::string, int> uniformCache;
 
       std::map<int, int> VBOPingPongMap;
       std::map<int, int> VAOPingPongMap;

@@ -144,8 +144,8 @@ def softmax(x):
 
 
 @cfg.log
-def write_dump(name, trace, skip_visuals=False, config={}):
-  if not skip_visuals:
+def write_dump(name, trace, config):
+  if config['write_video']:
     fd, temp_path = tempfile.mkstemp(suffix='.avi')
     if HIGH_RES:
       frame_dim = (1280, 720)
@@ -212,6 +212,7 @@ def write_dump(name, trace, skip_visuals=False, config={}):
       # For some reason sometimes the file is missing, so the code fails.
       if WRITE_FILES:
         shutil.copy2(temp_path, name + '.avi')
+      logging.info('Video written to %s.avi', name)
       os.remove(temp_path)
     except:
       logging.info(traceback.format_exc())
@@ -222,6 +223,8 @@ def write_dump(name, trace, skip_visuals=False, config={}):
       temp_frames.append(o._trace['observation']['frame'])
       o._trace['observation']['frame'] = REMOVED_FRAME
     to_pickle.append(o._trace)
+  # Add config to the first frame for our replay tools to use.
+  to_pickle[0]['debug']['config'] = config.get_dictionary()
   if WRITE_FILES:
     with open(name + '.dump', 'wb') as f:
       six.moves.cPickle.dump(to_pickle, f)
@@ -229,8 +232,6 @@ def write_dump(name, trace, skip_visuals=False, config={}):
     if 'frame' in o._trace['observation']:
       o._trace['observation']['frame'] = temp_frames.pop(0)
   logging.info('Dump written to %s.dump', name)
-  if not skip_visuals:
-    logging.info('Video written to %s.avi', name)
   return True
 
 
@@ -379,8 +380,7 @@ class ObservationProcessor(object):
         if finish or config._trigger_step <= self._frame:
           logging.info('Start dump %s', name)
           trace = list(self._trace)[-config._max_length:]
-          write_dump(config._file_name, trace, self._config['write_video'],
-                     self._config)
+          write_dump(config._file_name, trace, self._config)
           config._file_name = None
       if config._result:
         assert not config._file_name

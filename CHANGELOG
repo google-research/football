@@ -5,6 +5,11 @@ should not change, as modifications made to the environment are either
 new features or backward compatible bug fixes. We will maintain vX branches
 pointing at the most recent vX.Y.
 
+v1.5
+- Fix to numerical issue resulting in asserts in long runs (https://github.com/google-research/football/issues/78).
+- Eliminate dependense on Glee (https://github.com/google-research/football/issues/77)
+- Created google-research-football@google.com email for direct contact with the environment team.
+
 v1.4
 - Added implementation of architecture 'gfootball_impala_cnn' used in the paper.
 - Added possibility of loading PPO checkpoints as players, added example checkpoints (for levels 11_vs_11_easy_stochastic and academy_run_to_score_with_keeper).

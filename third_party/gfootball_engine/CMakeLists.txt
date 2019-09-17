@@ -130,8 +130,8 @@ add_library(gamelib ${GAME_SOURCES} ${GAME_HEADERS})
 add_library(menulib ${MENU_SOURCES} ${MENU_HEADERS})
 add_library(datalib ${DATA_SOURCES} ${DATA_HEADERS})
 
-set(LIBRARIES gamelib menulib datalib glee
-   blunted2 rt ${Boost_LIBRARIES} ${PYTHON_LIBRARY}
+set(LIBRARIES gamelib menulib datalib blunted2 rt
+   ${Boost_LIBRARIES} ${PYTHON_LIBRARY}
    ${SDL2_IMAGE_LIBRARIES} ${SDL2_TTF_LIBRARIES} ${SDL2_GFX_LIBRARIES}
    ${SDL2_LIBRARY} ${SGE_LIBRARY} ${OPENGL_LIBRARIES})
 add_library(baselib OBJECT ${BASE_SOURCES} ${BASE_HEADERS}

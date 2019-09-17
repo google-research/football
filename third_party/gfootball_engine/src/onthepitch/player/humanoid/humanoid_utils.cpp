@@ -207,7 +207,7 @@ Vector3 GetBallControlVector(Ball *ball, Player *player, const Vector3 &nextStar
   if (currentAnim->originatingCommand.desiredVelocityFloat > walkSprintSwitch) maximumOverdrive_mps = 2.0f * explosivenessFactor;
   float dotFactor1 = spatialState.directionVec.GetDotProduct(currentAnim->originatingCommand.desiredDirection) * 0.5f + 0.5f; // inv deviation from the current direction
   float dotFactor2 = Vector3(0, -1, 0).GetRotated2D(nextStartAngle).GetDotProduct(currentAnim->originatingCommand.desiredDirection) * 0.5f + 0.5f; // inv deviation from the direction we wanted
-  float dotFactor = std::min(dotFactor1, dotFactor2);
+  float dotFactor = clamp(std::min(dotFactor1, dotFactor2), 0.0f, 1.0f);  // clamp for numerical problems, don't want negative values out of this.
   maximumOverdrive_mps *= dotFactor;
 
   if (FloatToEnumVelocity(currentAnim->anim->GetOutgoingVelocity()) == e_Velocity_Idle) maximumOverdrive_mps = 0.0f;

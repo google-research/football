@@ -146,10 +146,6 @@ class FootballEnvCore(object):
       if 'frame' in self._observation:
         self._trace.add_frame(self._observation['frame'])
     debug['frame_cnt'] = self._step
-    if self._step == 1:
-      # Put environment config into the debug, so that we can replay a given
-      # scenario from the dump.
-      debug['config'] = self._config.get_dictionary()
 
     previous_score_diff = 0
     if self._trace.len() > 0:

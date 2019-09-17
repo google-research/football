@@ -10,6 +10,11 @@ We'd like to thank Bastiaan Konings Schuiling, who authored and open-sourced the
 For more information, please look at our [paper](https://arxiv.org/abs/1907.11180).
 
 Mailing list: https://groups.google.com/forum/#!forum/google-research-football
+Comments / suggestions / feature ideas are welcome on this list, and please
+use it to communicate with us (in addition to GitHub issues).
+
+For non-public matters that you'd like to discuss directly with the Google Research Football team,
+please use google-research-football@google.com.
 
 ## Installation
 Currently we're supporting only Linux and Python3.
@@ -18,7 +23,7 @@ You can either install the code from github (newest version) or from pypi (stabl
   1. Install required apt packages with
   `sudo apt-get install git cmake build-essential libgl1-mesa-dev libsdl2-dev
   libsdl2-image-dev libsdl2-ttf-dev libsdl2-gfx-dev libboost-all-dev
-  libdirectfb-dev libst-dev mesa-utils xvfb x11vnc glee-dev libsdl-sge-dev
+  libdirectfb-dev libst-dev mesa-utils xvfb x11vnc libsdl-sge-dev
   python3-pip`
 
   1. Install gfootball python package from pypi:

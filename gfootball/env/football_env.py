@@ -41,6 +41,8 @@ class FootballEnv(gym.Env):
     # team and the index on the team to generate observations appropriately.
     self._agent = None
     self._agent_index = -1
+    self._agent_left_position = -1
+    self._agent_right_position = -1
     self._players = self._construct_players(config['players'], player_config)
     self._env = football_env_wrapper.FootballEnvWrapper(self._config)
     self._num_actions = len(football_action_set.get_action_set(self._config))
