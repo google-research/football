@@ -45,7 +45,7 @@ class RllibGFootball(MultiAgentEnv):
         logdir='/tmp/rllib_test',
         enable_goal_videos=False, enable_full_episode_videos=False, render=True,
         dump_frequency=0,
-        number_of_players_agent_controls=num_agents,
+        number_of_left_players_agent_controls=num_agents,
         channel_dimensions=(42, 42))
     self.action_space = gym.spaces.Discrete(self.env.action_space.nvec[1])
     self.observation_space = gym.spaces.Box(
