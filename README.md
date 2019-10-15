@@ -266,6 +266,8 @@ A simple example of training multi-agent can be found in examples/run_multiagent
 
 After entering the image, you can run sample training with `python3 -m gfootball.examples.run_ppo2`.
 Unfortunately, rendering is not supported inside the docker.
+Note that tensorflow/tensorflow:1.12.0-gpu-py3 is based on Ubuntu 16.04 with
+python 3.5. If you want python 3.6, you should instead use tensorflow/tensorflow:1.14.0-gpu-py3.
 
 ### Building a docker image under MacOS
 
