@@ -9,7 +9,8 @@ RUN apt-get update && apt-get install -yq git cmake build-essential \
   libdirectfb-dev libst-dev mesa-utils xvfb x11vnc \
   libsdl-sge-dev python3-pip
 
-RUN pip3 install "tensorflow<2.0" dm-sonnet
+RUN python3 -m pip install --upgrade pip
+RUN pip3 install tensorflow==1.15rc2 dm-sonnet
 
 COPY . /gfootball
 RUN cd /gfootball && pip3 install .
