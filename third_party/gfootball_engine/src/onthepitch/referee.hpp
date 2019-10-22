@@ -34,23 +34,33 @@ struct RefereeBuffer {
   bool active = false;
   e_GameMode desiredSetPiece;
   signed int teamID = 0;
-  signed int setpiece_teamID = 0;
+  Team* setpiece_team = 0;
   unsigned long stopTime = 0;
   unsigned long prepareTime = 0;
   unsigned long startTime = 0;
   Vector3 restartPos;
   Player *taker;
   bool endPhase = false;
+  void ProcessState(EnvState* state);
 };
 
 struct Foul {
-  Player *foulPlayer;
-  Player *foulVictim;
+  Player *foulPlayer = 0;
+  Player *foulVictim = 0;
   int foulType = 0; // 0: nothing, 1: foul, 2: yellow, 3: red
   bool advantage = false;
   unsigned long foulTime = 0;
   Vector3 foulPosition;
   bool hasBeenProcessed = false;
+  void ProcessState(EnvState* state) {
+    state->process(foulPlayer);
+    state->process(foulVictim);
+    state->process(foulType);
+    state->process(advantage);
+    state->process(foulTime);
+    state->process(foulPosition);
+    state->process(hasBeenProcessed);
+  }
 };
 
 class Referee {
@@ -73,18 +83,17 @@ class Referee {
 
     Player *GetCurrentFoulPlayer() { return foul.foulPlayer; }
     int GetCurrentFoulType() { return foul.foulType; }
+    void ProcessState(EnvState* state);
 
   protected:
     Match *match;
-
-    boost::shared_ptr<Scene3D> scene3D;
 
     RefereeBuffer buffer;
 
     int afterSetPieceRelaxTime_ms = 0; // throw-ins cause immediate new throw-ins, because ball is still outside the lines at the moment of throwing ;)
 
     // Players on offside position at the time of the last ball touch.
-    std::set<Player*> offsidePlayers;
+    std::vector<Player*> offsidePlayers;
 
     Foul foul;
 };

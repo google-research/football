@@ -19,8 +19,6 @@
 #include "graphics_system.hpp"
 #include "graphics_object.hpp"
 
-#include "../../managers/systemmanager.hpp"
-
 #include "objects/graphics_camera.hpp"
 #include "objects/graphics_overlay2d.hpp"
 #include "objects/graphics_geometry.hpp"

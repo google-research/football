@@ -70,21 +70,19 @@ namespace blunted {
     return systemType;
   }
 
-  ISystemScene *GraphicsSystem::CreateSystemScene(boost::shared_ptr<IScene> scene) {
-    if (scene->GetSceneType() == e_SceneType_Scene2D) {
-      GraphicsScene *graphicsScene = new GraphicsScene(this);
-      scene->Attach(graphicsScene->GetInterpreter(e_SceneType_Scene2D));
-      return graphicsScene;
-    }
-    if (scene->GetSceneType() == e_SceneType_Scene3D) {
-      GraphicsScene *graphicsScene = new GraphicsScene(this);
-      scene->Attach(graphicsScene->GetInterpreter(e_SceneType_Scene3D));
-      return graphicsScene;
-    }
-    return NULL;
+  GraphicsScene *GraphicsSystem::Create2DScene(boost::shared_ptr<IScene> scene) {
+    GraphicsScene *graphicsScene = new GraphicsScene(this);
+    scene->Attach(graphicsScene->GetInterpreter(e_SceneType_Scene2D));
+    return graphicsScene;
   }
 
-  ISystemTask *GraphicsSystem::GetTask() {
+  GraphicsScene *GraphicsSystem::Create3DScene(boost::shared_ptr<IScene> scene) {
+    GraphicsScene *graphicsScene = new GraphicsScene(this);
+    scene->Attach(graphicsScene->GetInterpreter(e_SceneType_Scene3D));
+    return graphicsScene;
+  }
+
+  GraphicsTask *GraphicsSystem::GetTask() {
     return task;
   }
 

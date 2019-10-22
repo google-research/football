@@ -26,9 +26,6 @@
 #include "hid/ihidevice.hpp"
 
 #include "systems/graphics/graphics_system.hpp"
-#include "synchronizationTask.hpp"
-#include "managers/systemmanager.hpp"
-#include "managers/scenemanager.hpp"
 #include "scene/objectfactory.hpp"
 #include "loaders/aseloader.hpp"
 #include "loaders/imageloader.hpp"
@@ -81,14 +78,18 @@ struct ScenarioConfig {
   bool real_time = false;
   // Seed to use for random generators.
   unsigned int game_engine_random_seed = 42;
-  // Should players in both teams be identical.
-  bool symmetrical_teams = true;
+  // Reverse order of teams' processing, used for symmetry testing.
+  bool reverse_team_processing = false;
   // Is rendering enabled.
   bool render = true;
-  // Computer AI difficulty level, from 0.0 to 1.0.
-  float game_difficulty = 0.8;
+  // Left team AI difficulty level, from 0.0 to 1.0.
+  float left_team_difficulty = 1.0;
+  // Right team AI difficulty level, from 0.0 to 1.0.
+  float right_team_difficulty = 0.8;
   // Should the kickoff start with the team loosing a goal to own the ball.
   bool kickoff_for_goal_loosing_team = false;
+  // Use symmetric mode, which makes sure game if fully symmetric.
+  bool symmetric_mode = false;
 
   bool LeftTeamOwnsBall() {
     float leftDistance = 1000000;
@@ -105,17 +106,14 @@ struct ScenarioConfig {
   }
 };
 
+
 struct GameContext {
   GameContext() : rng(BaseGenerator(), Distribution()), rng_non_deterministic(BaseGenerator(), Distribution()) {}
-  GraphicsSystem *graphicsSystem = nullptr;
+  std::unique_ptr<GraphicsSystem> graphicsSystem;
   boost::shared_ptr<GameTask> gameTask;
   boost::shared_ptr<MenuTask> menuTask;
-  boost::shared_ptr<TaskSequence> gameSequence;
-  boost::shared_ptr<TaskSequence> graphicsSequence;
   boost::shared_ptr<Scene2D> scene2D;
   boost::shared_ptr<Scene3D> scene3D;
-  boost::shared_ptr<SynchronizationTask> synchronizationTask;
-
   Properties *config = nullptr;
   ScenarioConfig scenario_config;
   GameConfig game_config;
@@ -124,17 +122,13 @@ struct GameContext {
   TTF_Font *defaultOutlineFont = nullptr;
 
   std::vector<IHIDevice*> controllers;
-  SystemManager system_manager;
   ObjectFactory object_factory;
-  EnvironmentManager environment_manager;
   ResourceManager<GeometryData> geometry_manager;
   ResourceManager<Surface> surface_manager;
   ResourceManager<Texture> texture_manager;
   ResourceManager<VertexBuffer> vertices_manager;
   ASELoader aseLoader;
   ImageLoader imageLoader;
-  Scheduler scheduler;
-  SceneManager scene_manager;
 
   typedef boost::mt19937 BaseGenerator;
   typedef boost::uniform_real<float> Distribution;
@@ -153,6 +147,7 @@ struct GameContext {
   boost::shared_ptr<AnimCollection> anims;
   std::map<Animation*, std::vector<Vector3>> animPositionCache;
   std::map<Vector3, Vector3> colorCoords;
+  int step = 0;
 };
 
 class Match;
@@ -164,10 +159,8 @@ boost::shared_ptr<Scene3D> GetScene3D();
 GraphicsSystem *GetGraphicsSystem();
 boost::shared_ptr<GameTask> GetGameTask();
 boost::shared_ptr<MenuTask> GetMenuTask();
-boost::shared_ptr<SynchronizationTask> GetSynchronizationTask();
 
 Properties *GetConfiguration();
-SystemManager* GetSystemManager();
 ScenarioConfig& GetScenarioConfig();
 GameConfig& GetGameConfig();
 
@@ -177,5 +170,4 @@ void run_game(Properties* input_config);
 void randomize(unsigned int seed);
 void quit_game();
 int main(int argc, char** argv);
-void set_rendering(bool);
 #endif

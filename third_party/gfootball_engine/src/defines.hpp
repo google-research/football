@@ -43,6 +43,7 @@
 #include <boost/signals2/slot.hpp>
 #include <boost/bind.hpp>
 #include "backtrace.h"
+#include "base/log.hpp"
 
 #define CHECK(a) assert(a);
 #define CHECK_EQ(a, b) assert((a) == (b));
@@ -55,6 +56,90 @@ constexpr float EPSILON = 0.000001;
 #define MAX_PLAYERS 11
 
 typedef std::string screenshoot;
+
+namespace blunted {
+  class Animation;
+  using namespace boost;
+}
+
+class Player;
+class Team;
+class HumanController;
+
+
+#include "base/math/vector3.hpp"
+
+class EnvState {
+ public:
+  EnvState(const std::string& state, const std::string reference = "");
+  void process(unsigned long &value);
+  void process(unsigned int &value);
+  void process(bool &value);
+  void process(blunted::Vector3 &value);
+  void process(blunted::radian &value);
+  void process(blunted::Quaternion &value);
+  void process(int &value);
+  void process(std::string &value);
+  void process(float &value);
+  void process(blunted::Animation* &value);
+  template<typename T> void process(T& collection) {
+    int size = collection.size();
+    process(&size, sizeof(int));
+    collection.resize(size);
+    for (auto& el : collection) {
+      process(&el, sizeof(el));
+    }
+  }
+  void process(Player*& value);
+  void process(HumanController*& value);
+  void process(Team*& value);
+  void setValidate(bool validate) {
+    this->validate = validate;
+  }
+  bool Load() { return load; }
+  void process(void* ptr, int size);
+  template<typename T> void process(T* ptr, int size) {
+    if (load) {
+      if (pos + size > state.size()) {
+        Log(blunted::e_FatalError, "EnvState", "state", "state is invalid");
+      }
+      memcpy(ptr, &state[pos], size);
+      pos += size;
+    } else {
+      state.resize(pos + size);
+      memcpy(&state[pos], ptr, size);
+      if (validate && !reference.empty() && (*(T*) &state[pos]) != (*(T*) &reference[pos])) {
+        T ref_value;
+        memcpy(&ref_value, &reference[pos], size);
+        std::cout << "Position:  " << pos << std::endl;
+        std::cout << "Value:     " << *ptr << std::endl;
+        std::cout << "Reference: " << ref_value << std::endl;
+        Log(blunted::e_FatalError, "EnvState", "state", "Reference mismatch");
+      }
+      pos += size;
+      if (pos > 10000000) {
+        Log(blunted::e_FatalError, "EnvState", "state", "state is too big");
+      }
+    }
+  }
+  void SetPlayers(const std::vector<Player*>& players);
+  void SetHumanControllers(const std::vector<HumanController*>& controllers);
+  void SetAnimations(const std::vector<blunted::Animation*>& animations);
+  void SetTeams(Team* team0, Team* team1);
+  const std::string& GetState();
+ protected:
+  bool load = false;
+  bool validate = true;
+  std::vector<Player*> players;
+  std::vector<blunted::Animation*> animations;
+  std::vector<Team*> teams;
+  std::vector<HumanController*> controllers;
+  std::string state;
+  std::string reference;
+  int pos = 0;
+ private:
+  void process(void** collection, int size, void*& element);
+};
 
 // 3-d position of object (available from python).
 struct Position {
@@ -171,14 +256,7 @@ struct SharedInfo {
   bool is_in_play = false;
   int ball_owned_team = 0;
   int ball_owned_player = 0;
-  bool done = false;
+  int step = 0;
 };
-
-namespace blunted {
-
-  using namespace boost;
-  typedef float real;
-
-}
 
 #endif

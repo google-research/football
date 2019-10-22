@@ -36,9 +36,8 @@ inline e_Velocity FloatToEnumVelocity(float velocity);
 
 radian FixAngle(radian angle) {
   // convert engine angle into football angle (different base orientation: 'down' on y instead of 'right' on x)
-  radian newAngle = angle;
-  newAngle += 0.5f * pi;
-  return ModulateIntoRange(-pi, pi, newAngle);
+  angle += 0.5f * pi;
+  return ModulateIntoRange(-pi, pi, angle);
 }
 
 float RangeVelocity(float velocity) {
@@ -155,7 +154,7 @@ class AnimCollection {
 
   public:
     // scene3D for debugging pilon
-    AnimCollection(boost::shared_ptr<Scene3D> scene3D);
+    AnimCollection();
     virtual ~AnimCollection();
 
     void Clear();
@@ -180,8 +179,6 @@ class AnimCollection {
     void _PrepareAnim(Animation *animation, boost::intrusive_ptr<Node> playerNode, const std::list < boost::intrusive_ptr<Object> > &bodyParts, const NodeMap &nodeMap, bool convertAngledDribbleToWalk = false);
 
     bool _CheckFunctionType(e_DefString functionType, e_FunctionType queryFunctionType) const;
-
-    boost::shared_ptr<Scene3D> scene3D;
 
     std::vector<Animation*> animations;
     std::vector<Quadrant> quadrants;

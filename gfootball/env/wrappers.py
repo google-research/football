@@ -47,7 +47,10 @@ class PeriodicDumpWriter(gym.Wrapper):
     if (self._dump_frequency > 0 and
         (self._current_episode_number % self._dump_frequency == 0)):
       self.env._config.update(self._original_dump_config)
-      self.env._config.update({'render': True})
+      # Only enable rendering if it is actually needed.
+      self.env._config.update({'render':
+                                   (self._original_dump_config['write_video'] or
+                                    self._original_render)})
     else:
       self.env._config.update({'render': self._original_render,
                                'write_video': False,

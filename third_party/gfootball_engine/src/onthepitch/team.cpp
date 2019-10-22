@@ -24,8 +24,10 @@
 #include "AIsupport/AIfunctions.hpp"
 #include "match.hpp"
 
-Team::Team(int id, Match *match, TeamData *teamData)
-    : id(id), match(match), teamData(teamData) {
+Team::Team(int id, Match *match, TeamData *teamData, float aiDifficulty,
+           int side)
+    : id(id), match(match), teamData(teamData), aiDifficulty(aiDifficulty),
+      side(side) {
   assert(id == 0 || id == 1);
   // assert(teamData->GetPlayerNum() >= playerNum); // does team have enough
   // players?
@@ -42,15 +44,16 @@ Team::Team(int id, Match *match, TeamData *teamData)
 
   teamPossessionAmount = 1.0;
   fadingTeamPossessionAmount = 1.0;
-
-  for (unsigned int i = 0; i < e_TouchType_SIZE; i++) {
-    lastTouchPlayers[i] = 0;
-  }
-  lastTouchPlayer = 0;
-  lastTouchType = e_TouchType_None;
 }
 
 Team::~Team() {}
+
+void Team::Mirror() {
+  side *= -1;
+  for (auto& p : players) {
+    p->Mirror();
+  }
+}
 
 void Team::Exit() {
   Hide2D();
@@ -71,13 +74,11 @@ void Team::Exit() {
 }
 
 void Team::InitPlayers(boost::intrusive_ptr<Node> fullbodyNode,
-                       boost::intrusive_ptr<Node> fullbody2Node,
                        std::map<Vector3, Vector3> &colorCoords) {
   // first, load 1 instance of a player
 
   ObjectLoader loader;
-  playerNode =
-      loader.LoadObject(GetScene3D(), "media/objects/players/player.object");
+  playerNode = loader.LoadObject("media/objects/players/player.object");
   playerNode->SetName("player");
   playerNode->SetLocalMode(e_LocalMode_Absolute);
 
@@ -91,20 +92,17 @@ void Team::InitPlayers(boost::intrusive_ptr<Node> fullbodyNode,
       // activate playerCount players (the starting eleven, usually)
       std::string kitFilename;
       // printf("%i player id\n", player->GetID());
-      auto formation = GetFormationEntry(player->GetID());
+      auto formation = GetFormationEntry(player);
       if (formation.role != e_PlayerRole_GK) {
         kitFilename = GetTeamData()->GetKitUrl() + "_kit_0" +
                       int_to_str(GetMenuTask()->GetTeamKitNum(GetID())) +
                       ".png";
-        if (!boost::filesystem::exists(kitFilename))
-          kitFilename = (GetID() == 0) ? "media/textures/almost_white.png"
-                                       : "media/textures/almost_black.png";
       } else {
         kitFilename = "media/objects/players/textures/goalie_kit.png";
       }
       kit = GetContext().surface_manager.Fetch(kitFilename);
       player->Activate(
-          playerNode, playerData->GetModelId() ? fullbody2Node : fullbodyNode,
+          playerNode, fullbodyNode,
           colorCoords, kit, match->GetAnimCollection(), formation.lazy);
     }
   }
@@ -113,32 +111,12 @@ void Team::InitPlayers(boost::intrusive_ptr<Node> fullbodyNode,
 }
 
 signed int Team::GetSide() {
-  signed int side = 0;
-  if (id == 0) side = -1;
-  if (id == 1) side = 1;
-
-  // -1 == left, 1 == right
-  e_MatchPhase phase = match->GetMatchPhase();
-  if (phase == e_MatchPhase_2ndHalf || phase == e_MatchPhase_2ndExtraTime) {
-    side *= -1;
-  }
   return side;
 }
 
-Player *Team::GetPlayer(int player_id) {
+FormationEntry Team::GetFormationEntry(void* player) {
   for (int i = 0; i < (signed int)players.size(); i++) {
-    if (players[i]->GetID() == player_id) {
-      return players[i];
-    }
-  }
-
-  // id not found
-  return 0;
-}
-
-FormationEntry Team::GetFormationEntry(int playerID) {
-  for (int i = 0; i < (signed int)players.size(); i++) {
-    if (players[i]->GetID() == playerID) {
+    if (players[i] == player) {
       return teamData->GetFormationEntry(i);
     }
   }
@@ -148,9 +126,9 @@ FormationEntry Team::GetFormationEntry(int playerID) {
   return fail;
 }
 
-void Team::SetFormationEntry(int playerID, FormationEntry entry) {
+void Team::SetFormationEntry(Player* player, FormationEntry entry) {
   for (int i = 0; i < (signed int)players.size(); i++) {
-    if (players[i]->GetID() == playerID) {
+    if (players[i] == player) {
       teamData->SetFormationEntry(i, entry);
     }
   }
@@ -178,7 +156,7 @@ void Team::AddHumanGamer(IHIDevice *hid, e_PlayerColor color) {
   Player *player =
       AI_GetClosestPlayer(this, match->GetBall()->Predict(0).Get2D(), true);
   if (player) {
-    humanGamer->SetSelectedPlayerID(player->GetID());
+    humanGamer->SetSelectedPlayer(player);
   }
   UpdateDesignatedTeamPossessionPlayer();
   switchPriority.push_back(humanGamers.size() - 1);
@@ -197,17 +175,17 @@ void Team::DeleteHumanGamers() {
   switchPriority.clear();
 }
 
-e_PlayerColor Team::GetPlayerColor(int playerID) {
+e_PlayerColor Team::GetPlayerColor(PlayerBase* player) {
   for (unsigned int h = 0; h < humanGamers.size(); h++) {
-    if (humanGamers.at(h)->GetSelectedPlayerID() == playerID)
+    if (humanGamers.at(h)->GetSelectedPlayer() == player)
       return humanGamers.at(h)->GetPlayerColor();
   }
   return e_PlayerColor_Default;
 }
 
-bool Team::IsHumanControlled(int playerID) {
+bool Team::IsHumanControlled(PlayerBase* player) {
   for (unsigned int h = 0; h < humanGamers.size(); h++) {
-    if (humanGamers.at(h)->GetSelectedPlayerID() == playerID) return true;
+    if (humanGamers.at(h)->GetSelectedPlayer() == player) return true;
   }
   return false;
 }
@@ -227,26 +205,22 @@ int Team::HumanControlledToBallDistance() {
 bool Team::HasPossession() const { return hasPossession; }
 
 bool Team::HasUniquePossession() const {
-  return HasPossession() && !match->GetTeam(abs(id - 1))->HasPossession();
+  return HasPossession() && !match->GetTeam(1 - id)->HasPossession();
 }
 
 int Team::GetTimeNeededToGetToBall_ms() const {
   return timeNeededToGetToBall_ms;
 }
 
-signed int Team::GetBestPossessionPlayerID() {
-  return GetBestPossessionPlayer()->GetID();
-}
-
 Player *Team::GetBestPossessionPlayer() {
   int bestTime_ms = 10000000;
   Player *bestPlayer = 0;
-  for (unsigned int i = 0; i < players.size(); i++) {
-    if (players[i]->IsActive()) {
-      int time_ms = players[i]->GetTimeNeededToGetToBall_ms();
+  for (auto p : players) {
+    if (p->IsActive()) {
+      int time_ms = p->GetTimeNeededToGetToBall_ms();
       if (time_ms < bestTime_ms) {
         bestTime_ms = time_ms;
-        bestPlayer = players[i];
+        bestPlayer = p;
       }
     }
   }
@@ -267,11 +241,9 @@ void Team::SetFadingTeamPossessionAmount(float value) {
 }
 
 void Team::SetLastTouchPlayer(Player *player, e_TouchType touchType) {
-  lastTouchPlayers[touchType] = player;
   lastTouchPlayer = player;
-  lastTouchType = touchType;
   player->SetLastTouchTime_ms(match->GetActualTime_ms());
-  player->SetLastTouchType(lastTouchType);
+  player->SetLastTouchType(touchType);
   match->SetLastTouchTeamID(GetID(), touchType);
 }
 
@@ -281,12 +253,7 @@ void Team::ResetSituation(const Vector3 &focusPos) {
 
   teamPossessionAmount = 1.0f;
   fadingTeamPossessionAmount = 1.0f;
-
-  for (unsigned int i = 0; i < e_TouchType_SIZE; i++) {
-    lastTouchPlayers[i] = 0;
-  }
   lastTouchPlayer = 0;
-  lastTouchType = e_TouchType_None;
 
   designatedTeamPossessionPlayer = players.at(0);
 
@@ -304,12 +271,11 @@ void Team::HumanGamersSelectAnyone() {
 
   if (match->IsInPlay()) {
     for (unsigned int i = 0; i < humanGamers.size(); i++) {
-      if (humanGamers[i]->GetSelectedPlayerID() == -1) {
+      if (!humanGamers[i]->GetSelectedPlayer()) {
         Player *player = AI_GetClosestPlayer(
             this, match->GetBall()->Predict(0).Get2D(), true);
         if (player) {
-          int playerID = player->GetID();
-          humanGamers[i]->SetSelectedPlayerID(playerID);
+          humanGamers[i]->SetSelectedPlayer(player);
         }
       }
     }
@@ -317,10 +283,8 @@ void Team::HumanGamersSelectAnyone() {
 }
 
 void Team::SelectPlayer(Player *player) {
-  if (!IsHumanControlled(player->GetID()) &&
-      humanGamers.size() != 0) {  // already selected
-    humanGamers.at(*switchPriority.begin())
-        ->SetSelectedPlayerID(player->GetID());
+  if (!IsHumanControlled(player) && humanGamers.size() != 0) {  // already selected
+    humanGamers.at(*switchPriority.begin())->SetSelectedPlayer(player);
     switchPriority.push_back(*switchPriority.begin());
     switchPriority.pop_front();
   }
@@ -329,14 +293,14 @@ void Team::SelectPlayer(Player *player) {
 
 void Team::DeselectPlayer(Player *player) {
   for (unsigned int i = 0; i < humanGamers.size(); i++) {
-    int selectedPlayerID = humanGamers[i]->GetSelectedPlayerID();
-    if (selectedPlayerID == player->GetID()) {
+    Player* selectedPlayer = humanGamers[i]->GetSelectedPlayer();
+    if (selectedPlayer == player) {
       Player *somePlayer =
           AI_GetClosestPlayer(this, player->GetPosition(), true, player);
       if (somePlayer) {
-        humanGamers[i]->SetSelectedPlayerID(somePlayer->GetID());
+        humanGamers[i]->SetSelectedPlayer(somePlayer);
       } else {
-        humanGamers[i]->SetSelectedPlayerID(-1);
+        humanGamers[i]->SetSelectedPlayer(0);
       }
     }
   }
@@ -379,11 +343,12 @@ void Team::Process() {
     if (match->IsInPlay() && !match->IsInSetPiece()) {
       teamController->Process();
 
-      if ((match->GetActualTime_ms() + 200 * id) % 400 == 0) {
+      int team_offset = id == match->SecondTeam() ? 200 : 0;
+      if ((match->GetActualTime_ms() + team_offset) % 400 == 0) {
         teamController->CalculateDynamicRoles();
       }
 
-      if ((match->GetActualTime_ms() + 200 * id + 100) % 400 == 0) {
+      if ((match->GetActualTime_ms() + team_offset + 100) % 400 == 0) {
         teamController->CalculateManMarking();
       }
     }
@@ -397,45 +362,37 @@ void Team::Process() {
     if (match->IsInPlay()) {
       for (unsigned int i = 0; i < humanGamers.size(); i++) {
         // switch button
-        int selectedPlayerID = humanGamers[i]->GetSelectedPlayerID();
-        Player *selectedPlayer = 0;
-        selectedPlayer = GetPlayer(selectedPlayerID);
-        // assert(selectedPlayer);
-
+        Player *selectedPlayer = humanGamers[i]->GetSelectedPlayer();
         if (humanGamers[i]->GetHIDevice()->GetButton(e_ButtonFunction_Switch) &&
             !humanGamers[i]->GetHIDevice()->GetPreviousButtonState(
                 e_ButtonFunction_Switch) &&
             // don't switch if we are both best AND designated possession
             // player. unless opponent team has ball.
-            (!(selectedPlayerID == GetBestPossessionPlayerID() &&
-               selectedPlayerID == designatedTeamPossessionPlayer->GetID()) ||
+            (!(selectedPlayer == GetBestPossessionPlayer() &&
+               selectedPlayer == designatedTeamPossessionPlayer) ||
              GetTeamPossessionAmount() < 1.0f) &&
             !selectedPlayer->HasUniquePossession()) {
-          int targetPlayerID = -1;
           Player *targetPlayer = 0;
 
-          if (!IsHumanControlled(designatedTeamPossessionPlayer->GetID()) &&
+          if (!IsHumanControlled(designatedTeamPossessionPlayer) &&
               match->GetBestPossessionTeam() == this) {
             targetPlayer = designatedTeamPossessionPlayer;
-          } else if (!IsHumanControlled(GetBestPossessionPlayer()->GetID()) &&
+          } else if (!IsHumanControlled(GetBestPossessionPlayer()) &&
                      match->GetBestPossessionTeam() == this) {
             targetPlayer = GetBestPossessionPlayer();
           } else {
             targetPlayer = AI_GetBestSwitchTargetPlayer(
                 match, this, humanGamers[i]->GetHIDevice()->GetDirection());
             if (targetPlayer)
-              if (IsHumanControlled(targetPlayer->GetID())) targetPlayer = 0;
+              if (IsHumanControlled(targetPlayer)) targetPlayer = 0;
           }
           if (targetPlayer == GetGoalie())
             targetPlayer =
                 0;  // can not be goalie in current version, at least not during
                     // play, unless being directly passed to by teammate
 
-          if (targetPlayer) {
-            targetPlayerID = targetPlayer->GetID();
-          }
-          if (targetPlayerID != -1)
-            humanGamers[i]->SetSelectedPlayerID(targetPlayerID);
+          if (targetPlayer)
+            humanGamers[i]->SetSelectedPlayer(targetPlayer);
         }
       }
 
@@ -443,8 +400,8 @@ void Team::Process() {
       // make sure all human gamers don't have a player selected
 
       for (unsigned int i = 0; i < humanGamers.size(); i++) {
-        if (humanGamers[i]->GetSelectedPlayerID() != -1) {
-          humanGamers[i]->SetSelectedPlayerID(-1);
+        if (humanGamers[i]->GetSelectedPlayer()) {
+          humanGamers[i]->SetSelectedPlayer(0);
         }
       }
     }
@@ -464,15 +421,15 @@ void Team::Process() {
       if (bestPlayer->HasPossession()) timeRating *= 0.5f;
       if (designatedTeamPossessionPlayer->HasPossession()) timeRating /= 0.5f;
 
-      if (IsHumanControlled(bestPlayer->GetID())) timeRating *= 0.8f;
-      if (IsHumanControlled(designatedTeamPossessionPlayer->GetID()))
+      if (IsHumanControlled(bestPlayer)) timeRating *= 0.8f;
+      if (IsHumanControlled(designatedTeamPossessionPlayer))
         timeRating /= 0.8f;
 
       // current player can get to the ball before the closest opponent: less
       // need to switch
       // if (GetID() == 0) printf("opptime: %i, designated time: %i\n",
       // oppTime_ms, designatedPlayerTime_ms);
-      if (IsHumanControlled(bestPlayer->GetID()) == false &&
+      if (IsHumanControlled(bestPlayer) == false &&
           designatedPlayerTime_ms < oppTime_ms - 100) {
         timeRating += 0.2f;
         timeRating *= 1.2f;
@@ -482,49 +439,37 @@ void Team::Process() {
         designatedTeamPossessionPlayer = bestPlayer;
       }
     }
-
-    // printf("team id: %i, time: %i, other team id: %i, time: %i\n", GetID(),
-    // GetTimeNeededToGetToBall_ms(), match->GetTeam(abs(GetID() - 1))->GetID(),
-    // match->GetTeam(abs(GetID() - 1))->GetTimeNeededToGetToBall_ms());
-
-    /*
-      if (id == 0) {
-        GetSmallDebugCircle1()->SetPosition(designatedTeamPossessionPlayer->GetPosition());
-      } else {
-        GetSmallDebugCircle2()->SetPosition(designatedTeamPossessionPlayer->GetPosition());
-      }
-    */
   }
 }
 
-void Team::PreparePutBuffers(unsigned long snapshotTime_ms) {
+void Team::PreparePutBuffers() {
   for (unsigned int i = 0; i < players.size(); i++) {
     if (players[i]->IsActive()) {
-      players[i]->PreparePutBuffers(snapshotTime_ms);
+      players[i]->PreparePutBuffers();
     }
   }
 }
 
-void Team::FetchPutBuffers(unsigned long putTime_ms) {
+void Team::FetchPutBuffers() {
   for (unsigned int i = 0; i < players.size(); i++) {
     if (players[i]->IsActive()) {
-      players[i]->FetchPutBuffers(putTime_ms);
+      players[i]->FetchPutBuffers();
     }
   }
 }
 
-void Team::Put() {
+void Team::Put(bool mirror) {
   for (unsigned int i = 0; i < players.size(); i++) {
     if (players[i]->IsActive()) {
-      players[i]->Put();
+      players[i]->Put(mirror);
     }
   }
 }
 
-void Team::Put2D() {
+void Team::Put2D(bool mirror) {
   for (unsigned int i = 0; i < players.size(); i++) {
     if (players[i]->IsActive()) {
-      players[i]->Put2D();
+      players[i]->Put2D(mirror);
     }
   }
 }
@@ -562,8 +507,8 @@ void Team::UpdateSwitch() {
 
   if (match->IsInPlay() && humanGamers.size() > 1) {
     int myTurn = *switchPriority.begin();
-    if (humanGamers.at(myTurn)->GetSelectedPlayerID() ==
-        match->GetDesignatedPossessionPlayer()->GetID()) {
+    if (humanGamers.at(myTurn)->GetSelectedPlayer() ==
+        match->GetDesignatedPossessionPlayer()) {
       switchPriority.pop_front();
       switchPriority.push_back(myTurn);
     }
@@ -572,7 +517,7 @@ void Team::UpdateSwitch() {
   // autoswitch on proximity
 
   if (match->IsInPlay() && humanGamers.size() > 0) {
-    if (!IsHumanControlled(designatedTeamPossessionPlayer->GetID()) &&
+    if (!IsHumanControlled(designatedTeamPossessionPlayer) &&
         3 * designatedTeamPossessionPlayer->GetTimeNeededToGetToBall_ms() <
             HumanControlledToBallDistance() &&
         designatedTeamPossessionPlayer->GetFormationEntry().role !=
@@ -581,12 +526,10 @@ void Team::UpdateSwitch() {
     }
   }
 
-  // if (GetID() == 0) printf("teamposs %f\n", GetTeamPossessionAmount());
-
   // team player in possession is not human selected
 
   if (match->IsInPlay() && humanGamers.size() > 0) {
-    if (!IsHumanControlled(designatedTeamPossessionPlayer->GetID()) &&
+    if (!IsHumanControlled(designatedTeamPossessionPlayer) &&
         (designatedTeamPossessionPlayer->HasUniquePossession() ||
          match->IsInSetPiece())) {
       if (designatedTeamPossessionPlayer != GetGoalie()) {
@@ -605,4 +548,18 @@ Player *Team::GetGoalie() {
   }
 
   return 0;
+}
+
+void Team::ProcessState(EnvState* state) {
+  state->process(hasPossession);
+  state->process(timeNeededToGetToBall_ms);
+  state->process(designatedTeamPossessionPlayer);
+  state->process(teamPossessionAmount);
+  state->process(fadingTeamPossessionAmount);
+  teamController->ProcessState(state);
+  for (auto &g : humanGamers) {
+    g->ProcessState(state);
+  }
+  state->process(switchPriority);
+  state->process(lastTouchPlayer);
 }

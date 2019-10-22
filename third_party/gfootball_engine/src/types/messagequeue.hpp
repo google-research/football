@@ -24,8 +24,6 @@
 
 #include "../types/command.hpp"
 
-#include "../managers/environmentmanager.hpp"
-
 namespace blunted {
 
   template <typename T = boost::intrusive_ptr<Command> >

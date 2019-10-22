@@ -40,9 +40,6 @@ namespace blunted {
       void LoadImage(const std::string &filename);
       virtual void Redraw();
 
-      virtual void SetSize(float new_width_percent, float new_height_percent);
-      virtual void SetZoom(float zoomx, float zoomy);
-
     protected:
       boost::intrusive_ptr<Image2D> image;
       boost::intrusive_ptr<Image2D> imageSource;

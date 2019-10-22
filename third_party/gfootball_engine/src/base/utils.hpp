@@ -112,6 +112,10 @@ namespace blunted {
       void Clear() {
         values.clear();
       }
+      void ProcessState(EnvState *state) {
+        state->process(maxTime_ms);
+        state->process(values);
+      }
 
     protected:
       unsigned int maxTime_ms = 0;

@@ -16,7 +16,7 @@
 """Class responsible for generating scenarios."""
 
 import importlib
-import logging
+from absl import logging
 import os
 import pkgutil
 import random
@@ -58,8 +58,8 @@ class Scenario(object):
     try:
       scenario = importlib.import_module('gfootball.scenarios.{}'.format(config['level']))
     except ImportError as e:
-      logging.warning('Loading scenario "%s" failed' % config['level'])
-      logging.warning(e)
+      logging.error('Loading scenario "%s" failed' % config['level'])
+      logging.error(e)
       exit(1)
     scenario.build_scenario(self)
     if self._config['enable_sides_swap']:
@@ -87,7 +87,13 @@ class Scenario(object):
       self._scenario_cfg.right_agents = self._config.number_of_right_players()
     self._scenario_cfg.offsides = self._config['offsides']
     self._scenario_cfg.render = self._config['render']
-    self._scenario_cfg.game_difficulty = self._config['game_difficulty']
+    self._scenario_cfg.reverse_team_processing = (
+        self._config['reverse_team_processing'])
+    self._scenario_cfg.symmetric_mode = self._config['symmetric_mode']
+    self._scenario_cfg.left_team_difficulty = self._config[
+        'left_team_difficulty']
+    self._scenario_cfg.right_team_difficulty = self._config[
+        'right_team_difficulty']
     if self._config['kickoff_for_goal_loosing_team']:
       self._scenario_cfg.kickoff_for_goal_loosing_team = True
     # This is needed to record 'game_engine_random_seed' in the dump.

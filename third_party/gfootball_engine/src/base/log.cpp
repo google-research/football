@@ -18,6 +18,7 @@
 #include <chrono>
 #include "log.hpp"
 #include "../main.hpp"
+#include "../defines.hpp"
 
 #include <iostream>
 #include <fstream>

@@ -29,7 +29,7 @@ namespace blunted {
   class Scene2D : public Scene {
 
     public:
-      Scene2D(const std::string &name, const Properties &config);
+      Scene2D(const Properties &config);
       virtual ~Scene2D();
 
       virtual void Init();

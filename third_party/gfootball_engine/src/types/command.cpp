@@ -20,13 +20,13 @@
 
 namespace blunted {
 
-  Command::Command(const std::string &name) : name(name) {
+  Command::Command() {
   }
 
   Command::~Command() {
   }
 
   bool Command::Handle(void *caller) {
-    return Execute(caller);
+    return Execute();
   }
 }

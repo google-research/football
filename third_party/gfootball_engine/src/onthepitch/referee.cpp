@@ -24,10 +24,29 @@
 
 #include "../main.hpp"
 
+void RefereeBuffer::ProcessState(EnvState* state) {
+  state->process(active);
+  state->process((void*) &desiredSetPiece, sizeof(desiredSetPiece));
+  if (GetScenarioConfig().reverse_team_processing) {
+    teamID = 1 - teamID;
+  }
+  state->process(teamID);
+  if (GetScenarioConfig().reverse_team_processing) {
+    teamID = 1 - teamID;
+  }
+  state->process(setpiece_team);
+  state->process(stopTime);
+  state->process(prepareTime);
+  state->process(startTime);
+  state->process(restartPos);
+  state->process(taker);
+  state->process(endPhase);
+}
+
 Referee::Referee(Match *match) : match(match) {
   buffer.desiredSetPiece = e_GameMode_KickOff;
-  buffer.teamID = 0;
-  buffer.setpiece_teamID = 0;
+  buffer.teamID = match->FirstTeam();
+  buffer.setpiece_team = match->GetTeam(GetScenarioConfig().reverse_team_processing ? 1 : 0);
   buffer.stopTime = 0;
   buffer.prepareTime = 0;
   buffer.startTime = buffer.prepareTime + 2000;
@@ -43,18 +62,12 @@ Referee::Referee(Match *match) : match(match) {
   foul.hasBeenProcessed = true;
 
   afterSetPieceRelaxTime_ms = 0;
-
-
-  // for usage in destructor
-  scene3D = GetScene3D();
 }
 
 Referee::~Referee() {
 }
 
 void Referee::Process() {
-  //printf("%i", match->GetMatchState());
-
   if (match->IsInPlay() && !match->IsInSetPiece()) {
 
     Vector3 ballPos = match->GetBall()->Predict(0);
@@ -73,7 +86,7 @@ void Referee::Process() {
         // corner, goal kick or kick off?
         signed int lastSide = -1;
         Team *lastTouchTeam = match->GetLastTouchTeam();
-        if (lastTouchTeam == 0) lastTouchTeam = match->GetTeam(0);
+        if (lastTouchTeam == 0) lastTouchTeam = match->GetTeam(GetScenarioConfig().reverse_team_processing ? 1 : 0);
         lastSide = lastTouchTeam->GetSide();
 
         if (match->IsGoalScored()) {
@@ -84,8 +97,8 @@ void Referee::Process() {
           // Number of ms for kickoff.
           buffer.startTime = buffer.prepareTime + 500;
           buffer.restartPos = Vector3(0, 0, 0);
-          buffer.teamID = 0;//abs(match->GetLastGoalTeamID() - 1);
-          buffer.setpiece_teamID = abs(match->GetLastGoalTeamID() - 1);
+          buffer.teamID = match->FirstTeam();
+          buffer.setpiece_team = match->GetLastGoalTeam()->Opponent();
           match->SetMatchPhase(e_MatchPhase_1stHalf);
         } else if ((ballPos.coords[0] > 0 && lastSide > 0) || (ballPos.coords[0] < 0 && lastSide < 0)) {
           buffer.desiredSetPiece = e_GameMode_Corner;
@@ -146,19 +159,6 @@ void Referee::Process() {
         if (buffer.endPhase == true) {
           if (match->GetMatchPhase() == e_MatchPhase_PreMatch) {
             match->SetMatchPhase(e_MatchPhase_1stHalf);
-          } else {
-            // game over conditions
-            if (match->GetMatchPhase() == e_MatchPhase_1stExtraTime) {
-              if (match->GetScore(0) != match->GetScore(1)) {
-                match->GameOver();
-                return;
-              }
-            }
-            if (match->GetMatchPhase() == e_MatchPhase_Penalties) {
-              match->GameOver();
-              return;
-            }
-            match->sig_OnMatchPhaseChange(match);
           }
           buffer.endPhase = false;
         }
@@ -200,8 +200,14 @@ void Referee::PrepareSetPiece(e_GameMode setPiece) {
 
   match->ResetSituation(buffer.restartPos);
 
-  match->GetTeam(0)->GetController()->PrepareSetPiece(setPiece, match->GetTeam(1), buffer.setpiece_teamID, buffer.teamID);
-  match->GetTeam(1)->GetController()->PrepareSetPiece(setPiece, match->GetTeam(0), buffer.setpiece_teamID, buffer.teamID);
+  match->GetTeam(match->FirstTeam())
+      ->GetController()
+      ->PrepareSetPiece(setPiece, match->GetTeam(match->SecondTeam()),
+                        buffer.setpiece_team->GetID(), buffer.teamID);
+  match->GetTeam(match->SecondTeam())
+      ->GetController()
+      ->PrepareSetPiece(setPiece, match->GetTeam(match->FirstTeam()),
+                        buffer.setpiece_team->GetID(), buffer.teamID);
 
   buffer.taker = match->GetTeam(buffer.teamID)->GetController()->GetPieceTaker();
   // Reset offside state.
@@ -226,19 +232,21 @@ void Referee::BallTouched() {
   if (lastTouchTeamID == -1) return; // shouldn't happen really ;)
   if (match->IsInPlay() && !match->IsInSetPiece() && buffer.active == false && match->GetTeam(1 - lastTouchTeamID)->GetActivePlayersCount() > 1) { // disable if only 1 player: that's debug mode with only keeper
     auto ballOwner = match->GetLastTouchPlayer();
-    if (offsidePlayers.count(ballOwner)) {
-      foul.advantage = false;
-      if (!CheckFoul()) {
-        // uooooga uooooga offside!
-        match->StopPlay();
-        buffer.desiredSetPiece = e_GameMode_FreeKick;
-        buffer.stopTime = match->GetActualTime_ms();
-        buffer.prepareTime = match->GetActualTime_ms() + 2000;
-        buffer.startTime = buffer.prepareTime + 2000;
-        buffer.restartPos = ballOwner->GetPosition();
-        buffer.teamID = 1 - lastTouchTeamID;
-        buffer.active = true;
-        match->SpamMessage("offside!");
+    for (auto p : offsidePlayers) {
+      if (p == ballOwner) {
+        foul.advantage = false;
+        if (!CheckFoul()) {
+          // uooooga uooooga offside!
+          match->StopPlay();
+          buffer.desiredSetPiece = e_GameMode_FreeKick;
+          buffer.stopTime = match->GetActualTime_ms();
+          buffer.prepareTime = match->GetActualTime_ms() + 2000;
+          buffer.startTime = buffer.prepareTime + 2000;
+          buffer.restartPos = ballOwner->GetPosition();
+          buffer.teamID = 1 - lastTouchTeamID;
+          buffer.active = true;
+          match->SpamMessage("offside!");
+        }
       }
     }
   }
@@ -251,19 +259,14 @@ void Referee::BallTouched() {
           buffer.desiredSetPiece != e_GameMode_Corner))) {
     // check for offside players at moment of touch
     MentalImage mentalImage(match);
-    mentalImage.TakeSnapshot();
     float offside = AI_GetOffsideLine(match, &mentalImage, 1 - lastTouchTeamID);
     std::vector<Player*> players;
     Team *team = match->GetTeam(lastTouchTeamID);
     team->GetActivePlayers(players);
-    // Offside debug line:
-    // SetRedDebugPilon(Vector3(offside, -20, 0));
-    // SetBlueDebugPilon(Vector3(offside, 0, 0));
-    // SetGreenDebugPilon(Vector3(offside, 20, 0));
     for (auto player : players) {
       if (player != team->GetLastTouchPlayer()) {
         if (player->GetPosition().coords[0] * team->GetSide() < offside * team->GetSide()) {
-          offsidePlayers.insert(player);
+          offsidePlayers.push_back(player);
         }
       }
     }
@@ -326,6 +329,18 @@ void Referee::TripNotice(Player *tripee, Player *tripper, int tackleType) {
     }
 
   }
+}
+
+void Referee::ProcessState(EnvState* state) {
+  buffer.ProcessState(state);
+  state->process(afterSetPieceRelaxTime_ms);
+  int size = offsidePlayers.size();
+  state->process(size);
+  offsidePlayers.resize(size);
+  for (auto& i : offsidePlayers) {
+    state->process(i);
+  }
+  foul.ProcessState(state);
 }
 
 bool Referee::CheckFoul() {

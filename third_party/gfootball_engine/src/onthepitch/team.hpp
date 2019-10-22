@@ -28,13 +28,14 @@ class Match;
 class Team {
 
   public:
-    Team(int id, Match *match, TeamData *teamData);
+    Team(int id, Match *match, TeamData *teamData, float aiDifficulty,
+         int side);
+    void Mirror();
     virtual ~Team();
 
     void Exit();
 
     void InitPlayers(boost::intrusive_ptr<Node> fullbodyNode,
-                     boost::intrusive_ptr<Node> fullbody2Node,
                      std::map<Vector3, Vector3> &colorCoords);
 
     Match *GetMatch() { return match; }
@@ -43,28 +44,36 @@ class Team {
 
     int GetID() const { return id; }
     signed int GetSide();
-    TeamData *GetTeamData() { return teamData; }
+    const TeamData *GetTeamData() { return teamData; }
 
-    Player *GetPlayer(int playerID);
-    FormationEntry GetFormationEntry(int playerID);
-    void SetFormationEntry(int playerID, FormationEntry entry);
+    FormationEntry GetFormationEntry(void* player);
+    void SetFormationEntry(Player* player, FormationEntry entry);
+    float GetAiDifficulty() const { return aiDifficulty; }
     const std::vector<Player *> &GetAllPlayers() { return players; }
-    void GetAllPlayers(std::vector<Player*> &allPlayers) { allPlayers.insert(allPlayers.end(), players.begin(), players.end()); }
+    void GetAllPlayers(std::vector<Player*> &allPlayers) {
+      allPlayers.insert(allPlayers.end(), players.begin(), players.end());
+    }
     void GetActivePlayers(std::vector<Player *> &activePlayers);
     int GetActivePlayersCount() const;
 
     unsigned int GetHumanGamerCount() const { return humanGamers.size(); }
+    void GetHumanControllers(std::vector<HumanController*>& v) const {
+      for (auto& g: humanGamers) {
+        v.push_back(g->GetHumanController());
+      }
+    }
     void AddHumanGamer(IHIDevice *hid, e_PlayerColor color);
     void DeleteHumanGamers();
-    e_PlayerColor GetPlayerColor(int playerID);
-    bool IsHumanControlled(int playerID);
+    e_PlayerColor GetPlayerColor(PlayerBase* player);
+    bool IsHumanControlled(PlayerBase* player);
     int HumanControlledToBallDistance();
 
     bool HasPossession() const;
     bool HasUniquePossession() const;
     int GetTimeNeededToGetToBall_ms() const;
-    signed int GetBestPossessionPlayerID();
-    Player *GetDesignatedTeamPossessionPlayer() { return designatedTeamPossessionPlayer; }
+    Player *GetDesignatedTeamPossessionPlayer() {
+      return designatedTeamPossessionPlayer;
+    }
     void UpdateDesignatedTeamPossessionPlayer();
     Player *GetBestPossessionPlayer();
     float GetTeamPossessionAmount() const;
@@ -83,32 +92,36 @@ class Team {
     void ResetSituation(const Vector3 &focusPos);
 
     void HumanGamersSelectAnyone();
-
+    void SetOpponent(Team* opponent) { this->opponent = opponent; }
+    Team* Opponent() { return opponent; }
     void SelectPlayer(Player *player);
     void DeselectPlayer(Player *player);
 
     void RelaxFatigue(float howMuch);
 
     void Process();
-    void PreparePutBuffers(unsigned long snapshotTime_ms);
-    void FetchPutBuffers(unsigned long putTime_ms);
-    void Put();
-    void Put2D();
+    void PreparePutBuffers();
+    void FetchPutBuffers();
+    void Put(bool mirror);
+    void Put2D(bool mirror);
     void Hide2D();
 
     void UpdatePossessionStats();
     void UpdateSwitch();
+    void ProcessState(EnvState* state);
 
     Player *GetGoalie();
 
   protected:
-    int id = 0;
+    const int id;
     Match *match;
+    Team *opponent = 0;
     TeamData *teamData;
+    const float aiDifficulty;
 
     bool hasPossession = false;
     int timeNeededToGetToBall_ms = 0;
-    Player *designatedTeamPossessionPlayer;
+    Player *designatedTeamPossessionPlayer = 0;
 
     float teamPossessionAmount = 0.0f;
     float fadingTeamPossessionAmount = 0.0f;
@@ -125,13 +138,10 @@ class Team {
     // humanGamers index whose turn it is
     // begin() == due next
     std::list<int> switchPriority;
-
-    Player *lastTouchPlayers[e_TouchType_SIZE];
-    Player *lastTouchPlayer;
-    e_TouchType lastTouchType;
+    Player *lastTouchPlayer = 0;
 
     boost::intrusive_ptr < Resource<Surface> > kit;
-
+    int side = -1;
 };
 
 #endif

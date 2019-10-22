@@ -29,17 +29,12 @@ namespace blunted {
   class Command : public RefCounted {
 
     public:
-      Command(const std::string &name);
-      bool IsReady() {
-        return true;
-      }
-
+      Command();
       virtual ~Command();
       bool Handle(void *caller = NULL);
 
     protected:
-      virtual bool Execute(void *caller = NULL) = 0;
-      std::string name;
+      virtual bool Execute() = 0;
   };
 }
 

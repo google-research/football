@@ -29,26 +29,17 @@ namespace blunted {
   class Scene : public IScene {
 
     public:
-      Scene(std::string name, e_SceneType sceneType);
+      Scene();
       virtual ~Scene();
 
       virtual void Init() = 0; // ATOMIC
       virtual void Exit(); // ATOMIC
 
       virtual void CreateSystemObjects(boost::intrusive_ptr<Object> object);
-
-      virtual const std::string GetName() const;
-      virtual e_SceneType GetSceneType() const;
-
       virtual bool SupportedObjectType(e_ObjectType objectType) const;
 
     protected:
-      std::string name;
-
-      e_SceneType sceneType;
-
       std::vector<e_ObjectType> supportedObjectTypes;
-
   };
 
 }

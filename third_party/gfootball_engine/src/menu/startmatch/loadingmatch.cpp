@@ -31,26 +31,26 @@ LoadingMatchPage::LoadingMatchPage(Gui2WindowManager *windowManager, const Gui2P
   loading->Show();
 
   // logos
-  MatchData *matchData = new MatchData(GetMenuTask()->GetTeamID(0), GetMenuTask()->GetTeamID(1));
+  MatchData *matchData = new MatchData();
   GetMenuTask()->SetMatchData(matchData);
-  TeamData *teamData1 = matchData->GetTeamData(0);
-  TeamData *teamData2 = matchData->GetTeamData(1);
+  const TeamData& teamData1 = matchData->GetTeamData(0);
+  const TeamData& teamData2 = matchData->GetTeamData(1);
 
-  Gui2Caption *caption1 = new Gui2Caption(windowManager, "main_loading_team1caption", 20, 35, 40, 5, teamData1->GetName());
+  Gui2Caption *caption1 = new Gui2Caption(windowManager, "main_loading_team1caption", 20, 35, 40, 5, teamData1.GetName());
   float w = caption1->GetTextWidthPercent();
   caption1->SetPosition(30 - w * 0.5, 35);
   this->AddView(caption1);
   Gui2Image *logo1 = new Gui2Image(windowManager, "main_loading_team1logo", 25, 48, 10, 12.5);
   this->AddView(logo1);
-  logo1->LoadImage(teamData1->GetLogoUrl());
+  logo1->LoadImage(teamData1.GetLogoUrl());
 
-  Gui2Caption *caption2 = new Gui2Caption(windowManager, "main_loading_team2caption", 60, 35, 40, 5, teamData2->GetName());
+  Gui2Caption *caption2 = new Gui2Caption(windowManager, "main_loading_team2caption", 60, 35, 40, 5, teamData2.GetName());
   w = caption2->GetTextWidthPercent();
   caption2->SetPosition(70 - w * 0.5, 35);
   this->AddView(caption2);
   Gui2Image *logo2 = new Gui2Image(windowManager, "main_loading_team2logo", 65, 48, 10, 12.5);
   this->AddView(logo2);
-  logo2->LoadImage(teamData2->GetLogoUrl());
+  logo2->LoadImage(teamData2.GetLogoUrl());
 
   caption1->Show();
   caption2->Show();
@@ -60,9 +60,6 @@ LoadingMatchPage::LoadingMatchPage(Gui2WindowManager *windowManager, const Gui2P
   this->SetFocus();
 
   this->Show();
-
-  GetMenuTask()->SetActiveJoystickID(0);
-  GetMenuTask()->EnableKeyboard();
   windowManager->GetPagePath()->Clear();
 }
 
@@ -79,6 +76,5 @@ void LoadingMatchPage::Process() {
 }
 
 void LoadingMatchPage::Close() {
-  Properties properties;
-  windowManager->GetPageFactory()->CreatePage((int)e_PageID_Game, properties, 0);
+  windowManager->GetPageFactory()->CreatePage((int)e_PageID_Game, 0);
 }

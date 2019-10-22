@@ -33,7 +33,7 @@ class PlayerController : public IController {
     Team *GetTeam() { return team; }
     Team *GetOppTeam() { return oppTeam; }
 
-    const MentalImage *GetMentalImage() { return _mentalImage; }
+    const MentalImage *GetMentalImage();
 
     virtual int GetReactionTime_ms();
 
@@ -41,10 +41,11 @@ class PlayerController : public IController {
 
     float GetFadingTeamPossessionAmount() { return fadingTeamPossessionAmount; }
 
-    void AddDefensiveComponent(Vector3 &desiredPosition, float bias, int forcedOppID = -1);
+    void AddDefensiveComponent(Vector3 &desiredPosition, float bias, Player* forcedOpp = 0);
     Vector3 GetDefendPosition(Player *opp, float distance = 0.0f);
 
     virtual void Reset();
+    void ProcessPlayerController(EnvState *state);
 
   protected:
     float OppBetweenBallAndMeDot();
@@ -64,7 +65,7 @@ class PlayerController : public IController {
 
     Player *_oppPlayer = nullptr;
     float _timeNeeded_ms = 0;
-    const MentalImage *_mentalImage = nullptr;
+    int _mentalImageTime;
 
     void _CalculateSituation();
 

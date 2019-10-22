@@ -45,9 +45,6 @@ namespace blunted {
     elements[3] = values[3];
   }
 
-  Quaternion::~Quaternion() {
-  }
-
   void Quaternion::Set(real x, real y, real z, real w) {
     elements[0] = x;
     elements[1] = y;
@@ -93,7 +90,7 @@ namespace blunted {
 
   bool Quaternion::operator != (const Quaternion &fac) const {
     if (fac.elements[0] != elements[0] ||
-        fac.elements[0] != elements[1] ||
+        fac.elements[1] != elements[1] ||
         fac.elements[2] != elements[2] ||
         fac.elements[3] != elements[3]) {
       return true;
@@ -200,7 +197,7 @@ namespace blunted {
     rotation.elements[8]  = 1 - 2 * ( xx + yy );
   }
 
-  void Quaternion::GetAngles(radian &X, radian &Y, radian &Z) const {
+  void Quaternion::GetAngles(real &X, real &Y, real &Z) const {
     int x = 0;
     int y = 2;
     int z = 1;
@@ -231,7 +228,7 @@ namespace blunted {
         1 - 2 * sqx - 2 * sqz);
   }
 
-  void Quaternion::SetAngles(radian X, radian Y, radian Z) {
+  void Quaternion::SetAngles(real X, real Y, real Z) {
     // http://www.euclideanspace.com/maths/geometry/rotations/conversions/eulerToQuaternion/index.htm
     // assuming the angles are in radians.
 
@@ -418,6 +415,12 @@ namespace blunted {
       *this = -*this;
     }
     return dot;
+  }
+
+  std::ostream& operator<<(std::ostream& os, const Quaternion& v)
+  {
+    os << v.elements[0] << " " << v.elements[1] << " " << v.elements[2] << " " << v.elements[3];
+    return os;
   }
 
 }

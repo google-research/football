@@ -188,7 +188,10 @@ enum e_DefString {
   struct BiasedOffset {
     Quaternion orientation;
     float bias = 0.0f; // 0 .. 1
-    bool isRelative = false;
+    void ProcessState(EnvState* state) {
+      state->process(orientation);
+      state->process(bias);
+    }
   };
 
   struct BiasedOffsets {
@@ -201,12 +204,15 @@ enum e_DefString {
       }
     }
     void clear() {
-      for (int x = 0; x < body_part_max; x++) {
-        elements[x].bias = 0.0f;
-      }
     }
     inline BiasedOffset& operator[](BodyPart part) {
       return elements[part];
+    }
+    void ProcessState(EnvState* state) {
+      for (auto& el : elements) {
+        el.ProcessState(state);
+      }
+      state->process((void*) elements, sizeof(elements));
     }
   private:
     BiasedOffset elements[body_part_max];
@@ -215,10 +221,16 @@ enum e_DefString {
   static BiasedOffsets emptyOffsets;
 
   struct MovementHistoryEntry {
-    BodyPart nodeName;
     Vector3 position;
     Quaternion orientation;
     int timeDiff_ms = 0;
+    BodyPart nodeName;
+    void ProcessState(EnvState* state) {
+      state->process(position);
+      state->process(orientation);
+      state->process(timeDiff_ms);
+      state->process(&nodeName, sizeof(nodeName));
+    }
   };
 
   typedef std::vector<MovementHistoryEntry> MovementHistory;

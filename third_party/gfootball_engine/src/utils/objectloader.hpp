@@ -30,10 +30,10 @@ namespace blunted {
       ObjectLoader();
       ~ObjectLoader();
 
-      boost::intrusive_ptr<Node> LoadObject(boost::shared_ptr<Scene3D> scene3D, const std::string &filename, const Vector3 &offset = Vector3(0)) const;
+      boost::intrusive_ptr<Node> LoadObject(const std::string &filename, const Vector3 &offset = Vector3(0)) const;
 
     protected:
-      boost::intrusive_ptr<Node> LoadObjectImpl(boost::shared_ptr<Scene3D> scene3D, const std::string &nodename, const XMLTree &objectTree, const Vector3 &offset) const;
+      boost::intrusive_ptr<Node> LoadObjectImpl(const std::string &nodename, const XMLTree &objectTree, const Vector3 &offset) const;
 
       void InterpretProperties(const map_XMLTree &tree, Properties &properties) const;
       e_LocalMode InterpretLocalMode(const std::string &value) const;

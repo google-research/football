@@ -19,7 +19,7 @@
 
 namespace blunted {
 
-  Scene::Scene(std::string name, e_SceneType sceneType) : name(name), sceneType(sceneType) {
+  Scene::Scene() {
   }
 
   Scene::~Scene() {
@@ -35,14 +35,6 @@ namespace blunted {
       ISceneInterpreter *sceneInterpreter = static_cast<ISceneInterpreter*>(observers[i].get());
       sceneInterpreter->CreateSystemObject(object);
     }
-  }
-
-  const std::string Scene::GetName() const {
-    return name;
-  }
-
-  e_SceneType Scene::GetSceneType() const {
-    return sceneType;
   }
 
   bool Scene::SupportedObjectType(e_ObjectType objectType) const {

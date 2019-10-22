@@ -18,21 +18,58 @@
 #ifndef _hpp_bluntmath
 #define _hpp_bluntmath
 
-#include "../../defines.hpp"
-
 #include <cmath>
 #include <limits>
+#include <assert.h>
+#include <iostream>
+#include "../log.hpp"
 
 
 
 namespace blunted {
+  typedef float real;
 
   real clamp(const real value, const real min, const real max);
   real NormalizedClamp(const real value, const real min, const real max);
 
   // you can never be too specific ;)
   constexpr real pi = 3.1415926535897932384626433832795028841972f; // last decimal rounded ;)
-  typedef real radian;
+  class radian {
+   public:
+    radian() {}
+    radian(float r) : _angle(r) {}
+    radian &operator+=(radian r) {
+      _angle += r._angle;
+      _rotated ^= r._rotated;
+      return *this;
+    }
+    radian &operator-=(radian r){
+      _angle -= r._angle;
+      _rotated ^= r._rotated;
+      return *this;
+    }
+    radian &operator/=(radian r) {
+      *this = radian(real(*this) / real(r));
+      return *this;
+    }
+    radian &operator*=(radian r) {
+      *this = radian(real(*this) * real(r));
+      return *this;
+    }
+    operator real() const {
+      if (_rotated) {
+        return _angle - pi;
+      }
+      return _angle;
+    }
+    void Mirror() {
+      _rotated = !_rotated;
+    }
+   private:
+    float _angle = 0.0f;
+    // Was angle rotated by PI.
+    bool _rotated = false;
+  };
 
   void normalize(real v[3]);
   signed int signSide(real n);  // returns -1 or 1
@@ -46,7 +83,7 @@ namespace blunted {
            source * (1.0f - bias);
   }
 
-  real ModulateIntoRange(real min, real max, real value);
+  radian ModulateIntoRange(real min, real max, radian value);
 }
 
 #endif

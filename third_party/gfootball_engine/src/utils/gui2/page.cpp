@@ -38,15 +38,6 @@ namespace blunted {
     return;
   }
 
-  void Gui2Page::ProcessWindowingEvent(WindowingEvent *event) {
-    if (event->IsEscape()) {
-      GoBack();
-      return;
-    } else {
-      event->Ignore();
-    }
-  }
-
   Gui2PageFactory::Gui2PageFactory() {  }
 
   Gui2PageFactory::~Gui2PageFactory() {
@@ -56,10 +47,9 @@ namespace blunted {
     windowManager = wm;
   }
 
-  Gui2Page *Gui2PageFactory::CreatePage(int pageID, const Properties &properties, void *data) {
+  Gui2Page *Gui2PageFactory::CreatePage(int pageID, void *data) {
     Gui2PageData pageData;
     pageData.pageID = pageID;
-    pageData.properties = boost::shared_ptr<Properties>(new Properties(properties));
     pageData.data = data;
     Gui2Page *page = CreatePage(pageData);
     return page;

@@ -35,79 +35,59 @@ constexpr float bodyRotationSmoothingFactor = 1.0f;
 constexpr float bodyRotationSmoothingMaxAngle = 0.25f * pi;
 constexpr float initialReQueueDelayFrames = 32;
 
-void FillTemporalHumanoidNodes(boost::intrusive_ptr<Node> targetNode, std::vector<TemporalHumanoidNode> &temporalHumanoidNodes) {
-  //printf("%s\n", targetNode->GetName().c_str());
-  TemporalHumanoidNode temporalHumanoidNode;
-  temporalHumanoidNode.actualNode = targetNode;
-  temporalHumanoidNode.cachedPosition = targetNode->GetPosition();
-  temporalHumanoidNode.cachedOrientation = targetNode->GetRotation();
-  // initial values, not sure if really needed
-  temporalHumanoidNode.position.SetValue(
-      targetNode->GetPosition(), GetContext().environment_manager.GetTime_ms());
-  temporalHumanoidNode.orientation.SetValue(
-      targetNode->GetRotation(), GetContext().environment_manager.GetTime_ms());
-  temporalHumanoidNodes.push_back(temporalHumanoidNode);
+const Vector3 allowedBodyDirVecs[] = {
+    Vector3(0, -1, 0),
+    Vector3(0, -1, 0).GetRotated2D(-0.25 * pi),
+    Vector3(0, -1, 0).GetRotated2D(0.25 * pi),
+    Vector3(0, -1, 0).GetRotated2D(-0.75 * pi),
+    Vector3(0, -1, 0).GetRotated2D(0.75 * pi)
+};
 
-  std::vector < boost::intrusive_ptr<Node> > gatherNodes;
-  targetNode->GetNodes(gatherNodes);
-  for (unsigned int i = 0; i < gatherNodes.size(); i++) {
-    FillTemporalHumanoidNodes(gatherNodes[i], temporalHumanoidNodes);
-  }
+const radian allowedBodyDirAngles[] = {
+        0 * pi,
+     0.25 * pi,
+    -0.25 * pi,
+     0.75 * pi,
+    -0.75 * pi
+};
 
-}
+const Vector3 preferredDirectionVecs[] = {
+    Vector3(0, -1, 0),
+    Vector3(0, -1, 0).GetRotated2D(0.111 * pi),
+    Vector3(0, -1, 0).GetRotated2D(-0.111 * pi),
+    Vector3(0, -1, 0).GetRotated2D(0.25 * pi),
+    Vector3(0, -1, 0).GetRotated2D(-0.25 * pi),
+    Vector3(0, -1, 0).GetRotated2D(0.5 * pi),
+    Vector3(0, -1, 0).GetRotated2D(-0.5 * pi),
+    Vector3(0, -1, 0).GetRotated2D(0.75 * pi),
+    Vector3(0, -1, 0).GetRotated2D(-0.75 * pi),
+    Vector3(0, -1, 0).GetRotated2D(0.999 * pi),
+    Vector3(0, -1, 0).GetRotated2D(-0.999 * pi)
+};
 
-HumanoidBase::HumanoidBase(PlayerBase *player, Match *match, boost::intrusive_ptr<Node> humanoidSourceNode, boost::intrusive_ptr<Node> fullbodySourceNode, std::map<Vector3, Vector3> &colorCoords, boost::shared_ptr<AnimCollection> animCollection, boost::intrusive_ptr<Node> fullbodyTargetNode, boost::intrusive_ptr < Resource<Surface> > kit, int bodyUpdatePhaseOffset) : fullbodyTargetNode(fullbodyTargetNode), match(match), player(player), anims(animCollection), buf_bodyUpdatePhaseOffset(bodyUpdatePhaseOffset) {
+const radian preferredDirectionAngles[] = {
+    0 * pi,
+    0.111 * pi, // 20
+    -0.111 * pi,
+    0.25 * pi, // 45
+    -0.25 * pi,
+    0.5 * pi, // 90
+    -0.5 * pi,
+    0.75 * pi, // 135
+    -0.75 * pi,
+    0.999 * pi, // 180
+    -0.999 * pi
+};
 
+
+HumanoidBase::HumanoidBase(PlayerBase *player, Match *match, boost::intrusive_ptr<Node> humanoidSourceNode, boost::intrusive_ptr<Node> fullbodySourceNode, std::map<Vector3, Vector3> &colorCoords, boost::shared_ptr<AnimCollection> animCollection, boost::intrusive_ptr<Node> fullbodyTargetNode, boost::intrusive_ptr < Resource<Surface> > kit) : fullbodyTargetNode(fullbodyTargetNode), match(match), player(player), anims(animCollection) {
   interruptAnim = e_InterruptAnim_None;
   reQueueDelayFrames = 0;
 
   buf_LowDetailMode = false;
-  fetchedbuf_previousSnapshotTime_ms = 0;
-
-  currentAnim = new Anim();
-  previousAnim = new Anim();
 
   decayingPositionOffset = Vector3(0);
   decayingDifficultyFactor = 0.0f;
-
-  _cache_AgilityFactor = GetConfiguration()->GetReal("gameplay_agilityfactor", _default_AgilityFactor);
-  _cache_AccelerationFactor = GetConfiguration()->GetReal("gameplay_accelerationfactor", _default_AccelerationFactor);
-
-  allowedBodyDirVecs.push_back(Vector3(0, -1, 0));
-  allowedBodyDirVecs.push_back(Vector3(0, -1, 0).GetRotated2D(-0.25 * pi));
-  allowedBodyDirVecs.push_back(Vector3(0, -1, 0).GetRotated2D(0.25 * pi));
-  allowedBodyDirVecs.push_back(Vector3(0, -1, 0).GetRotated2D(-0.75 * pi));
-  allowedBodyDirVecs.push_back(Vector3(0, -1, 0).GetRotated2D(0.75 * pi));
-
-  allowedBodyDirAngles.push_back(0 * pi);
-  allowedBodyDirAngles.push_back(0.25 * pi);
-  allowedBodyDirAngles.push_back(-0.25 * pi);
-  allowedBodyDirAngles.push_back(0.75 * pi);
-  allowedBodyDirAngles.push_back(-0.75 * pi);
-
-  preferredDirectionVecs.push_back(Vector3(0, -1, 0));
-  preferredDirectionVecs.push_back(Vector3(0, -1, 0).GetRotated2D(0.111 * pi));
-  preferredDirectionVecs.push_back(Vector3(0, -1, 0).GetRotated2D(-0.111 * pi));
-  preferredDirectionVecs.push_back(Vector3(0, -1, 0).GetRotated2D(0.25 * pi));
-  preferredDirectionVecs.push_back(Vector3(0, -1, 0).GetRotated2D(-0.25 * pi));
-  preferredDirectionVecs.push_back(Vector3(0, -1, 0).GetRotated2D(0.5 * pi));
-  preferredDirectionVecs.push_back(Vector3(0, -1, 0).GetRotated2D(-0.5 * pi));
-  preferredDirectionVecs.push_back(Vector3(0, -1, 0).GetRotated2D(0.75 * pi));
-  preferredDirectionVecs.push_back(Vector3(0, -1, 0).GetRotated2D(-0.75 * pi));
-  preferredDirectionVecs.push_back(Vector3(0, -1, 0).GetRotated2D(0.999 * pi));
-  preferredDirectionVecs.push_back(Vector3(0, -1, 0).GetRotated2D(-0.999 * pi));
-
-  preferredDirectionAngles.push_back(0 * pi);
-  preferredDirectionAngles.push_back(0.111 * pi); // 20
-  preferredDirectionAngles.push_back(-0.111 * pi);
-  preferredDirectionAngles.push_back(0.25 * pi); // 45
-  preferredDirectionAngles.push_back(-0.25 * pi);
-  preferredDirectionAngles.push_back(0.5 * pi); // 90
-  preferredDirectionAngles.push_back(-0.5 * pi);
-  preferredDirectionAngles.push_back(0.75 * pi); // 135
-  preferredDirectionAngles.push_back(-0.75 * pi);
-  preferredDirectionAngles.push_back(0.999 * pi); // 180
-  preferredDirectionAngles.push_back(-0.999 * pi);
 
   assert(match);
 
@@ -124,7 +104,7 @@ HumanoidBase::HumanoidBase(PlayerBase *player, Match *match, boost::intrusive_pt
           int_to_str(player->GetPlayerData()->GetSkinColor()) + ".png",
       true, true);
 
-  boost::intrusive_ptr<Node> bla2(new Node(*fullbodySourceNode.get(), int_to_str(player->GetID()), GetScene3D()));
+  boost::intrusive_ptr<Node> bla2(new Node(*fullbodySourceNode.get(), int_to_str(GetContext().playerCount++), GetScene3D()));
   fullbodyNode = bla2;
   fullbodyNode->SetLocalMode(e_LocalMode_Absolute);
   fullbodyTargetNode->AddNode(fullbodyNode);
@@ -143,14 +123,10 @@ HumanoidBase::HumanoidBase(PlayerBase *player, Match *match, boost::intrusive_pt
 
   boost::static_pointer_cast<Geometry>(fullbodyNode->GetObject("fullbody"))->OnUpdateGeometryData();
 
-  kitDiffuseTextureIdentString = "kit_template.png";
   SetKit(kit);
 
 
-  scene3D = GetScene3D();
-
   FillNodeMap(humanoidNode, nodeMap);
-  FillTemporalHumanoidNodes(humanoidNode, buf_TemporalHumanoidNodes);
 
   PrepareFullbodyModel(colorCoords);
   buf_bodyUpdatePhase = 0;
@@ -167,7 +143,7 @@ HumanoidBase::HumanoidBase(PlayerBase *player, Match *match, boost::intrusive_pt
       static_pointer_cast<Geometry>(GetContext().object_factory.CreateObject(
           "hairstyle", e_ObjectType_Geometry));
 
-  scene3D->CreateSystemObjects(hairStyle);
+  GetScene3D()->CreateSystemObjects(hairStyle);
   hairStyle->SetLocalMode(e_LocalMode_Absolute);
   hairStyle->SetGeometryData(geometry);
   fullbodyTargetNode->AddObject(hairStyle);
@@ -191,8 +167,7 @@ HumanoidBase::HumanoidBase(PlayerBase *player, Match *match, boost::intrusive_pt
 
 
   ResetPosition(Vector3(0), Vector3(0));
-
-  currentMentalImage = 0;
+  mentalImageTime = 0;
 }
 
 HumanoidBase::~HumanoidBase() {
@@ -200,8 +175,6 @@ HumanoidBase::~HumanoidBase() {
   humanoidNode.reset();
   fullbodyTargetNode->DeleteNode(fullbodyNode);
   fullbodyTargetNode->DeleteObject(hairStyle);
-
-  buf_TemporalHumanoidNodes.clear();
 
   for (unsigned int i = 0; i < uniqueFullbodyMesh.size(); i++) {
     delete [] uniqueFullbodyMesh[i].data;
@@ -212,9 +185,33 @@ HumanoidBase::~HumanoidBase() {
   }
 
   // the other full body mesh ref is connected to a geometry object which has taken over ownership and will clean it up
+}
 
-  delete currentAnim;
-  delete previousAnim;
+void HumanoidBase::Mirror() {
+  // fullbodyNode - mirror for ball collision and render.
+  humanoidNode->SetPosition(humanoidNode->GetPosition() * Vector3(-1, -1, 1));
+  Quaternion rotation = humanoidNode->GetRotation();
+  if (!mirrored) {
+    humanoidNode->SetRotation(Quaternion(rotation.elements[1], rotation.elements[0], rotation.elements[3], -rotation.elements[2]));
+  } else {
+    humanoidNode->SetRotation(Quaternion(rotation.elements[1], rotation.elements[0], -rotation.elements[3], rotation.elements[2]));
+  }
+  mirrored = !mirrored;
+  startPos.Mirror();
+  startAngle.Mirror();
+  nextStartPos.Mirror();
+  nextStartAngle.Mirror();
+  spatialState.Mirror();
+  previousPosition2D.Mirror();
+  tripDirection.Mirror();
+  decayingPositionOffset.Mirror();
+  predicate_RelDesiredDirection.Mirror();
+  predicate_DesiredDirection.Mirror();
+  predicate_RelIncomingBodyDirection.Mirror();
+  predicate_LookAt.Mirror();
+  predicate_RelDesiredTripDirection.Mirror();
+  predicate_RelDesiredBallDirection.Mirror();
+  // movementHistory // only animation?
 }
 
 void HumanoidBase::PrepareFullbodyModel(std::map<Vector3, Vector3> &colorCoords) {
@@ -291,9 +288,6 @@ void HumanoidBase::PrepareFullbodyModel(std::map<Vector3, Vector3> &colorCoords)
       uniqueIndices[v / 3] = index;
     }
 
-    //printf("vertices: %i, unique vertices: %i\n", elementOffset / 3, uniqueVertices.size());
-    //printf("meshRef.size: %i, uniqueIndices.size: %i\n", meshRef.size, elementOffset / 3);
-
     uniqueMesh.size = uniqueVertices.size() * 3 * GetTriangleMeshElementCount();
     uniqueMesh.data = new float[uniqueMesh.size];
 
@@ -369,16 +363,6 @@ void HumanoidBase::PrepareFullbodyModel(std::map<Vector3, Vector3> &colorCoords)
       materializedTriangleMeshes.at(subgeom).indices.push_back(uniqueIndices[v / 3]);
     }
 
-/*
-    printf("\n");
-    printf("optimized: ");
-    for (int i = 0; i < elementOffset; i += 3) {
-      printf("%f, ", materializedTriangleMeshes.at(subgeom).vertices[uniqueIndices[i / 3] * 3 + uniqueElementOffset * 2]);
-    }
-    printf("\n");
-    printf("\n");
-*/
-
   } // subgeom
 
   boost::static_pointer_cast<Geometry>(fullbodyNode->GetObject("fullbody"))->OnUpdateGeometryData();
@@ -405,17 +389,17 @@ void HumanoidBase::PrepareFullbodyModel(std::map<Vector3, Vector3> &colorCoords)
 
   delete straightAnim;
   delete baseAnim;
-
-  //printf("vertexcount: %i, unique vertexcount: %i\n", elementOffset / 3, uniqueElementOffset / 3);
 }
 
-void HumanoidBase::UpdateFullbodyNodes() {
+void HumanoidBase::UpdateFullbodyNodes(bool mirror) {
   if (!GetScenarioConfig().render) {
     return;
   }
+  if (mirror) {
+    Mirror();
+  }
 
-  Vector3 previousFullbodyOffset = fullbodyOffset;
-  fullbodyOffset = humanoidNode->GetPosition().Get2D();
+  Vector3 fullbodyOffset = humanoidNode->GetPosition().Get2D();
   fullbodyNode->SetPosition(fullbodyOffset);
 
   for (unsigned int i = 0; i < joints.size(); i++) {
@@ -427,10 +411,16 @@ void HumanoidBase::UpdateFullbodyNodes() {
     hairStyle->SetPosition(joints[2].position * zMultiplier + fullbodyOffset, false);
     hairStyle->RecursiveUpdateSpatialData(e_SpatialDataType_Both);
   }
+  if (mirror) {
+    Mirror();
+  }
 }
 
 bool HumanoidBase::NeedsModelUpdate() {
-  if (buf_LowDetailMode && buf_bodyUpdatePhase != 1 - buf_bodyUpdatePhaseOffset) return false; else return true;
+  if (buf_LowDetailMode && buf_bodyUpdatePhase != 1)
+    return false;
+  else
+    return true;
 }
 
 void HumanoidBase::UpdateFullbodyModel(bool updateSrc) {
@@ -537,16 +527,8 @@ void HumanoidBase::UpdateFullbodyModel(bool updateSrc) {
   } // subgeom
 
 }
-/* moved this to gametask upload thread, so it can be multithreaded, whilst assuring its lifetime
-void HumanoidBase::UploadFullbodyModel() {
-  boost::static_pointer_cast<Geometry>(fullbodyNode->GetObject("fullbody"))->OnUpdateGeometryData(false);
-}
-*/
 
 void HumanoidBase::Process() {
-
-  _cache_AgilityFactor = GetConfiguration()->GetReal("gameplay_agilityfactor", _default_AgilityFactor);
-  _cache_AccelerationFactor = GetConfiguration()->GetReal("gameplay_accelerationfactor", _default_AccelerationFactor);
 
   decayingPositionOffset *= 0.95f;
   if (decayingPositionOffset.GetLength() < 0.005) decayingPositionOffset.Set(0);
@@ -555,18 +537,14 @@ void HumanoidBase::Process() {
 
   assert(match);
 
-  if (!currentMentalImage) {
-    currentMentalImage = match->GetMentalImage(0);
-  }
-
   CalculateSpatialState();
   spatialState.positionOffsetMovement = Vector3(0);
 
-  currentAnim->frameNum++;
-  previousAnim->frameNum++;
+  currentAnim.frameNum++;
+  previousAnim.frameNum++;
 
 
-  if (currentAnim->frameNum == currentAnim->anim->GetFrameCount() - 1 && interruptAnim == e_InterruptAnim_None) {
+  if (currentAnim.frameNum == currentAnim.anim->GetFrameCount() - 1 && interruptAnim == e_InterruptAnim_None) {
     interruptAnim = e_InterruptAnim_Switch;
   }
 
@@ -615,7 +593,7 @@ void HumanoidBase::Process() {
 
     if (interruptAnim != e_InterruptAnim_ReQueue && !found) {
       printf("RED ALERT! NO APPLICABLE ANIM FOUND FOR HUMANOIDBASE! NOOOO!\n");
-      printf("currentanimtype: %s\n", currentAnim->anim->GetVariable("type").c_str());
+      printf("currentanimtype: %s\n", currentAnim.anim->GetVariable("type").c_str());
       for (unsigned int i = 0; i < commandQueue.size(); i++) {
         printf("desiredanimtype: %i\n", commandQueue[i].desiredFunctionType);
       }
@@ -627,16 +605,16 @@ void HumanoidBase::Process() {
 
       CalculatePredictedSituation(nextStartPos, nextStartAngle);
 
-      animApplyBuffer.anim = currentAnim->anim;
+      animApplyBuffer.anim = currentAnim.anim;
       animApplyBuffer.smooth = true;
       animApplyBuffer.smoothFactor = (interruptAnim == e_InterruptAnim_Switch) ? 0.6f : 1.0f;
 
       // decaying difficulty
-      float animDiff = atof(currentAnim->anim->GetVariable("animdifficultyfactor").c_str());
+      float animDiff = atof(currentAnim.anim->GetVariable("animdifficultyfactor").c_str());
       if (animDiff > decayingDifficultyFactor) decayingDifficultyFactor = animDiff;
       // if we just requeued, for example, from movement to ballcontrol, there's no reason we can not immediately requeue to another ballcontrol again (next time). only apply the initial requeue delay on subsequent anims of the same type
       // (so we can have a fast ballcontrol -> ballcontrol requeue, but after that, use the initial delay)
-      if (interruptAnim == e_InterruptAnim_ReQueue && previousAnim->functionType == currentAnim->functionType) {
+      if (interruptAnim == e_InterruptAnim_ReQueue && previousAnim.functionType == currentAnim.functionType) {
         reQueueDelayFrames = initialReQueueDelayFrames; // don't try requeueing (some types of anims, see selectanim()) too often
       }
 
@@ -659,27 +637,27 @@ void HumanoidBase::Process() {
   // start with +1, because we want to influence the first frame as well
   // as for finishing, finish with frameBias = 1.0, even if the last frame is 'spiritually' the one-to-last, since the first frame of the next anim is actually 'same-tempered' as the current anim's last frame.
   // however, it works best to have all values 'done' at this one-to-last frame, so the next anim can read out these correct (new starting) values.
-  float frameBias = (currentAnim->frameNum + 1) / (float)(currentAnim->anim->GetEffectiveFrameCount() + 1);
+  float frameBias = (currentAnim.frameNum + 1) / (float)(currentAnim.anim->GetEffectiveFrameCount() + 1);
 
   // not sure if this is correct!
-  // radian beginAngle = currentAnim->rotationSmuggle.begin;// * (1.0f - frameBias); // more influence in the beginning; act more like it was 0 later on. (yes, next one is a bias within a bias) *edit: disabled, looks better without
-  // currentAnim->rotationSmuggleOffset = beginAngle * (1.0f - frameBias) +
-  //                                      currentAnim->rotationSmuggle.end * frameBias;
+  // radian beginAngle = currentAnim.rotationSmuggle.begin;// * (1.0f - frameBias); // more influence in the beginning; act more like it was 0 later on. (yes, next one is a bias within a bias) *edit: disabled, looks better without
+  // currentAnim.rotationSmuggleOffset = beginAngle * (1.0f - frameBias) +
+  //                                      currentAnim.rotationSmuggle.end * frameBias;
 
-  currentAnim->rotationSmuggleOffset = currentAnim->rotationSmuggle.begin * (1.0f - frameBias) +
-                                       currentAnim->rotationSmuggle.end * frameBias;
+  currentAnim.rotationSmuggleOffset = currentAnim.rotationSmuggle.begin * (1.0f - frameBias) +
+                                       currentAnim.rotationSmuggle.end * frameBias;
 
 
   // next frame
 
-  animApplyBuffer.frameNum = currentAnim->frameNum;
+  animApplyBuffer.frameNum = currentAnim.frameNum;
 
-  if (currentAnim->positions.size() > (unsigned int)currentAnim->frameNum) {
-    animApplyBuffer.position = startPos + currentAnim->actionSmuggleOffset + currentAnim->actionSmuggleSustainOffset + currentAnim->movementSmuggleOffset + currentAnim->positions.at(currentAnim->frameNum);
-    animApplyBuffer.orientation = startAngle + currentAnim->rotationSmuggleOffset;
+  if (currentAnim.positions.size() > (unsigned int)currentAnim.frameNum) {
+    animApplyBuffer.position = startPos + currentAnim.actionSmuggleOffset + currentAnim.actionSmuggleSustainOffset + currentAnim.movementSmuggleOffset + currentAnim.positions.at(currentAnim.frameNum);
+    animApplyBuffer.orientation = startAngle + currentAnim.rotationSmuggleOffset;
     animApplyBuffer.noPos = true;
   } else {
-    animApplyBuffer.position = startPos + currentAnim->actionSmuggleOffset + currentAnim->actionSmuggleSustainOffset + currentAnim->movementSmuggleOffset;
+    animApplyBuffer.position = startPos + currentAnim.actionSmuggleOffset + currentAnim.actionSmuggleSustainOffset + currentAnim.movementSmuggleOffset;
     animApplyBuffer.orientation = startAngle;
     animApplyBuffer.noPos = false;
   }
@@ -687,15 +665,10 @@ void HumanoidBase::Process() {
   animApplyBuffer.offsets = offsets;
 }
 
-void HumanoidBase::PreparePutBuffers(unsigned long snapshotTime_ms) {
+void HumanoidBase::PreparePutBuffers() {
 
   // offsets
   CalculateGeomOffsets();
-
-  buf_animApplyBuffer = animApplyBuffer;
-  buf_animApplyBuffer.snapshotTime_ms = snapshotTime_ms;
-
-  // display humanoids farther away from action at half FPS
   buf_LowDetailMode = false;
   if (!player->GetExternalController() && !match->GetPause()) {
     Vector3 focusPos = match->GetBall()->Predict(100).Get2D();
@@ -708,63 +681,18 @@ void HumanoidBase::PreparePutBuffers(unsigned long snapshotTime_ms) {
 
 }
 
-void HumanoidBase::FetchPutBuffers(unsigned long putTime_ms) {
-
-  fetchedbuf_animApplyBuffer = buf_animApplyBuffer;
-  assert(fetchedbuf_animApplyBuffer.anim == buf_animApplyBuffer.anim);
-
-  fetchedbuf_LowDetailMode = buf_LowDetailMode;
+void HumanoidBase::FetchPutBuffers() {
   buf_bodyUpdatePhase++;
   if (buf_bodyUpdatePhase == 2) buf_bodyUpdatePhase = 0;
-  fetchedbuf_bodyUpdatePhase = buf_bodyUpdatePhase;
-  fetchedbuf_bodyUpdatePhaseOffset = buf_bodyUpdatePhaseOffset;
 }
 
-void HumanoidBase::Put() {
-  // unsigned long timeDiff_ms =
-  // match->GetTimeSincePreviousPut_ms();//GetContext().environment_manager.GetTime_ms()
-  // - match->GetPreviousTime_ms();
-  // the apply function doesn't know better than that it is displaying snapshot
-  // times, so continue this hoax into the timeDiff_ms value. then, the
-  // temporalsmoother will convert it to 'realtime' once again
-  unsigned long timeDiff_ms = fetchedbuf_animApplyBuffer.snapshotTime_ms - fetchedbuf_previousSnapshotTime_ms;
-  timeDiff_ms = clamp(timeDiff_ms, 10, 50);
-  fetchedbuf_previousSnapshotTime_ms = fetchedbuf_animApplyBuffer.snapshotTime_ms;
-
-  for (unsigned int i = 0; i < buf_TemporalHumanoidNodes.size(); i++) {
-    // first, restore the previous non-temporal-smoothed values, so the Apply() function can use them for smoothing
-    buf_TemporalHumanoidNodes[i].actualNode->SetPosition(buf_TemporalHumanoidNodes[i].cachedPosition, false);
-    buf_TemporalHumanoidNodes[i].actualNode->SetRotation(buf_TemporalHumanoidNodes[i].cachedOrientation, false);
-  }
-
+void HumanoidBase::Put(bool mirror) {
   if (GetScenarioConfig().render) {
     humanoidNode->RecursiveUpdateSpatialData(e_SpatialDataType_Both);
   }
-
-  fetchedbuf_animApplyBuffer.anim->Apply(nodeMap, fetchedbuf_animApplyBuffer.frameNum, -1, fetchedbuf_animApplyBuffer.smooth, fetchedbuf_animApplyBuffer.smoothFactor, fetchedbuf_animApplyBuffer.position, fetchedbuf_animApplyBuffer.orientation, fetchedbuf_animApplyBuffer.offsets, &movementHistory, timeDiff_ms, fetchedbuf_animApplyBuffer.noPos, false);
-
-  if (GetScenarioConfig().render) {
-    humanoidNode->RecursiveUpdateSpatialData(e_SpatialDataType_Both);
-  }
-
-  // we've just set the humanoid positions for time fetchedbuf_animApplyBuffer.snapshotTime_ms. however, it's eventually going to be displayed in a historic position, for temporal smoothing.
-  // thus; read out the current values we've just set, insert them in the temporal smoother, and get the historic spatial data instead (GetValue).
-  for (unsigned int i = 0; i < buf_TemporalHumanoidNodes.size(); i++) {
-    // save the non-historic version in cachedNode
-    buf_TemporalHumanoidNodes[i].cachedPosition = buf_TemporalHumanoidNodes[i].actualNode->GetPosition();
-    buf_TemporalHumanoidNodes[i].cachedOrientation = buf_TemporalHumanoidNodes[i].actualNode->GetRotation();
-
-    // sudden realisation: by only SetValue'ing here instead of in prepareputbuffers, aren't we missing out on valuable interpolateable data?
-    buf_TemporalHumanoidNodes[i].position.SetValue(buf_TemporalHumanoidNodes[i].actualNode->GetPosition(), fetchedbuf_animApplyBuffer.snapshotTime_ms);
-    buf_TemporalHumanoidNodes[i].orientation.SetValue(buf_TemporalHumanoidNodes[i].actualNode->GetRotation(), fetchedbuf_animApplyBuffer.snapshotTime_ms);
-
-    buf_TemporalHumanoidNodes[i].actualNode->SetPosition(buf_TemporalHumanoidNodes[i].position.GetValue(match->GetPreviousPutTime_ms()), false);
-    buf_TemporalHumanoidNodes[i].actualNode->SetRotation(buf_TemporalHumanoidNodes[i].orientation.GetValue(match->GetPreviousPutTime_ms()), false);
-  }
-
+  animApplyBuffer.anim->Apply(nodeMap, animApplyBuffer.frameNum, -1, animApplyBuffer.smooth, animApplyBuffer.smoothFactor, animApplyBuffer.position, animApplyBuffer.orientation, animApplyBuffer.offsets, &movementHistory, 10, animApplyBuffer.noPos, false);
   humanoidNode->RecursiveUpdateSpatialData(e_SpatialDataType_Both);
-
-  UpdateFullbodyNodes();
+  UpdateFullbodyNodes(mirror);
 }
 
 void HumanoidBase::CalculateGeomOffsets() {
@@ -774,7 +702,6 @@ void HumanoidBase::SetOffset(BodyPart body_part, float bias, const Quaternion &o
   BiasedOffset& biasedOffset = offsets[body_part];
   biasedOffset.bias = bias;
   biasedOffset.orientation = orientation;
-  biasedOffset.isRelative = isRelative;
 }
 
 int HumanoidBase::GetIdleMovementAnimID() {
@@ -830,62 +757,61 @@ void HumanoidBase::ResetPosition(const Vector3 &newPos, const Vector3 &focusPos)
   spatialState.foot = e_Foot_Right;
 
   int idleAnimID = GetIdleMovementAnimID();
-  currentAnim->id = idleAnimID;
-  currentAnim->anim = anims->GetAnim(currentAnim->id);
-  currentAnim->positions.clear();
-  currentAnim->positions = match->GetAnimPositionCache(currentAnim->anim);
-  currentAnim->frameNum =
-      boostrandom(0, currentAnim->anim->GetEffectiveFrameCount() - 1);
-  currentAnim->radiusOffset = 0.0;
-  currentAnim->touchFrame = -1;
-  currentAnim->originatingInterrupt = e_InterruptAnim_None;
-  currentAnim->fullActionSmuggle = Vector3(0);
-  currentAnim->actionSmuggle = Vector3(0);
-  currentAnim->actionSmuggleOffset = Vector3(0);
-  currentAnim->actionSmuggleSustain = Vector3(0);
-  currentAnim->actionSmuggleSustainOffset = Vector3(0);
-  currentAnim->movementSmuggle = Vector3(0);
-  currentAnim->movementSmuggleOffset = Vector3(0);
-  currentAnim->rotationSmuggle.begin = 0;
-  currentAnim->rotationSmuggle.end = 0;
-  currentAnim->rotationSmuggleOffset = 0;
-  currentAnim->functionType = e_FunctionType_Movement;
-  currentAnim->incomingMovement = Vector3(0);
-  currentAnim->outgoingMovement = Vector3(0);
-  currentAnim->positionOffset = Vector3(0);
+  currentAnim.id = idleAnimID;
+  currentAnim.anim = anims->GetAnim(currentAnim.id);
+  currentAnim.positions.clear();
+  currentAnim.positions = match->GetAnimPositionCache(currentAnim.anim);
+  currentAnim.frameNum =
+      boostrandom(0, currentAnim.anim->GetEffectiveFrameCount() - 1);
+  currentAnim.radiusOffset = 0.0;
+  currentAnim.touchFrame = -1;
+  currentAnim.originatingInterrupt = e_InterruptAnim_None;
+  currentAnim.fullActionSmuggle = Vector3(0);
+  currentAnim.actionSmuggle = Vector3(0);
+  currentAnim.actionSmuggleOffset = Vector3(0);
+  currentAnim.actionSmuggleSustain = Vector3(0);
+  currentAnim.actionSmuggleSustainOffset = Vector3(0);
+  currentAnim.movementSmuggle = Vector3(0);
+  currentAnim.movementSmuggleOffset = Vector3(0);
+  currentAnim.rotationSmuggle.begin = 0;
+  currentAnim.rotationSmuggle.end = 0;
+  currentAnim.rotationSmuggleOffset = 0;
+  currentAnim.functionType = e_FunctionType_Movement;
+  currentAnim.incomingMovement = Vector3(0);
+  currentAnim.outgoingMovement = Vector3(0);
+  currentAnim.positionOffset = Vector3(0);
 
-  previousAnim->id = idleAnimID;
-  previousAnim->anim = currentAnim->anim;
-  previousAnim->positions.clear();
-  previousAnim->positions = match->GetAnimPositionCache(previousAnim->anim);
-  previousAnim->frameNum = 0;
-  previousAnim->radiusOffset = 0.0;
-  previousAnim->touchFrame = -1;
-  previousAnim->originatingInterrupt = e_InterruptAnim_None;
-  previousAnim->fullActionSmuggle = Vector3(0);
-  previousAnim->actionSmuggle = Vector3(0);
-  previousAnim->actionSmuggleOffset = Vector3(0);
-  previousAnim->actionSmuggleSustain = Vector3(0);
-  previousAnim->actionSmuggleSustainOffset = Vector3(0);
-  previousAnim->movementSmuggle = Vector3(0);
-  previousAnim->movementSmuggleOffset = Vector3(0);
-  previousAnim->rotationSmuggle.begin = 0;
-  previousAnim->rotationSmuggle.end = 0;
-  previousAnim->rotationSmuggleOffset = 0;
-  previousAnim->functionType = e_FunctionType_Movement;
-  previousAnim->incomingMovement = Vector3(0);
-  previousAnim->outgoingMovement = Vector3(0);
-  previousAnim->positionOffset = Vector3(0);
+  previousAnim.id = idleAnimID;
+  previousAnim.anim = currentAnim.anim;
+  previousAnim.positions.clear();
+  previousAnim.positions = match->GetAnimPositionCache(previousAnim.anim);
+  previousAnim.frameNum = 0;
+  previousAnim.radiusOffset = 0.0;
+  previousAnim.touchFrame = -1;
+  previousAnim.originatingInterrupt = e_InterruptAnim_None;
+  previousAnim.fullActionSmuggle = Vector3(0);
+  previousAnim.actionSmuggle = Vector3(0);
+  previousAnim.actionSmuggleOffset = Vector3(0);
+  previousAnim.actionSmuggleSustain = Vector3(0);
+  previousAnim.actionSmuggleSustainOffset = Vector3(0);
+  previousAnim.movementSmuggle = Vector3(0);
+  previousAnim.movementSmuggleOffset = Vector3(0);
+  previousAnim.rotationSmuggle.begin = 0;
+  previousAnim.rotationSmuggle.end = 0;
+  previousAnim.rotationSmuggleOffset = 0;
+  previousAnim.functionType = e_FunctionType_Movement;
+  previousAnim.incomingMovement = Vector3(0);
+  previousAnim.outgoingMovement = Vector3(0);
+  previousAnim.positionOffset = Vector3(0);
 
   humanoidNode->SetPosition(startPos, false);
 
-  animApplyBuffer.anim = currentAnim->anim;
+  animApplyBuffer.anim = currentAnim.anim;
   animApplyBuffer.smooth = false;
   animApplyBuffer.smoothFactor = 0.0f;
   animApplyBuffer.position = startPos;
   animApplyBuffer.orientation = startAngle;
   animApplyBuffer.offsets.clear();
-  buf_animApplyBuffer = animApplyBuffer;
 
   interruptAnim = e_InterruptAnim_None;
   tripType = 0;
@@ -894,18 +820,6 @@ void HumanoidBase::ResetPosition(const Vector3 &newPos, const Vector3 &focusPos)
   decayingDifficultyFactor = 0.0f;
 
   movementHistory.clear();
-
-  // clear temporalsmoother vars
-
-/*
-  for (unsigned int i = 0; i < buf_TemporalHumanoidNodes.size(); i++) {
-    buf_TemporalHumanoidNodes[i].position.Clear();
-    buf_TemporalHumanoidNodes[i].orientation.Clear();
-  }
-  buf_animApplyBuffer_TemporalPosition.Clear();
-  buf_animApplyBuffer_TemporalOrientationOffset.Clear();
-  buf_animApplyBuffer_FrameNum.Clear();
-*/
 }
 
 void HumanoidBase::OffsetPosition(const Vector3 &offset) {
@@ -913,22 +827,20 @@ void HumanoidBase::OffsetPosition(const Vector3 &offset) {
 
   assert(offset.coords[2] == 0.0f);
 
-  float cheat = 1.0f;
-
-  nextStartPos += offset * cheat;
-  startPos += offset * cheat;
-  spatialState.position += offset * cheat;
-  spatialState.positionOffsetMovement += offset * 100.0f * cheat;
-  decayingPositionOffset += offset * cheat;
+  nextStartPos += offset;
+  startPos += offset;
+  spatialState.position += offset;
+  spatialState.positionOffsetMovement += offset * 100.0f;
+  decayingPositionOffset += offset;
   if (decayingPositionOffset.GetLength() > 0.1f) decayingPositionOffset = decayingPositionOffset.GetNormalized() * 0.1f;
-  currentAnim->positionOffset += offset * cheat;
+  currentAnim.positionOffset += offset;
 }
 
 void HumanoidBase::TripMe(const Vector3 &tripVector, int tripType) {
   if (match->GetBallRetainer() == player) return;
-  if (currentAnim->anim->GetVariableCache().incoming_special_state().compare("") == 0 && currentAnim->anim->GetVariableCache().outgoing_special_state().compare("") == 0) {
-    if (this->interruptAnim == e_InterruptAnim_None && (currentAnim->functionType != e_FunctionType_Trip || (currentAnim->anim->GetVariable("triptype").compare("1") == 0 && tripType > 1))
-                                                    && currentAnim->functionType != e_FunctionType_Sliding) {
+  if (currentAnim.anim->GetVariableCache().incoming_special_state().compare("") == 0 && currentAnim.anim->GetVariableCache().outgoing_special_state().compare("") == 0) {
+    if (this->interruptAnim == e_InterruptAnim_None && (currentAnim.functionType != e_FunctionType_Trip || (currentAnim.anim->GetVariable("triptype").compare("1") == 0 && tripType > 1))
+                                                    && currentAnim.functionType != e_FunctionType_Sliding) {
       this->interruptAnim = e_InterruptAnim_Trip;
       this->tripDirection = tripVector;
       this->tripType = tripType;
@@ -958,8 +870,7 @@ void HumanoidBase::SetKit(boost::intrusive_ptr < Resource<Surface> > newKit) {
 }
 
 void HumanoidBase::ResetSituation(const Vector3 &focusPos) {
-  currentMentalImage = 0;
-
+  mentalImageTime = 0;
   ResetPosition(spatialState.position, focusPos);
 }
 
@@ -1087,7 +998,7 @@ void HumanoidBase::_KeepBestBodyDirectionAnims(DataSet &dataSet, const PlayerCom
 bool HumanoidBase::SelectAnim(const PlayerCommand &command, e_InterruptAnim localInterruptAnim, bool preferPassAndShot) { // returns false on no applicable anim found
   assert(command.desiredDirection.coords[2] == 0.0f);
 
-  if (localInterruptAnim != e_InterruptAnim_ReQueue || currentAnim->frameNum > 12) CalculateFactualSpatialState();
+  if (localInterruptAnim != e_InterruptAnim_ReQueue || currentAnim.frameNum > 12) CalculateFactualSpatialState();
 
 
   // CREATE A CRUDE SET OF POTENTIAL ANIMATIONS
@@ -1112,12 +1023,12 @@ bool HumanoidBase::SelectAnim(const PlayerCommand &command, e_InterruptAnim loca
     query.byTripType = true;
     query.tripType = command.tripType;
   }
-  query.properties.set("incoming_special_state", currentAnim->anim->GetVariableCache().outgoing_special_state());
-  if (match->GetBallRetainer() == player) query.properties.set("incoming_retain_state", currentAnim->anim->GetVariable("outgoing_retain_state"));
+  query.properties.set("incoming_special_state", currentAnim.anim->GetVariableCache().outgoing_special_state());
+  if (match->GetBallRetainer() == player) query.properties.set("incoming_retain_state", currentAnim.anim->GetVariable("outgoing_retain_state"));
   if (command.useSpecialVar1) query.properties.set_specialvar1(command.specialVar1);
   if (command.useSpecialVar2) query.properties.set_specialvar2(command.specialVar2);
 
-  if (!currentAnim->anim->GetVariableCache().outgoing_special_state().empty()) query.incomingVelocity = e_Velocity_Idle; // standing up anims always start out idle
+  if (!currentAnim.anim->GetVariableCache().outgoing_special_state().empty()) query.incomingVelocity = e_Velocity_Idle; // standing up anims always start out idle
 
   DataSet dataSet;
   anims->CrudeSelection(dataSet, query);
@@ -1152,7 +1063,7 @@ bool HumanoidBase::SelectAnim(const PlayerCommand &command, e_InterruptAnim loca
   std::stable_sort(dataSet.begin(), dataSet.end(), boost::bind(&Humanoid::CompareIdleVariable, this, _1, _2));
 
   SetFootSimilarityPredicate(spatialState.foot);
-  std::stable_sort(dataSet.begin(), dataSet.end(), boost::bind(&HumanoidBase::CompareFootSimilarity, this, _1, _2));
+  std::stable_sort(dataSet.begin(), dataSet.end(), boost::bind(&HumanoidBase::CompareFootSimilarity, this, spatialState.foot, _1, _2));
 
   SetIncomingBodyDirectionSimilarityPredicate(spatialState.relBodyDirectionVec);
   std::stable_sort(dataSet.begin(), dataSet.end(), boost::bind(&HumanoidBase::CompareIncomingBodyDirectionSimilarity, this, _1, _2));
@@ -1200,16 +1111,16 @@ bool HumanoidBase::SelectAnim(const PlayerCommand &command, e_InterruptAnim loca
 
   // check if we really want to requeue - only requeue movement to movement, for example, when we want to go a different direction
 
-  if (localInterruptAnim == e_InterruptAnim_ReQueue && selectedAnimID != -1 && currentAnim->positions.size() > 1 && positions_tmp.size() > 1) {
+  if (localInterruptAnim == e_InterruptAnim_ReQueue && selectedAnimID != -1 && currentAnim.positions.size() > 1 && positions_tmp.size() > 1) {
 
     // don't requeue to same quadrant
-    if (currentAnim->functionType == command.desiredFunctionType &&
+    if (currentAnim.functionType == command.desiredFunctionType &&
 
-        ((FloatToEnumVelocity(currentAnim->anim->GetOutgoingVelocity()) != e_Velocity_Idle &&
-          currentAnim->anim->GetVariableCache().quadrant_id() == anims->GetAnim(selectedAnimID)->GetVariableCache().quadrant_id())
+        ((FloatToEnumVelocity(currentAnim.anim->GetOutgoingVelocity()) != e_Velocity_Idle &&
+          currentAnim.anim->GetVariableCache().quadrant_id() == anims->GetAnim(selectedAnimID)->GetVariableCache().quadrant_id())
           ||
-         (FloatToEnumVelocity(currentAnim->anim->GetOutgoingVelocity()) == e_Velocity_Idle &&
-          fabs((ForceIntoPreferredDirectionAngle(currentAnim->anim->GetOutgoingAngle()) - ForceIntoPreferredDirectionAngle(anims->GetAnim(selectedAnimID)->GetOutgoingAngle()))) < 0.20f * pi))
+         (FloatToEnumVelocity(currentAnim.anim->GetOutgoingVelocity()) == e_Velocity_Idle &&
+          fabs((ForceIntoPreferredDirectionAngle(currentAnim.anim->GetOutgoingAngle()) - ForceIntoPreferredDirectionAngle(anims->GetAnim(selectedAnimID)->GetOutgoingAngle()))) < 0.20f * pi))
        ) {
 
       selectedAnimID = -1;
@@ -1220,32 +1131,32 @@ bool HumanoidBase::SelectAnim(const PlayerCommand &command, e_InterruptAnim loca
   // make it so
 
   if (selectedAnimID != -1) {
-    *previousAnim = *currentAnim;
+    previousAnim = currentAnim;
 
-    currentAnim->anim = anims->GetAnim(selectedAnimID);
-    currentAnim->id = selectedAnimID;
-    currentAnim->functionType = command.desiredFunctionType;
-    currentAnim->frameNum = 0;
-    currentAnim->touchFrame = touchFrame_tmp;
-    currentAnim->originatingInterrupt = localInterruptAnim;
-    currentAnim->radiusOffset = radiusOffset_tmp;
-    currentAnim->touchPos = touchPos_tmp;
-    currentAnim->rotationSmuggle.begin = clamp(ModulateIntoRange(-pi, pi, spatialState.relBodyAngleNonquantized - currentAnim->anim->GetIncomingBodyAngle()) * bodyRotationSmoothingFactor, -bodyRotationSmoothingMaxAngle, bodyRotationSmoothingMaxAngle);
-    currentAnim->rotationSmuggle.end = rotationSmuggle_tmp;
-    currentAnim->rotationSmuggleOffset = 0;
-    currentAnim->fullActionSmuggle = fullActionSmuggle_tmp;
-    currentAnim->actionSmuggle = actionSmuggle_tmp;
-    currentAnim->actionSmuggleOffset = Vector3(0);
-    currentAnim->actionSmuggleSustain = Vector3(0);
-    currentAnim->actionSmuggleSustainOffset = Vector3(0);
-    currentAnim->movementSmuggle = Vector3(0);
-    currentAnim->movementSmuggleOffset = Vector3(0);
-    currentAnim->incomingMovement = spatialState.movement;
-    currentAnim->outgoingMovement = CalculateOutgoingMovement(positions_tmp);
-    currentAnim->positions.clear();
-    currentAnim->positions.assign(positions_tmp.begin(), positions_tmp.end());
-    currentAnim->positionOffset = 0.0;
-    currentAnim->originatingCommand = command;
+    currentAnim.anim = anims->GetAnim(selectedAnimID);
+    currentAnim.id = selectedAnimID;
+    currentAnim.functionType = command.desiredFunctionType;
+    currentAnim.frameNum = 0;
+    currentAnim.touchFrame = touchFrame_tmp;
+    currentAnim.originatingInterrupt = localInterruptAnim;
+    currentAnim.radiusOffset = radiusOffset_tmp;
+    currentAnim.touchPos = touchPos_tmp;
+    currentAnim.rotationSmuggle.begin = clamp(ModulateIntoRange(-pi, pi, spatialState.relBodyAngleNonquantized - currentAnim.anim->GetIncomingBodyAngle()) * bodyRotationSmoothingFactor, -bodyRotationSmoothingMaxAngle, bodyRotationSmoothingMaxAngle);
+    currentAnim.rotationSmuggle.end = rotationSmuggle_tmp;
+    currentAnim.rotationSmuggleOffset = 0;
+    currentAnim.fullActionSmuggle = fullActionSmuggle_tmp;
+    currentAnim.actionSmuggle = actionSmuggle_tmp;
+    currentAnim.actionSmuggleOffset = Vector3(0);
+    currentAnim.actionSmuggleSustain = Vector3(0);
+    currentAnim.actionSmuggleSustainOffset = Vector3(0);
+    currentAnim.movementSmuggle = Vector3(0);
+    currentAnim.movementSmuggleOffset = Vector3(0);
+    currentAnim.incomingMovement = spatialState.movement;
+    currentAnim.outgoingMovement = CalculateOutgoingMovement(positions_tmp);
+    currentAnim.positions.clear();
+    currentAnim.positions.assign(positions_tmp.begin(), positions_tmp.end());
+    currentAnim.positionOffset = 0.0;
+    currentAnim.originatingCommand = command;
 
     return true;
   }
@@ -1255,14 +1166,14 @@ bool HumanoidBase::SelectAnim(const PlayerCommand &command, e_InterruptAnim loca
 
 void HumanoidBase::CalculatePredictedSituation(Vector3 &predictedPos, radian &predictedAngle) {
 
-  if (currentAnim->positions.size() > (unsigned int)currentAnim->frameNum) {
-    assert(currentAnim->positions.size() > (unsigned int)currentAnim->anim->GetEffectiveFrameCount());
-    predictedPos = spatialState.position + currentAnim->positions.at(currentAnim->anim->GetEffectiveFrameCount()) + currentAnim->actionSmuggle + currentAnim->actionSmuggleSustain + currentAnim->movementSmuggle;
+  if (currentAnim.positions.size() > (unsigned int)currentAnim.frameNum) {
+    assert(currentAnim.positions.size() > (unsigned int)currentAnim.anim->GetEffectiveFrameCount());
+    predictedPos = spatialState.position + currentAnim.positions.at(currentAnim.anim->GetEffectiveFrameCount()) + currentAnim.actionSmuggle + currentAnim.actionSmuggleSustain + currentAnim.movementSmuggle;
   } else {
-    predictedPos = spatialState.position + currentAnim->anim->GetTranslation().Get2D().GetRotated2D(spatialState.angle) + currentAnim->actionSmuggle + currentAnim->actionSmuggleSustain + currentAnim->movementSmuggle;
+    predictedPos = spatialState.position + currentAnim.anim->GetTranslation().Get2D().GetRotated2D(spatialState.angle) + currentAnim.actionSmuggle + currentAnim.actionSmuggleSustain + currentAnim.movementSmuggle;
   }
 
-  predictedAngle = spatialState.angle + currentAnim->anim->GetOutgoingAngle() + currentAnim->rotationSmuggle.end;
+  predictedAngle = spatialState.angle + currentAnim.anim->GetOutgoingAngle() + currentAnim.rotationSmuggle.end;
   predictedAngle = ModulateIntoRange(-pi, pi, predictedAngle);
   assert(predictedPos.coords[2] == 0.0f);
 }
@@ -1274,46 +1185,46 @@ Vector3 HumanoidBase::CalculateOutgoingMovement(const std::vector<Vector3> &posi
 
 void HumanoidBase::CalculateSpatialState() {
   Vector3 position;
-  if (currentAnim->positions.size() > (unsigned int)currentAnim->frameNum) {
-    position = startPos + currentAnim->positions.at(currentAnim->frameNum) + currentAnim->actionSmuggleOffset + currentAnim->actionSmuggleSustainOffset + currentAnim->movementSmuggleOffset;
+  if (currentAnim.positions.size() > (unsigned int)currentAnim.frameNum) {
+    position = startPos + currentAnim.positions.at(currentAnim.frameNum) + currentAnim.actionSmuggleOffset + currentAnim.actionSmuggleSustainOffset + currentAnim.movementSmuggleOffset;
   } else {
     Quaternion orientation;
-    currentAnim->anim->GetKeyFrame(BodyPart::player, currentAnim->frameNum, orientation, position);
+    currentAnim.anim->GetKeyFrame(BodyPart::player, currentAnim.frameNum, orientation, position);
     position.coords[2] = 0.0f;
-    position = startPos + position.GetRotated2D(startAngle) + currentAnim->actionSmuggleOffset + currentAnim->actionSmuggleSustainOffset + currentAnim->movementSmuggleOffset;
+    position = startPos + position.GetRotated2D(startAngle) + currentAnim.actionSmuggleOffset + currentAnim.actionSmuggleSustainOffset + currentAnim.movementSmuggleOffset;
   }
 
-  if (currentAnim->frameNum > 12) {
-    spatialState.foot = currentAnim->anim->GetOutgoingFoot();
+  if (currentAnim.frameNum > 12) {
+    spatialState.foot = currentAnim.anim->GetOutgoingFoot();
   }
 
   assert(startPos.coords[2] == 0.0f);
-  assert(currentAnim->actionSmuggleOffset.coords[2] == 0.0f);
-  assert(currentAnim->movementSmuggleOffset.coords[2] == 0.0f);
+  assert(currentAnim.actionSmuggleOffset.coords[2] == 0.0f);
+  assert(currentAnim.movementSmuggleOffset.coords[2] == 0.0f);
   assert(position.coords[2] == 0.0f);
 
   spatialState.actualMovement = (position - previousPosition2D) * 100.0f;
   float positionOffsetMovementIgnoreFactor = 0.5f;
   spatialState.physicsMovement = spatialState.actualMovement - (spatialState.actionSmuggleMovement) - (spatialState.movementSmuggleMovement) - (spatialState.positionOffsetMovement * positionOffsetMovementIgnoreFactor);
   spatialState.animMovement = spatialState.physicsMovement;
-  if (currentAnim->positions.size() > 0) {
+  if (currentAnim.positions.size() > 0) {
     // this way, action cheating is being omitted from the current movement, making for better requeues. however, keep in mind that
     // movementoffsets, from bumping into other players, for example, will also be ignored this way.
-    const std::vector<Vector3> &origPositionCache = match->GetAnimPositionCache(currentAnim->anim);
-    spatialState.animMovement = CalculateMovementAtFrame(origPositionCache, currentAnim->frameNum, 1).GetRotated2D(startAngle);
+    const std::vector<Vector3> &origPositionCache = match->GetAnimPositionCache(currentAnim.anim);
+    spatialState.animMovement = CalculateMovementAtFrame(origPositionCache, currentAnim.frameNum, 1).GetRotated2D(startAngle);
   }
   spatialState.movement = spatialState.physicsMovement; // PICK DEFAULT
 
 
   Vector3 bodyPosition;
   Quaternion bodyOrientation;
-  currentAnim->anim->GetKeyFrame(body, currentAnim->frameNum, bodyOrientation, bodyPosition);
-  radian x, y, z;
+  currentAnim.anim->GetKeyFrame(body, currentAnim.frameNum, bodyOrientation, bodyPosition);
+  real x, y, z;
   bodyOrientation.GetAngles(x, y, z);
 
   Vector3 quatDirection; quatDirection = bodyOrientation;
 
-  Vector3 bodyDirectionVec = Vector3(0, -1, 0).GetRotated2D(z + startAngle + currentAnim->rotationSmuggleOffset);
+  Vector3 bodyDirectionVec = Vector3(0, -1, 0).GetRotated2D(z + startAngle + currentAnim.rotationSmuggleOffset);
 
   spatialState.floatVelocity = spatialState.movement.GetLength();
   spatialState.enumVelocity = FloatToEnumVelocity(spatialState.floatVelocity);
@@ -1375,9 +1286,9 @@ void HumanoidBase::CalculateSpatialState() {
 
 void HumanoidBase::CalculateFactualSpatialState() {
 
-  spatialState.foot = currentAnim->anim->GetOutgoingFoot();
+  spatialState.foot = currentAnim.anim->GetOutgoingFoot();
 
-  if (!currentAnim->anim->GetVariableCache().outgoing_special_state().empty()) {
+  if (!currentAnim.anim->GetVariableCache().outgoing_special_state().empty()) {
     spatialState.floatVelocity = 0;
     spatialState.enumVelocity = e_Velocity_Idle;
     spatialState.movement = Vector3(0);
@@ -1424,7 +1335,7 @@ void HumanoidBase::SetFootSimilarityPredicate(e_Foot desiredFoot) const {
   predicate_DesiredFoot = desiredFoot;
 }
 
-bool HumanoidBase::CompareFootSimilarity(int animIndex1, int animIndex2) const {
+bool HumanoidBase::CompareFootSimilarity(e_Foot foot, int animIndex1, int animIndex2) const {
   int one = 1;
   int two = 1;
   if (anims->GetAnim(animIndex1)->GetCurrentFoot() == predicate_DesiredFoot) one = 0;
@@ -1739,8 +1650,7 @@ Vector3 HumanoidBase::CalculatePhysicsVector(Animation *anim, bool useDesiredMov
   bool mod_AirResistance = true;
   bool mod_CheatBodyDirection = false;
 
-  float accelerationMultiplier = 0.5f + _cache_AccelerationFactor;
-
+  float accelerationMultiplier = 0.5f + _default_AccelerationFactor;
 
   // rotate anim towards desired angle
 
@@ -1806,7 +1716,7 @@ Vector3 HumanoidBase::CalculatePhysicsVector(Animation *anim, bool useDesiredMov
 
     float lagExp = 1.0f;
     if (mod_PointinessCurve && physicsBias > 0.0f && (animType == e_DefString_BallControl || animType == e_DefString_Movement)) {
-      lagExp = 1.4f - _cache_AgilityFactor * 0.8f;
+      lagExp = 1.4f - _default_AgilityFactor * 0.8f;
       lagExp *= 1.2f - stat_agility * 0.4f;
       if (touch) {
         lagExp += -0.1f + clamp(difficultyFactor * 0.4f, 0.0f, 0.5f);
@@ -1974,7 +1884,7 @@ Vector3 HumanoidBase::CalculatePhysicsVector(Animation *anim, bool useDesiredMov
 
       maxChange *= 1.2f - veloFactor * 0.4f;
 
-      maxChange *= 0.75f + _cache_AgilityFactor * 0.5f;
+      maxChange *= 0.75f + _default_AgilityFactor * 0.5f;
 
       // lose power 'around' touch
 
@@ -2123,59 +2033,86 @@ Vector3 HumanoidBase::ForceIntoAllowedBodyDirectionVec(const Vector3 &src) const
 
   // check what allowed dir this vector is closest to
   float bestDot = -1.0f;
-  int bestIndex = 0;
-  for (unsigned int i = 0; i < allowedBodyDirVecs.size(); i++) {
-    float nDotL = allowedBodyDirVecs[i].GetDotProduct(src);
+  Vector3 best;
+  for (const Vector3& vec : allowedBodyDirVecs) {
+    float nDotL = vec.GetDotProduct(src);
     if (nDotL > bestDot) {
       bestDot = nDotL;
-      bestIndex = i;
+      best = vec;
     }
   }
 
-  return allowedBodyDirVecs.at(bestIndex);
+  return best;
 }
 
 radian HumanoidBase::ForceIntoAllowedBodyDirectionAngle(radian angle) const {
 
   float bestAngleDiff = 10000.0;
-  int bestIndex = 0;
-  for (unsigned int i = 0; i < allowedBodyDirAngles.size(); i++) {
-    float diff = fabs(allowedBodyDirAngles[i] - angle);
+  radian bestValue = 0;
+  for (auto v : allowedBodyDirAngles) {
+    float diff = fabs(v - angle);
     if (diff < bestAngleDiff) {
       bestAngleDiff = diff;
-      bestIndex = i;
+      bestValue = v;
     }
   }
-
-  return allowedBodyDirAngles.at(bestIndex);
+  return bestValue;
 }
 
 Vector3 HumanoidBase::ForceIntoPreferredDirectionVec(const Vector3 &src) const {
 
   float bestDot = -1.0f;
-  int bestIndex = 0;
-  for (unsigned int i = 0; i < preferredDirectionVecs.size(); i++) {
-    float nDotL = preferredDirectionVecs[i].GetDotProduct(src);
+  Vector3 bestValue;
+  for (auto& v: preferredDirectionVecs) {
+    float nDotL = v.GetDotProduct(src);
     if (nDotL > bestDot) {
       bestDot = nDotL;
-      bestIndex = i;
+      bestValue = v;
     }
   }
-
-  return preferredDirectionVecs.at(bestIndex);
+  return bestValue;
 }
 
 radian HumanoidBase::ForceIntoPreferredDirectionAngle(radian angle) const {
 
   float bestAngleDiff = 10000.0;
-  int bestIndex = 0;
-  for (unsigned int i = 0; i < preferredDirectionAngles.size(); i++) {
-    float diff = fabs(preferredDirectionAngles[i] - angle);
+  radian bestValue;
+  for (auto v: preferredDirectionAngles) {
+    float diff = fabs(v - angle);
     if (diff < bestAngleDiff) {
       bestAngleDiff = diff;
-      bestIndex = i;
+      bestValue = v;
     }
   }
+  return bestValue;
+}
 
-  return preferredDirectionAngles.at(bestIndex);
+void HumanoidBase::ProcessState(EnvState* state) {
+  humanoidNode->ProcessState(state);
+  animApplyBuffer.ProcessState(state);
+  state->process(buf_LowDetailMode);
+  state->process(buf_bodyUpdatePhase);
+  offsets.ProcessState(state);
+  currentAnim.ProcessState(state);
+  previousAnim.ProcessState(state);
+  state->process(startPos);
+  state->process(startAngle);
+  state->process(nextStartPos);
+  state->process(nextStartAngle);
+  spatialState.ProcessState(state);
+  state->process(previousPosition2D);
+  state->process((void*) &interruptAnim, sizeof(interruptAnim));
+  state->process(reQueueDelayFrames);
+  state->process(tripType);
+  state->process(tripDirection);
+  state->process(decayingPositionOffset);
+  state->process(decayingDifficultyFactor);
+  state->process(zMultiplier);
+  int s = movementHistory.size();
+  state->process(s);
+  movementHistory.resize(s);
+  for (auto& i : movementHistory) {
+    i.ProcessState(state);
+  }
+  state->process(mentalImageTime);
 }

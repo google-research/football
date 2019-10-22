@@ -15,24 +15,15 @@
 
 
 AIControlledKeyboard::AIControlledKeyboard() {
-  deviceType = e_HIDeviceType_Keyboard;
-  identifier = "AIkeyboard";
-}
-
-void AIControlledKeyboard::Process() {
-
+  memset(buttons_pressed_, 0, sizeof(buttons_pressed_));
 }
 
 bool AIControlledKeyboard::GetButton(e_ButtonFunction buttonFunction) {
-  return buttons_pressed_.find(buttonFunction) != buttons_pressed_.end();
+  return buttons_pressed_[buttonFunction];
 }
 
 void AIControlledKeyboard::SetButton(e_ButtonFunction buttonFunction, bool state) {
-  if (state) {
-    buttons_pressed_.insert(buttonFunction);
-  } else {
-    buttons_pressed_.erase(buttonFunction);
-  }
+  buttons_pressed_[buttonFunction] = state;
 }
 
 bool AIControlledKeyboard::GetPreviousButtonState(e_ButtonFunction buttonFunction) {
@@ -49,6 +40,10 @@ void AIControlledKeyboard::SetDirection(const Vector3& new_direction) {
 
 void AIControlledKeyboard::Reset() {
   direction_ = Vector3(0, 0, 0);
-  buttons_pressed_.clear();
+  memset(buttons_pressed_, 0, sizeof(buttons_pressed_));
 }
 
+void AIControlledKeyboard::ProcessState(EnvState* state) {
+  state->process(direction_);
+  state->process(buttons_pressed_, sizeof(buttons_pressed_));
+}

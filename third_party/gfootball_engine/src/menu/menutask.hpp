@@ -53,7 +53,6 @@ struct QueuedFixture {
     matchData = 0;
   }
   std::vector<SideSelection> sides; // queued match fixture
-  std::string teamID1, teamID2; // queued match fixture
   int team1KitNum, team2KitNum;
   MatchData *matchData;
 };
@@ -65,16 +64,12 @@ class MenuTask : public Gui2Task {
     virtual ~MenuTask();
 
     virtual void ProcessPhase();
+    void MenuAction();
+    void GameAction();
 
     void SetControllerSetup(const std::vector<SideSelection> &sides) { queuedFixture.sides = sides;  }
     const std::vector<SideSelection> GetControllerSetup() {
       return queuedFixture.sides;
-    }
-    int GetTeamID(int whichOne) {
-      if (whichOne == 0)
-        return atoi(queuedFixture.teamID1.c_str());
-      else
-        return atoi(queuedFixture.teamID2.c_str());
     }
     int GetTeamKitNum(int teamID) { if (teamID == 0) return queuedFixture.team1KitNum; else return queuedFixture.team2KitNum; }
     void SetMatchData(MatchData *matchData) {  queuedFixture.matchData = matchData;  }

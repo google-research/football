@@ -15,8 +15,6 @@
 
 """Base controller class."""
 
-import logging
-
 from gfootball.env import football_action_set
 from gfootball.env import player_base
 

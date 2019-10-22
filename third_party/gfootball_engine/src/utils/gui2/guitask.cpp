@@ -29,20 +29,10 @@ namespace blunted {
     delete windowManager;
   }
 
-  void Gui2Task::GetPhase() {
-  }
-
   void Gui2Task::ProcessPhase() {
     if (GetScenarioConfig().render) {
       windowManager->GetRoot()->SetRecursiveZPriority(0);
     }
-    ProcessEvents();
     windowManager->Process();
-  }
-
-  void Gui2Task::PutPhase() {
-  }
-
-  void Gui2Task::ProcessEvents() {
   }
 }

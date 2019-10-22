@@ -18,6 +18,7 @@
 #ifndef _HPP_ANIMATIONEXTENSION
 #define _HPP_ANIMATIONEXTENSION
 
+#include <vector>
 #include "../../base/math/vector3.hpp"
 
 namespace blunted {

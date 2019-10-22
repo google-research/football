@@ -53,8 +53,9 @@ void RefereeController::GetForceField(std::vector<ForceSpot> &forceField) {
   }
 
   std::vector<Player*> players;
-  match->GetActiveTeamPlayers(0, players);
-  match->GetActiveTeamPlayers(1, players);
+  match->GetActiveTeamPlayers(match->FirstTeam(),
+                              players);
+  match->GetActiveTeamPlayers(match->SecondTeam(), players);
   for (unsigned int i = 0; i < players.size(); i++) {
     ForceSpot forceSpot;
     forceSpot.origin = players[i]->GetPosition() + players[i]->GetMovement() * 0.4f;

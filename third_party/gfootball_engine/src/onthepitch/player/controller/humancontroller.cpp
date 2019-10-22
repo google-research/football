@@ -37,7 +37,7 @@ void HumanController::SetPlayer(PlayerBase *player) {
 }
 
 void HumanController::RequestCommand(PlayerCommandQueue &commandQueue) {
-
+  auto _mentalImage = match->GetMentalImage(_mentalImageTime);
   CastPlayer()->SetDesiredTimeToBall_ms(0);
 
   _Preprocess(); // calculate some variables
@@ -200,7 +200,7 @@ void HumanController::RequestCommand(PlayerCommandQueue &commandQueue) {
         command.desiredVelocityFloat = inputVelocityFloat; // this is so we can use sprint/dribble buttons as shot modifiers
         command.touchInfo.inputDirection = inputDirection;
         command.touchInfo.autoDirectionBias = GetConfiguration()->GetReal("gameplay_shot_autodirection", _default_Shot_AutoDirection);
-        if (GetHIDevice()->GetDeviceType() == e_HIDeviceType_Keyboard) command.touchInfo.autoDirectionBias = 1.0f;
+        command.touchInfo.autoDirectionBias = 1.0f;
         command.touchInfo.desiredDirection = AI_GetShotDirection(CastPlayer(), command.touchInfo.inputDirection, command.touchInfo.autoDirectionBias);
         command.touchInfo.desiredPower =
             clamp(std::pow(gaugeFactor, 0.6f), 0.01f, 1.0f);

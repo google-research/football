@@ -51,7 +51,6 @@ float Perlin::noise2(float vec[2])
 
 	if (mStart)
   {
-    srand(mSeed);
 		mStart = false;
 		init();
 	}
@@ -169,12 +168,11 @@ float Perlin::perlin_noise_2D(float vec[2])
 
 
 
-Perlin::Perlin(int octaves,float freq,float amp,int seed)
+Perlin::Perlin(int octaves,float freq,float amp)
 {
   mOctaves = octaves;
   mFrequency = freq;
   mAmplitude = amp;
-  mSeed = seed;
   mStart = true;
 }
 

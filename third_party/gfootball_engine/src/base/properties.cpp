@@ -31,6 +31,10 @@ namespace blunted {
   Properties::Properties() {
   }
 
+  Properties::Properties(std::vector<std::pair<std::string, float>> values) {
+
+  }
+
   Properties::~Properties() {
   }
 
@@ -122,6 +126,30 @@ namespace blunted {
 
   const map_Properties *Properties::GetProperties() const {
     return &properties;
+  }
+
+  void Properties::ProcessState(EnvState* state) {
+    if (state->Load()) {
+      properties.clear();
+      int size;
+      state->process(size);
+      while (size--) {
+        string key;
+        string value;
+        state->process(key);
+        state->process(value);
+        properties[key] = value;
+      }
+    } else {
+      int size = properties.size();
+      state->process(size);
+      for (auto x : properties) {
+        string key = x.first;
+        string value = x.second;
+        state->process(key);
+        state->process(value);
+      }
+    }
   }
 
   }  // namespace blunted

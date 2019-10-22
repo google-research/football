@@ -37,6 +37,17 @@ class HumanController : public PlayerController {
     virtual Vector3 GetDirection();
     virtual float GetFloatVelocity();
 
+    virtual void ProcessState(EnvState* state) {
+      ProcessPlayerController(state);
+      hid->ProcessState(state);
+      state->process(actionMode);
+      state->process(static_cast<void*>(&actionButton), sizeof(actionButton));
+      state->process(actionBufferTime_ms);
+      state->process(gauge_ms);
+      state->process(previousDirection);
+      state->process(steadyDirection);
+      state->process(lastSteadyDirectionSnapshotTime_ms);
+    }
     virtual int GetReactionTime_ms();
 
     IHIDevice *GetHIDevice() { return hid; }
@@ -64,7 +75,6 @@ class HumanController : public PlayerController {
     Vector3 previousDirection;
     Vector3 steadyDirection;
     int lastSteadyDirectionSnapshotTime_ms = 0;
-
 };
 
 #endif

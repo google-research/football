@@ -22,8 +22,6 @@
 
 #include "../../scene/objects/image2d.hpp"
 
-#include "events.hpp"
-
 namespace blunted {
 
   class Gui2WindowManager;
@@ -42,22 +40,15 @@ namespace blunted {
       virtual void RemoveView(Gui2View *view);
       virtual void SetParent(Gui2View *view);
       virtual Gui2View *GetParent();
-      virtual void SetSize(float new_width_percent, float new_height_percent) { width_percent = new_width_percent; height_percent = new_height_percent; }
       virtual void SetPosition(float x_percent, float y_percent);
       virtual void GetSize(float &width_percent, float &height_percent) const;
       virtual void GetPosition(float &x_percent, float &y_percent) const;
       virtual void GetDerivedPosition(float &x_percent, float &y_percent) const;
-      virtual void SnuglyFitSize(float margin = 0.5f);
       virtual void CenterPosition();
       virtual void GetImages(std::vector < boost::intrusive_ptr<Image2D> > &target);
 
       virtual void Process();
       virtual void Redraw() {}
-
-      virtual bool ProcessEvent(Gui2Event *event);
-
-      virtual void ProcessWindowingEvent(WindowingEvent *event);
-      virtual void ProcessKeyboardEvent(KeyboardEvent *event);
 
       bool IsFocussed();
       void SetFocus();
@@ -75,7 +66,6 @@ namespace blunted {
       virtual void Show();
       virtual void ShowAllChildren();
       virtual void Hide();
-      virtual void HideAllChildren();
 
       void SetRecursiveZPriority(int prio);
       virtual void SetZPriority(int prio);

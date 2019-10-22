@@ -21,7 +21,6 @@
 #include "../main.hpp"
 #include "../scene/objectfactory.hpp"
 #include "../scene/objects/geometry.hpp"
-#include "../scene/objects/joint.hpp"
 #include "../scene/objects/light.hpp"
 #include "../scene/resources/geometrydata.hpp"
 #include "../types/resource.hpp"
@@ -34,15 +33,15 @@ namespace blunted {
   ObjectLoader::~ObjectLoader() {
   }
 
-  boost::intrusive_ptr<Node> ObjectLoader::LoadObject(boost::shared_ptr<Scene3D> scene3D, const std::string &filename, const Vector3 &offset) const {
+  boost::intrusive_ptr<Node> ObjectLoader::LoadObject(const std::string &filename, const Vector3 &offset) const {
 
     XMLLoader loader;
     const XMLTree objectTree = loader.LoadFile(filename);
-    boost::intrusive_ptr<Node> result = LoadObjectImpl(scene3D, filename, objectTree.children.begin()->second, offset);
+    boost::intrusive_ptr<Node> result = LoadObjectImpl(filename, objectTree.children.begin()->second, offset);
     return result;
   }
 
-  boost::intrusive_ptr<Node> ObjectLoader::LoadObjectImpl(boost::shared_ptr<Scene3D> scene3D, const std::string &nodename, const XMLTree &objectTree, const Vector3 &offset) const {
+  boost::intrusive_ptr<Node> ObjectLoader::LoadObjectImpl(const std::string &nodename, const XMLTree &objectTree, const Vector3 &offset) const {
 
     boost::intrusive_ptr<Node> objNode(new Node("objectnode: " + nodename));
 
@@ -65,7 +64,7 @@ namespace blunted {
       // NODE (recurse)
 
       if (objectIter->first == "node") {
-        objNode->AddNode(LoadObjectImpl(scene3D, dirpart, objectIter->second, offset));
+        objNode->AddNode(LoadObjectImpl(dirpart, objectIter->second, offset));
       }
 
       else if (objectIter->first == "name") {
@@ -130,7 +129,7 @@ namespace blunted {
         if (properties.GetBool("dynamic")) geometry->GetResource()->SetDynamic(true);
 
         object->SetProperties(properties);
-        scene3D->CreateSystemObjects(object);
+        GetScene3D()->CreateSystemObjects(object);
         object->SetLocalMode(localMode);
         object->SetPosition(position);
         object->SetRotation(rotation);
@@ -171,7 +170,7 @@ namespace blunted {
             GetContext().object_factory.CreateObject(objectName, objectType));
 
         //object->SetProperties(properties);
-        scene3D->CreateSystemObjects(object);
+        GetScene3D()->CreateSystemObjects(object);
         object->SetLocalMode(localMode);
         object->SetColor(GetVectorFromString(properties.Get("color")));
         object->SetRadius(properties.GetReal("radius"));
@@ -184,61 +183,6 @@ namespace blunted {
         object->SetPosition(position);
         objNode->AddObject(object);
       }
-
-
-      // JOINT waaaah smoke em
-
-      else if (objectIter->first == "joint") {
-
-        objectType = e_ObjectType_Joint;
-
-        Vector3 anchor(0, 0, 0);
-        Vector3 axis_1(0, 0, 0);
-        Vector3 axis_2(0, 0, 0);
-        std::string target_1 = "";
-        std::string target_2 = "";
-
-        map_XMLTree::const_iterator iter = objectIter->second.children.begin();
-        while (iter != objectIter->second.children.end()) {
-
-          if (iter->first == "name") {
-            objectName = iter->second.value;
-          }
-          if (iter->first == "anchor") {
-            anchor = GetVectorFromString(iter->second.value) + offset;
-          }
-          if (iter->first == "axis_1") {
-            axis_1 = GetVectorFromString(iter->second.value);
-          }
-          if (iter->first == "axis_2") {
-            axis_2 = GetVectorFromString(iter->second.value);
-          }
-          if (iter->first == "target_1") {
-            target_1 = iter->second.value;
-          }
-          if (iter->first == "target_2") {
-            target_2 = iter->second.value;
-          }
-          if (iter->first == "properties") {
-            InterpretProperties(iter->second.children, properties);
-          }
-
-          iter++;
-        }
-
-        boost::intrusive_ptr<Joint> object = static_pointer_cast<Joint>(
-            GetContext().object_factory.CreateObject(objectName, objectType));
-        object->SetProperties(properties);
-        scene3D->CreateSystemObjects(object);
-        objNode->AddObject(object);
-
-        boost::intrusive_ptr<Geometry> target_1_object;
-        boost::intrusive_ptr<Geometry> target_2_object;
-        if (target_1 != "") target_1_object = static_pointer_cast<Geometry>(objNode->GetObject(target_1));
-        if (target_2 != "") target_2_object = static_pointer_cast<Geometry>(objNode->GetObject(target_2));
-        object->Connect(target_1_object, target_2_object, anchor, axis_1, axis_2);
-      }
-
       objectIter++;
     }
 

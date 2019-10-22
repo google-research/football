@@ -44,8 +44,8 @@ class PlayerOfficial : public PlayerBase {
     virtual void Deactivate();
 
     virtual void Process();
-    virtual void PreparePutBuffers(unsigned long snapshotTime_ms);
-    virtual void FetchPutBuffers(unsigned long putTime_ms);
+    virtual void PreparePutBuffers();
+    virtual void FetchPutBuffers();
 
   protected:
     e_OfficialType officialType;

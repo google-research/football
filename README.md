@@ -266,8 +266,8 @@ A simple example of training multi-agent can be found in examples/run_multiagent
 
 After entering the image, you can run sample training with `python3 -m gfootball.examples.run_ppo2`.
 Unfortunately, rendering is not supported inside the docker.
-Note that tensorflow/tensorflow:1.12.0-gpu-py3 is based on Ubuntu 16.04 with
-python 3.5. If you want python 3.6, you should instead use tensorflow/tensorflow:1.14.0-gpu-py3.
+
+Note that tensorflow/tensorflow:1.12.0-gpu-py3 is based on Ubuntu 16.04 with python 3.5. If you want python 3.6, you should instead use tensorflow/tensorflow:1.14.0-gpu-py3.
 
 ### Building a docker image under MacOS
 
@@ -294,6 +294,14 @@ There are following scripts provided to operate on trace dumps:
 -  `dump_to_txt.py` - converts trace dump to human-readable form.
 -  `dump_to_video.py` - converts trace dump to a 2D representation video.
 -  `replay.py` - replays a given trace dump using environment.
+
+## Environment logs
+Environment uses `absl.logging` module for logging.
+You can change logging level by setting --verbosity flag to one of the following values:
+
+-  `-1` - warning, only warnings and above are logged when problems are encountered,
+-  `0` - info (the default), some per-episode statistics and similar are logged as well,
+-  `1` - debug, additional debugging messages are included.
 
 ## Frequent Problems & Solutions
 

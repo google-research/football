@@ -338,8 +338,8 @@ void GeneratePitch(int resX, int resY, int resSpecularX, int resSpecularY, int r
 
   float scale = 0.06f;
 
-  Perlin *perlin1 = new Perlin(4, 0.06 * scale, 0.5, time(NULL)); // low freq
-  Perlin *perlin2 = new Perlin(4, 0.14 * scale, 0.5, time(NULL) + 139882); // mid freq
+  Perlin *perlin1 = new Perlin(4, 0.06 * scale, 0.5); // low freq
+  Perlin *perlin2 = new Perlin(4, 0.14 * scale, 0.5); // mid freq
 //  Perlin *perlin3 = new Perlin(4, 25.4 / 20.0,   3, 423423); // high freq
   float* perlinTex = new float[perlinTexW * perlinTexH];
 

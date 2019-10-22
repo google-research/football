@@ -26,10 +26,7 @@
 #include "base/math/bluntmath.hpp"
 #include "base/utils.hpp"
 #include "file.h"
-#include "framework/scheduler.hpp"
 #include "main.hpp"
-#include "managers/scenemanager.hpp"
-#include "managers/systemmanager.hpp"
 #include "scene/objectfactory.hpp"
 #include "scene/scene2d/scene2d.hpp"
 #include "scene/scene3d/scene3d.hpp"
@@ -55,19 +52,13 @@ boost::shared_ptr<Scene2D> GetScene2D() { return context->scene2D; }
 
 boost::shared_ptr<Scene3D> GetScene3D() { return context->scene3D; }
 
-GraphicsSystem* GetGraphicsSystem() { return context->graphicsSystem; }
+GraphicsSystem* GetGraphicsSystem() { return context->graphicsSystem.get(); }
 
 boost::shared_ptr<GameTask> GetGameTask() { return context->gameTask; }
 
 boost::shared_ptr<MenuTask> GetMenuTask() { return context->menuTask; }
 
-boost::shared_ptr<SynchronizationTask> GetSynchronizationTask() {
-  return context->synchronizationTask;
-}
-
 Properties* GetConfiguration() { return context->config; }
-
-SystemManager* GetSystemManager() { return &context->system_manager; }
 
 ScenarioConfig& GetScenarioConfig() { return context->scenario_config; }
 
@@ -88,26 +79,18 @@ void run_game(Properties* input_config) {
   Initialize(*context->config);
   randomize(0);
 
-  int timeStep_ms = context->config->GetInt("physics_frametime_ms", 10);
-
   // initialize systems
-
-  SystemManager* systemManager = &GetContext().system_manager;
-
-  context->graphicsSystem = new GraphicsSystem();
-  bool returnvalue =
-      systemManager->RegisterSystem("GraphicsSystem", context->graphicsSystem);
-  if (!returnvalue) Log(e_FatalError, "football", "main", "Could not register GraphicsSystem");
+  context->graphicsSystem.reset(new GraphicsSystem());
   context->graphicsSystem->Initialize(*context->config);
 
   // init scenes
 
-  context->scene2D =
-      boost::shared_ptr<Scene2D>(new Scene2D("scene2D", *context->config));
-  GetContext().scene_manager.RegisterScene(context->scene2D);
-
-  context->scene3D = boost::shared_ptr<Scene3D>(new Scene3D("scene3D"));
-  GetContext().scene_manager.RegisterScene(context->scene3D);
+  context->scene2D.reset(new Scene2D(*context->config));
+  context->graphicsSystem->Create2DScene(context->scene2D);
+  context->scene2D->Init();
+  context->scene3D.reset(new Scene3D());
+  context->graphicsSystem->Create3DScene(context->scene3D);
+  context->scene3D->Init();
 
   for (int x = 0; x < 2 * MAX_PLAYERS; x++) {
     context->controllers.push_back(new AIControlledKeyboard());
@@ -129,53 +112,12 @@ void run_game(Properties* input_config) {
   context->menuTask = boost::shared_ptr<MenuTask>(
       new MenuTask(5.0f / 4.0f, 0, context->defaultFont,
                    context->defaultOutlineFont, context->config));
-  // ME
-  //if (controllers.size() > 1) menuTask->SetEventJoyButtons(static_cast<HIDGamepad*>(controllers.at(1))->GetControllerMapping(e_ControllerButton_A), static_cast<HIDGamepad*>(controllers.at(1))->GetControllerMapping(e_ControllerButton_B));
-
-  context->gameSequence = boost::shared_ptr<TaskSequence>(
-      new TaskSequence("game", timeStep_ms, false));
-
-  // note: the whole locking stuff is now happening from within some of the code, iirc, 't is all very ugly and unclear. sorry
-
-  //gameSequence->AddLockEntry(graphicsGameMutex, e_LockAction_Lock);   // ---------- lock -----
-
-  context->synchronizationTask =
-      boost::shared_ptr<SynchronizationTask>(new SynchronizationTask());
-  context->gameSequence->AddUserTaskEntry(context->synchronizationTask,
-                                          e_TaskPhase_Get);
-
-  context->gameSequence->AddUserTaskEntry(context->menuTask, e_TaskPhase_Get);
-  context->gameSequence->AddUserTaskEntry(context->menuTask,
-                                          e_TaskPhase_Process);
-  context->gameSequence->AddUserTaskEntry(context->menuTask, e_TaskPhase_Put);
-
-  //gameSequence->AddLockEntry(graphicsGameMutex, e_LockAction_Unlock); // ---------- unlock ---
-
-  context->gameSequence->AddUserTaskEntry(context->gameTask, e_TaskPhase_Get);
-  context->gameSequence->AddUserTaskEntry(context->gameTask,
-                                          e_TaskPhase_Process);
-  context->gameSequence->AddUserTaskEntry(context->gameTask, e_TaskPhase_Put);
-  if (context->graphicsSystem && game_config.render_mode != e_Disabled) {
-    context->gameSequence->AddSystemTaskEntry(context->graphicsSystem,
-                                              e_TaskPhase_Get);
-    context->gameSequence->AddSystemTaskEntry(context->graphicsSystem,
-                                              e_TaskPhase_Process);
-    context->gameSequence->AddSystemTaskEntry(context->graphicsSystem,
-                                              e_TaskPhase_Put);
-  }
-
-  context->gameSequence->AddUserTaskEntry(context->synchronizationTask,
-                                          e_TaskPhase_Put);
-  GetScheduler()->RegisterTaskSequence(context->gameSequence);
 }
   // fire!
 
 void quit_game() {
   context->gameTask.reset();
   context->menuTask.reset();
-
-  context->gameSequence.reset();
-  context->graphicsSequence.reset();
 
   context->scene2D.reset();
   context->scene3D.reset();
@@ -193,6 +135,3 @@ void quit_game() {
   Exit();
 }
 
-void set_rendering(bool enabled) {
-  GetGraphicsSystem()->GetTask()->SetEnabled(enabled);
-}

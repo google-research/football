@@ -30,20 +30,24 @@ PlayerOfficial::PlayerOfficial(e_OfficialType officialType, Match *match, Player
 PlayerOfficial::~PlayerOfficial() {
 }
 
-HumanoidBase *PlayerOfficial::CastHumanoid() { return static_cast<HumanoidBase*>(humanoid); }
+HumanoidBase *PlayerOfficial::CastHumanoid() {
+  return static_cast<HumanoidBase *>(humanoid.get());
+}
 
 RefereeController *PlayerOfficial::CastController() {
-  return static_cast<RefereeController*>(controller);
+  return static_cast<RefereeController *>(controller.get());
 }
 
 void PlayerOfficial::Activate(boost::intrusive_ptr<Node> humanoidSourceNode, boost::intrusive_ptr<Node> fullbodySourceNode, std::map<Vector3, Vector3> &colorCoords, boost::intrusive_ptr < Resource<Surface> > kit, boost::shared_ptr<AnimCollection> animCollection, bool lazyPlayer) {
   isActive = true;
-  humanoid = new HumanoidBase(this, match, humanoidSourceNode, fullbodySourceNode, colorCoords, animCollection, match->GetDynamicNode(), kit, 0);
+  humanoid.reset(new HumanoidBase(
+      this, match, humanoidSourceNode, fullbodySourceNode, colorCoords,
+      animCollection, match->GetDynamicNode(), kit));
 
   CastHumanoid()->ResetPosition(Vector3(0), Vector3(0));
 
-  controller = new RefereeController(match);
-  CastController()->SetPlayer(this);
+  controller.reset(new RefereeController(match));
+  controller->SetPlayer(this);
 }
 
 void PlayerOfficial::Deactivate() {
@@ -55,11 +59,11 @@ void PlayerOfficial::Process() {
   CastHumanoid()->Process();
 }
 
-void PlayerOfficial::PreparePutBuffers(unsigned long snapshotTime_ms) {
-  PlayerBase::PreparePutBuffers(snapshotTime_ms);
+void PlayerOfficial::PreparePutBuffers() {
+  PlayerBase::PreparePutBuffers();
 }
 
-void PlayerOfficial::FetchPutBuffers(unsigned long putTime_ms) {
-  PlayerBase::FetchPutBuffers(putTime_ms);
+void PlayerOfficial::FetchPutBuffers() {
+  PlayerBase::FetchPutBuffers();
 }
 

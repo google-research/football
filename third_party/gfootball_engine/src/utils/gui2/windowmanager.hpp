@@ -55,8 +55,6 @@ namespace blunted {
       void UpdateImagePosition(Gui2View *view) const;
       void RemoveImage(boost::intrusive_ptr<Image2D> image) const;
 
-      void MarkForDeletion(Gui2View *view);
-
       void SetTimeStep_ms(unsigned long timeStep_ms) {
         this->timeStep_ms = timeStep_ms;
       };
@@ -85,9 +83,6 @@ namespace blunted {
 
       Gui2Root *root;
       Gui2View *focus;
-
-      std::vector<Gui2View*> pendingDelete;
-
       unsigned long timeStep_ms = 0;
 
       Gui2Style *style;

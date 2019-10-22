@@ -25,8 +25,6 @@
 
 #include "../main.hpp"
 
-#include "../framework/scheduler.hpp"
-
 using namespace blunted;
 
 MenuTask::MenuTask(float aspectRatio, float margin, TTF_Font *defaultFont,
@@ -80,8 +78,6 @@ MenuTask::MenuTask(float aspectRatio, float margin, TTF_Font *defaultFont,
   // 6 == man utd
   // 7 == psv
   // 8 == real madrid
-  queuedFixture.teamID1 = "3";
-  queuedFixture.teamID2 = "8";
   queuedFixture.team1KitNum = 2;
   queuedFixture.team2KitNum = 2;
   menuAction = e_MenuAction_Menu;
@@ -91,26 +87,23 @@ MenuTask::~MenuTask() {
   delete windowManager->GetPageFactory();
 }
 
+void MenuTask::MenuAction() {
+  windowManager->GetPagePath()->Clear();
+  GetGameTask()->StopMatch();
+  windowManager->GetPageFactory()->CreatePage((int)e_PageID_LoadingMatch, 0);
+}
+
+void MenuTask::GameAction() {
+  GetGameTask()->StartMatch();
+}
+
 void MenuTask::ProcessPhase() {
-
   Gui2Task::ProcessPhase();
-
   if (menuAction == e_MenuAction_Menu) {
-
-    windowManager->GetPagePath()->Clear();
-
-    GetGameTask()->Action(e_GameTaskMessage_StopMatch);
-    GetGameTask()->Action(e_GameTaskMessage_StartMenuScene);
-
-    Properties properties;
-    windowManager->GetPageFactory()->CreatePage((int)e_PageID_LoadingMatch, properties, 0);
+    MenuAction();
   } else if (menuAction == e_MenuAction_Game) {
-
-    GetGameTask()->Action(e_GameTaskMessage_StopMenuScene);
-    GetGameTask()->Action(e_GameTaskMessage_StartMatch);
-
+    GameAction();
   }
-
   menuAction = e_MenuAction_None;
 }
 

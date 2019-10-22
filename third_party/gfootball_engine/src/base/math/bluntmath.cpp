@@ -78,7 +78,7 @@ namespace blunted {
     return value;
   }
 
-  real ModulateIntoRange(real min, real max, real value) {
+  radian ModulateIntoRange(real min, real max, radian value) {
     real step = max - min;
     real newValue = value;
     while (newValue < min) newValue += step;

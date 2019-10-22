@@ -25,8 +25,6 @@
 
 #include "../types/loader.hpp"
 
-#include "../managers/environmentmanager.hpp"
-
 namespace blunted {
 
   template <typename T>

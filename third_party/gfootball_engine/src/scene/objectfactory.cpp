@@ -25,7 +25,6 @@
 #include "../scene/objects/geometry.hpp"
 #include "../scene/objects/skybox.hpp"
 #include "../scene/objects/light.hpp"
-#include "../scene/objects/joint.hpp"
 
 namespace blunted {
 
@@ -74,9 +73,6 @@ namespace blunted {
         break;
       case e_ObjectType_Light:
         bla = new Light(*static_cast<Light*>(source.get()));
-        break;
-      case e_ObjectType_Joint:
-        bla = new Joint(*static_cast<Joint*>(source.get()));
         break;
       default:
         Log(e_FatalError, "ObjectFactory", "CopyObject", "Object type " + int_to_str(source->GetObjectType()) + " not found");

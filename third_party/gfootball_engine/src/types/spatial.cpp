@@ -17,6 +17,8 @@
 
 #include "spatial.hpp"
 
+#include "../scene/scene3d/node.hpp"
+
 namespace blunted {
 
   Spatial::Spatial(const std::string &name) : name(name), parent(0), localMode(e_LocalMode_Relative) {
@@ -50,6 +52,8 @@ namespace blunted {
     InvalidateBoundingVolume();
   }
 
+  e_LocalMode Spatial::GetLocalMode() { return localMode; }
+
   void Spatial::SetName(const std::string &name) {
     this->name = name;
   }
@@ -58,7 +62,7 @@ namespace blunted {
     return name.c_str();
   }
 
-  void Spatial::SetParent(Spatial *parent) {
+  void Spatial::SetParent(Node *parent) {
     this->parent = parent;
     InvalidateBoundingVolume();
   }
@@ -78,8 +82,7 @@ namespace blunted {
   }
 
   Quaternion Spatial::GetRotation() const {
-    Quaternion rot = rotation;
-    return rot;
+    return rotation;
   }
 
   void Spatial::SetScale(const Vector3 &newScale) {
@@ -159,6 +162,7 @@ namespace blunted {
     _dirty_DerivedPosition = true;
     _dirty_DerivedRotation = true;
     _dirty_DerivedScale = true;
+    _dirty_DerivedRotatedRotation = true;
   }
 
 

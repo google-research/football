@@ -28,7 +28,7 @@ import copy
 import six.moves.cPickle
 import os
 import tempfile
-import tensorflow as tf
+
 
 class ScriptHelpers(object):
   """Set of methods used by command line scripts."""

@@ -146,26 +146,6 @@ namespace blunted {
     y_percent = tmp_y_percent;
   }
 
-  void Gui2View::SnuglyFitSize(float margin) {
-    if (IsSelectable()) return;
-
-    float maxW = 0;
-    float maxH = 0;
-
-    float x, y, w, h;
-
-    for (unsigned int i = 0; i < children.size(); i++) {
-      children[i]->SnuglyFitSize(margin);
-
-      children[i]->GetPosition(x, y);
-      children[i]->GetSize(w, h);
-      if (x + w > maxW) maxW = x + w;
-      if (y + h > maxH) maxH = y + h;
-    }
-
-    SetSize(maxW + margin * 2.0f, maxH + margin * 2.0f);
-  }
-
   void Gui2View::CenterPosition() {
   }
 
@@ -174,41 +154,8 @@ namespace blunted {
 
   void Gui2View::Process() {
     for (unsigned int i = 0; i < children.size(); i++) {
-      //printf("gui2view %s :: processing child %s\n", name.c_str(), children[i]->GetName().c_str());
       children[i]->Process();
     }
-  }
-
-  bool Gui2View::ProcessEvent(Gui2Event *event) {
-
-    event->Accept();
-
-    switch (event->GetType()) {
-
-      case e_Gui2EventType_Windowing:
-        ProcessWindowingEvent(static_cast<WindowingEvent*>(event));
-        break;
-
-      case e_Gui2EventType_Keyboard:
-        ProcessKeyboardEvent(static_cast<KeyboardEvent*>(event));
-        break;
-
-      default:
-        break;
-
-    }
-
-    if (!event->IsAccepted() && parent) parent->ProcessEvent(event);
-
-    return true;
-  }
-
-  void Gui2View::ProcessWindowingEvent(WindowingEvent *event) {
-    event->Ignore();
-  }
-
-  void Gui2View::ProcessKeyboardEvent(KeyboardEvent *event) {
-    event->Ignore();
   }
 
   bool Gui2View::IsFocussed() {
@@ -237,14 +184,6 @@ namespace blunted {
     std::vector<Gui2View*>::iterator iter = children.begin();
     while (iter != children.end()) {
       (*iter)->Show();
-      iter++;
-    }
-  }
-
-  void Gui2View::HideAllChildren() {
-    std::vector<Gui2View*>::iterator iter = children.begin();
-    while (iter != children.end()) {
-      (*iter)->Hide();
       iter++;
     }
   }

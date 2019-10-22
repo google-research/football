@@ -48,15 +48,16 @@ struct GameEnv {
   // Executes the action inside the game.
   void action(int action, bool left_team, int player);
   void reset(ScenarioConfig game_config);
+  PyObject* get_state();
+  void set_state(const std::string& state);
   void step();
 
   private:
-  void do_step(int count = 1);
+  void do_step(int count, bool render);
   void getObservations();
   GameContext* context;
 
   AIControlledKeyboard* keyboard_;
-  GameTask* game_;
   bool disable_graphics_ = false;
   int last_step_rendered_frames_ = 1;
 };

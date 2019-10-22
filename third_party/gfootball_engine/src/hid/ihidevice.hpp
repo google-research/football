@@ -19,6 +19,7 @@
 #define _HPP_HIDEVICE
 
 #include "../base/math/vector3.hpp"
+#include "../defines.hpp"
 
 using namespace blunted;
 
@@ -54,22 +55,12 @@ class IHIDevice {
   public:
     virtual ~IHIDevice() {}
 
-    virtual void LoadConfig() = 0;
-    virtual void SaveConfig() = 0;
     virtual void Reset() {};
 
-    virtual void Process() = 0;
-
     virtual bool GetButton(e_ButtonFunction buttonFunction) = 0;
-    virtual void SetButton(e_ButtonFunction buttonFunction, bool state) = 0;
     virtual bool GetPreviousButtonState(e_ButtonFunction buttonFunction) = 0;
     virtual Vector3 GetDirection() = 0;
-
-    e_HIDeviceType GetDeviceType() const { return deviceType; }
-
-   protected:
-    e_HIDeviceType deviceType;
-    std::string identifier;
+    virtual void ProcessState(EnvState* state) = 0;
 };
 
 #endif

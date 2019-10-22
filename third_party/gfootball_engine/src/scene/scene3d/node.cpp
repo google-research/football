@@ -91,6 +91,25 @@ namespace blunted {
     }
   }
 
+  Quaternion Node::GetRotatedDerivedRotation() {
+    if (_dirty_DerivedRotatedRotation) {
+      if (localMode == e_LocalMode_Relative) {
+        if (parent) {
+          _cache_DerivedRotatedRotation =
+              (parent->GetRotatedDerivedRotation() * GetRotation())
+                  .GetNormalized();
+        } else {
+          _cache_DerivedRotatedRotation =
+              Quaternion(0, 0, 1, 0) * GetRotation();
+        }
+      } else {
+        _cache_DerivedRotatedRotation = Quaternion(0, 0, 1, 0) * GetRotation();
+      }
+      _dirty_DerivedRotatedRotation = false;
+    }
+    return _cache_DerivedRotatedRotation;
+  }
+
   void Node::AddObject(boost::intrusive_ptr<Object> object) {
     assert(object.get());
     objects.push_back(object);
@@ -147,6 +166,26 @@ namespace blunted {
         if (nodes[i]->GetAABB().Intersects(bounding)) nodes[i]->GetObjects(gatherObjects, bounding, recurse, depth + 1);
       }
     }
+  }
+
+  void Node::ProcessState(EnvState* state) {
+    state->process(position);
+    state->process(rotation);
+    state->process(scale);
+    state->process(_dirty_DerivedPosition);
+    state->process(_dirty_DerivedRotation);
+    state->process(_dirty_DerivedScale);
+    state->process(_cache_DerivedPosition);
+    state->process(_cache_DerivedRotation);
+    state->process(_cache_DerivedScale);
+    state->process(_dirty_DerivedRotatedRotation);
+    state->process(_cache_DerivedRotatedRotation);
+    state->process((void*) &localMode, sizeof(localMode));
+    aabb.ProcessState(state);
+    for (auto& node : nodes) {
+      node->ProcessState(state);
+    }
+
   }
 
   void Node::PokeObjects(e_ObjectType targetObjectType, e_SystemType targetSystemType) {

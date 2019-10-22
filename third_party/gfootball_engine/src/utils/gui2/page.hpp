@@ -28,7 +28,6 @@ namespace blunted {
 
   struct Gui2PageData {
     int pageID = 0;
-    boost::shared_ptr<Properties> properties;
     void *data;
   };
 
@@ -37,10 +36,7 @@ namespace blunted {
     public:
       Gui2Page(Gui2WindowManager *windowManager, const Gui2PageData &pageData);
       virtual ~Gui2Page();
-
       void GoBack();
-      virtual void ProcessWindowingEvent(WindowingEvent *event);
-
       // moved to View class: boost::signals2::signal<void()> sig_OnClose;
 
     protected:
@@ -56,7 +52,7 @@ namespace blunted {
 
       virtual void SetWindowManager(Gui2WindowManager *wm);
 
-      virtual Gui2Page *CreatePage(int pageID, const Properties &properties, void *data = 0);
+      virtual Gui2Page *CreatePage(int pageID, void *data = 0);
       virtual Gui2Page *CreatePage(const Gui2PageData &pageData) = 0;
       virtual Gui2Page *GetMostRecentlyCreatedPage() = 0;
 

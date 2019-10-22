@@ -85,7 +85,7 @@ namespace blunted {
   void Gui2Radar::Process() {
   }
 
-  void Gui2Radar::Put() {
+  void Gui2Radar::Put(bool mirror) {
 
     Vector3 position = match->GetBall()->Predict(0).Get2D();
     Vector3 pos2d = position * Vector3(1 / (pitchHalfW * 2), - (1 / (pitchHalfH * 2)), 0);
@@ -114,6 +114,9 @@ namespace blunted {
 
     for (unsigned int i = 0; i < team2players.size(); i++) {
       Vector3 position = team2players[i]->GetPosition();
+      if (mirror) {
+        position *= Vector3(-1, -1, 0);
+      }
       Vector3 pos2d = position * Vector3(1 / (pitchHalfW * 2), - (1 / (pitchHalfH * 2)), 0);
       pos2d = pos2d + Vector3(0.5, 0.5, 0);
       pos2d = pos2d * Vector3(0.96f, 0.96f, 0) + Vector3(0.02f, 0.02f, 0); // margin

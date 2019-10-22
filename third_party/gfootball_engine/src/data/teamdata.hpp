@@ -25,45 +25,32 @@
 #include "playerdata.hpp"
 
 struct TeamTactics {
-
-  TeamTactics() {
-  }
-
-  Properties factoryProperties;
   Properties userProperties;
-
-  //Properties humanReadableNames;
-  //Properties descriptions;
-
 };
 
 class TeamData {
 
   public:
-    TeamData(int teamDatabaseID, int playersTeamDatabaseID,
-             const std::vector<FormationEntry>& f);
-    virtual ~TeamData();
+    TeamData(int teamDatabaseID, const std::vector<FormationEntry>& f);
+    ~TeamData();
 
-    std::string GetName() { return name; }
-    std::string GetShortName() { return shortName; }
-    std::string GetLogoUrl() { return logo_url; }
-    std::string GetKitUrl() { return kit_url; }
-    Vector3 GetColor1() { return color1; }
-    Vector3 GetColor2() { return color2; }
+    std::string GetName() const { return name; }
+    std::string GetShortName() const { return shortName; }
+    std::string GetLogoUrl() const { return logo_url; }
+    std::string GetKitUrl() const { return kit_url; }
+    Vector3 GetColor1() const { return color1; }
+    Vector3 GetColor2() const { return color2; }
 
     const TeamTactics &GetTactics() const { return tactics; }
-    TeamTactics &GetTacticsWritable() { return tactics; }
 
-    FormationEntry GetFormationEntry(int num);
+    FormationEntry GetFormationEntry(int num) const;
     void SetFormationEntry(int num, FormationEntry entry);
 
     // vector index# is entry in formation[index#]
-    int GetPlayerNum() { return playerData.size(); }
-    PlayerData *GetPlayerData(int num) { return playerData.at(num); }
+    int GetPlayerNum() const { return playerData.size(); }
+    PlayerData *GetPlayerData(int num) const { return playerData.at(num); }
 
    protected:
-    int databaseID = 0;
-
     std::string name;
     std::string shortName;
     std::string logo_url;

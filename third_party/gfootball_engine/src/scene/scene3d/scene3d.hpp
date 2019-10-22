@@ -34,7 +34,7 @@ namespace blunted {
   class Scene3D : public Scene {
 
     public:
-      Scene3D(std::string name);
+      Scene3D();
       virtual ~Scene3D();
 
       virtual void Init();
@@ -42,7 +42,6 @@ namespace blunted {
 
       void AddNode(boost::intrusive_ptr<Node> node);
       void DeleteNode(boost::intrusive_ptr<Node> node);
-      void AddObject(boost::intrusive_ptr<Object> object);
 
       void GetObjects(std::deque < boost::intrusive_ptr<Object> > &gatherObjects, const vector_Planes &bounding) const {
         hierarchyRoot->GetObjects(gatherObjects, bounding, true, 0);

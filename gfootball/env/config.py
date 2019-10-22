@@ -18,7 +18,7 @@
 from __future__ import print_function
 
 import copy
-import logging
+from absl import logging
 import sys
 import traceback
 
@@ -27,28 +27,6 @@ from absl import flags
 import gfootball_engine as libgame
 
 FLAGS = flags.FLAGS
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s: %(message)s')
-
-
-def log(func):
-  # Change to True to enable tracing / debugging.
-  debug = False
-  if not debug:
-    return func
-  else:
-    def wrapper(*args, **kwargs):
-      try:
-        logging.error('ENTER %s:%s', func.__module__, func.__name__)
-        res = func(*args, **kwargs)
-        logging.error('EXIT %s:%s', func.__module__, func.__name__)
-        return res
-      except Exception as e:
-        logging.error('Exception: %s', traceback.format_exc())
-        sys.exit(1)
-
-    return wrapper
-
 
 def parse_player_definition(definition):
   """Parses player definition.
@@ -102,16 +80,20 @@ class Config(object):
   def __init__(self, values=None):
     self._values = {
         'action_set': 'default',
+        'custom_display_stats': None,
         'enable_sides_swap': False,
         'display_game_stats': True,
         'dump_full_episodes': False,
         'dump_scores': False,
-        'game_difficulty': 0.6,
+        'left_team_difficulty': 1.0,
+        'right_team_difficulty': 0.6,
         'players': ['agent:left_players=1'],
         'level': '11_vs_11_stochastic',
         'physics_steps_per_frame': 10,
         'real_time': False,
         'render': False,
+        'reverse_team_processing': False,
+        'symmetric_mode': False,
         'tracesdir': '/tmp/dumps',
         'write_video': False
     }

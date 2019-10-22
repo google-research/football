@@ -27,27 +27,16 @@
 #include "../humanoid/humanoid_utils.hpp"
 
 #include "strategies/strategy.hpp"
-
-#include "strategies/offtheball/default_def.hpp"
-#include "strategies/offtheball/default_mid.hpp"
-#include "strategies/offtheball/default_off.hpp"
-#include "strategies/offtheball/goalie_default.hpp"
 #include "../playerofficial.hpp"
 
 ElizaController::ElizaController(Match *match, bool lazyPlayer) : PlayerController(match), lazyPlayer(lazyPlayer) {
-  lastDesiredDirection = Vector3(0);
-  lastDesiredVelocity = 0;
 }
 
 ElizaController::~ElizaController() {
-  if (defenseStrategy) delete defenseStrategy;
-  if (midfieldStrategy) delete midfieldStrategy;
-  if (offenseStrategy) delete offenseStrategy;
-  if (goalieStrategy) delete goalieStrategy;
 }
 
 void ElizaController::RequestCommand(PlayerCommandQueue &commandQueue) {
-
+  auto _mentalImage = match->GetMentalImage(_mentalImageTime);
   lastSwitchTimeDuration_ms = 0;
   lastSwitchTime_ms = 0;
 
@@ -245,7 +234,10 @@ void ElizaController::RequestCommand(PlayerCommandQueue &commandQueue) {
       command.useDesiredMovement = true;
       command.useDesiredLookAt = true;
 
-      AI_GetBallControlMovement(_mentalImage, CastPlayer(), player->GetDirectionVec(), walkVelocity, command.desiredDirection, command.desiredVelocityFloat, command.desiredLookAt);
+      AI_GetBallControlMovement(
+          _mentalImage, CastPlayer(), player->GetDirectionVec(),
+          walkVelocity, command.desiredDirection, command.desiredVelocityFloat,
+          command.desiredLookAt);
       assert(command.desiredDirection.coords[2] == 0.0f);
 
       commandQueue.push_back(command);
@@ -275,17 +267,20 @@ void ElizaController::RequestCommand(PlayerCommandQueue &commandQueue) {
     if      (CastPlayer()->GetFormationEntry().role == e_PlayerRole_LB ||
              CastPlayer()->GetFormationEntry().role == e_PlayerRole_CB ||
              CastPlayer()->GetFormationEntry().role == e_PlayerRole_RB) {
-      defenseStrategy->RequestInput(_mentalImage, rawInputDirection, rawInputVelocityFloat);
+      defenseStrategy.RequestInput(this, _mentalImage, rawInputDirection,
+                                   rawInputVelocityFloat);
     }
     else if (CastPlayer()->GetFormationEntry().role == e_PlayerRole_DM ||
              CastPlayer()->GetFormationEntry().role == e_PlayerRole_LM ||
              CastPlayer()->GetFormationEntry().role == e_PlayerRole_CM ||
              CastPlayer()->GetFormationEntry().role == e_PlayerRole_RM ||
              CastPlayer()->GetFormationEntry().role == e_PlayerRole_AM) {
-      midfieldStrategy->RequestInput(_mentalImage, rawInputDirection, rawInputVelocityFloat);
+      midfieldStrategy.RequestInput(this, _mentalImage, rawInputDirection,
+                                    rawInputVelocityFloat);
     }
     else if (CastPlayer()->GetFormationEntry().role == e_PlayerRole_CF) {
-      offenseStrategy->RequestInput(_mentalImage, rawInputDirection, rawInputVelocityFloat);
+      offenseStrategy.RequestInput(this, _mentalImage, rawInputDirection,
+                                   rawInputVelocityFloat);
     }
 
   }
@@ -300,12 +295,13 @@ void ElizaController::RequestCommand(PlayerCommandQueue &commandQueue) {
 
   else if (match->IsInPlay() && !match->IsInSetPiece() && CastPlayer()->GetFormationEntry().role == e_PlayerRole_GK) {
     // keeper's mental image for deflections is near-instant; let's just call it premonition ;)
-    const MentalImage *keeperMentalImage = _mentalImage;
-    static_cast<GoalieDefaultStrategy*>(goalieStrategy)->CalculateIfBallIsBoundForGoal(keeperMentalImage);
-    bool boundForGoal = static_cast<GoalieDefaultStrategy*>(goalieStrategy)->IsBallBoundForGoal();
+    goalieStrategy.CalculateIfBallIsBoundForGoal(this, _mentalImage);
+    bool boundForGoal = goalieStrategy.IsBallBoundForGoal();
     if (boundForGoal) manualMovement = true;
     if (CastPlayer() != match->GetDesignatedPossessionPlayer()) manualMovement = true;
-    goalieStrategy->RequestInput(keeperMentalImage, manualMovementDirection, manualMovementVelocityFloat);
+    goalieStrategy.RequestInput(this, _mentalImage,
+                                manualMovementDirection,
+                                manualMovementVelocityFloat);
 
     //if (boundForGoal && hasUniquePossession) printf("has unique possession, so no deflect anims (poss: %f)\n", possessionAmount);
     if (!hasUniquePossession || possessionAmount < 3.4f) {
@@ -361,7 +357,8 @@ void ElizaController::RequestCommand(PlayerCommandQueue &commandQueue) {
       float huntDistanceThreshold = 10.0f + (1.0f - mindSet) * 10.0f; // 10 + .. * 10
       huntDistanceThreshold *= 0.5f * CastPlayer()->GetFatigueFactorInv() +
                                0.5f * (1.0f - NormalizedClamp(CastPlayer()->GetAverageVelocity(10), idleVelocity, sprintVelocity));
-      huntDistanceThreshold *= 0.3f + GetMatch()->GetMatchDifficulty() * 0.7f;
+      huntDistanceThreshold *=
+          0.3f + CastPlayer()->GetTeam()->GetAiDifficulty() * 0.7f;
 
       if (forceMagnet) {
 
@@ -371,7 +368,7 @@ void ElizaController::RequestCommand(PlayerCommandQueue &commandQueue) {
         inputVelocityFloat = idleVelocity;
         inputDirection.Normalize(CastPlayer()->GetDirectionVec());
 
-      } else if (!teamHasBestPossession && CastPlayer()->GetManMarkingID() == -1 && ((opp->GetPosition() + opp->GetMovement() * 0.12f) - (CastPlayer()->GetPosition() + CastPlayer()->GetMovement() * 0.04f)).GetLength() < huntDistanceThreshold) { // defend player
+      } else if (!teamHasBestPossession && !CastPlayer()->GetManMarking() && ((opp->GetPosition() + opp->GetMovement() * 0.12f) - (CastPlayer()->GetPosition() + CastPlayer()->GetMovement() * 0.04f)).GetLength() < huntDistanceThreshold) { // defend player
 
           if (player == team->GetDesignatedTeamPossessionPlayer() && possessionAmount > 0.8f) {
             forceMagnet = true; // don't give up battles too easily
@@ -449,13 +446,6 @@ float ElizaController::GetFloatVelocity() {
   return lastDesiredVelocity;
 }
 
-void ElizaController::LoadStrategies() {
-  defenseStrategy = new DefaultDefenseStrategy(this);
-  midfieldStrategy = new DefaultMidfieldStrategy(this);
-  offenseStrategy = new DefaultOffenseStrategy(this);
-  goalieStrategy = new GoalieDefaultStrategy(this);
-}
-
 float ElizaController::GetLazyVelocity(float desiredVelocityFloat) {
 
   // input is unclamped! use large values (less lazy, apparently we are more off-position)
@@ -496,7 +486,7 @@ float ElizaController::GetLazyVelocity(float desiredVelocityFloat) {
 }
 
 Vector3 ElizaController::GetSupportPosition_ForceField(const MentalImage *mentalImage, const Vector3 &basePosition, bool makeRun) {
-
+  auto _mentalImage = match->GetMentalImage(_mentalImageTime);
   Player *designatedPlayer = team->GetDesignatedTeamPossessionPlayer();
 
   Vector3 currentPos = player->GetPosition() + CastPlayer()->GetMovement() * 0.1f; //basePosition;
@@ -547,7 +537,8 @@ Vector3 ElizaController::GetSupportPosition_ForceField(const MentalImage *mental
       break;
   }
 
-  float offsideX = AI_GetOffsideLine(match, _mentalImage, abs(team->GetID() - 1), 240);
+  float offsideX =
+      AI_GetOffsideLine(match, _mentalImage, abs(team->GetID() - 1), 240);
   float adaptedMakeRun = makeRun;
 
   // actual base position
@@ -598,7 +589,7 @@ Vector3 ElizaController::GetSupportPosition_ForceField(const MentalImage *mental
   std::vector<Player*> opponents;
   AI_GetClosestPlayers(match->GetTeam(abs(team->GetID() - 1)), mainManPos * 0.3f + currentPos + 0.7f, false, opponents, 3);
   for (unsigned int i = 0; i < opponents.size(); i++) {
-    const PlayerImage &oppImg = mentalImage->GetPlayerImage(opponents[i]->GetID());
+    const PlayerImage &oppImg = mentalImage->GetPlayerImage(opponents[i]);
     ForceSpot spot;
     Vector3 oppPos = oppImg.position + oppImg.movement * 0.1f;
     spot.origin = oppPos + (oppPos - mainManPos).GetNormalized(0) * 2.0f; // anti-magnet behind opponent, because the pass-way must be cleared
@@ -620,7 +611,7 @@ Vector3 ElizaController::GetSupportPosition_ForceField(const MentalImage *mental
     AI_GetClosestPlayers(team, currentPos, false, players, 6);
     for (unsigned int i = 0; i < players.size(); i++) {
       if (players[i] != CastPlayer()) {
-        const PlayerImage &mateImg = mentalImage->GetPlayerImage(players[i]->GetID());
+        const PlayerImage &mateImg = mentalImage->GetPlayerImage(players[i]);
         ForceSpot spot;
         spot.origin = mateImg.position + mateImg.movement * 0.1f;
         spot.magnetType = e_MagnetType_Repel;
@@ -694,8 +685,15 @@ void ElizaController::Reset() {
   lastDesiredVelocity = 0;
 }
 
-void ElizaController::GetOnTheBallCommands(std::vector<PlayerCommand> &commandQueue, Vector3 &rawInputDirection, float &rawInputVelocityFloat) {
+void ElizaController::ProcessState(EnvState* state) {
+  ProcessPlayerController(state);
+  goalieStrategy.ProcessState(state);
+  state->process(lastDesiredDirection);
+  state->process(lastDesiredVelocity);
+}
 
+void ElizaController::GetOnTheBallCommands(std::vector<PlayerCommand> &commandQueue, Vector3 &rawInputDirection, float &rawInputVelocityFloat) {
+  auto _mentalImage = match->GetMentalImage(_mentalImageTime);
   float oneTouchIsHard = 0.0f;
   float movementDiff = NormalizedClamp((match->GetBall()->GetMovement() - CastPlayer()->GetMovement()).GetLength(), 0.0f, 10.0f);
   oneTouchIsHard = movementDiff - CastPlayer()->GetStat(technical_shortpass) * movementDiff * 0.8f;
@@ -865,7 +863,9 @@ void ElizaController::GetOnTheBallCommands(std::vector<PlayerCommand> &commandQu
 
 
   e_Velocity enumVelocity = e_Velocity_Idle;
-  AI_GetBestDribbleMovement(match, player->GetID(), _mentalImage, rawInputDirection, rawInputVelocityFloat, team->GetTeamData()->GetTactics());
+  AI_GetBestDribbleMovement(match, player, _mentalImage,
+                            rawInputDirection, rawInputVelocityFloat,
+                            team->GetTeamData()->GetTactics());
 }
 
 void ElizaController::_AddPass(std::vector<PlayerCommand> &commandQueue, Player *target, e_FunctionType passType) {
@@ -980,7 +980,7 @@ void ElizaController::_AddCelebration(std::vector<PlayerCommand> &commandQueue) 
   Vector3 desiredLookAt = player->GetPosition() + player->GetDirectionVec() * 1000;
 
   int celebrationType = 1;
-  if (match->GetLastGoalTeamID() != team->GetID()) {
+  if (match->GetLastGoalTeam() != team) {
     celebrationType = 2;
     desiredVelocityFloat = idleVelocity;
   } else {

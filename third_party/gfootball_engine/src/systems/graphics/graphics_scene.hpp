@@ -20,8 +20,6 @@
 
 #include "../../defines.hpp"
 
-#include "../../systems/isystemscene.hpp"
-
 #include "../../scene/scene3d/scene3d.hpp"
 #include "../../scene/scene2d/scene2d.hpp"
 
@@ -29,7 +27,7 @@ namespace blunted {
 
   class GraphicsSystem;
 
-  class GraphicsScene : public ISystemScene {
+  class GraphicsScene {
 
     public:
       GraphicsScene(GraphicsSystem *graphicsSystem);
@@ -43,7 +41,6 @@ namespace blunted {
 
     protected:
       GraphicsSystem *graphicsSystem;
-
   };
 
 

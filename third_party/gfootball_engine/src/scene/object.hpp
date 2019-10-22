@@ -34,7 +34,6 @@ namespace blunted {
     e_ObjectType_Geometry = 3,
     e_ObjectType_Skybox = 4,
     e_ObjectType_Light = 5,
-    e_ObjectType_Joint = 6,
     e_ObjectType_UserStart = 7
   };
 

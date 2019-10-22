@@ -16,6 +16,7 @@
 // i do not offer support, so don't ask. to be used for inspiration :)
 
 #include "matrix4.hpp"
+#include "../../defines.hpp"
 
 #include <cmath>
 

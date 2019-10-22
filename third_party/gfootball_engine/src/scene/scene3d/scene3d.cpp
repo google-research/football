@@ -16,20 +16,12 @@
 // i do not offer support, so don't ask. to be used for inspiration :)
 
 #include "scene3d.hpp"
-
 #include "../../scene/objects/geometry.hpp"
-
-#include "../../systems/isystemscene.hpp"
-
-#include "../../managers/environmentmanager.hpp"
-#include "../../managers/systemmanager.hpp"
-
 #include "../../scene/objectfactory.hpp"
 
 namespace blunted {
 
-  Scene3D::Scene3D(std::string name) : Scene(name, e_SceneType_Scene3D) {
-    //printf("CREATING SCENE3D\n");
+  Scene3D::Scene3D() {
     boost::intrusive_ptr<Node> root(new Node("Scene3D root node"));
     hierarchyRoot = root;
 
@@ -37,11 +29,9 @@ namespace blunted {
     supportedObjectTypes.push_back(e_ObjectType_Skybox);
     supportedObjectTypes.push_back(e_ObjectType_Camera);
     supportedObjectTypes.push_back(e_ObjectType_Light);
-    supportedObjectTypes.push_back(e_ObjectType_Joint);
   }
 
   Scene3D::~Scene3D() {
-    //printf("DELETING SCENE3D\n");
   }
 
   void Scene3D::Init() {
@@ -76,13 +66,6 @@ namespace blunted {
 
   void Scene3D::DeleteNode(boost::intrusive_ptr<Node> node) {
     hierarchyRoot->DeleteNode(node);
-  }
-
-  void Scene3D::AddObject(boost::intrusive_ptr<Object> object) {
-    if (!SupportedObjectType(object->GetObjectType())) {
-      Log(e_FatalError, "Scene3D", "AddObject", "Object type not supported");
-    }
-    hierarchyRoot->AddObject(object);
   }
 
   void Scene3D::PokeObjects(e_ObjectType targetObjectType, e_SystemType targetSystemType) {

@@ -21,8 +21,7 @@
 #include "../defines.hpp"
 
 #include "../types/subject.hpp"
-
-#include "../systems/isystemscene.hpp"
+#include "../scene/object.hpp"
 
 namespace blunted {
 
@@ -42,9 +41,6 @@ namespace blunted {
       virtual void Exit() = 0; // ATOMIC
 
       virtual void CreateSystemObjects(boost::intrusive_ptr<Object> object) = 0;
-
-      virtual const std::string GetName() const = 0;
-      virtual e_SceneType GetSceneType() const = 0;
 
       virtual void PokeObjects(e_ObjectType targetObjectType, e_SystemType targetSystemType) = 0;
       virtual bool SupportedObjectType(e_ObjectType objectType) const = 0;

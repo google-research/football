@@ -124,7 +124,8 @@ void TeamAIController::Process() {
   if ((opp->GetPosition().coords[0] + opp->GetMovement().coords[0] * 0.15f + cautionDistance) * team->GetSide() > deepestDanger * team->GetSide()) deepestDanger = opp->GetPosition().coords[0] + opp->GetMovement().coords[0] * 0.1f + cautionDistance;
 
   // slacking teammate as max
-  float lineX = AI_GetOffsideLine(match, match->GetMentalImage(0), abs(team->GetID()));
+  float lineX = AI_GetOffsideLine(match, match->GetMentalImage(0),
+                                  abs(team->GetID()));
   float allowSlackDistance = 4.0f; // despite teammates slacking behind line this much, just hold the line
   if (lineX * team->GetSide() - allowSlackDistance > deepestDanger * team->GetSide()) {
     //printf("previous: %f\n", deepestDanger);
@@ -580,7 +581,7 @@ void TeamAIController::CalculateManMarking() {
 
   // reset previous man marking
   for (unsigned int i = 0; i < players.size(); i++) {
-    players[i]->SetManMarkingID(-1);
+    players[i]->SetManMarking(0);
   }
 
   // most dangerous opponent gets closest player to cover him, and so on
@@ -612,8 +613,7 @@ void TeamAIController::CalculateManMarking() {
     }
 
     if (closestPlayer) {
-      //printf("oppID: %i\n", oppPlayer->GetID());
-      closestPlayer->SetManMarkingID(oppPlayer->GetID());
+      closestPlayer->SetManMarking(oppPlayer);
       players.erase(closestPlayerIter);
     }
 
@@ -939,10 +939,7 @@ void TeamAIController::ApplyTeamPressure() {
 
   if (teamPressurePlayer) {
     // switch man marking
-    int prevMarking = teamPressurePlayer->GetManMarkingID();
-    teamPressurePlayer->SetManMarkingID(opp->GetID());
-
-    //SetRedDebugPilon(teamPressurePlayer->GetPosition());
+    teamPressurePlayer->SetManMarking(opp);
   }
 }
 
@@ -953,23 +950,22 @@ void TeamAIController::ApplyKeeperRush() {
 void TeamAIController::CalculateSituation() {
   teamHasPossession = team->HasPossession();
   teamHasUniquePossession = team->HasUniquePossession();
-  oppTeamHasPossession = match->GetTeam(abs(team->GetID() - 1))->HasPossession();
-  oppTeamHasUniquePossession = match->GetTeam(abs(team->GetID() - 1))->HasUniquePossession();
+  oppTeamHasPossession = match->GetTeam(1 - team->GetID())->HasPossession();
+  oppTeamHasUniquePossession = match->GetTeam(1 - team->GetID())->HasUniquePossession();
   teamHasBestPossession = match->GetBestPossessionTeam() == team;
   teamPossessionAmount = team->GetTeamPossessionAmount();
   fadingTeamPossessionAmount = team->GetFadingTeamPossessionAmount();
   timeNeededToGetToBall = team->GetTimeNeededToGetToBall_ms();
-  oppTimeNeededToGetToBall = match->GetTeam(abs(team->GetID() - 1))->GetTimeNeededToGetToBall_ms();
+  oppTimeNeededToGetToBall = match->GetTeam(1 - team->GetID())->GetTimeNeededToGetToBall_ms();
 }
 
 void TeamAIController::UpdateTactics() {
   const TeamTactics &teamTactics = team->GetTeamData()->GetTactics();
-  TeamTactics &teamTacticsWritable = team->GetTeamData()->GetTacticsWritable();
 
   const Properties &userTacticsModifiers = teamTactics.userProperties;
 
   int goals = match->GetMatchData()->GetGoalCount(team->GetID());
-  int oppGoals = match->GetMatchData()->GetGoalCount(abs(team->GetID() - 1));
+  int oppGoals = match->GetMatchData()->GetGoalCount(1 - team->GetID());
 
   liveTeamTactics = baseTeamTactics;
 
@@ -983,9 +979,12 @@ void TeamAIController::UpdateTactics() {
 
 
   float possessionFactor = match->GetMatchData()->GetPossessionFactor_60seconds();
-  float recentPossessionBias = 1.0f - fabs(possessionFactor - team->GetID());
-  // if (team->GetID() == 0) printf("team 0 recentPossessionBias: %f (possessionFactor: %f)\n", recentPossessionBias, possessionFactor);
-  // if (team->GetID() == 1) printf("team 1 recentPossessionBias: %f (possessionFactor: %f)\n", recentPossessionBias, possessionFactor);
+  float recentPossessionBias;
+  if (team->GetID() == 0) {
+    recentPossessionBias = 0.5 - possessionFactor * 0.5f;
+  } else {
+    recentPossessionBias = 0.5 + possessionFactor * 0.5f;
+  }
 
   offensivenessBias = offenseBias * 0.5f + recentPossessionBias * 0.5f;
   //if (team->GetID() == 0) printf("T1 offensivenessBias: %f\n", offensivenessBias);
@@ -1038,4 +1037,37 @@ void TeamAIController::Reset() {
   fadingTeamPossessionAmount = 1.0f;
   timeNeededToGetToBall = 100;
   oppTimeNeededToGetToBall = 100;
+}
+
+void TeamAIController::ProcessState(EnvState* state) {
+  state->process(taker);
+  state->process(static_cast<void*>(&setPieceType), sizeof(setPieceType));
+  //baseTeamTactics.ProcessState(state);
+  //teamTacticsModMultipliers.ProcessState(state);
+  liveTeamTactics.ProcessState(state);
+  state->process(offensivenessBias);
+  state->process(teamHasPossession);
+  state->process(teamHasUniquePossession);
+  state->process(oppTeamHasPossession);
+  state->process(oppTeamHasUniquePossession);
+  state->process(teamHasBestPossession);
+  state->process(teamPossessionAmount);
+  state->process(fadingTeamPossessionAmount);
+  state->process(timeNeededToGetToBall);
+  state->process(oppTimeNeededToGetToBall);
+  state->process(depth);
+  state->process(width);
+  state->process(offsideTrapX);
+  state->process(endApplyAttackingRun_ms);
+  state->process(attackingRunPlayer);
+  state->process(endApplyTeamPressure_ms);
+  state->process(teamPressurePlayer);
+  state->process(endApplyKeeperRush_ms);
+  state->process(forwardSupportPlayer);
+  int size = tacticalOpponentInfo.size();
+  state->process(size);
+  tacticalOpponentInfo.resize(size);
+  for (auto& a : tacticalOpponentInfo) {
+    a.ProcessState(state);
+  }
 }

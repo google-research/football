@@ -20,19 +20,14 @@
 #include "base/log.hpp"
 #include "base/properties.hpp"
 #include "base/utils.hpp"
-#include "framework/scheduler.hpp"
 #include "loaders/aseloader.hpp"
 #include "loaders/imageloader.hpp"
 #include "main.hpp"
-#include "managers/environmentmanager.hpp"
 #include "managers/resourcemanager.hpp"
-#include "managers/scenemanager.hpp"
-#include "managers/systemmanager.hpp"
 #include "scene/objectfactory.hpp"
 #include "scene/objects/camera.hpp"
 #include "scene/objects/geometry.hpp"
 #include "scene/objects/image2d.hpp"
-#include "scene/objects/joint.hpp"
 #include "scene/objects/light.hpp"
 #include "scene/objects/skybox.hpp"
 #include "scene/resources/geometrydata.hpp"
@@ -58,14 +53,18 @@ namespace blunted {
     RegisterObjectTypes(&GetContext().object_factory);
   }
 
-  void DoStep() { GetContext().scheduler.Run(); }
-
-  Scheduler *GetScheduler() { return &GetContext().scheduler; }
+  void ProcessState(EnvState *state) {
+    state->process((void *)&GetContext().rng, sizeof(GetContext().rng));
+    state->process((void *)&GetContext().rng_non_deterministic,
+                   sizeof(GetContext().rng_non_deterministic));
+    GetGameTask()->GetMatch()->ProcessState(state);
+  }
 
   void Exit() {
-    GetContext().scene_manager.Exit();
+    GetContext().scene2D->Exit();
+    GetContext().scene3D->Exit();
     GetContext().object_factory.Exit();
-    GetContext().system_manager.Exit();
+    GetContext().graphicsSystem->Exit();
     TTF_Quit();
     SDL_Quit();
   }
@@ -84,8 +83,6 @@ namespace blunted {
     objectFactory->RegisterPrototype(e_ObjectType_Skybox, skybox);
     boost::intrusive_ptr<Light> light(new Light("Light prototype"));
     objectFactory->RegisterPrototype(e_ObjectType_Light, light);
-    boost::intrusive_ptr<Joint> joint(new Joint("Joint prototype"));
-    objectFactory->RegisterPrototype(e_ObjectType_Joint, joint);
   }
 
 }

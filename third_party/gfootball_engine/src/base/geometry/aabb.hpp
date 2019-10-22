@@ -20,6 +20,7 @@
 
 #include "../../base/math/vector3.hpp"
 #include "../../base/math/quaternion.hpp"
+#include "../../defines.hpp"
 
 #include "line.hpp"
 #include "plane.hpp"
@@ -49,10 +50,18 @@ namespace blunted {
       bool Intersects(const AABB &src) const;
 
       void MakeDirty() { radius_needupdate = true; center_needupdate = true; }
+      void ProcessState(EnvState* state) {
+        state->process(minxyz);
+        state->process(maxxyz);
+        state->process(radius);
+        state->process(center);
+        state->process(radius_needupdate);
+        state->process(center_needupdate);
+      }
 
       Vector3 minxyz;
       Vector3 maxxyz;
-      mutable real radius;
+      mutable real radius = 0.0f;
       mutable Vector3 center;
 
     protected:
@@ -64,6 +73,10 @@ namespace blunted {
   struct AABBCache {
     bool dirty = false;
     AABB aabb;
+    void ProcessState(EnvState* state) {
+      state->process(dirty);
+      aabb.ProcessState(state);
+    }
   };
 
 }

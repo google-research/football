@@ -22,7 +22,6 @@
 namespace blunted {
 
   Texture::Texture() : textureID(-1) {
-    //printf("CREATING TEXTUREID\n");
     this->renderer3D = 0;
     textureID = -1;
     width = 0;
@@ -30,10 +29,7 @@ namespace blunted {
   }
 
   Texture::~Texture() {
-    //printf("ERASING TEXTURE ID #%i\n", textureID);
-
     DeleteTexture();
-    //printf(" [ok]\n");
   }
 
   void Texture::SetRenderer3D(Renderer3D *renderer3D) {

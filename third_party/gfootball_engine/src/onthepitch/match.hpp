@@ -18,8 +18,6 @@
 #ifndef _HPP_MATCH
 #define _HPP_MATCH
 
-#include "../framework/scheduler.hpp"
-
 #include "team.hpp"
 #include "ball.hpp"
 #include "referee.hpp"
@@ -58,6 +56,7 @@ class Match {
     virtual ~Match();
 
     void Exit();
+    void MaybeMirror(bool team_0, bool team_1, bool ball);
 
     void SetRandomSunParams();
     void RandomizeAdboards(boost::intrusive_ptr<Node> stadiumNode);
@@ -66,13 +65,12 @@ class Match {
     int GetScore(int teamID) { return matchData->GetGoalCount(teamID); }
     Ball *GetBall() { return ball; }
     Team *GetTeam(int teamID) { return teams[teamID]; }
-    Player *GetPlayer(int playerID);
     void GetAllTeamPlayers(int teamID, std::vector<Player*> &players);
     void GetActiveTeamPlayers(int teamID, std::vector<Player*> &players);
     void GetOfficialPlayers(std::vector<PlayerBase*> &players);
     boost::shared_ptr<AnimCollection> GetAnimCollection();
 
-    const MentalImage *GetMentalImage(int history_ms);
+    MentalImage* GetMentalImage(int history_ms);
     void UpdateLatestMentalImageBallPredictions();
 
     void ResetSituation(const Vector3 &focusPos);
@@ -93,7 +91,7 @@ class Match {
 
     void SetGoalScored(bool onOff) { if (onOff == false) ballIsInGoal = false; goalScored = onOff; }
     bool IsGoalScored() const { return goalScored; }
-    int GetLastGoalTeamID() const { return lastGoalTeamID; }
+    Team* GetLastGoalTeam() const { return lastGoalTeam; }
     void SetLastTouchTeamID(int id, e_TouchType touchType = e_TouchType_Intentional_Kicked) { lastTouchTeamIDs[touchType] = id; lastTouchTeamID = id; referee->BallTouched(); }
     int GetLastTouchTeamID(e_TouchType touchType) const { return lastTouchTeamIDs[touchType]; }
     int GetLastTouchTeamID() const { return lastTouchTeamID; }
@@ -101,7 +99,7 @@ class Match {
       if (lastTouchTeamID != -1)
         return teams[lastTouchTeamID];
       else
-        return teams[0];
+        return teams[first_team];
     }
     Player *GetLastTouchPlayer() {
       if (GetLastTouchTeam())
@@ -116,15 +114,15 @@ class Match {
 
     Player *GetDesignatedPossessionPlayer() { return designatedPossessionPlayer; }
     Player *GetBallRetainer() { return ballRetainer; }
-    void SetBallRetainer(Player *retainer) { ballRetainer = retainer; }
+    void SetBallRetainer(Player *retainer) {
+      ballRetainer = retainer;
+    }
 
-    float GetAveragePossessionSide(int time_ms) const { return possessionSideHistory->GetAverage(time_ms); }
+    float GetAveragePossessionSide(int time_ms) const { return possessionSideHistory.GetAverage(time_ms); }
 
     unsigned long GetIterations() const { return iterations; }
     unsigned long GetMatchTime_ms() const { return matchTime_ms; }
     unsigned long GetActualTime_ms() const { return actualTime_ms; }
-
-    void GameOver();
 
     void UpdateIngameCamera();
 
@@ -132,7 +130,7 @@ class Match {
     boost::intrusive_ptr<Camera> GetCamera() { return camera; }
 
     void GetState(SharedInfo* state);
-    void Get();
+    void ProcessState(EnvState* state);
     void Process();
     void PreparePutBuffers();
     void FetchPutBuffers();
@@ -149,29 +147,23 @@ class Match {
     MatchData* GetMatchData() { return matchData; }
 
     float GetMatchDurationFactor() const { return matchDurationFactor; }
-    float GetMatchDifficulty() const { return matchDifficulty; }
     bool GetUseMagnet() const { return _useMagnet; }
 
     const std::vector<Vector3> &GetAnimPositionCache(Animation *anim) const;
 
     void UploadGoalNetting();
 
-    unsigned long GetPreviousProcessTime_ms() { return previousProcessTime_ms; } // always around 10ms, not a very useful function, probably
-    unsigned long GetPreviousPreparePutTime_ms() { return previousPreparePutTime_ms; }
-    unsigned long GetPreviousPutTime_ms() { return previousPutTime_ms; }
-
     //void AddMissingAnim(const MissingAnim &someAnim);
 
     // not sure about how signals work in this game at the moment. whole menu/game thing needs a rethink, i guess
-    boost::signals2::signal<void(Match*)> sig_OnMatchPhaseChange;
     boost::signals2::signal<void(Match*)> sig_OnShortReplayMoment;
-    boost::signals2::signal<void(Match*)> sig_OnExtendedReplayMoment;
-    boost::signals2::signal<void(Match*)> sig_OnGameOver;
     boost::signals2::signal<void(Match*)> sig_OnCreatedMatch;
     boost::signals2::signal<void(Match*)> sig_OnExitedMatch;
+    int FirstTeam() { return first_team; }
+    int SecondTeam() { return second_team; }
 
   private:
-    bool CheckForGoal(signed int side);
+    bool CheckForGoal(signed int side, const Vector3& previousBallPos);
 
     void CalculateBestPossessionTeamID();
     void CheckHumanoidCollisions();
@@ -181,16 +173,10 @@ class Match {
     void PrepareGoalNetting();
     void UpdateGoalNetting(bool ballTouchesNet = false);
 
-    // for stuff like animation smoothing, we could need the time elapsed since last Put() and such
-    unsigned long previousProcessTime_ms = 0;
-    unsigned long previousPreparePutTime_ms = 0;
-    unsigned long previousPutTime_ms = 0;
-    int timeSincePreviousProcess_ms = 0;
-    int timeSincePreviousPreparePut_ms = 0;
-    int timeSincePreviousPut_ms = 0;
-
     MatchData *matchData;
     Team *teams[2];
+    const int first_team = 0;
+    const int second_team = 1;
 
     Officials *officials;
 
@@ -203,30 +189,19 @@ class Match {
     boost::intrusive_ptr<Node> stadiumNode;
     boost::intrusive_ptr<Node> goalsNode;
 
-    // camera user settings
-    float cameraUserZoom = 0.0f;
-    float cameraUserHeight = 0.0f;
-    float cameraUserFOV = 0.0f;
-    float cameraUserAngleFactor = 0.0f;
-
     const std::vector<IHIDevice*> &controllers;
 
     Ball *ball = nullptr;
 
-    std::vector<MentalImage*> mentalImages; // [index] == index * 10 ms ago ([0] == now)
+    std::vector<MentalImage> mentalImages; // [index] == index * 10 ms ago ([0] == now)
 
     Gui2ScoreBoard *scoreboard;
     Gui2Radar *radar;
     Gui2Caption *messageCaption;
     unsigned long messageCaptionRemoveTime_ms = 0;
     unsigned long iterations = 0;
-    TaskSequenceInfo gameSequenceInfo;
     unsigned long matchTime_ms = 0;
     unsigned long actualTime_ms = 0;
-    unsigned long buf_matchTime_ms = 0;
-    unsigned long buf_actualTime_ms = 0;
-    unsigned long fetchedbuf_matchTime_ms = 0;
-    unsigned long fetchedbuf_actualTime_ms = 0;
     unsigned long goalScoredTimer = 0;
 
     bool pause = false;
@@ -235,7 +210,7 @@ class Match {
     bool inSetPiece = false; // Whether game is in special mode (corner etc...)
     bool goalScored = false; // true after goal scored, false again after next match state change
     bool ballIsInGoal = false;
-    int lastGoalTeamID = 0;
+    Team* lastGoalTeam = 0;
     Player *lastGoalScorer;
     int lastTouchTeamIDs[e_TouchType_SIZE];
     int lastTouchTeamID = 0;
@@ -243,12 +218,9 @@ class Match {
     Player *designatedPossessionPlayer;
     Player *ballRetainer;
 
-    bool gameOver = false;
-
     boost::intrusive_ptr<Node> fullbodyNode;
-    boost::intrusive_ptr<Node> fullbody2Node;
 
-    ValueHistory<float> *possessionSideHistory;
+    ValueHistory<float> possessionSideHistory;
 
     bool autoUpdateIngameCamera = false;
 
@@ -259,21 +231,6 @@ class Match {
     float cameraFOV = 0.0f;
     float cameraNearCap = 0.0f;
     float cameraFarCap = 0.0f;
-
-    TemporalSmoother<Quaternion> buf_cameraOrientation;
-    TemporalSmoother<Quaternion> buf_cameraNodeOrientation;
-    TemporalSmoother<Vector3> buf_cameraNodePosition;
-    TemporalSmoother<float> buf_cameraFOV;
-    float buf_cameraNearCap = 0.0f;
-    float buf_cameraFarCap = 0.0f;
-    Quaternion fetchedbuf_cameraOrientation;
-    Quaternion fetchedbuf_cameraNodeOrientation;
-    Vector3 fetchedbuf_cameraNodePosition;
-    float fetchedbuf_cameraFOV = 0.0f;
-    float fetchedbuf_cameraNearCap = 0.0f;
-    float fetchedbuf_cameraFarCap = 0.0f;
-
-    int fetchedbuf_timeDelta = 0;
 
     unsigned int lastBodyBallCollisionTime_ms = 0;
 
@@ -288,19 +245,13 @@ class Match {
     bool resetNetting = false;
     bool nettingHasChanged = false;
 
-    float excitement = 0.0f;
-
-    Vector3 previousBallPos;
-
-    float matchDurationFactor = 0.0f;
+    const float matchDurationFactor = 0.0f;
 
     std::vector<Vector3> nettingMeshesSrc[2];
     std::vector<float*> nettingMeshes[2];
-
-    float matchDifficulty = 0.0f;
     // Whether to use magnet logic (that automatically pushes active player
     // towards the ball).
-    bool _useMagnet = true;
+    const bool _useMagnet;
 };
 
 #endif

@@ -22,7 +22,6 @@
 
 #include "../../types/messagequeue.hpp"
 #include "../../systems/isystem.hpp"
-#include "../../systems/isystemscene.hpp"
 #include "../../systems/graphics/rendering/opengl_renderer3d.hpp"
 
 #include "../../scene/iscene.hpp"
@@ -37,8 +36,9 @@
 namespace blunted {
 
   class Renderer3D;
+  class GraphicsScene;
 
-  class GraphicsSystem : public ISystem {
+  class GraphicsSystem {
 
     public:
       GraphicsSystem();
@@ -50,9 +50,10 @@ namespace blunted {
 
       e_SystemType GetSystemType() const;
 
-      virtual ISystemScene *CreateSystemScene(boost::shared_ptr<IScene> scene);
+      GraphicsScene *Create2DScene(boost::shared_ptr<IScene> scene);
+      GraphicsScene *Create3DScene(boost::shared_ptr<IScene> scene);
 
-      virtual ISystemTask *GetTask();
+      GraphicsTask *GetTask();
       virtual Renderer3D *GetRenderer3D();
 
       MessageQueue<Overlay2DQueueEntry> &GetOverlay2DQueue();

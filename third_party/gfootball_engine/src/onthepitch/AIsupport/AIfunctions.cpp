@@ -210,9 +210,9 @@ float AI_GetOffsideLine(Match *match, const MentalImage *mentalImage, int teamID
   return offsideLine;
 }
 
-void AI_GetBestDribbleMovement(Match *match, int thisPlayerID, const MentalImage *mentalImage, Vector3 &desiredDirection, float &desiredVelocity, const TeamTactics &teamTactics) {
+void AI_GetBestDribbleMovement(Match *match, PlayerBase* p, const MentalImage *mentalImage, Vector3 &desiredDirection, float &desiredVelocity, const TeamTactics &teamTactics) {
 
-  Player *player = match->GetPlayer(thisPlayerID);
+  Player* player = static_cast<Player*>(p);
   Vector3 myPos = player->GetPosition();
   Vector3 myMov = player->GetMovement();
 
@@ -221,7 +221,7 @@ void AI_GetBestDribbleMovement(Match *match, int thisPlayerID, const MentalImage
 
   float future_sec = 0.25f;
 
-  PlayerImage thisPlayerImage = mentalImage->GetPlayerImage(thisPlayerID);
+  PlayerImage thisPlayerImage = mentalImage->GetPlayerImage(player);
 
   Team *team = player->GetTeam();
   signed int side = team->GetSide();
@@ -231,7 +231,7 @@ void AI_GetBestDribbleMovement(Match *match, int thisPlayerID, const MentalImage
   std::vector<Player*> opponents;
   AI_GetClosestPlayers(match->GetTeam(abs(team->GetID() - 1)), myPos, false, opponents, 5);
   for (unsigned int i = 0; i < opponents.size(); i++) {
-    opponentPlayerImages.push_back(mentalImage->GetPlayerImage(opponents[i]->GetID()));
+    opponentPlayerImages.push_back(mentalImage->GetPlayerImage(opponents[i]));
   }
 
   float nearBackline = NormalizedClamp(fabs(player->GetPosition().coords[0]) / pitchHalfW, 0.0f, 1.0f);
@@ -490,7 +490,7 @@ unsigned int AI_GetToBallMovement(Match *match, const MentalImage *mentalImage, 
 
   int directions = 16;
 
-  radian angle = adaptedDesiredDirectionBallSpace.GetAngle2D();
+  real angle = adaptedDesiredDirectionBallSpace.GetAngle2D();
   angle /= pi * 2.0f;
   angle = std::round(angle * directions);
   angle /= directions;
@@ -780,7 +780,7 @@ Player *AI_GetClosestPlayer(Team *team, const Vector3 &position, bool onlyAICont
     if (players[i]->IsActive() && players[i] != except) {
       float distance = (players[i]->GetPosition() - position).GetLength();
       if (distance < closestDistance) {
-        if (!onlyAIControlled || !team->IsHumanControlled(players[i]->GetID())) {
+        if (!onlyAIControlled || !team->IsHumanControlled(players[i])) {
           closestDistance = distance;
           closestPlayer = players[i];
         }
@@ -804,7 +804,7 @@ void AI_GetClosestPlayers(Team *team, const Vector3 &position, bool onlyAIContro
     if (players[i]->IsActive()) {
       float distance = (players[i]->GetPosition() - position).GetLength();
       if ((!onlyAIControlled) ||
-          ( onlyAIControlled && !team->IsHumanControlled(players[i]->GetID()))) {
+          ( onlyAIControlled && !team->IsHumanControlled(players[i]))) {
         tmpResult.insert(std::pair<float, Player*>(distance, players[i]));
       }
     }
@@ -905,10 +905,8 @@ void AI_GetPass(Player *player, e_FunctionType passType, const Vector3 &inputDir
   bool fullAutoDirection = false;
   bool fullAutoPower = false;
   if (player->GetExternalController()) {
-    if (static_cast<HumanController*>(player->GetExternalController())->GetHIDevice()->GetDeviceType() == e_HIDeviceType_Keyboard) {
-      fullAutoDirection = true;
-      fullAutoPower = true;
-    }
+    fullAutoDirection = true;
+    fullAutoPower = true;
   }
 
   float adaptedAutoDirectionBias = autoDirectionBias;

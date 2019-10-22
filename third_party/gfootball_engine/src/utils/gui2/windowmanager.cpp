@@ -89,12 +89,6 @@ namespace blunted {
   }
 
   void Gui2WindowManager::Exit() {
-    for (unsigned int i = 0; i < pendingDelete.size(); i++) {
-      pendingDelete[i]->Exit();
-      delete pendingDelete[i];
-    }
-    pendingDelete.clear();
-
     std::vector < boost::intrusive_ptr<Image2D> > images;
     root->GetImages(images);
     for (unsigned int i = 0; i < images.size(); i++) {
@@ -122,12 +116,6 @@ namespace blunted {
   }
 
   void Gui2WindowManager::Process() {
-    for (int i = 0; i < (signed int)pendingDelete.size(); i++) {
-      pendingDelete[i]->Exit();
-      delete pendingDelete[i];
-    }
-    pendingDelete.clear();
-
     root->Process();
   }
 
@@ -213,10 +201,6 @@ namespace blunted {
 
   void Gui2WindowManager::RemoveImage(boost::intrusive_ptr<Image2D> image) const {
     scene2D->DeleteObject(image);
-  }
-
-  void Gui2WindowManager::MarkForDeletion(Gui2View *view) {
-    pendingDelete.push_back(view);
   }
 
   void Gui2WindowManager::Show(Gui2View *view) {

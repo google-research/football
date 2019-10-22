@@ -29,7 +29,7 @@ HumanGamer::HumanGamer(Team *team, IHIDevice *hid, e_PlayerColor color) : team(t
   std::vector<Player*> activePlayers;
   team->GetActivePlayers(activePlayers);
   selectedPlayer = 0;
-  SetSelectedPlayerID(-1);
+  SetSelectedPlayer(0);
 }
 
 HumanGamer::~HumanGamer() {
@@ -40,19 +40,20 @@ HumanGamer::~HumanGamer() {
   }
 }
 
-int HumanGamer::GetSelectedPlayerID() const {
-  if (selectedPlayer) return selectedPlayer->GetID(); else return -1;
-}
-
-void HumanGamer::SetSelectedPlayerID(int id) {
+void HumanGamer::SetSelectedPlayer(Player* player) {
   if (selectedPlayer) {
-    if (selectedPlayer->GetID() == id) return;
+    if (selectedPlayer == player) return;
     selectedPlayer->SetExternalController(0);
   }
-  if (id != -1) {
-    selectedPlayer = team->GetPlayer(id);
+  if (player) {
+    selectedPlayer = player;
     selectedPlayer->SetExternalController(controller);
   } else {
     selectedPlayer = 0;
   }
+}
+
+void HumanGamer::ProcessState(EnvState *state) {
+  controller->ProcessState(state);
+  state->process(selectedPlayer);
 }

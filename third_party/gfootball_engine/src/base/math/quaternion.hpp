@@ -19,8 +19,7 @@
 #define _hpp_bluntmath_quaternion
 
 #include <cmath>
-
-#include "../../defines.hpp"
+#include <iostream>
 
 #include "bluntmath.hpp"
 
@@ -42,7 +41,6 @@ namespace blunted {
       }
       Quaternion(real x, real y, real z, real w);
       Quaternion(real values[4]);
-      virtual ~Quaternion();
 
       void Set(real x, real y, real z, real w);
       void Set(const Quaternion &quat);
@@ -62,8 +60,8 @@ namespace blunted {
       // ----- mathematics
       Quaternion GetInverse() const;
       void ConstructMatrix(Matrix3 &rotation) const;
-      void GetAngles(radian &X, radian &Y, radian &Z) const;
-      void SetAngles(radian X, radian Y, radian Z);
+      void GetAngles(real &X, real &Y, real &Z) const;
+      void SetAngles(real X, real Y, real Z);
       void GetAngleAxis(radian &rfangle, Vector3 &rkaxis) const;
       void SetAngleAxis(const radian &rfangle, const Vector3 &rkaxis);
       void conjugate();
@@ -83,12 +81,9 @@ namespace blunted {
       float MakeSameNeighborhood(const Quaternion &src); // returns dot product as added bonus! ;)
 
       real elements[4];
-
-    protected:
-
-    private:
-
   };
+
+  std::ostream& operator<<(std::ostream& os, const Quaternion& v);
 
 }
 

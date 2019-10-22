@@ -34,6 +34,12 @@ struct TacticalPlayerSituation {
   float toGoalSpaceRating = 0.0f;
   float spaceRating = 0.0f;
   float forwardRating = 0.0f;
+  void ProcessState(EnvState* state) {
+    state->process(forwardSpaceRating);
+    state->process(toGoalSpaceRating);
+    state->process(spaceRating);
+    state->process(forwardRating);
+  }
 };
 
 class Player : public PlayerBase {
@@ -65,8 +71,8 @@ class Player : public PlayerBase {
     FormationEntry GetFormationEntry();
     inline void SetDynamicFormationEntry(FormationEntry entry) { dynamicFormationEntry = entry; }
     inline FormationEntry GetDynamicFormationEntry() { return dynamicFormationEntry; }
-    inline void SetManMarkingID(int id) { manMarkingID = id; }
-    inline int GetManMarkingID() { return manMarkingID; }
+    inline void SetManMarking(Player* player) { manMarking = player; }
+    inline Player* GetManMarking() { return manMarking; }
 
     bool HasPossession() const;
     bool HasBestPossession() const;
@@ -85,16 +91,16 @@ class Player : public PlayerBase {
 
     float GetAverageVelocity(float timePeriod_sec); // is reset on ResetSituation() calls
 
-    void UpdatePossessionStats(bool onInterval = true);
+    void UpdatePossessionStats();
 
     float GetClosestOpponentDistance() const;
 
     const TacticalPlayerSituation &GetTacticalSituation() { return tacticalSituation; }
 
     virtual void Process();
-    virtual void PreparePutBuffers(unsigned long snapshotTime_ms);
-    virtual void FetchPutBuffers(unsigned long putTime_ms);
-    void Put2D();
+    virtual void PreparePutBuffers();
+    virtual void FetchPutBuffers();
+    void Put2D(bool mirror);
     void Hide2D();
 
     void GiveYellowCard(unsigned long giveTime_ms) { cards++; cardEffectiveTime_ms = giveTime_ms; }
@@ -114,12 +120,13 @@ class Player : public PlayerBase {
 
     virtual void ResetSituation(const Vector3 &focusPos);
 
+    void ProcessState(EnvState* state);
   protected:
     void _CalculateTacticalSituation();
 
     Team *team = nullptr;
 
-    signed int manMarkingID = 0;
+    Player* manMarking = 0;
 
     FormationEntry dynamicFormationEntry;
 
@@ -127,9 +134,9 @@ class Player : public PlayerBase {
     bool hasBestPossession = false;
     bool hasUniquePossession = false;
     int possessionDuration_ms = 0;
-    unsigned int timeNeededToGetToBall_ms = 0;
-    unsigned int timeNeededToGetToBall_optimistic_ms = 0;
-    unsigned int timeNeededToGetToBall_previous_ms = 0;
+    unsigned int timeNeededToGetToBall_ms = 1000;
+    unsigned int timeNeededToGetToBall_optimistic_ms = 1000;
+    unsigned int timeNeededToGetToBall_previous_ms = 1000;
 
     bool triggerControlledBallCollision = false;
 
@@ -138,24 +145,9 @@ class Player : public PlayerBase {
     bool buf_nameCaptionShowCondition = false;
     std::string buf_nameCaption;
     std::string buf_debugCaption;
-    Vector3 buf_nameCaptionPos;
-    Vector3 buf_debugCaptionPos;
     Vector3 buf_playerColor;
-    Vector3 buf_debugCaptionColor;
-
-    bool fetchedbuf_nameCaptionShowCondition = false;
-    bool fetchedbuf_debugCaptionShowCondition = false;
-    std::string fetchedbuf_nameCaption;
-    std::string fetchedbuf_debugCaption;
-    Vector3 fetchedbuf_nameCaptionPos;
-    Vector3 fetchedbuf_debugCaptionPos;
-    Vector3 fetchedbuf_playerColor;
-    Vector3 fetchedbuf_debugCaptionColor;
 
     Gui2Caption *nameCaption = nullptr;
-    Gui2Caption *debugCaption = nullptr;
-
-    boost::shared_ptr<MenuTask> menuTask;
 
     int desiredTimeToBall_ms = 0;
     int cards = 0; // 1 == 1 yellow; 2 == 2 yellow; 3 == 1 red; 4 == 1 yellow, 1 red

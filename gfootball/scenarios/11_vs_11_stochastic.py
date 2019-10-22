@@ -21,7 +21,7 @@ from . import *
 
 def build_scenario(builder):
   builder.SetFlag('game_duration', 3000)
-  builder.SetFlag('game_difficulty', 0.6)
+  builder.SetFlag('right_team_difficulty', 0.6)
   builder.SetFlag('deterministic', False)
   if builder.EpisodeNumber() % 2 == 0:
     first_team = Team.e_Left

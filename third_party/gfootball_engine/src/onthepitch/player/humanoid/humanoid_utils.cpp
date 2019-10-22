@@ -191,7 +191,7 @@ void GetDifficultyFactors(Match *match, Player *player, const Vector3 &positionO
   ballMovementFactor = clamp(ballMovementFactor, 0.0f, 1.0f);
 }
 
-Vector3 GetBallControlVector(Ball *ball, Player *player, const Vector3 &nextStartPos, radian nextStartAngle, radian nextBodyAngle, const Vector3 &outgoingMovement, const Anim *currentAnim, int frameNum, const SpatialState &spatialState, const Vector3 &positionOffset, radian &xRot, radian &yRot, float ffoOffset) {
+Vector3 GetBallControlVector(Ball *ball, Player *player, const Vector3 &nextStartPos, radian nextStartAngle, radian nextBodyAngle, const Vector3 &outgoingMovement, const Anim &currentAnim, int frameNum, const SpatialState &spatialState, const Vector3 &positionOffset, radian &xRot, radian &yRot, float ffoOffset) {
 
   // part of the resulting direction is physics, the other part is anim/controller. so originatingBias is only applied on the (1.0 - physicsBias) part of the result
   float physicsBias = 0.7f;
@@ -199,23 +199,23 @@ Vector3 GetBallControlVector(Ball *ball, Player *player, const Vector3 &nextStar
     physicsBias = 0.9f;
   }
 
-  if (FloatToEnumVelocity(currentAnim->anim->GetOutgoingVelocity()) == e_Velocity_Idle) physicsBias = 1.0f;
+  if (FloatToEnumVelocity(currentAnim.anim->GetOutgoingVelocity()) == e_Velocity_Idle) physicsBias = 1.0f;
 
   float explosivenessFactor = 0.6f;
   float maximumOverdrive_mps = 1.0f * explosivenessFactor;
-  if (currentAnim->originatingCommand.desiredVelocityFloat < dribbleWalkSwitch) maximumOverdrive_mps = 0.0f;
-  if (currentAnim->originatingCommand.desiredVelocityFloat > walkSprintSwitch) maximumOverdrive_mps = 2.0f * explosivenessFactor;
-  float dotFactor1 = spatialState.directionVec.GetDotProduct(currentAnim->originatingCommand.desiredDirection) * 0.5f + 0.5f; // inv deviation from the current direction
-  float dotFactor2 = Vector3(0, -1, 0).GetRotated2D(nextStartAngle).GetDotProduct(currentAnim->originatingCommand.desiredDirection) * 0.5f + 0.5f; // inv deviation from the direction we wanted
+  if (currentAnim.originatingCommand.desiredVelocityFloat < dribbleWalkSwitch) maximumOverdrive_mps = 0.0f;
+  if (currentAnim.originatingCommand.desiredVelocityFloat > walkSprintSwitch) maximumOverdrive_mps = 2.0f * explosivenessFactor;
+  float dotFactor1 = spatialState.directionVec.GetDotProduct(currentAnim.originatingCommand.desiredDirection) * 0.5f + 0.5f; // inv deviation from the current direction
+  float dotFactor2 = Vector3(0, -1, 0).GetRotated2D(nextStartAngle).GetDotProduct(currentAnim.originatingCommand.desiredDirection) * 0.5f + 0.5f; // inv deviation from the direction we wanted
   float dotFactor = clamp(std::min(dotFactor1, dotFactor2), 0.0f, 1.0f);  // clamp for numerical problems, don't want negative values out of this.
   maximumOverdrive_mps *= dotFactor;
 
-  if (FloatToEnumVelocity(currentAnim->anim->GetOutgoingVelocity()) == e_Velocity_Idle) maximumOverdrive_mps = 0.0f;
+  if (FloatToEnumVelocity(currentAnim.anim->GetOutgoingVelocity()) == e_Velocity_Idle) maximumOverdrive_mps = 0.0f;
 
   float originatingBias = 0.7f;
 
   // using just controller velo
-  Vector3 desiredMovement = currentAnim->originatingCommand.desiredDirection * (currentAnim->originatingCommand.desiredVelocityFloat * originatingBias + player->GetController()->GetFloatVelocity() * (1.0f - originatingBias));
+  Vector3 desiredMovement = currentAnim.originatingCommand.desiredDirection * (currentAnim.originatingCommand.desiredVelocityFloat * originatingBias + player->GetController()->GetFloatVelocity() * (1.0f - originatingBias));
 
   // range velocity, pes6 style
   //desiredMovement = desiredMovement.GetNormalized(0) * RangeVelocity(desiredMovement.GetLength());
@@ -233,7 +233,7 @@ Vector3 GetBallControlVector(Ball *ball, Player *player, const Vector3 &nextStar
   float physicsVelocity = physicsMovement.GetLength();
 
   Vector3 FFOsrc = GetFrontOfFootOffsetRel(physicsVelocity, nextBodyAngle - spatialState.angle, ball->Predict(0).coords[2]);
-  float annoyanceVeloFactor = curve(NormalizedClamp(currentAnim->anim->GetOutgoingVelocity(), idleVelocity, sprintVelocity), 0.7f); // do not apply effect to low velo's; makes it too chaotic
+  float annoyanceVeloFactor = curve(NormalizedClamp(currentAnim.anim->GetOutgoingVelocity(), idleVelocity, sprintVelocity), 0.7f); // do not apply effect to low velo's; makes it too chaotic
   float opponentAnnoyanceFactor = (1.0f - NormalizedClamp(player->GetClosestOpponentDistance(), 0.5f, 1.5f)) * (1.0f - (player->GetStat(mental_calmness) * 0.5f + player->GetStat(physical_balance) * 0.3f)) * annoyanceVeloFactor;
   Vector3 FFO = Vector3(0, -1, 0).GetRotated2D(nextBodyAngle) * (FFOsrc.GetLength() + ffoOffset + opponentAnnoyanceFactor * 3.0f); // positionOffset is already in ffoOffset (though only for trap atm)
   float heightFFOOffset = NormalizedClamp(ball->Predict(0).coords[2], 0.5f, 1.0f) * 0.5f; // bounce high balls off body - else they keep colliding inside body and stuff like that
@@ -270,7 +270,7 @@ Vector3 GetBallControlVector(Ball *ball, Player *player, const Vector3 &nextStar
   Vector3 plannedBallPos = physicsPlannedBallPos * physicsBias + desiredPlannedBallPos * (1.0f - physicsBias);
   Vector3 toPlannedBall = plannedBallPos - ball->Predict(0).Get2D();
 
-  float timeToGo = ((currentAnim->anim->GetEffectiveFrameCount() - frameNum) * 10) * 0.001f;
+  float timeToGo = ((currentAnim.anim->GetEffectiveFrameCount() - frameNum) * 10) * 0.001f;
   timeToGo += physicsDelayTime * physicsBias + desiredDelayTime * (1.0f - physicsBias);
   timeToGo += defaultTouchOffset_ms * 0.001f;//0.08f; // time into next anim where we want to hit the ball
 
@@ -314,7 +314,7 @@ Vector3 GetBallControlVector(Ball *ball, Player *player, const Vector3 &nextStar
   return touchVec;
 }
 
-Vector3 GetTrapVector(Match *match, Player *player, const Vector3 &nextStartPos, radian nextStartAngle, radian nextBodyAngle, const Vector3 &outgoingMovement, const Anim *currentAnim, int frameNum, const SpatialState &spatialState, const Vector3 &positionOffset, radian &xRot, radian &yRot) {
+Vector3 GetTrapVector(Match *match, Player *player, const Vector3 &nextStartPos, radian nextStartAngle, radian nextBodyAngle, const Vector3 &outgoingMovement, const Anim &currentAnim, int frameNum, const SpatialState &spatialState, const Vector3 &positionOffset, radian &xRot, radian &yRot) {
 
   Ball *ball = match->GetBall();
 
@@ -334,25 +334,25 @@ Vector3 GetTrapVector(Match *match, Player *player, const Vector3 &nextStartPos,
 
 }
 
-Vector3 GetShotVector(Match *match, Player *player, const Vector3 &nextStartPos, radian nextStartAngle, radian nextBodyAngle, const Vector3 &outgoingMovement, const Anim *currentAnim, int frameNum, const SpatialState &spatialState, const Vector3 &positionOffset, radian &xRot, radian &yRot, radian &zRot, float autoDirectionBias) {
+Vector3 GetShotVector(Match *match, Player *player, const Vector3 &nextStartPos, radian nextStartAngle, radian nextBodyAngle, const Vector3 &outgoingMovement, const Anim &currentAnim, int frameNum, const SpatialState &spatialState, const Vector3 &positionOffset, radian &xRot, radian &yRot, radian &zRot, float autoDirectionBias) {
 
   Ball *ball = match->GetBall();
 
-  const std::vector<Vector3> &origPositionCache = match->GetAnimPositionCache(currentAnim->anim);
-  Vector3 touchMovement = CalculateMovementAtFrame(origPositionCache, currentAnim->frameNum).GetRotated2D(spatialState.angle); // spatialState.movement isn't reliable because of smuggles and such
+  const std::vector<Vector3> &origPositionCache = match->GetAnimPositionCache(currentAnim.anim);
+  Vector3 touchMovement = CalculateMovementAtFrame(origPositionCache, currentAnim.frameNum).GetRotated2D(spatialState.angle); // spatialState.movement isn't reliable because of smuggles and such
   //SetRedDebugPilon(player->GetPosition() + touchMovement);
   Vector3 touchDirection = touchMovement.GetNormalized(spatialState.directionVec);
   float touchVelocity = touchMovement.GetLength();
   if (FloatToEnumVelocity(touchVelocity) == e_Velocity_Idle) touchDirection = spatialState.directionVec;
   //SetBlueDebugPilon(player->GetPosition() + touchDirection * 8.0f);
 
-  float expressionModifierFactor = NormalizedClamp(currentAnim->originatingCommand.desiredVelocityFloat, idleVelocity, sprintVelocity);
+  float expressionModifierFactor = NormalizedClamp(currentAnim.originatingCommand.desiredVelocityFloat, idleVelocity, sprintVelocity);
 
-  // previous: float directionFactor = touchDirection.GetDotProduct(currentAnim->originatingCommand.touchInfo.desiredDirection) * 0.5f + 0.5f;
+  // previous: float directionFactor = touchDirection.GetDotProduct(currentAnim.originatingCommand.touchInfo.desiredDirection) * 0.5f + 0.5f;
   // ideal angle is ~36 degrees == 0.2 * pi
   radian idealAngle = 0.2f * pi;
-  radian angle1 = fabs(touchDirection.GetAngle2D(currentAnim->originatingCommand.touchInfo.desiredDirection.GetRotated2D(-idealAngle)));
-  radian angle2 = fabs(touchDirection.GetAngle2D(currentAnim->originatingCommand.touchInfo.desiredDirection.GetRotated2D( idealAngle)));
+  radian angle1 = fabs(touchDirection.GetAngle2D(currentAnim.originatingCommand.touchInfo.desiredDirection.GetRotated2D(-idealAngle)));
+  radian angle2 = fabs(touchDirection.GetAngle2D(currentAnim.originatingCommand.touchInfo.desiredDirection.GetRotated2D( idealAngle)));
   radian angle = std::min(angle1, angle2);
   float directionFactor = clamp(angle / pi, 0.0f, 1.0f);
   directionFactor = curve(1.0f - directionFactor, 0.8f);
@@ -380,10 +380,10 @@ Vector3 GetShotVector(Match *match, Player *player, const Vector3 &nextStartPos,
   float adaptedDesiredPower =
       45.0f *
       (0.7f +
-       std::pow(currentAnim->originatingCommand.touchInfo.desiredPower, 0.5f) *
+       std::pow(currentAnim.originatingCommand.touchInfo.desiredPower, 0.5f) *
            0.3f);
 
-  float animMaxPowerFactor = atof(currentAnim->anim->GetVariable("touch_maxpowerfactor").c_str());
+  float animMaxPowerFactor = atof(currentAnim.anim->GetVariable("touch_maxpowerfactor").c_str());
   if (animMaxPowerFactor == 0.0f) animMaxPowerFactor = 1.0f;
 
   float power = clamp(powerFactor * adaptedDesiredPower, 0.0f, (32.0f + player->GetStat(physical_shotpower) * 13.0f) * (0.2f + animMaxPowerFactor * 0.8f));
@@ -422,11 +422,11 @@ Vector3 GetShotVector(Match *match, Player *player, const Vector3 &nextStartPos,
   // best case result
 
   float desiredHeight = 0.05f;
-  Vector3 desiredShot = (currentAnim->originatingCommand.touchInfo.desiredDirection.Get2D() + Vector3(0, 0, desiredHeight)).GetNormalized() * power;
+  Vector3 desiredShot = (currentAnim.originatingCommand.touchInfo.desiredDirection.Get2D() + Vector3(0, 0, desiredHeight)).GetNormalized() * power;
 
   // worst case result
 
-  Vector3 worstCaseDirection = currentAnim->originatingCommand.touchInfo.desiredDirection.Get2D();
+  Vector3 worstCaseDirection = currentAnim.originatingCommand.touchInfo.desiredDirection.Get2D();
 
   // direction lag
   float laggyDirectionBias = difficultyFactor * 0.8f;
@@ -462,10 +462,10 @@ Vector3 GetShotVector(Match *match, Player *player, const Vector3 &nextStartPos,
   float plannedCurveFactor = 0.7f;
 
   // forward/backward 'curve'
-  xRot = -currentAnim->originatingCommand.touchInfo.desiredDirection.coords[1] *
+  xRot = -currentAnim.originatingCommand.touchInfo.desiredDirection.coords[1] *
              20.0f +
          (boostrandom(-20, 20) * randomCurveFactor);
-  yRot = -currentAnim->originatingCommand.touchInfo.desiredDirection.coords[0] *
+  yRot = -currentAnim.originatingCommand.touchInfo.desiredDirection.coords[0] *
              20.0f +
          (boostrandom(-20, 20) * randomCurveFactor);
 

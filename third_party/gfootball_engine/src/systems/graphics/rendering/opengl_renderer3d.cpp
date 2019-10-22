@@ -24,7 +24,6 @@
 #include "../../../main.hpp"
 #include "../../../base/log.hpp"
 #include "../../../utils/gui2/widgets/image.hpp"
-#include "../../../managers/environmentmanager.hpp"
 #include "../../../types/command.hpp"
 #include "../../../base/sdl_surface.hpp"
 #include "../../../base/utils.hpp"
@@ -67,17 +66,6 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
     last_screen_.resize(1280*720*3);
     SDL_GL_SwapWindow(window);
     mapping.glReadPixels(0, 0, 1280, 720, GL_RGB, GL_UNSIGNED_BYTE, &last_screen_[0]);
-  }
-
-  void OpenGLRenderer3D::LoadMatrix(const Matrix4 &mat) {
-    mapping.glLoadMatrixf((float*)mat.GetTransposed().elements);
-  }
-
-  Matrix4 OpenGLRenderer3D::GetMatrix(e_MatrixMode matrixMode) const {
-    float the_matrix[16];
-    if (matrixMode == e_MatrixMode_Projection) mapping.glGetFloatv(GL_PROJECTION_MATRIX, the_matrix);
-    if (matrixMode == e_MatrixMode_ModelView) mapping.glGetFloatv(GL_MODELVIEW_MATRIX, the_matrix);
-    return Matrix4(the_matrix).GetTransposed();
   }
 
   void OpenGLRenderer3D::SetMatrix(const std::string &shaderUniformName, const Matrix4 &matrix) {
@@ -973,15 +961,6 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
     if (pingPongIter != VAOReadIndex.end()) {
       VAOReadIndex.erase(pingPongIter);
     }
-
-/*fenceoff
-    // delete sync object
-    std::map<int, GLsync>::iterator syncIter = VAOfence.find(vertexBufferID.vertexArrayID);
-    if (syncIter != VAOfence.end()) {
-      glDeleteSync(syncIter->second);
-      VAOfence.erase(syncIter);
-    }
-*/
   }
 
   void DrawBufferChunk(int startIndex, int count) {
@@ -993,17 +972,6 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
   }
 
   void OpenGLRenderer3D::RenderVertexBuffer(const std::deque<VertexBufferQueueEntry> &vertexBufferQueue, e_RenderMode renderMode) {
-
-    /*
-    CPrecisionTimer myTimer;
-    boost::this_thread::yield();
-    myTimer.Start();
-
-    printf("it took %f milliseconds\n", myTimer.Stop() * 1000.0);
-    */
-
-    //glMatrixMode(GL_MODELVIEW);
-
     VertexBuffer *vertexBuffer;
 
     if (renderMode != e_RenderMode_GeometryOnly) {
@@ -1011,11 +979,6 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
     } else {
       mapping.glDisable(GL_TEXTURE_2D);
     }
-    // if (renderMode == e_RenderMode_GeometryOnly || renderMode == e_RenderMode_Diffuse) {
-    //   glDisable(GL_LIGHTING);
-    // } else {
-    //   glEnable(GL_LIGHTING);
-    // }
 
     signed int currentDiffuseTextureID = -1;
     signed int currentNormalTextureID = -1;
@@ -1023,13 +986,7 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
     signed int currentIlluminationTextureID = -1;
     signed int currentBoundBuffer = -1;
 
-    //int bufferSize = vertexBufferQueue.size();
     int bufferSwitches = 0;
-
-    //glPolygonMode(GL_FRONT, GL_FILL);
-    //glColor3f(1, 1, 1);
-
-    //glEnableClientState(GL_VERTEX_ARRAY);
 
    	Matrix4 transform;
 
@@ -1235,120 +1192,6 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
 
     mapping.glBindVertexArray(0);
   }
-
-  void OpenGLRenderer3D::RenderAABB(std::list<VertexBufferQueueEntry> &vertexBufferQueue) {
-
-    mapping.glDisable(GL_LIGHTING);
-    mapping.glPolygonMode(GL_FRONT, GL_FILL);
-    mapping.glColor3f(0, 1, 0);
-
-    mapping.glBegin(GL_LINES);
-
-    std::list<VertexBufferQueueEntry>::iterator vertexBufferQueueIter = vertexBufferQueue.begin();
-    while (vertexBufferQueueIter != vertexBufferQueue.end()) {
-      VertexBufferQueueEntry *queueEntry = &(*vertexBufferQueueIter);
-
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-
-
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-
-
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-
-      vertexBufferQueueIter++;
-    }
-
-    mapping.glEnd();
-
-  }
-
-  void OpenGLRenderer3D::RenderAABB(std::list<LightQueueEntry> &lightQueue) {
-
-    mapping.glDisable(GL_LIGHTING);
-    mapping.glPolygonMode(GL_FRONT, GL_FILL);
-    mapping.glColor3f(0, 0, 1);
-
-    mapping.glBegin(GL_LINES);
-
-    std::list<LightQueueEntry>::iterator lightQueueIter = lightQueue.begin();
-    while (lightQueueIter != lightQueue.end()) {
-      LightQueueEntry *queueEntry = &(*lightQueueIter);
-
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-
-
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-
-
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.minxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.minxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.minxyz.coords[2]);
-      mapping.glVertex3f(queueEntry->aabb.maxxyz.coords[0], queueEntry->aabb.maxxyz.coords[1], queueEntry->aabb.maxxyz.coords[2]);
-
-      lightQueueIter++;
-    }
-
-    mapping.glEnd();
-  }
-
 
   // lights
 
@@ -1653,29 +1496,6 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
     }
   }
 
-
-  // render buffers
-
-  int OpenGLRenderer3D::CreateRenderBuffer() {
-    GLuint id = 0;
-    mapping.glGenRenderbuffers(1, &id);
-    return id;
-  }
-
-  void OpenGLRenderer3D::DeleteRenderBuffer(int rbID) {
-    GLuint glrbID = rbID;
-    mapping.glDeleteRenderbuffers(1, &glrbID);
-  }
-
-  void OpenGLRenderer3D::BindRenderBuffer(int rbID) {
-    mapping.glBindRenderbuffer(GL_RENDERBUFFER, (GLuint)rbID);
-  }
-
-  void OpenGLRenderer3D::SetRenderBufferStorage(e_InternalPixelFormat internalPixelFormat, int width, int height) {
-    mapping.glRenderbufferStorage(GL_RENDERBUFFER, GetGLInternalPixelFormat(internalPixelFormat), width, height);
-  }
-
-
   // render targets
 
   void OpenGLRenderer3D::SetRenderTargets(std::vector<e_TargetAttachment> targetAttachments) {
@@ -1709,10 +1529,6 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
     width = context_width;
     height = context_height;
     bpp = context_bpp;
-  }
-
-  void OpenGLRenderer3D::SetPolygonOffset(float scale, float bias) {
-    mapping.glPolygonOffset(scale, bias); // hint: doesn't work with glsl since i'm using my own calculations
   }
 
   // shaders
@@ -2119,30 +1935,5 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
 
   const screenshoot& OpenGLRenderer3D::GetScreen() {
     return last_screen_;
-  }
-
-  void OpenGLRenderer3D::HDRCaptureOverallBrightness() {
-    float brightness = 0.0;
-    int count = 0;
-    for (int i = 0; i < 2; i++) {
-//    for (int x = context_width * 0.2; x <= context_width * 0.8; x += context_width * 0.01) {
-//      for (int y = context_height * 0.2; y <= context_height * 0.8; y += context_height * 0.01) {
-      int x = random_non_determ(context_width * 0.2f, context_width * 0.8f);
-      int y = random_non_determ(context_height * 0.2f, context_height * 0.8f);
-      GLubyte pixel[3];
-      mapping.glReadPixels(x, y, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, (void*)pixel);
-      brightness += (pixel[0] + pixel[1] + pixel[2]) / 3.0f;
-      count++;
-    }
-    brightness /= (float)count;
-    //brightness /= 256.0;
-
-    overallBrightness = overallBrightness * 0.99f + brightness * 0.01f;
-
-    //printf("overall brightness: %f (%f)\n", overallBrightness, brightness);
-  }
-
-  float OpenGLRenderer3D::HDRGetOverallBrightness() {
-    return overallBrightness;
   }
 }

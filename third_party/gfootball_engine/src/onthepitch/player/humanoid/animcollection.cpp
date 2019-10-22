@@ -38,7 +38,7 @@ void FillNodeMap(boost::intrusive_ptr<Node> targetNode, NodeMap &nodeMap) {
 
 }
 
-AnimCollection::AnimCollection(boost::shared_ptr<Scene3D> scene3D) : scene3D(scene3D) {
+AnimCollection::AnimCollection() {
   maxIncomingBallDirectionDeviation = 0.25f * pi;
   maxOutgoingBallDirectionDeviation = 0.25f * pi;
 
@@ -352,7 +352,7 @@ void AnimCollection::Load() {
 
   ObjectLoader loader;
   boost::intrusive_ptr<Node> playerNode;
-  playerNode = loader.LoadObject(scene3D, "media/objects/players/player.object");
+  playerNode = loader.LoadObject("media/objects/players/player.object");
   playerNode->SetName("player");
   playerNode->SetLocalMode(e_LocalMode_Absolute);
 

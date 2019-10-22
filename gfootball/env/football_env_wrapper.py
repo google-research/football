@@ -16,10 +16,9 @@
 """Football environment wrapper which supports multiple as close as possible to a GYM environment."""
 
 import copy
-import logging
+from absl import logging
 import timeit
 
-from gfootball.env import config as cfg
 from gfootball.env import football_action_set
 from gfootball.env import football_env_core
 from gfootball.env import observation_processor
@@ -32,11 +31,9 @@ class FootballEnvWrapper(object):
     self._env = football_env_core.FootballEnvCore(config)
     self._env_state = 'initialized'
 
-  @cfg.log
   def state(self):
     return self._env_state
 
-  @cfg.log
   def reset(self):
     """Reset environment for a new episode using a given config."""
     self._episode_start = timeit.default_timer()
@@ -47,11 +44,9 @@ class FootballEnvWrapper(object):
     self._env.reset(self._trace)
     self._env_state = 'game_started'
 
-  @cfg.log
   def write_dump(self, name):
     return self._trace.write_dump(name)
 
-  @cfg.log
   def step(self, action, extra_data={}):
     if self._env_state != 'game_started':
       raise RuntimeError('invalid game state: {}'.format(self._env_state))
@@ -84,9 +79,15 @@ class FootballEnvWrapper(object):
           self._step_count, fps, game_fps)
     return observation, reward, done
 
-  @cfg.log
   def observation(self):
     return self._env.observation()
 
   def close(self):
     self._env.close()
+
+  def get_state(self):
+    return self._env.get_state()
+
+  def set_state(self, state):
+    return self._env.set_state(state)
+

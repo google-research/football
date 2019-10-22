@@ -13,286 +13,50 @@
 
 #undef NDEBUG
 
-#include "ai.hpp"
+#include "src/game_env.hpp"
+#include <Python.h>
 
-#include <fenv.h>
-#include <sys/prctl.h>
-#include <sys/wait.h>
+#include <boost/python.hpp>
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/sync/interprocess_mutex.hpp>
+#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 
-#include <cerrno>
-#include <chrono>
-#include <ctime>
-#include <iostream>
-#include <ratio>
-
-#include "ai/ai_keyboard.hpp"
-#include "file.h"
-#include "gametask.hpp"
-
+namespace bp = boost::python;
 using namespace boost::python;
 using namespace boost::interprocess;
-
-#define FRAME_SIZE (1280*720*3)
-
 using std::string;
 
-void GameEnv::do_step(int count) {
-  GetSynchronizationTask()->Step(count);
-  while (GetSynchronizationTask()->Steps() > 0) {
-    DoStep();
+class GameEnv_Python : public GameEnv {
+ public:
+  PyObject* get_frame_python() {
+    screenshoot screen = get_frame();
+    PyObject* str = PyBytes_FromStringAndSize(screen.data(), screen.size());
+    return str;
   }
-}
 
-float Position::env_coord(int index) const {
-  switch (index) {
-    case 0:
-      return value[0] / X_FIELD_SCALE;
-    case 1:
-      return value[1] / Y_FIELD_SCALE;
-    case 2:
-      return value[2] / Z_FIELD_SCALE;
-    default:
-      PyErr_SetString(PyExc_IndexError, "index out of range");
-      throw boost::python::error_already_set();
+  PyObject* get_state_python() {
+    std::string state = get_state();
+    PyObject* str = PyBytes_FromStringAndSize(state.data(), state.size());
+    return str;
   }
-}
 
-std::string Position::debug() {
-  return std::to_string(value[0]) + "," + std::to_string(value[1]) + "," +
-         std::to_string(value[2]);
-}
-
-GameEnv::~GameEnv() { }
-
-void setConfig(ScenarioConfig scenario_config) {
-  scenario_config.ball_position.coords[0] =
-      scenario_config.ball_position.coords[0] * X_FIELD_SCALE;
-  scenario_config.ball_position.coords[1] =
-      scenario_config.ball_position.coords[1] * Y_FIELD_SCALE;
-  GetScenarioConfig() = scenario_config;
-  std::vector<SideSelection> setup = GetMenuTask()->GetControllerSetup();
-  CHECK(setup.size() == 2 * MAX_PLAYERS);
-  int controller = 0;
-  for (int x = 0; x < scenario_config.left_agents; x++) {
-    setup[controller++].side = -1;
+  void step_python() {
+    SetContext(context);
+    PyThreadState* _save = NULL;
+    Py_UNBLOCK_THREADS;
+    step();
+    Py_BLOCK_THREADS;
   }
-  while (controller < MAX_PLAYERS) {
-    setup[controller++].side = 0;
-  }
-  for (int x = 0; x < scenario_config.right_agents; x++) {
-    setup[controller++].side = 1;
-  }
-  while (controller < 2 * MAX_PLAYERS) {
-    setup[controller++].side = 0;
-  }
-  GetMenuTask()->SetControllerSetup(setup);
-}
 
-std::string GameEnv::start_game(GameConfig game_config) {
-  context = new GameContext();
-  SetContext(context);
-  // feenableexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
-  GetGameConfig() = game_config;
-  std::cout << std::unitbuf;
-
-  char* data_dir = getenv("GFOOTBALL_DATA_DIR");
-  if (data_dir) {
-    GetGameConfig().data_dir = data_dir;
+  void reset_python(const ScenarioConfig& game_config) {
+    SetContext(context);
+    context->step = -1;
+    PyThreadState* _save = NULL;
+    Py_UNBLOCK_THREADS;
+    reset(game_config);
+    Py_BLOCK_THREADS;
   }
-  Properties* config = new Properties();
-  config->Set("match_duration", 0.027);
-  char* font_file = getenv("GFOOTBALL_FONT");
-  if (font_file) {
-    config->Set("font_filename", font_file);
-  }
-  config->Set("physics_frametime_ms", 1);
-  config->Set("game", 0);
-  // Enable AI.
-  config->SetBool("ai_keyboard", true);
-  if (game_config.render_mode == e_Disabled) {
-    config->Set("graphics3d_renderer", "mock");
-  } else if (game_config.render_mode == e_Offscreen) {
-    setenv("DISPLAY", ":63", 1);
-    config->Set("graphics3d_renderer", "egl");
-  }
-  run_game(config);
-  game_ = GetGameTask().get();
-  setConfig(ScenarioConfig());
-  do_step(1);
-  return "ok";
-}
-
-SharedInfo GameEnv::get_info() {
-  Match* match = game_->GetMatch();
-  CHECK(match);
-  SharedInfo info;
-  match->GetState(&info);
-  auto graphics = GetGraphicsSystem();
-  return info;
-}
-
-PyObject* GameEnv::get_frame() {
-  SetContext(context);
-  const screenshoot& screen = GetGraphicsSystem()->GetScreen();
-  PyObject* str = PyBytes_FromStringAndSize(screen.data(), screen.size());
-  return str;
-}
-
-void GameEnv::action(int action, bool left_team, int player) {
-  SetContext(context);
-  int controller_id = player + (left_team ? 0 : 11);
-  auto controller = static_cast<AIControlledKeyboard*>(GetControllers()[controller_id]);
-  switch (Action(action)) {
-    case game_idle:
-      break;
-    case game_left:
-      controller->SetDirection(Vector3(-1, 0, 0));
-      break;
-    case game_top_left:
-      controller->SetDirection(Vector3(-1, 1, 0));
-      break;
-    case game_top:
-      controller->SetDirection(Vector3(0, 1, 0));
-      break;
-    case game_top_right:
-      controller->SetDirection(Vector3(1, 1, 0));
-      break;
-    case game_right:
-      controller->SetDirection(Vector3(1, 0, 0));
-      break;
-    case game_bottom_right:
-      controller->SetDirection(Vector3(1, -1, 0));
-      break;
-    case game_bottom:
-      controller->SetDirection(Vector3(0, -1, 0));
-      break;
-    case game_bottom_left:
-      controller->SetDirection(Vector3(-1, -1, 0));
-      break;
-
-    case game_long_pass:
-      controller->SetButton(e_ButtonFunction_LongPass, true);
-      break;
-    case game_high_pass:
-      controller->SetButton(e_ButtonFunction_HighPass, true);
-      break;
-    case game_short_pass:
-      controller->SetButton(e_ButtonFunction_ShortPass, true);
-      break;
-    case game_shot:
-      controller->SetButton(e_ButtonFunction_Shot, true);
-      break;
-    case game_keeper_rush:
-      controller->SetButton(e_ButtonFunction_KeeperRush, true);
-      break;
-    case game_sliding:
-      controller->SetButton(e_ButtonFunction_Sliding, true);
-      break;
-    case game_pressure:
-      controller->SetButton(e_ButtonFunction_Pressure, true);
-      break;
-    case game_team_pressure:
-      controller->SetButton(e_ButtonFunction_TeamPressure, true);
-      break;
-    case game_switch:
-      controller->SetButton(e_ButtonFunction_Switch, true);
-      break;
-    case game_sprint:
-      controller->SetButton(e_ButtonFunction_Sprint, true);
-      break;
-    case game_dribble:
-      controller->SetButton(e_ButtonFunction_Dribble, true);
-      break;
-    case game_release_direction:
-      controller->SetDirection(Vector3(0, 0, 0));
-      break;
-    case game_release_long_pass:
-      controller->SetButton(e_ButtonFunction_LongPass, false);
-      break;
-    case game_release_high_pass:
-      controller->SetButton(e_ButtonFunction_HighPass, false);
-      break;
-    case game_release_short_pass:
-      controller->SetButton(e_ButtonFunction_ShortPass, false);
-      break;
-    case game_release_shot:
-      controller->SetButton(e_ButtonFunction_Shot, false);
-      break;
-    case game_release_keeper_rush:
-      controller->SetButton(e_ButtonFunction_KeeperRush, false);
-      break;
-    case game_release_sliding:
-      controller->SetButton(e_ButtonFunction_Sliding, false);
-      break;
-    case game_release_pressure:
-      controller->SetButton(e_ButtonFunction_Pressure, false);
-      break;
-    case game_release_team_pressure:
-      controller->SetButton(e_ButtonFunction_TeamPressure, false);
-      break;
-    case game_release_switch:
-      controller->SetButton(e_ButtonFunction_Switch, false);
-      break;
-    case game_release_sprint:
-      controller->SetButton(e_ButtonFunction_Sprint, false);
-      break;
-    case game_release_dribble:
-      controller->SetButton(e_ButtonFunction_Dribble, false);
-      break;
-  }
-}
-
-void GameEnv::step() {
-  SetContext(context);
-  PyThreadState* _save = NULL;
-  Py_UNBLOCK_THREADS;
-  // We do 10 environment steps per second, while game does 100 frames of
-  // physics animation.
-  int steps_to_do = GetGameConfig().physics_steps_per_frame;
-  if (GetScenarioConfig().real_time) {
-    auto start = std::chrono::system_clock::now();
-    for (int x = 1; x <= steps_to_do; x++) {
-      bool render_current_step =
-          x * last_step_rendered_frames_ / steps_to_do !=
-          (x - 1) * last_step_rendered_frames_ / steps_to_do;
-      set_rendering(render_current_step);
-      do_step(1);
-    }
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::system_clock::now() - start);
-    if (elapsed.count() > 9 * (steps_to_do + 1) &&
-        last_step_rendered_frames_ > 1) {
-      last_step_rendered_frames_--;
-    } else if (elapsed.count() < 9 * (steps_to_do - 1) &&
-               last_step_rendered_frames_ < steps_to_do) {
-      last_step_rendered_frames_++;
-    }
-  } else {
-    set_rendering(false);
-    do_step(steps_to_do - 1);
-    set_rendering(GetScenarioConfig().render);
-    do_step(1);
-  }
-  Py_BLOCK_THREADS;
-}
-
-void GameEnv::reset(ScenarioConfig game_config) {
-  SetContext(context);
-  PyThreadState* _save = NULL;
-  Py_UNBLOCK_THREADS;
-  SetContext(context);
-  setConfig(game_config);
-  for (auto controller : GetControllers()) {
-    controller->Reset();
-  }
-  context->geometry_manager.RemoveUnused();
-  context->surface_manager.RemoveUnused();
-  context->texture_manager.RemoveUnused();
-  context->vertices_manager.RemoveUnused();
-  GetMenuTask()->SetMenuAction(e_MenuAction_Menu);
-  do_step(1);
-  Py_BLOCK_THREADS;
-}
+};
 
 BOOST_PYTHON_MODULE(_gameplayfootball) {
   class_<std::vector<float> >("FloatVec")
@@ -334,20 +98,22 @@ BOOST_PYTHON_MODULE(_gameplayfootball) {
       .def_readonly("left_goals", &SharedInfo::left_goals)
       .def_readonly("right_goals", &SharedInfo::right_goals)
       .def_readonly("is_in_play", &SharedInfo::is_in_play)
-      .def_readonly("done", &SharedInfo::done)
       .def_readonly("ball_owned_team", &SharedInfo::ball_owned_team)
       .def_readonly("ball_owned_player", &SharedInfo::ball_owned_player)
       .add_property("left_controllers", &SharedInfo::left_controllers)
       .add_property("right_controllers", &SharedInfo::right_controllers)
-      .def_readonly("game_mode", &SharedInfo::game_mode);
+      .def_readonly("game_mode", &SharedInfo::game_mode)
+      .def_readonly("step", &SharedInfo::step);
 
-  class_<GameEnv>("GameEnv")
-      .def("start_game", &GameEnv::start_game)
-      .def("get_info", &GameEnv::get_info)
-      .def("get_frame", &GameEnv::get_frame)
-      .def("perform_action", &GameEnv::action)
-      .def("step", &GameEnv::step)
-      .def("reset", &GameEnv::reset);
+  class_<GameEnv_Python>("GameEnv")
+      .def("start_game", &GameEnv_Python::start_game)
+      .def("get_info", &GameEnv_Python::get_info)
+      .def("get_frame", &GameEnv_Python::get_frame_python)
+      .def("perform_action", &GameEnv_Python::action)
+      .def("step", &GameEnv_Python::step_python)
+      .def("get_state", &GameEnv_Python::get_state_python)
+      .def("set_state", &GameEnv_Python::set_state)
+      .def("reset", &GameEnv_Python::reset_python);
   ;
 
   class_<Vector3>("Vector3", init<float, float, float>())
@@ -370,10 +136,17 @@ BOOST_PYTHON_MODULE(_gameplayfootball) {
       .def_readwrite("use_magnet", &ScenarioConfig::use_magnet)
       .def_readwrite("game_engine_random_seed",
                      &ScenarioConfig::game_engine_random_seed)
+      .def_readwrite("reverse_team_processing",
+                     &ScenarioConfig::reverse_team_processing)
+      .def_readwrite("symmetric_mode",
+                     &ScenarioConfig::symmetric_mode)
       .def_readwrite("offsides", &ScenarioConfig::offsides)
       .def_readwrite("real_time", &ScenarioConfig::real_time)
       .def_readwrite("render", &ScenarioConfig::render)
-      .def_readwrite("game_difficulty", &ScenarioConfig::game_difficulty)
+      .def_readwrite("left_team_difficulty",
+                     &ScenarioConfig::left_team_difficulty)
+      .def_readwrite("right_team_difficulty",
+                     &ScenarioConfig::right_team_difficulty)
       .def_readwrite("kickoff_for_goal_loosing_team",
                      &ScenarioConfig::kickoff_for_goal_loosing_team);
 

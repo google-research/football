@@ -17,18 +17,11 @@
 #include "../../scene/objects/image2d.hpp"
 #include "../../scene/objects/geometry.hpp"
 
-#include "../../systems/isystemscene.hpp"
-
-#include "../../managers/environmentmanager.hpp"
-#include "../../managers/systemmanager.hpp"
-
 #include "../../scene/objectfactory.hpp"
 
 namespace blunted {
 
-  Scene2D::Scene2D(const std::string &name, const Properties &config) : Scene(name, e_SceneType_Scene2D) {
-    //printf("CREATING SCENE2D\n");
-
+  Scene2D::Scene2D(const Properties &config) {
     supportedObjectTypes.push_back(e_ObjectType_Image2D);
 
     width = config.GetInt("context_x", 1280);
@@ -37,7 +30,6 @@ namespace blunted {
   }
 
   Scene2D::~Scene2D() {
-    //printf("DELETING SCENE2D\n");
   }
 
   void Scene2D::Init() {

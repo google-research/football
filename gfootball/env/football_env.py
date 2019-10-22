@@ -21,7 +21,7 @@ from __future__ import print_function
 
 import copy
 import importlib
-import logging
+from absl import logging
 
 from gfootball.env import config as cfg
 from gfootball.env import constants
@@ -29,6 +29,11 @@ from gfootball.env import football_action_set
 from gfootball.env import football_env_wrapper
 import gym
 import numpy as np
+
+try:
+  import cv2
+except ImportError:
+  import cv2
 
 
 class FootballEnv(gym.Env):
@@ -71,8 +76,8 @@ class FootballEnv(gym.Env):
         player_factory = importlib.import_module(
             'gfootball.env.players.{}'.format(name))
       except ImportError as e:
-        logging.warning('Failed loading player "%s"', name)
-        logging.warning(e)
+        logging.error('Failed loading player "%s"', name)
+        logging.error(e)
         exit(1)
       player_config = copy.deepcopy(config)
       player_config.update(d)
@@ -192,3 +197,27 @@ class FootballEnv(gym.Env):
 
   def close(self):
     self._env.close()
+
+  def get_state(self):
+    return self._env.get_state()
+
+  def set_state(self, state):
+    return self._env.set_state(state)
+
+
+  def render(self, mode='human'):
+    frame = []
+    if self.last_observation and 'frame' in self.last_observation:
+      frame = self.last_observation['frame']
+    else:
+      frame = self._env._trace.get_last_frame()
+    b,g,r = cv2.split(frame)
+    frame_rgb = cv2.merge((r,g,b))
+    if mode == 'rgb_array':
+      return frame_rgb
+    elif mode == 'human':
+      cv2.imshow("Render", frame_rgb)
+      # Without waitKey call image is not rendered correctly.
+      cv2.waitKey(1)
+      return True
+    return False

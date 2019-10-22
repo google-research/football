@@ -32,8 +32,8 @@ class PlayerBase {
   public:
     PlayerBase(Match *match, PlayerData *playerData);
     virtual ~PlayerBase();
+    void Mirror();
 
-    inline int GetID() const { return id; }
     inline int GetStableID() const { return stable_id; }
     inline const PlayerData* GetPlayerData() { return playerData; }
 
@@ -76,9 +76,9 @@ class PlayerBase {
     float GetDecayingPositionOffsetLength() { return humanoid->GetDecayingPositionOffsetLength(); }
 
     virtual void Process();
-    virtual void PreparePutBuffers(unsigned long snapshotTime_ms);
-    virtual void FetchPutBuffers(unsigned long putTime_ms);
-    void Put();
+    virtual void PreparePutBuffers();
+    virtual void FetchPutBuffers();
+    void Put(bool mirror);
 
     bool NeedsModelUpdate() { return humanoid->NeedsModelUpdate(); }
     void UpdateFullbodyModel() { humanoid->UpdateFullbodyModel(); }
@@ -105,16 +105,17 @@ class PlayerBase {
 
     virtual void ResetSituation(const Vector3 &focusPos);
 
+    void ProcessStateBase(EnvState* state);
+
   protected:
     Match *match;
 
     const PlayerData* const playerData;
-    const int id = 0;
     const int stable_id = 0;
 
-    HumanoidBase *humanoid;
-    IController *controller;
-    HumanController *externalController;
+    std::unique_ptr<HumanoidBase> humanoid;
+    std::unique_ptr<IController> controller;
+    HumanController *externalController = 0;
 
     bool isActive = false;
 

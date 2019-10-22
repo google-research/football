@@ -44,21 +44,19 @@ class HumanGamer {
     HumanGamer(Team *team, IHIDevice *hid, e_PlayerColor color);
     virtual ~HumanGamer();
 
-    int GetSelectedPlayerID() const;
     Player *GetSelectedPlayer() const { return selectedPlayer; }
-    void SetSelectedPlayerID(int id);
+    void SetSelectedPlayer(Player* player);
     IHIDevice *GetHIDevice() { return hid; }
-
+    HumanController* GetHumanController() { return controller; }
+    void ProcessState(EnvState *state);
     e_PlayerColor GetPlayerColor() const { return playerColor; }
 
   protected:
     Team *team;
     IHIDevice *hid;
     HumanController *controller;
-
-    e_PlayerColor playerColor;
+    const e_PlayerColor playerColor;
     Player *selectedPlayer;
-
 };
 
 #endif

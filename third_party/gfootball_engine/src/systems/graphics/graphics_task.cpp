@@ -20,8 +20,6 @@
 #include "../../base/log.hpp"
 #include "../../base/utils.hpp"
 #include "../../main.hpp"
-#include "../../managers/environmentmanager.hpp"
-#include "../../managers/scenemanager.hpp"
 #include "../../scene/objects/geometry.hpp"
 #include "../../scene/objects/light.hpp"
 #include "../../scene/objects/skybox.hpp"
@@ -30,7 +28,7 @@
 
 namespace blunted {
 
-  GraphicsTask::GraphicsTask(GraphicsSystem *system) : ISystemTask(), graphicsSystem(system) {
+  GraphicsTask::GraphicsTask(GraphicsSystem *system) : graphicsSystem(system) {
   }
 
   GraphicsTask::~GraphicsTask() {
@@ -38,34 +36,22 @@ namespace blunted {
   }
 
   void GraphicsTask::GetPhase() {
-    if (!enabled) return;
-
     Renderer3D *renderer3D = graphicsSystem->GetRenderer3D();
 
 
     // poke all image2D objects
-
-    bool success = false;
-    boost::shared_ptr<IScene> scene2d =
-        GetContext().scene_manager.GetScene("scene2D", success);
-    if (success) {
-      scene2d->PokeObjects(e_ObjectType_Image2D, e_SystemType_Graphics);
+    if (GetContext().scene2D) {
+      GetContext().scene2D->PokeObjects(e_ObjectType_Image2D, e_SystemType_Graphics);
     }
-
-    // collect visibles
-    boost::shared_ptr<IScene> scene3d =
-        GetContext().scene_manager.GetScene("scene3D", success);
-    if (success) {
+    if (GetContext().scene3D) {
       std::list < boost::intrusive_ptr<Camera> > cameras;
-      boost::static_pointer_cast<Scene3D>(scene3d)->GetObjects<Camera>(e_ObjectType_Camera, cameras);
+      GetContext().scene3D->GetObjects<Camera>(e_ObjectType_Camera, cameras);
       std::list < boost::intrusive_ptr<Camera> >::iterator cameraIter = cameras.begin();
       // enqueue all camera views
       while (cameraIter != cameras.end()) {
-
         if ((*cameraIter)->IsEnabled()) {
-          GraphicsTaskCommand_EnqueueView((*cameraIter)).Handle();
+          Execute(*cameraIter);
         }
-
         cameraIter++;
       }
 
@@ -73,25 +59,17 @@ namespace blunted {
   }
 
   void GraphicsTask::ProcessPhase() {
-    if (!enabled) return;
-
     Renderer3D *renderer3D = graphicsSystem->GetRenderer3D();
 
     // poke lights
-    {
-      bool success = false;
-      boost::shared_ptr<IScene> scene =
-          GetContext().scene_manager.GetScene("scene3D", success);
-      if (success) {
-        scene->PokeObjects(e_ObjectType_Light, e_SystemType_Graphics);
-      }
+    if (GetContext().scene3D) {
+      GetContext().scene3D->PokeObjects(e_ObjectType_Light, e_SystemType_Graphics);
     }
 
     // poke camera
-    bool success = false;
-    boost::shared_ptr<IScene> scene =
-        GetContext().scene_manager.GetScene("scene3D", success);
-    if (success) scene->PokeObjects(e_ObjectType_Camera, e_SystemType_Graphics);
+    if (GetContext().scene3D) {
+      GetContext().scene3D->PokeObjects(e_ObjectType_Camera, e_SystemType_Graphics);
+    }
     // render the Overlay2D queue
     auto &overlay2DQueue = graphicsSystem->GetOverlay2DQueue();
     bool isMessage = true;
@@ -103,23 +81,11 @@ namespace blunted {
       }
     }
     renderer3D->RenderOverlay2D(queue);
-  }
-
-  void GraphicsTask::PutPhase() {
-    if (!enabled) return;
-
-    Renderer3D *renderer3D = graphicsSystem->GetRenderer3D();
-
-    // swap the buffers and stare in awe
     renderer3D->SwapBuffers();
   }
 
-  bool GraphicsTaskCommand_EnqueueView::Execute(void *caller) {
-    bool success = false;
-    boost::shared_ptr<IScene> scene =
-        GetContext().scene_manager.GetScene("scene3D", success);
-
-    if (success) {
+  bool GraphicsTask::Execute(boost::intrusive_ptr<Camera> camera) {
+    if (GetContext().scene3D) {
       // test
       // camera->SetPosition(Vector3(sin((float)GetContext().environment_manager.GetTime_ms()
       // * 0.001f) * 60, 0, 0), true);
@@ -148,7 +114,7 @@ namespace blunted {
 
       std::deque < boost::intrusive_ptr<Object> > visibleObjects;
       //std::list < boost::intrusive_ptr<Object> > visibleObjects;
-      boost::static_pointer_cast<Scene3D>(scene)->GetObjects(visibleObjects, bounding);
+      GetContext().scene3D->GetObjects(visibleObjects, bounding);
 
       std::deque < boost::intrusive_ptr<Geometry> > visibleGeometry;
       std::deque < boost::intrusive_ptr<Light> > visibleLights;
@@ -169,7 +135,7 @@ namespace blunted {
       // prepare shadow maps
       for (auto& light : visibleLights) {
         if (light->IsEnabled() && light->GetShadow()) {
-          EnqueueShadowMap(light);
+          EnqueueShadowMap(camera, light);
         }
       }
       // enqueue camera view
@@ -180,12 +146,9 @@ namespace blunted {
     return true;
   }
 
-  void GraphicsTaskCommand_EnqueueView::EnqueueShadowMap(boost::intrusive_ptr<Light> light) {
+  void GraphicsTask::EnqueueShadowMap(boost::intrusive_ptr<Camera> camera, boost::intrusive_ptr<Light> light) {
 
-    bool success = false;
-    boost::shared_ptr<IScene> scene =
-        GetContext().scene_manager.GetScene("scene3D", success);
-    if (success) {
+    if (GetContext().scene3D) {
       std::deque < boost::intrusive_ptr<Geometry> > visibleGeometry;
       vector_Planes bounding;
       Plane plane(Vector3(0, -40, 0), Vector3(0, 1, 0.3).GetNormalized());
@@ -196,7 +159,7 @@ namespace blunted {
       bounding.push_back(plane);
       plane.Set(Vector3(60, 0, 0), Vector3(-1, 0, 0.3).GetNormalized());
       bounding.push_back(plane);
-      boost::static_pointer_cast<Scene3D>(scene)->GetObjects<Geometry>(e_ObjectType_Geometry, visibleGeometry, bounding);
+      GetContext().scene3D->GetObjects<Geometry>(e_ObjectType_Geometry, visibleGeometry, bounding);
       //boost::static_pointer_cast<Scene3D>(scene)->GetObjects<Geometry>(e_ObjectType_Geometry, visibleGeometry);
       light->EnqueueShadowMap(camera, visibleGeometry);
     }

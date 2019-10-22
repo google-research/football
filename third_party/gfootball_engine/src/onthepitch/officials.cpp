@@ -31,7 +31,7 @@
 
 Officials::Officials(Match *match, boost::intrusive_ptr<Node> fullbodySourceNode, std::map<Vector3, Vector3> &colorCoords, boost::intrusive_ptr < Resource<Surface> > kit, boost::shared_ptr<AnimCollection> animCollection) : match(match) {
   ObjectLoader loader;
-  boost::intrusive_ptr<Node> playerNode = loader.LoadObject(GetScene3D(), "media/objects/players/player.object");
+  boost::intrusive_ptr<Node> playerNode = loader.LoadObject("media/objects/players/player.object");
   playerNode->SetName("player");
   playerNode->SetLocalMode(e_LocalMode_Absolute);
 
@@ -82,6 +82,12 @@ Officials::~Officials() {
   yellowCard.reset();
 }
 
+void Officials::Mirror() {
+  referee->Mirror();
+  linesmen[0]->Mirror();
+  linesmen[1]->Mirror();
+}
+
 void Officials::GetPlayers(std::vector<PlayerBase*> &players) {
   players.push_back(referee);
   players.push_back(linesmen[0]);
@@ -96,23 +102,23 @@ void Officials::Process() {
   }
 }
 
-void Officials::PreparePutBuffers(unsigned long snapshotTime_ms) {
-  referee->PreparePutBuffers(snapshotTime_ms);
-  linesmen[0]->PreparePutBuffers(snapshotTime_ms);
-  linesmen[1]->PreparePutBuffers(snapshotTime_ms);
+void Officials::PreparePutBuffers() {
+  referee->PreparePutBuffers();
+  linesmen[0]->PreparePutBuffers();
+  linesmen[1]->PreparePutBuffers();
 }
 
-void Officials::FetchPutBuffers(unsigned long putTime_ms) {
-  referee->FetchPutBuffers(putTime_ms);
-  linesmen[0]->FetchPutBuffers(putTime_ms);
-  linesmen[1]->FetchPutBuffers(putTime_ms);
+void Officials::FetchPutBuffers() {
+  referee->FetchPutBuffers();
+  linesmen[0]->FetchPutBuffers();
+  linesmen[1]->FetchPutBuffers();
 }
 
 void Officials::Put() {
   if (GetScenarioConfig().render) {
-    referee->Put();
-    linesmen[0]->Put();
-    linesmen[1]->Put();
+    referee->Put(false);
+    linesmen[0]->Put(false);
+    linesmen[1]->Put(false);
   }
 
   if (referee->GetCurrentFunctionType() == e_FunctionType_Special && (match->GetReferee()->GetCurrentFoulType() == 2 || match->GetReferee()->GetCurrentFoulType() == 3)) {
@@ -135,4 +141,12 @@ void Officials::Put() {
     yellowCard->SetPosition(Vector3(0, 0, -10));
     redCard->SetPosition(Vector3(0, 0, -10));
   }
+}
+
+void Officials::ProcessState(EnvState* state) {
+  state->setValidate(false);
+  referee->ProcessStateBase(state);
+  linesmen[0]->ProcessStateBase(state);
+  linesmen[1]->ProcessStateBase(state);
+  state->setValidate(true);
 }

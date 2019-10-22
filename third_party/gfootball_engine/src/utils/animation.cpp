@@ -362,12 +362,10 @@ namespace blunted {
       }
 
       // offset
-      BiasedOffset& offset = offsets[nodeAnimation->nodeName];
-      if (offset.bias != 0.0) {
-        offset.orientation.MakeSameNeighborhood(orientation);
-        if (offset.isRelative) {
-          orientation = orientation.GetLerped(offset.bias, offset.orientation * orientation).GetNormalized();
-        } else {
+      {
+        BiasedOffset& offset = offsets[nodeAnimation->nodeName];
+        if (offset.bias != 0.0) {
+          offset.orientation.MakeSameNeighborhood(orientation);
           orientation = orientation.GetLerped(offset.bias, offset.orientation).GetNormalized();
         }
       }
@@ -556,38 +554,6 @@ namespace blunted {
             }
 
           } // timeDiff_ms > 0
-
-          /*
-            // enforce max change
-
-            float dot = clamp(orientation.GetDotProduct(oldOrientation), 0.0f, 1.0f);
-            //radian diff = pi - acos(change) * 2.0f;
-            radian diff = acos(dot);
-            radian maxRadPerSec = 3.8f * pi;
-            if ((nodeAnimation->nodeName.compare("body") == 0 || nodeAnimation->nodeName.compare("middle") == 0)) maxRadPerSec = 3.2f * pi;
-            maxRadPerSec *= 1.0f - beginBias * smoothFactor;
-            radian clampedDiff = clamp(diff, 0.0f, (timeDiff_ms * 0.001f) * maxRadPerSec);
-            float slerpBias = 1.0f - NormalizedClamp(clampedDiff + 0.00001f, 0.0f, diff + 0.00001f); // convert from clampedDiff to slerp bias. 0 == diff, 1 == 0
-            //slerpBias = 0.94f;
-            //slerpBias = slerpBias * 0.3f + 0.7f;
-            //slerpBias = 0.0f;
-            orientation = orientation.GetSlerped(slerpBias, oldOrientation);
-            //if (GetVariable("type").compare("ballcontrol") == 0 && nodeAnimation->nodeName.compare("body") == 0) printf("%i ms, %f %f %f %f\n", timeDiff_ms, dot, diff, clampedDiff, slerpBias);
-
-            // tmp super low tek hax
-            //if (dot < 0.95f) orientation = orientation.GetSlerped(0.3f, oldOrientation);
-
-
-            // some global smoothing to top things off
-
-            float smoothness = 0.1f * beginBias + 0.1f;
-
-            //float result = clamp(slerpBias * (1.0f + smoothness), 0.0f, 0.99f);
-            //orientation = orientation.GetSlerped(result, oldOrientation);
-
-            orientation = orientation.GetSlerped(smoothness, oldOrientation);
-          */
-
           movementHistoryEntry->orientation = currentOrientation;
           movementHistoryEntry->timeDiff_ms = timeDiff_ms;
 
@@ -601,34 +567,8 @@ namespace blunted {
           if (timeDiff_ms > 0 && beginBias > 0.01f) {
 
             Vector3 currentMovement = (currentPosition - previousPosition) / (movementHistoryEntry->timeDiff_ms * 0.001f);
-  /*
-            // damping (maybe useful: http://www.freebasic.net/forum/viewtopic.php?t=9769 )
-            Vector3 desiredMovement = ((basePos + position) - currentPosition) / (timeDiff_ms * 0.001f);
-            Vector3 dampingMovement = (desiredMovement - currentMovement);
-            currentMovement += dampingMovement.GetNormalizedMax(timeDiff_ms * 0.02f);
-
-            Vector3 extrapolatedPosition = currentPosition + currentMovement * (timeDiff_ms * 0.001f);
-
-            // now we want to go from current to new position, but we can only differ so much from the movement from previous to current position
-            float movementInfluence = 1.0f - clamp(timeDiff_ms / 50.0f, 0.0f, 1.0f);
-            movementInfluence = pow(movementInfluence, 0.5f); // influence of old movement wears off in exponential fashion (source: laws of nature)
-            float beginBias = pow(1.0f - NormalizedClamp(frame, 0, 15), 0.5f);
-            movementInfluence *= 0.4f + beginBias * 0.6f;
-
-            //if (desiredMovement.GetLength() < currentMovement.GetLength()) movementInfluence = 0.0f;
-            //if (currentMovement.GetLength() > desiredMovement.GetLength()) currentMovement = currentMovement.GetNormalized() * desiredMovement.GetLength();
-            //if (currentMovement.GetLength() > desiredMovement.GetLength()) currentMovement = currentMovement.GetNormalized() * (currentMovement.GetLength() * movementInfluence + desiredMovement.GetLength() * (1.0f - movementInfluence));
-
-            Vector3 newPosition = (extrapolatedPosition) * movementInfluence + // current-movement-implied position
-                                  (basePos + position) * (1.0f - movementInfluence); // desired position
-  */
-
             // smooth
             position.coords[2] = position.coords[2] * (1.0f - currentBias) + currentPosition.coords[2] * currentBias;
-
-
-  // old version, use for now, until new version above is finished
-
             float maxMetersPerSec = 2.8f;//1.8f
             if (GetVariableCache().outgoing_special_state().compare("") != 0) maxMetersPerSec = 6.0f;
             volatile float allowedDistance = maxMetersPerSec * ((float)timeDiff_ms * 0.001f);
@@ -790,7 +730,7 @@ namespace blunted {
 
         // if angle is close to 180 degrees, we can't be sure if we want 180 or -180 deg. use body angle as hint.
         if (cache_angle < -0.95f * pi || cache_angle > 0.95f * pi) {
-          radian x, y, z;
+          real x, y, z;
           (--(nodeAnimations.at(1)->animation.d.end()))->second.orientation.GetAngles(x, y, z);
           if (signSide(cache_angle) != signSide(z)) {
             cache_angle = pi * 0.99f * signSide(z);
@@ -803,7 +743,7 @@ namespace blunted {
 
         if (nodeAnimations.at(1)->animation.d.size() > 0) {
           // body rotation
-          radian x, y, z;
+          real x, y, z;
           (--(nodeAnimations.at(1)->animation.d.end()))->second.orientation.GetAngles(x, y, z);
           cache_angle = z;
 
@@ -833,7 +773,7 @@ namespace blunted {
       if (nodeAnimations.at(1)->animation.d.size() > 0) {
 
         // body rotation
-        radian x, y, z;
+        real x, y, z;
         (nodeAnimations.at(1)->animation.d.begin())->second.orientation.GetAngles(x, y, z);
         cache_incomingBodyAngle = z;
 
@@ -863,7 +803,7 @@ namespace blunted {
         if (nodeAnimations.at(1)->animation.d.size() > 0) {
 
           // body rotation
-          radian x, y, z;
+          real x, y, z;
           (--(nodeAnimations.at(1)->animation.d.end()))->second.orientation.GetAngles(x, y, z);
           cache_outgoingBodyAngle = z;
 
@@ -943,11 +883,10 @@ namespace blunted {
         Quaternion orientation(QUATERNION_IDENTITY);
 
         if (line != 0) { // limbs, only rotations
-          orientation.elements[0] = atof(file.at(line).at(key + 1).c_str());
-          orientation.elements[1] = atof(file.at(line).at(key + 2).c_str());
-          orientation.elements[2] = atof(file.at(line).at(key + 3).c_str());
-          orientation.elements[3] = atof(file.at(line).at(key + 4).c_str());
-
+          orientation = Quaternion(atof(file.at(line).at(key + 1).c_str()),
+                                   atof(file.at(line).at(key + 2).c_str()),
+                                   atof(file.at(line).at(key + 3).c_str()),
+                                   atof(file.at(line).at(key + 4).c_str()));
           key += 5;
         }
 

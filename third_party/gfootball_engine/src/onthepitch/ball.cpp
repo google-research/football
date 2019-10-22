@@ -26,22 +26,19 @@
 
 #include "../main.hpp"
 
+constexpr float bounce = 0.62f;  // 1 = full bounce, 0 = no bounce
+constexpr float linearBounce = 0.06f;  // bigger = more brake force
+constexpr float drag = 0.015f;  // bigger = more
+constexpr float friction = 0.04f;  // bigger = more
+constexpr float linearFriction = 1.6f;  // bigger = more, arbitrary scale;
+constexpr float gravity = -9.81f;
+constexpr float grassHeight = 0.025f;
+
 Ball::Ball(Match *match) : match(match) {
-
-  bounce = 0.62f; // 1 = full bounce, 0 = no bounce
-  linearBounce = 0.06f; // bigger = more brake force
-  drag = 0.015f;//previously 0.025f; // bigger = more
-  friction = 0.04f; // bigger = more
-  linearFriction = 1.6f; // bigger = more, arbitrary scale
-  gravity = -9.81f;
-  grassHeight = 0.025f;
-
   ballTouchesNet = false;
 
-  scene3D = GetScene3D();
-
   ObjectLoader loader;
-  ballNode = loader.LoadObject(scene3D, "media/objects/balls/generic.object");
+  ballNode = loader.LoadObject("media/objects/balls/generic.object");
   match->GetDynamicNode()->AddNode(ballNode);
 
   std::list < boost::intrusive_ptr<Geometry> > children;
@@ -55,8 +52,23 @@ Ball::~Ball() {
   match->GetDynamicNode()->DeleteNode(ballNode);
 }
 
-void Ball::GetPredictionArray(Vector3 *target) {
-  memcpy(target, predictions, sizeof(Vector3) * ballPredictionSize_ms / 10);
+void Ball::Mirror() {
+  mirrored = !mirrored;
+  momentum.Mirror();
+  for (auto& a : predictions) {
+    a.Mirror();
+  }
+  for (auto& a : ballPosHistory) {
+    a.Mirror();
+  }
+  positionBuffer.Mirror();
+}
+
+void Ball::GetPredictionArray(std::vector<Vector3> &target) {
+  target.resize(ballPredictionSize_ms / 10);
+  for (int x = 0; x < ballPredictionSize_ms / 10; x++) {
+    target[x] = predictions[x];
+  }
 }
 
 Vector3 Ball::GetMovement() {
@@ -65,7 +77,7 @@ Vector3 Ball::GetMovement() {
 }
 
 Vector3 Ball::GetRotation() {
-  radian x, y, z;
+  real x, y, z;
   rotation_ms.GetAngles(x, y, z);
   return Vector3(x, y, z);
 }
@@ -80,8 +92,8 @@ void Ball::Touch(const Vector3 &target) {
   CalculatePrediction();
   match->UpdateLatestMentalImageBallPredictions();
 
-  match->GetTeam(0)->UpdatePossessionStats();
-  match->GetTeam(1)->UpdatePossessionStats();
+  match->GetTeam(match->FirstTeam())->UpdatePossessionStats();
+  match->GetTeam(match->SecondTeam())->UpdatePossessionStats();
 }
 
 void Ball::SetPosition(const Vector3 &target) {
@@ -90,8 +102,6 @@ void Ball::SetPosition(const Vector3 &target) {
   momentum.Set(0);
   SetRotation(0, 0, 0, 1.0);
   ballPosHistory.clear();
-  previousMomentum = momentum;
-  previousPosition = positionBuffer;
 }
 
 void Ball::SetMomentum(const Vector3 &target) {
@@ -99,7 +109,7 @@ void Ball::SetMomentum(const Vector3 &target) {
   CalculatePrediction();
 }
 
-void Ball::SetRotation(radian x, radian y, radian z, float bias) { // radians per second for each axis
+void Ball::SetRotation(real x, real y, real z, float bias) { // radians per second for each axis
   Quaternion rotX;
   rotX.SetAngleAxis(clamp(x * 0.001f, -pi * 0.49f, pi * 0.49f), Vector3(-1, 0, 0));
   Quaternion rotY;
@@ -128,14 +138,14 @@ BallSpatialInfo Ball::CalculatePrediction() {
 
   predictions[0] = nextPos;
 
-  bool drag_enabled = true;
-  bool groundFriction_enabled = true;
-  bool woodwork_enabled = true;
-  bool netting_enabled = true;
-  bool groundRotationEffects_enabled = true;
-  bool swerve_enabled = true;
+  constexpr bool drag_enabled = true;
+  constexpr bool groundFriction_enabled = true;
+  constexpr bool woodwork_enabled = true;
+  constexpr bool netting_enabled = true;
+  constexpr bool groundRotationEffects_enabled = true;
+  constexpr bool swerve_enabled = true;
 
-  const float timeStep = 0.01f;//0.001f; // seconds
+  constexpr float timeStep = 0.01f;//0.001f; // seconds
 
   bool firstTime = true;
   bool use_cache = false;
@@ -398,7 +408,7 @@ BallSpatialInfo Ball::CalculatePrediction() {
       radian xR, yR;
 
       // x movement causes roll over y axis.. so this is correct ;)
-      float radius = 0.11f;
+      constexpr float radius = 0.11f;
       xR = momentumPredict.coords[1] / radius;
       yR = momentumPredict.coords[0] / radius;
 
@@ -419,7 +429,7 @@ BallSpatialInfo Ball::CalculatePrediction() {
       if (frictionFactor > 0.0f) {
         maxRotationChangePerSecond += 4.0f * pi;
       }
-      volatile radian factor = 1.0f;
+      radian factor = 1.0f;
       if (rotationChangePerSecond > maxRotationChangePerSecond) {
         factor = maxRotationChangePerSecond / rotationChangePerSecond;
       }
@@ -432,7 +442,7 @@ BallSpatialInfo Ball::CalculatePrediction() {
 
       // rotation induced ground friction
 
-      radian x, y, z;
+      real x, y, z;
       rotationPredict_ms.GetAngles(x, y, z);
       x = -x;
 
@@ -534,27 +544,12 @@ void Ball::Process() {
   orientationBuffer = orientPrediction;
 
   ballPosHistory.push_back(positionBuffer);
-  if (ballPosHistory.size() > ballHistorySize_ms) ballPosHistory.pop_front();
-
-  Vector3 changedMomentum = momentum - previousMomentum;
-
-  previousMomentum = momentum;
-  previousPosition = positionBuffer;
-}
-
-void Ball::PreparePutBuffers(unsigned long snapshotTime_ms) {
-  buf_positionBuffer.SetValue(positionBuffer, snapshotTime_ms);//Predict(0);//positionBuffer;
-  buf_orientationBuffer.SetValue(orientationBuffer, snapshotTime_ms);
-}
-
-void Ball::FetchPutBuffers(unsigned long putTime_ms) {
-  fetchedbuf_positionBuffer = buf_positionBuffer.GetValue(putTime_ms);
-  fetchedbuf_orientationBuffer = buf_orientationBuffer.GetValue(putTime_ms);
+  if (ballPosHistory.size() > ballHistorySize) ballPosHistory.pop_front();
 }
 
 void Ball::Put() {
-  ball->SetPosition(fetchedbuf_positionBuffer, false);
-  ball->SetRotation(fetchedbuf_orientationBuffer, false);
+  ball->SetPosition(positionBuffer, false);
+  ball->SetRotation(orientationBuffer, false);
 }
 
 void Ball::ResetSituation(const Vector3 &focusPos) {
@@ -565,10 +560,33 @@ void Ball::ResetSituation(const Vector3 &focusPos) {
   }
   orientPrediction = QUATERNION_IDENTITY;
   ballPosHistory.clear();
-  previousMomentum = Vector3(0);
-  previousPosition = Vector3(focusPos + Vector3(0, 0, 0.11));
   positionBuffer = Vector3(focusPos + Vector3(0, 0, 0.11));
   valid_predictions = 0;
   orientationBuffer = QUATERNION_IDENTITY;
   ballTouchesNet = false;
+}
+
+void Ball::ProcessState(EnvState *state) {
+  bool mirror = false;
+  if (GetScenarioConfig().reverse_team_processing && !mirrored) {
+    mirror = true;
+    Mirror();
+  }
+  state->process(momentum);
+  state->process(rotation_ms);
+  state->process(predictions, sizeof(predictions));
+  state->process(valid_predictions);
+  state->process(orientPrediction);
+  int size = ballPosHistory.size();
+  state->process(size);
+  ballPosHistory.resize(size);
+  for (auto& i : ballPosHistory) {
+    state->process(i);
+  }
+  state->process(positionBuffer);
+  state->process(orientationBuffer);
+  state->process(ballTouchesNet);
+  if (mirror) {
+    Mirror();
+  }
 }

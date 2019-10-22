@@ -40,7 +40,6 @@ class FootballEnvCore(object):
     self._env = None
     self._config = config
 
-  @cfg.log
   def reset(self, trace):
     """Reset environment for a new episode using a given config."""
     global _unused_engines
@@ -103,7 +102,6 @@ class FootballEnvCore(object):
   def __del__(self):
     self.close()
 
-  @cfg.log
   def step(self, action):
     # If agent 'holds' the game for too long, just start it.
     if self._waiting_for_game_count > 20:
@@ -116,10 +114,7 @@ class FootballEnvCore(object):
     debug = {}
     if self._done:
       return copy.deepcopy(self._observation), 0, self._done, debug
-    self._step += 1
     debug['action'] = action
-    if self._step >= self._config['game_duration']:
-      self._done = True
     self._left_team = True
     self._player_id = 0
     action_index = 0
@@ -194,9 +189,10 @@ class FootballEnvCore(object):
       self._waiting_for_game_count += 1
     else:
       self._waiting_for_game_count = 0
+    if self._step >= self._config['game_duration']:
+      self._done = True
     return self._observation, reward, self._done, debug
 
-  @cfg.log
   def _retrieve_observation(self):
     """Constructs observations exposed by the environment.
 
@@ -204,8 +200,6 @@ class FootballEnvCore(object):
        is on or not.
     """
     info = self._env.get_info()
-    if info.done:
-      self._done = True
     result = {}
     if self._config['render']:
       frame = self._env.get_frame()
@@ -259,8 +253,9 @@ class FootballEnvCore(object):
     result['score'] = [info.left_goals, info.right_goals]
     result['ball_owned_team'] = info.ball_owned_team
     result['ball_owned_player'] = info.ball_owned_player
-    result['steps_left'] = self._config['game_duration'] - self._step
+    result['steps_left'] = self._config['game_duration'] - info.step
     self._observation = result
+    self._step = info.step
     self._info = info
     return info.is_in_play
 
@@ -300,7 +295,6 @@ class FootballEnvCore(object):
     result['{}_yellow_card'.format(name)] = np.array(yellow_cards)
     result['{}_roles'.format(name)] = np.array(roles)
 
-  @cfg.log
   def observation(self):
     """Returns the current observation of the game."""
     return copy.deepcopy(self._observation)
@@ -308,3 +302,10 @@ class FootballEnvCore(object):
   def perform_action(self, action):
     # Left team player 0 action...
     self._env.perform_action(action, self._left_team, self._player_id)
+
+  def get_state(self):
+    return self._env.get_state()
+
+  def set_state(self, state):
+    return self._env.set_state(state)
+

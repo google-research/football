@@ -30,10 +30,6 @@ Gui2Page *PageFactory::CreatePage(const Gui2PageData &pageData) {
 
   Gui2Page *page = 0;
 
-  if (GetGameTask()->GetMenuScene()) {
-    GetGameTask()->GetMenuScene()->RandomizeTargetLocation();
-  }
-
   switch (pageData.pageID) {
 
     case e_PageID_Game:
