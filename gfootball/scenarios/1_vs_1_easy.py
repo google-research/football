@@ -25,7 +25,6 @@ def build_scenario(builder):
   builder.SetFlag('right_team_difficulty', 0.0)
   builder.SetFlag('left_team_difficulty', 0.0)
   builder.SetFlag('deterministic', False)
-  builder.SetFlag('kickoff_for_goal_loosing_team', True)
   if builder.EpisodeNumber() % 2 == 0:
     first_team = Team.e_Left
     second_team = Team.e_Right

@@ -62,13 +62,7 @@ def get_inference_model(inference_model):
 
 
 def main(unused_argv):
-  # This example is often run together with restarting all services.
-  # Wait till all restarts.
-
-  time.sleep(30)
-
   model = get_inference_model(FLAGS.inference_model)
-
   env = football_env.create_remote_environment(
       FLAGS.username, FLAGS.token, FLAGS.model_name, track=FLAGS.track,
       representation='extracted', stacked=True)

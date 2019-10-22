@@ -21,6 +21,7 @@ from __future__ import print_function
 
 from absl import app
 from absl import flags
+from absl import logging
 
 
 from gfootball.env import config
@@ -58,6 +59,7 @@ def main(_):
       if done:
         env.reset()
   except KeyboardInterrupt:
+    logging.warning('Game stopped, writing dump...')
     env.write_dump('shutdown')
     exit(1)
 

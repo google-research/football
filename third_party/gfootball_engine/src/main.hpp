@@ -86,8 +86,6 @@ struct ScenarioConfig {
   float left_team_difficulty = 1.0;
   // Right team AI difficulty level, from 0.0 to 1.0.
   float right_team_difficulty = 0.8;
-  // Should the kickoff start with the team loosing a goal to own the ball.
-  bool kickoff_for_goal_loosing_team = false;
   // Use symmetric mode, which makes sure game if fully symmetric.
   bool symmetric_mode = false;
 

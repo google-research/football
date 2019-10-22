@@ -109,8 +109,6 @@ namespace blunted {
       mutable Vector3 _cache_DerivedPosition;
       mutable Quaternion _cache_DerivedRotation;
       mutable Vector3 _cache_DerivedScale;
-      mutable bool _dirty_DerivedRotatedRotation = false;
-      mutable Quaternion _cache_DerivedRotatedRotation;
 
       e_LocalMode localMode;
 

@@ -62,6 +62,9 @@ class RemoteFootballEnv(gym.Env):
     self._game_id = None
     self._channel = None
 
+    self._update_master()
+
+  def _update_master(self):
     master_address = utils.get_master_address(self._track)
     self._master_channel = utils.get_grpc_channel(master_address)
     logging.info('Connecting to %s', master_address)
@@ -90,11 +93,10 @@ class RemoteFootballEnv(gym.Env):
       self._channel = None
 
     # Get game server address and side id from master.
-    stub = master_pb2_grpc.MasterStub(self._master_channel)
     start_game_request = master_pb2.StartGameRequest(
         game_version=config.game_version, username=self._username,
         token=self._token, model_name=self._model_name)
-    response = stub.StartGame(start_game_request)
+    response = self._reset_with_retries(start_game_request)
     self._game_id = response.game_id
     self._channel = utils.get_grpc_channel(response.game_server_address)
     grpc.channel_ready_future(self._channel).result()
@@ -102,6 +104,22 @@ class RemoteFootballEnv(gym.Env):
         game_version=config.game_version, game_id=self._game_id,
         username=self._username, token=self._token, model_name=self._model_name)
     return self._get_env_result(get_env_result_request, 'GetEnvResult')[0]
+
+  def _reset_with_retries(self, request):
+    time_to_sleep = 1
+    while True:
+      try:
+        stub = master_pb2_grpc.MasterStub(self._master_channel)
+        response = stub.StartGame(request)
+        return response
+      except BaseException as e:
+        logging.warning('Exception during request: %s', e)
+        logging.warning('Sleeping for %d seconds', time_to_sleep)
+        time.sleep(time_to_sleep)
+        if time_to_sleep < 1000:
+          time_to_sleep *= 2
+        self._update_master()
+    raise RuntimeError('Connection problems!')
 
   def _get_env_result(self, request, rpc_name):
     assert rpc_name in ['GetEnvResult', 'Step']

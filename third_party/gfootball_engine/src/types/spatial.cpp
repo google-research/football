@@ -162,7 +162,6 @@ namespace blunted {
     _dirty_DerivedPosition = true;
     _dirty_DerivedRotation = true;
     _dirty_DerivedScale = true;
-    _dirty_DerivedRotatedRotation = true;
   }
 
 

@@ -146,9 +146,7 @@ BOOST_PYTHON_MODULE(_gameplayfootball) {
       .def_readwrite("left_team_difficulty",
                      &ScenarioConfig::left_team_difficulty)
       .def_readwrite("right_team_difficulty",
-                     &ScenarioConfig::right_team_difficulty)
-      .def_readwrite("kickoff_for_goal_loosing_team",
-                     &ScenarioConfig::kickoff_for_goal_loosing_team);
+                     &ScenarioConfig::right_team_difficulty);
 
   class_<std::vector<FormationEntry> >("FormationEntryVec").def(
       vector_indexing_suite<std::vector<FormationEntry> >());

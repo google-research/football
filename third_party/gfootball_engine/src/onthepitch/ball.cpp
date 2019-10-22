@@ -53,7 +53,6 @@ Ball::~Ball() {
 }
 
 void Ball::Mirror() {
-  mirrored = !mirrored;
   momentum.Mirror();
   for (auto& a : predictions) {
     a.Mirror();
@@ -567,11 +566,6 @@ void Ball::ResetSituation(const Vector3 &focusPos) {
 }
 
 void Ball::ProcessState(EnvState *state) {
-  bool mirror = false;
-  if (GetScenarioConfig().reverse_team_processing && !mirrored) {
-    mirror = true;
-    Mirror();
-  }
   state->process(momentum);
   state->process(rotation_ms);
   state->process(predictions, sizeof(predictions));
@@ -586,7 +580,4 @@ void Ball::ProcessState(EnvState *state) {
   state->process(positionBuffer);
   state->process(orientationBuffer);
   state->process(ballTouchesNet);
-  if (mirror) {
-    Mirror();
-  }
 }

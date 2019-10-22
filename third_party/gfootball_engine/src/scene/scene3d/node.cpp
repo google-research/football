@@ -91,25 +91,6 @@ namespace blunted {
     }
   }
 
-  Quaternion Node::GetRotatedDerivedRotation() {
-    if (_dirty_DerivedRotatedRotation) {
-      if (localMode == e_LocalMode_Relative) {
-        if (parent) {
-          _cache_DerivedRotatedRotation =
-              (parent->GetRotatedDerivedRotation() * GetRotation())
-                  .GetNormalized();
-        } else {
-          _cache_DerivedRotatedRotation =
-              Quaternion(0, 0, 1, 0) * GetRotation();
-        }
-      } else {
-        _cache_DerivedRotatedRotation = Quaternion(0, 0, 1, 0) * GetRotation();
-      }
-      _dirty_DerivedRotatedRotation = false;
-    }
-    return _cache_DerivedRotatedRotation;
-  }
-
   void Node::AddObject(boost::intrusive_ptr<Object> object) {
     assert(object.get());
     objects.push_back(object);
@@ -178,8 +159,6 @@ namespace blunted {
     state->process(_cache_DerivedPosition);
     state->process(_cache_DerivedRotation);
     state->process(_cache_DerivedScale);
-    state->process(_dirty_DerivedRotatedRotation);
-    state->process(_cache_DerivedRotatedRotation);
     state->process((void*) &localMode, sizeof(localMode));
     aabb.ProcessState(state);
     for (auto& node : nodes) {

@@ -884,8 +884,7 @@ void TeamAIController::PrepareSetPiece(e_GameMode setPiece, Team* other_team,
   if (setPiece == e_GameMode_KickOff) {
     auto formation_players = team->GetAllPlayers();
     auto players_to_position = team->GetAllPlayers();
-    if (GetScenarioConfig().kickoff_for_goal_loosing_team &&
-        match->GetMatchTime_ms() > 0 &&
+    if (match->GetMatchTime_ms() > 0 &&
         (GetScenarioConfig().LeftTeamOwnsBall() ^ kickoffTakerTeamId == 0)) {
       formation_players = other_team->GetAllPlayers();
     }

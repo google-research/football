@@ -419,7 +419,9 @@ void Player::ProcessState(EnvState* state) {
   state->process(triggerControlledBallCollision);
   tacticalSituation.ProcessState(state);
   state->process(buf_nameCaptionShowCondition);
+  state->setValidate(false);
   state->process(buf_playerColor);
+  state->setValidate(true);
   state->process(desiredTimeToBall_ms);
   state->process(cards);
   state->process(cardEffectiveTime_ms);

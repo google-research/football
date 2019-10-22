@@ -177,6 +177,9 @@ class Match {
     Team *teams[2];
     const int first_team = 0;
     const int second_team = 1;
+    bool team_0_mirrored = false;
+    bool team_1_mirrored = false;
+    bool ball_mirrored = false;
 
     Officials *officials;
 

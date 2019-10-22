@@ -72,8 +72,6 @@ class Ball {
 
     void ResetSituation(const Vector3 &focusPos);
     void ProcessState(EnvState *state);
-
-    bool mirrored = false;
   private:
     boost::intrusive_ptr<Node> ballNode;
     boost::intrusive_ptr<Geometry> ball;

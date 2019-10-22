@@ -37,7 +37,6 @@ namespace blunted {
 
       virtual void Exit();
 
-      Quaternion GetRotatedDerivedRotation();
       void AddNode(boost::intrusive_ptr<Node> node);
       void DeleteNode(boost::intrusive_ptr<Node> node);
       void GetNodes(std::vector<boost::intrusive_ptr<Node> > &gatherNodes,

@@ -255,12 +255,15 @@ Match::~Match() {
 void Match::MaybeMirror(bool team_0, bool team_1, bool ball) {
   if (GetScenarioConfig().symmetric_mode) {
     if (team_0) {
+      team_0_mirrored = !team_0_mirrored;
       teams[0]->Mirror();
     }
     if (team_1) {
+      team_1_mirrored = !team_1_mirrored;
       teams[1]->Mirror();
     }
     if (ball) {
+      ball_mirrored = !ball_mirrored;
       this->ball->Mirror();
     }
     for (auto& i : mentalImages) {
@@ -394,12 +397,11 @@ void Match::UpdateControllerSetup() {
   const std::vector<SideSelection> sides = menuTask->GetControllerSetup();
   for (unsigned int i = 0; i < sides.size(); i++) {
     if (sides[i].side == -1) {
-      teams[first_team]->AddHumanGamer(controllers.at(sides[i].controllerID),
-                                       (e_PlayerColor)i);
+      teams[0]->AddHumanGamer(controllers.at(sides[i].controllerID),
+                              (e_PlayerColor)i);
     } else if (sides[i].side == 1) {
-      teams[second_team]->AddHumanGamer(
-          controllers.at(sides[i].controllerID),
-          (e_PlayerColor)i);
+      teams[1]->AddHumanGamer(controllers.at(sides[i].controllerID),
+                              (e_PlayerColor)i);
     }
   }
 }
@@ -608,6 +610,10 @@ void Match::UpdateIngameCamera() {
 }
 
 void Match::ProcessState(EnvState* state) {
+  bool team_0_mirror = team_0_mirrored;
+  bool team_1_mirror = team_1_mirrored;
+  bool ball_mirror = ball_mirrored ^ GetScenarioConfig().reverse_team_processing;
+  MaybeMirror(team_0_mirror, team_1_mirror, ball_mirror);
   std::vector<Player*> players;
   GetAllTeamPlayers(first_team, players);
   GetAllTeamPlayers(second_team, players);
@@ -632,9 +638,11 @@ void Match::ProcessState(EnvState* state) {
   teams[first_team]->ProcessState(state);
   teams[second_team]->ProcessState(state);
   officials->ProcessState(state);
+  state->setValidate(false);
   for (auto& c : controllers) {
     c->ProcessState(state);
   }
+  state->setValidate(true);
   ball->ProcessState(state);
   state->process(iterations);
   state->process(matchTime_ms);
@@ -698,6 +706,7 @@ void Match::ProcessState(EnvState* state) {
     resetNetting = true;
     nettingHasChanged = true;
   }
+  MaybeMirror(team_0_mirror, team_1_mirror, ball_mirror);
 }
 
 void Match::GetState(SharedInfo *state) {
@@ -779,11 +788,9 @@ void Match::Process() {
 
 
     // HIJ IS EEN HONDELUUUL
-
     MaybeMirror(reverse, !reverse, reverse);
     referee->Process();
     MaybeMirror(reverse, !reverse, reverse);
-
 
     // ball
 

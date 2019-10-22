@@ -52,7 +52,6 @@ class Scenario(object):
     self._scenario_cfg = libgame.ScenarioConfig()
     self._config = config
     self.SetFlag('swap_sides', False)
-    self.SetFlag('kickoff_for_goal_loosing_team', False)
     self._active_team = Team.e_Left
     scenario = None
     try:
@@ -64,8 +63,6 @@ class Scenario(object):
     scenario.build_scenario(self)
     if self._config['enable_sides_swap']:
       self.SetFlag('swap_sides', random.choice([True, False]))
-      # Swapping sides also enabled kickoff_for_goal_loosing_team.
-      self.SetFlag('kickoff_for_goal_loosing_team', True)
     self.SetTeam(libgame.e_Team.e_Left)
     self._FakePlayersForEmptyTeam(self._scenario_cfg.left_team)
     self.SetTeam(libgame.e_Team.e_Right)
@@ -94,8 +91,6 @@ class Scenario(object):
         'left_team_difficulty']
     self._scenario_cfg.right_team_difficulty = self._config[
         'right_team_difficulty']
-    if self._config['kickoff_for_goal_loosing_team']:
-      self._scenario_cfg.kickoff_for_goal_loosing_team = True
     # This is needed to record 'game_engine_random_seed' in the dump.
     if 'game_engine_random_seed' not in self._config._values:
       self._config.set_scenario_value('game_engine_random_seed',
