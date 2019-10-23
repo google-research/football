@@ -255,11 +255,9 @@ Match::~Match() {
 void Match::MaybeMirror(bool team_0, bool team_1, bool ball) {
   if (GetScenarioConfig().symmetric_mode) {
     if (team_0) {
-      team_0_mirrored = !team_0_mirrored;
       teams[0]->Mirror();
     }
     if (team_1) {
-      team_1_mirrored = !team_1_mirrored;
       teams[1]->Mirror();
     }
     if (ball) {
@@ -610,8 +608,8 @@ void Match::UpdateIngameCamera() {
 }
 
 void Match::ProcessState(EnvState* state) {
-  bool team_0_mirror = team_0_mirrored;
-  bool team_1_mirror = team_1_mirrored;
+  bool team_0_mirror = teams[0]->isMirrored();
+  bool team_1_mirror = teams[1]->isMirrored();
   bool ball_mirror = ball_mirrored ^ GetScenarioConfig().reverse_team_processing;
   MaybeMirror(team_0_mirror, team_1_mirror, ball_mirror);
   std::vector<Player*> players;
@@ -754,11 +752,16 @@ void Match::GetState(SharedInfo *state) {
         }
       }
       if (player->CastHumanoid() != NULL) {
+        auto position = player->GetPosition();
+        auto movement = player->GetMovement();
+        if (GetScenarioConfig().symmetric_mode && team_id == 1) {
+          position.Mirror();
+          movement.Mirror();
+        }
         PlayerInfo info;
-        info.player_position = player->GetPosition().coords;
+        info.player_position = position.coords;
         info.player_direction =
-            (player->GetMovement() / GetGameConfig().physics_steps_per_frame)
-                .coords;
+            (movement / GetGameConfig().physics_steps_per_frame).coords;
         info.tired_factor = 1 - player->GetFatigueFactorInv();
         info.has_card = player->HasCards();
         info.is_active = player->IsActive();

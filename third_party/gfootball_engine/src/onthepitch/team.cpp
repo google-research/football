@@ -50,6 +50,7 @@ Team::~Team() {}
 
 void Team::Mirror() {
   side *= -1;
+  mirrored = !mirrored;
   for (auto& p : players) {
     p->Mirror();
   }

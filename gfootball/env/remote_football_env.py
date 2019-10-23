@@ -65,10 +65,19 @@ class RemoteFootballEnv(gym.Env):
     self._update_master()
 
   def _update_master(self):
-    master_address = utils.get_master_address(self._track)
-    self._master_channel = utils.get_grpc_channel(master_address)
-    logging.info('Connecting to %s', master_address)
-    grpc.channel_ready_future(self._master_channel).result()
+    while True:
+      try:
+        master_address = utils.get_master_address(self._track)
+        logging.info('Connecting to %s', master_address)
+        self._master_channel = utils.get_grpc_channel(master_address)
+        grpc.channel_ready_future(self._master_channel).result(timeout=10)
+        break
+      except grpc.FutureTimeoutError:
+        logging.info('Failed to connect to master')
+      except BaseException as e:
+        logging.info('Error %s, sleeping 10 secs', e)
+        time.sleep(10)
+    logging.info('Connection successful')
 
   @property
   def action_space(self):
@@ -110,7 +119,7 @@ class RemoteFootballEnv(gym.Env):
     while True:
       try:
         stub = master_pb2_grpc.MasterStub(self._master_channel)
-        response = stub.StartGame(request)
+        response = stub.StartGame(request, timeout=10*60)
         return response
       except BaseException as e:
         logging.warning('Exception during request: %s', e)

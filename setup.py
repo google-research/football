@@ -55,7 +55,7 @@ setup(
         'pygame==1.9.6',
         'opencv-python',
         'scipy',
-        'gym',
+        'gym>=0.10.0',
         'absl-py',
     ],
     include_package_data=True,

@@ -53,6 +53,7 @@ class Player : public PlayerBase {
 
     int GetTeamID() const;
     Team *GetTeam();
+    Vector3 GetPitchPosition();
 
     // get ready for some action
     virtual void Activate(boost::intrusive_ptr<Node> humanoidSourceNode, boost::intrusive_ptr<Node> fullbodySourceNode, std::map<Vector3, Vector3> &colorCoords, boost::intrusive_ptr < Resource<Surface> > kit, boost::shared_ptr<AnimCollection> animCollection, bool lazyPlayer);

@@ -31,6 +31,13 @@ class Team {
     Team(int id, Match *match, TeamData *teamData, float aiDifficulty,
          int side);
     void Mirror();
+    bool isMirrored() {
+      return mirrored;
+    }
+    bool onOriginalSide() {
+      return id == 0 ? (side == -1) : (side == 1);
+    }
+
     virtual ~Team();
 
     void Exit();
@@ -142,6 +149,7 @@ class Team {
 
     boost::intrusive_ptr < Resource<Surface> > kit;
     int side = -1;
+    bool mirrored = false;
 };
 
 #endif

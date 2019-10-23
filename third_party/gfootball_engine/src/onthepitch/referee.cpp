@@ -242,7 +242,7 @@ void Referee::BallTouched() {
           buffer.stopTime = match->GetActualTime_ms();
           buffer.prepareTime = match->GetActualTime_ms() + 2000;
           buffer.startTime = buffer.prepareTime + 2000;
-          buffer.restartPos = ballOwner->GetPosition();
+          buffer.restartPos = ballOwner->GetPitchPosition();
           buffer.teamID = 1 - lastTouchTeamID;
           buffer.active = true;
           match->SpamMessage("offside!");
@@ -289,7 +289,7 @@ void Referee::TripNotice(Player *tripee, Player *tripper, int tackleType) {
       foul.foulPlayer = tripper;
       foul.foulVictim = tripee;
       foul.foulTime = match->GetActualTime_ms();
-      foul.foulPosition = tripee->GetPosition();
+      foul.foulPosition = tripee->GetPitchPosition();
       foul.hasBeenProcessed = false;
     }
 
@@ -319,7 +319,7 @@ void Referee::TripNotice(Player *tripee, Player *tripper, int tackleType) {
         foul.foulPlayer = tripper;
         foul.foulVictim = tripee;
         foul.foulTime = match->GetActualTime_ms();
-        foul.foulPosition = tripee->GetPosition();
+        foul.foulPosition = tripee->GetPitchPosition();
         foul.hasBeenProcessed = false;
         if (severity > 1.4) foul.foulType = 2;
         if (severity > 2.0) {

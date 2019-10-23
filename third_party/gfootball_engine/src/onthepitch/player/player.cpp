@@ -66,6 +66,14 @@ int Player::GetTeamID() const {
   return team->GetID();
 }
 
+Vector3 Player::GetPitchPosition() {
+  Vector3 pos = GetPosition();
+  if (!team->onOriginalSide()) {
+    pos.Mirror();
+  }
+  return pos;
+}
+
 Team *Player::GetTeam() {
   return team;
 }
