@@ -73,7 +73,7 @@ class Simple115StateWrapper(gym.ObservationWrapper):
       observation: observation that the environment returns
 
     Returns:
-      (N, 155) shaped representation, where N stands for the number of players
+      (N, 115) shaped representation, where N stands for the number of players
       being controlled.
     """
     final_obs = []
@@ -167,7 +167,7 @@ class SMMWrapper(gym.ObservationWrapper):
 
 
 class SingleAgentObservationWrapper(gym.ObservationWrapper):
-  """A wrapper that converts an observation to a minimap."""
+  """A wrapper that returns an observation only for the first agent."""
 
   def __init__(self, env):
     gym.ObservationWrapper.__init__(self, env)
@@ -181,7 +181,7 @@ class SingleAgentObservationWrapper(gym.ObservationWrapper):
 
 
 class SingleAgentRewardWrapper(gym.RewardWrapper):
-  """A wrapper that converts an observation to a minimap."""
+  """A wrapper that returns a reward only for the first agent."""
 
   def __init__(self, env):
     gym.RewardWrapper.__init__(self, env)
