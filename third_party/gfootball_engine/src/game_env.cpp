@@ -252,6 +252,9 @@ void GameEnv::set_state(const std::string& state) {
   EnvState writer(state);
   writer.process(context->step);
   ProcessState(&writer);
+  if (!writer.eos()) {
+    Log(e_FatalError, "football", "main", "corrupted state");
+  }
 }
 
 

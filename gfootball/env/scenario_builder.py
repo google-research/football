@@ -51,7 +51,6 @@ class Scenario(object):
     # Game config controls C++ engine and is derived from the main config.
     self._scenario_cfg = libgame.ScenarioConfig()
     self._config = config
-    self.SetFlag('swap_sides', False)
     self._active_team = Team.e_Left
     scenario = None
     try:
@@ -61,8 +60,6 @@ class Scenario(object):
       logging.error(e)
       exit(1)
     scenario.build_scenario(self)
-    if self._config['enable_sides_swap']:
-      self.SetFlag('swap_sides', random.choice([True, False]))
     self.SetTeam(libgame.e_Team.e_Left)
     self._FakePlayersForEmptyTeam(self._scenario_cfg.left_team)
     self.SetTeam(libgame.e_Team.e_Right)
@@ -76,21 +73,11 @@ class Scenario(object):
   def _BuildScenarioConfig(self):
     """Builds scenario config from gfootball.environment config."""
     self._scenario_cfg.real_time = self._config['real_time']
-    if self._config['swap_sides']:
-      self._scenario_cfg.left_agents = self._config.number_of_right_players()
-      self._scenario_cfg.right_agents = self._config.number_of_left_players()
-    else:
-      self._scenario_cfg.left_agents = self._config.number_of_left_players()
-      self._scenario_cfg.right_agents = self._config.number_of_right_players()
+    self._scenario_cfg.left_agents = self._config.number_of_left_players()
+    self._scenario_cfg.right_agents = self._config.number_of_right_players()
     self._scenario_cfg.offsides = self._config['offsides']
     self._scenario_cfg.render = self._config['render']
-    self._scenario_cfg.reverse_team_processing = (
-        self._config['reverse_team_processing'])
-    self._scenario_cfg.symmetric_mode = self._config['symmetric_mode']
-    self._scenario_cfg.left_team_difficulty = self._config[
-        'left_team_difficulty']
-    self._scenario_cfg.right_team_difficulty = self._config[
-        'right_team_difficulty']
+    self._scenario_cfg.team_difficulty = self._config['team_difficulty']
     # This is needed to record 'game_engine_random_seed' in the dump.
     if 'game_engine_random_seed' not in self._config._values:
       self._config.set_scenario_value('game_engine_random_seed',
@@ -99,6 +86,11 @@ class Scenario(object):
     if not self._config['deterministic']:
       self._scenario_cfg.game_engine_random_seed = (
           self._config['game_engine_random_seed'])
+      self._config['reverse_team_processing'] = (
+          bool(self._config['game_engine_random_seed'] % 2))
+    if 'reverse_team_processing' in self._config:
+      self._scenario_cfg.reverse_team_processing = (
+          self._config['reverse_team_processing'])
 
   def SetFlag(self, name, value):
     self._config.set_scenario_value(name, value)

@@ -34,27 +34,6 @@ namespace blunted {
   ObjectFactory::~ObjectFactory() {
   }
 
-  void ObjectFactory::Exit() {
-    std::map <e_ObjectType, boost::intrusive_ptr<Object> >::iterator prototype_iter = prototypes.begin();
-    while (prototype_iter != prototypes.end()) {
-      prototype_iter->second->Exit();
-      prototype_iter++;
-    }
-    prototypes.clear();
-  }
-
-  boost::intrusive_ptr<Object> ObjectFactory::CreateObject(const std::string &name, e_ObjectType objectType, std::string postfix) {
-    std::map <e_ObjectType, boost::intrusive_ptr<Object> >::iterator prototype_iter = prototypes.find(objectType);
-    if (prototype_iter != prototypes.end()) {
-      boost::intrusive_ptr<Object> bla = CopyObject((*prototype_iter).second, postfix);
-      bla->SetName(name);
-      return bla;
-    } else {
-      Log(e_FatalError, "ObjectFactory", "CreateObject", "Object type " + int_to_str(objectType) + " not found in prototype registry");
-      return 0;
-    }
-  }
-
   boost::intrusive_ptr<Object> ObjectFactory::CopyObject(boost::intrusive_ptr<Object> source, std::string postfix) {
     boost::intrusive_ptr<Object> bla;
 
@@ -81,9 +60,4 @@ namespace blunted {
     assert(bla != boost::intrusive_ptr<Object>());
     return bla;
   }
-
-  void ObjectFactory::RegisterPrototype(e_ObjectType objectType, boost::intrusive_ptr<Object> prototype) {
-    prototypes.insert(std::pair<e_ObjectType, boost::intrusive_ptr<Object> >(objectType, prototype));
-  }
-
 }

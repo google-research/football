@@ -27,12 +27,16 @@ void GoalieDefaultStrategy::RequestInput(ElizaController *controller, const Ment
   // base position
   float lineDistance = 10.0f; // default distance keeper stays in front of goal line
   Vector3 ballPos = mentalImage->GetBallPrediction(600 + static_cast<Player*>(controller->GetPlayer())->GetTimeNeededToGetToBall_ms() * 0.2f).Get2D();
-  Vector3 targetPos = Vector3((pitchHalfW - lineDistance) * controller->GetTeam()->GetSide(), 0, 0);
-  Vector3 goalPos = Vector3(pitchHalfW * controller->GetTeam()->GetSide(), 0, 0);
+  Vector3 targetPos = Vector3(
+      (pitchHalfW - lineDistance) * controller->GetTeam()->GetDynamicSide(), 0,
+      0);
+  Vector3 goalPos =
+      Vector3(pitchHalfW * controller->GetTeam()->GetDynamicSide(), 0, 0);
 
   float maxVelocity = sprintVelocity;
 
-  if (ballPos.coords[0] * controller->GetTeam()->GetSide() > 0) { // optimization
+  if (ballPos.coords[0] * controller->GetTeam()->GetDynamicSide() >
+      0) {  // optimization
 
     CalculateIfBallIsBoundForGoal(controller, mentalImage);
 
@@ -45,10 +49,18 @@ void GoalieDefaultStrategy::RequestInput(ElizaController *controller, const Ment
 
       // first, make line from ballPos to one post, then one to the other post, then calculate the line in between.
       // this line is the line we want our goalie to be on: it splits the goal in to equal halves (in the 'ball view projection', that is)
-      Vector3 toPost1 = Vector3(pitchHalfW * controller->GetTeam()->GetSide(),  3.7f, 0) - ballPos;
-      Vector3 toPost2 = Vector3(pitchHalfW * controller->GetTeam()->GetSide(), -3.7f, 0) - ballPos;
+      Vector3 toPost1 =
+          Vector3(pitchHalfW * controller->GetTeam()->GetDynamicSide(), 3.7f,
+                  0) -
+          ballPos;
+      Vector3 toPost2 =
+          Vector3(pitchHalfW * controller->GetTeam()->GetDynamicSide(), -3.7f,
+                  0) -
+          ballPos;
       radian angle = toPost2.GetAngle2D(toPost1);
-      Vector3 middle = toPost1.GetRotated2D(angle * 0.5f).GetNormalized(Vector3(controller->GetTeam()->GetSide(), 0, 0));
+      Vector3 middle = toPost1.GetRotated2D(angle * 0.5f)
+                           .GetNormalized(Vector3(
+                               controller->GetTeam()->GetDynamicSide(), 0, 0));
       Line ballToGoal;
       ballToGoal.SetVertex(0, ballPos);
       ballToGoal.SetVertex(1, ballPos + middle);
@@ -56,8 +68,12 @@ void GoalieDefaultStrategy::RequestInput(ElizaController *controller, const Ment
       // this line is now arbitrary length - make it so long that v2 is on the backline
       // (or rather, near the backline - keeping ON the backline is dangerous; some anims may only touch the ball when it's already behind the line, which is pretty useless :p)
       Line backLine;
-      backLine.SetVertex(0, Vector3((pitchHalfW - 0.7f) * controller->GetTeam()->GetSide(), -pitchHalfH, 0));
-      backLine.SetVertex(1, Vector3((pitchHalfW - 0.7f) * controller->GetTeam()->GetSide(),  pitchHalfH, 0));
+      backLine.SetVertex(0, Vector3((pitchHalfW - 0.7f) *
+                                        controller->GetTeam()->GetDynamicSide(),
+                                    -pitchHalfH, 0));
+      backLine.SetVertex(1, Vector3((pitchHalfW - 0.7f) *
+                                        controller->GetTeam()->GetDynamicSide(),
+                                    pitchHalfH, 0));
       Vector3 intersect = ballToGoal.GetIntersectionPoint(backLine).Get2D();
       intersect.coords[1] = clamp(intersect.coords[1], -3.7f, 3.7f);
       ballToGoal.SetVertex(1, intersect);
@@ -171,7 +187,9 @@ void GoalieDefaultStrategy::RequestInput(ElizaController *controller, const Ment
       Line ballToGoal;
       ballToGoal.SetVertex(0, mentalImage->GetBallPrediction(10).Get2D());
       float minGoalLineDist = 0.4f;
-      Vector3 ballOverGoalLinePos = Vector3(pitchHalfW * controller->GetTeam()->GetSide(), ballBoundForGoal_ycoord, 0);
+      Vector3 ballOverGoalLinePos =
+          Vector3(pitchHalfW * controller->GetTeam()->GetDynamicSide(),
+                  ballBoundForGoal_ycoord, 0);
       ballOverGoalLinePos += (ballToGoal.GetVertex(0) - ballOverGoalLinePos).GetNormalized(0) * minGoalLineDist;
       ballToGoal.SetVertex(1, ballOverGoalLinePos);
       float u = 0.0f;
@@ -212,7 +230,7 @@ void GoalieDefaultStrategy::CalculateIfBallIsBoundForGoal(ElizaController *contr
   bool intersect = false;
   ballBoundForGoal_ycoord = 0;
 
-  int side = controller->GetTeam()->GetSide();
+  int side = controller->GetTeam()->GetDynamicSide();
 
   float panic = 1.02f + (1.0f - (controller->GetPlayer()->GetStat(mental_defensivepositioning) * 0.6f + controller->GetPlayer()->GetStat(mental_vision) * 0.4f)) * 0.5f;
   if (mentalImage->GetBallPrediction(4000).coords[0] * side > pitchHalfW && (controller->GetPlayer()->GetPosition() - mentalImage->GetBallPrediction(250)).GetLength() < 32.0f) { // only if ball is close enough (cpu optimization)

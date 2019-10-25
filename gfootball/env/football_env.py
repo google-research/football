@@ -27,14 +27,9 @@ from gfootball.env import config as cfg
 from gfootball.env import constants
 from gfootball.env import football_action_set
 from gfootball.env import football_env_wrapper
+from gfootball.env import observation_rotation
 import gym
 import numpy as np
-
-try:
-  import cv2
-except ImportError:
-  import cv2
-
 
 class FootballEnv(gym.Env):
   """Allows multiple players to play in the same environment."""
@@ -52,7 +47,6 @@ class FootballEnv(gym.Env):
     self._env = football_env_wrapper.FootballEnvWrapper(self._config)
     self._num_actions = len(football_action_set.get_action_set(self._config))
     self.last_observation = None
-    self._last_swapped_sides = False
 
   @property
   def action_space(self):
@@ -109,7 +103,9 @@ class FootballEnv(gym.Env):
     """
     observations = []
     for is_left in [True, False]:
-      prefix = 'left' if is_left else 'right'
+      adopted = original if is_left or player.can_play_right(
+      ) else observation_rotation.flip_observation(original, self._config)
+      prefix = 'left' if is_left or not player.can_play_right() else 'right'
       position = left_player_position if is_left else right_player_position
       for x in range(player.num_controlled_left_players() if is_left
                      else player.num_controlled_right_players()):
@@ -117,19 +113,20 @@ class FootballEnv(gym.Env):
         for v in constants.EXPOSED_OBSERVATIONS:
           # Active and sticky_actions are added below.
           if v != 'active' and v != 'sticky_actions':
-            o[v] = copy.deepcopy(original[v])
-        assert (len(original[prefix + '_agent_controlled_player']) ==
-                len(original[prefix + '_agent_sticky_actions']))
-        if position + x >= len(original[prefix + '_agent_controlled_player']):
+            o[v] = copy.deepcopy(adopted[v])
+        assert (len(adopted[prefix + '_agent_controlled_player']) == len(
+            adopted[prefix + '_agent_sticky_actions']))
+        if position + x >= len(adopted[prefix + '_agent_controlled_player']):
           o['active'] = -1
           o['sticky_actions'] = []
         else:
           o['active'] = (
-              original[prefix + '_agent_controlled_player'][position + x])
+              adopted[prefix + '_agent_controlled_player'][position + x])
           o['sticky_actions'] = copy.deepcopy(
-              original[prefix + '_agent_sticky_actions'][position + x])
+              adopted[prefix + '_agent_sticky_actions'][position + x])
         o['is_left'] = is_left
-        if 'frame' in original:
+        # There is no frame for players on the right ATM.
+        if is_left and 'frame' in original:
           o['frame'] = original['frame']
         observations.append(o)
     return observations
@@ -154,6 +151,11 @@ class FootballEnv(gym.Env):
       assert len(adopted_obs) == len(
           a), 'Player returned {} actions instead of {}.'.format(
               len(a), len(adopted_obs))
+      if not player.can_play_right():
+        for x in range(player.num_controlled_right_players()):
+          index = x + player.num_controlled_left_players()
+          a[index] = observation_rotation.flip_single_action(
+              a[index], self._config)
       left_actions.extend(a[:player.num_controlled_left_players()])
       right_actions.extend(a[player.num_controlled_left_players():])
     actions = left_actions + right_actions
@@ -176,12 +178,6 @@ class FootballEnv(gym.Env):
 
   def reset(self):
     self._env.reset()
-    if self._config['swap_sides'] != self._last_swapped_sides:
-      for player in self._players:
-        player.swap_sides()
-      self._agent_left_position, self._agent_right_position = (
-          self._agent_right_position, self._agent_left_position)
-      self._last_swapped_sides = self._config['swap_sides']
     for player in self._players:
       player.reset()
     observation = self._env.observation()
@@ -206,18 +202,4 @@ class FootballEnv(gym.Env):
 
 
   def render(self, mode='human'):
-    frame = []
-    if self.last_observation and 'frame' in self.last_observation:
-      frame = self.last_observation['frame']
-    else:
-      frame = self._env._trace.get_last_frame()
-    b,g,r = cv2.split(frame)
-    frame_rgb = cv2.merge((r,g,b))
-    if mode == 'rgb_array':
-      return frame_rgb
-    elif mode == 'human':
-      cv2.imshow("Render", frame_rgb)
-      # Without waitKey call image is not rendered correctly.
-      cv2.waitKey(1)
-      return True
-    return False
+    return self._env.render(mode=mode)

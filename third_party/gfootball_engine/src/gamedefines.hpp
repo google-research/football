@@ -292,15 +292,15 @@ struct PlayerImage {
   Vector3 directionVec;
   Vector3 movement;
   Player *player;
-  float velocity = 0.0f;
-  FormationEntry dynamicFormationEntry;
+  e_Velocity velocity = e_Velocity_Idle;
+  e_PlayerRole role;
   void ProcessState(EnvState* state) {
     state->process(position);
     state->process(directionVec);
     state->process(movement);
     state->process(player);
-    state->process(velocity);
-    dynamicFormationEntry.ProcessState(state);
+    state->process(&velocity, sizeof(velocity));
+    state->process(&role, sizeof(role));
   }
   void Mirror() {
     position.Mirror();

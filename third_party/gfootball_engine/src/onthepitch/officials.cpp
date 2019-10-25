@@ -53,9 +53,7 @@ Officials::Officials(Match *match, boost::intrusive_ptr<Node> fullbodySourceNode
   boost::intrusive_ptr<Resource<GeometryData> > geometry =
       GetContext().geometry_manager.Fetch(
           "media/objects/officials/yellowcard.ase", true);
-  yellowCard =
-      static_pointer_cast<Geometry>(GetContext().object_factory.CreateObject(
-          "yellowcard", e_ObjectType_Geometry));
+  yellowCard = new Geometry("yellowcard");
   GetScene3D()->CreateSystemObjects(yellowCard);
   yellowCard->SetGeometryData(geometry);
   yellowCard->SetLocalMode(e_LocalMode_Absolute);
@@ -63,9 +61,7 @@ Officials::Officials(Match *match, boost::intrusive_ptr<Node> fullbodySourceNode
 
   geometry = GetContext().geometry_manager.Fetch(
       "media/objects/officials/redcard.ase", true);
-  redCard =
-      static_pointer_cast<Geometry>(GetContext().object_factory.CreateObject(
-          "redcard", e_ObjectType_Geometry));
+  redCard = new Geometry("redCard");
   GetScene3D()->CreateSystemObjects(redCard);
   redCard->SetGeometryData(geometry);
   redCard->SetLocalMode(e_LocalMode_Absolute);

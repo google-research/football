@@ -139,10 +139,7 @@ HumanoidBase::HumanoidBase(PlayerBase *player, Match *match, boost::intrusive_pt
           "media/objects/players/hairstyles/" +
               player->GetPlayerData()->GetHairStyle() + ".ase",
           true, true);
-  hairStyle =
-      static_pointer_cast<Geometry>(GetContext().object_factory.CreateObject(
-          "hairstyle", e_ObjectType_Geometry));
-
+  hairStyle = new Geometry("hairstyle");
   GetScene3D()->CreateSystemObjects(hairStyle);
   hairStyle->SetLocalMode(e_LocalMode_Absolute);
   hairStyle->SetGeometryData(geometry);
@@ -541,7 +538,7 @@ void HumanoidBase::Process() {
   spatialState.positionOffsetMovement = Vector3(0);
 
   currentAnim.frameNum++;
-  previousAnim.frameNum++;
+  previousAnim_frameNum++;
 
 
   if (currentAnim.frameNum == currentAnim.anim->GetFrameCount() - 1 && interruptAnim == e_InterruptAnim_None) {
@@ -614,7 +611,7 @@ void HumanoidBase::Process() {
       if (animDiff > decayingDifficultyFactor) decayingDifficultyFactor = animDiff;
       // if we just requeued, for example, from movement to ballcontrol, there's no reason we can not immediately requeue to another ballcontrol again (next time). only apply the initial requeue delay on subsequent anims of the same type
       // (so we can have a fast ballcontrol -> ballcontrol requeue, but after that, use the initial delay)
-      if (interruptAnim == e_InterruptAnim_ReQueue && previousAnim.functionType == currentAnim.functionType) {
+      if (interruptAnim == e_InterruptAnim_ReQueue && previousAnim_functionType == currentAnim.functionType) {
         reQueueDelayFrames = initialReQueueDelayFrames; // don't try requeueing (some types of anims, see selectanim()) too often
       }
 
@@ -763,10 +760,8 @@ void HumanoidBase::ResetPosition(const Vector3 &newPos, const Vector3 &focusPos)
   currentAnim.positions = match->GetAnimPositionCache(currentAnim.anim);
   currentAnim.frameNum =
       boostrandom(0, currentAnim.anim->GetEffectiveFrameCount() - 1);
-  currentAnim.radiusOffset = 0.0;
   currentAnim.touchFrame = -1;
   currentAnim.originatingInterrupt = e_InterruptAnim_None;
-  currentAnim.fullActionSmuggle = Vector3(0);
   currentAnim.actionSmuggle = Vector3(0);
   currentAnim.actionSmuggleOffset = Vector3(0);
   currentAnim.actionSmuggleSustain = Vector3(0);
@@ -781,28 +776,8 @@ void HumanoidBase::ResetPosition(const Vector3 &newPos, const Vector3 &focusPos)
   currentAnim.outgoingMovement = Vector3(0);
   currentAnim.positionOffset = Vector3(0);
 
-  previousAnim.id = idleAnimID;
-  previousAnim.anim = currentAnim.anim;
-  previousAnim.positions.clear();
-  previousAnim.positions = match->GetAnimPositionCache(previousAnim.anim);
-  previousAnim.frameNum = 0;
-  previousAnim.radiusOffset = 0.0;
-  previousAnim.touchFrame = -1;
-  previousAnim.originatingInterrupt = e_InterruptAnim_None;
-  previousAnim.fullActionSmuggle = Vector3(0);
-  previousAnim.actionSmuggle = Vector3(0);
-  previousAnim.actionSmuggleOffset = Vector3(0);
-  previousAnim.actionSmuggleSustain = Vector3(0);
-  previousAnim.actionSmuggleSustainOffset = Vector3(0);
-  previousAnim.movementSmuggle = Vector3(0);
-  previousAnim.movementSmuggleOffset = Vector3(0);
-  previousAnim.rotationSmuggle.begin = 0;
-  previousAnim.rotationSmuggle.end = 0;
-  previousAnim.rotationSmuggleOffset = 0;
-  previousAnim.functionType = e_FunctionType_Movement;
-  previousAnim.incomingMovement = Vector3(0);
-  previousAnim.outgoingMovement = Vector3(0);
-  previousAnim.positionOffset = Vector3(0);
+  previousAnim_frameNum = 0;
+  previousAnim_functionType = e_FunctionType_Movement;
 
   humanoidNode->SetPosition(startPos, false);
 
@@ -1087,9 +1062,7 @@ bool HumanoidBase::SelectAnim(const PlayerCommand &command, e_InterruptAnim loca
   int selectedAnimID = -1;
   std::vector<Vector3> positions_tmp;
   int touchFrame_tmp = -1;
-  float radiusOffset_tmp = 0.0f;
   Vector3 touchPos_tmp;
-  Vector3 fullActionSmuggle_tmp;
   Vector3 actionSmuggle_tmp;
   radian rotationSmuggle_tmp = 0;
 
@@ -1131,20 +1104,18 @@ bool HumanoidBase::SelectAnim(const PlayerCommand &command, e_InterruptAnim loca
   // make it so
 
   if (selectedAnimID != -1) {
-    previousAnim = currentAnim;
-
+    previousAnim_frameNum = currentAnim.frameNum;
+    previousAnim_functionType = currentAnim.functionType;
     currentAnim.anim = anims->GetAnim(selectedAnimID);
     currentAnim.id = selectedAnimID;
     currentAnim.functionType = command.desiredFunctionType;
     currentAnim.frameNum = 0;
     currentAnim.touchFrame = touchFrame_tmp;
     currentAnim.originatingInterrupt = localInterruptAnim;
-    currentAnim.radiusOffset = radiusOffset_tmp;
     currentAnim.touchPos = touchPos_tmp;
     currentAnim.rotationSmuggle.begin = clamp(ModulateIntoRange(-pi, pi, spatialState.relBodyAngleNonquantized - currentAnim.anim->GetIncomingBodyAngle()) * bodyRotationSmoothingFactor, -bodyRotationSmoothingMaxAngle, bodyRotationSmoothingMaxAngle);
     currentAnim.rotationSmuggle.end = rotationSmuggle_tmp;
     currentAnim.rotationSmuggleOffset = 0;
-    currentAnim.fullActionSmuggle = fullActionSmuggle_tmp;
     currentAnim.actionSmuggle = actionSmuggle_tmp;
     currentAnim.actionSmuggleOffset = Vector3(0);
     currentAnim.actionSmuggleSustain = Vector3(0);
@@ -2094,7 +2065,8 @@ void HumanoidBase::ProcessState(EnvState* state) {
   state->process(buf_bodyUpdatePhase);
   offsets.ProcessState(state);
   currentAnim.ProcessState(state);
-  previousAnim.ProcessState(state);
+  state->process(previousAnim_frameNum);
+  state->process(&previousAnim_functionType, sizeof(previousAnim_functionType));
   state->process(startPos);
   state->process(startAngle);
   state->process(nextStartPos);

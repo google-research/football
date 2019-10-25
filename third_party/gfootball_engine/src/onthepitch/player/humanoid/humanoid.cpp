@@ -90,7 +90,7 @@ void Humanoid::Process() {
   spatialState.positionOffsetMovement = Vector3(0);
 
   currentAnim.frameNum++;
-  previousAnim.frameNum++;
+  previousAnim_frameNum++;
 
   assert(team);
   int teamID = team->GetID();
@@ -237,7 +237,7 @@ void Humanoid::Process() {
 
       animApplyBuffer.anim = currentAnim.anim;
       animApplyBuffer.smooth = animSmoothing;
-      animApplyBuffer.smoothFactor = (interruptAnim == e_InterruptAnim_Switch && previousAnim.functionType == e_FunctionType_Movement && currentAnim.functionType == e_FunctionType_Movement) ? 0.0f : 1.0f; // more smoothing for mid-anim requeues
+      animApplyBuffer.smoothFactor = (interruptAnim == e_InterruptAnim_Switch && previousAnim_functionType == e_FunctionType_Movement && currentAnim.functionType == e_FunctionType_Movement) ? 0.0f : 1.0f; // more smoothing for mid-anim requeues
       if (currentAnim.functionType == e_FunctionType_Shot) animApplyBuffer.smoothFactor = 0.8f;
       if (currentAnim.functionType == e_FunctionType_ShortPass ||
           currentAnim.functionType == e_FunctionType_HighPass) animApplyBuffer.smoothFactor = 0.8f;
@@ -254,7 +254,7 @@ void Humanoid::Process() {
 
       // if we just requeued, for example, from movement to ballcontrol, there's no reason we can not immediately requeue to another ballcontrol again (next time). only apply the initial requeue delay on subsequent anims of the same type
       // (so we can have a fast ballcontrol -> ballcontrol requeue, but after that, use the initial delay)
-      if (interruptAnim == e_InterruptAnim_ReQueue && previousAnim.functionType == currentAnim.functionType) {
+      if (interruptAnim == e_InterruptAnim_ReQueue && previousAnim_functionType == currentAnim.functionType) {
         reQueueDelayFrames = initialReQueueDelayFrames; // don't try requeueing (some types of anims, see selectanim()) too often
       }
 
@@ -519,7 +519,7 @@ void Humanoid::Process() {
           Vector3 playerMovement = spatialState.movement;
           Vector3 touchVec =
               (-currentBallMovement * 0.1f + playerMovement * 2.0f +
-               Vector3(-team->GetSide(), 0, 0) * 4.0f +
+               Vector3(-team->GetDynamicSide(), 0, 0) * 4.0f +
                Vector3(0, boostrandom(-1, 1), 0))
                   .GetNormalized(0) *
               (currentBallMovement.GetLength() * 0.3f +
@@ -656,11 +656,23 @@ void Humanoid::Process() {
     if (match->GetBall()->Predict(0).coords[1] < -20.05f) {
       OffsetPosition(Vector3(0, clamp(-20.05f - match->GetBall()->Predict(0).coords[1], -0.5f, 0.5f), 0) * 0.3f);
     }
-    if (match->GetBall()->Predict(0).coords[0] * -team->GetSide() > -pitchHalfW + 16.4f) {
-      OffsetPosition(Vector3(clamp((-pitchHalfW + 16.4f) - match->GetBall()->Predict(0).coords[0] * -team->GetSide(), -0.5f, 0.5f), 0, 0) * -team->GetSide() * 0.3f);
+    if (match->GetBall()->Predict(0).coords[0] * -team->GetDynamicSide() >
+        -pitchHalfW + 16.4f) {
+      OffsetPosition(Vector3(clamp((-pitchHalfW + 16.4f) -
+                                       match->GetBall()->Predict(0).coords[0] *
+                                           -team->GetDynamicSide(),
+                                   -0.5f, 0.5f),
+                             0, 0) *
+                     -team->GetDynamicSide() * 0.3f);
     }
-    if (match->GetBall()->Predict(0).coords[0] * -team->GetSide() < -pitchHalfW + 0.1f) {
-      OffsetPosition(Vector3(clamp((-pitchHalfW + 0.1f) - match->GetBall()->Predict(0).coords[0] * -team->GetSide(), -0.5f, 0.5f), 0, 0) * -team->GetSide() * 0.4f);
+    if (match->GetBall()->Predict(0).coords[0] * -team->GetDynamicSide() <
+        -pitchHalfW + 0.1f) {
+      OffsetPosition(Vector3(clamp((-pitchHalfW + 0.1f) -
+                                       match->GetBall()->Predict(0).coords[0] *
+                                           -team->GetDynamicSide(),
+                                   -0.5f, 0.5f),
+                             0, 0) *
+                     -team->GetDynamicSide() * 0.4f);
     }
   }
 
@@ -974,7 +986,6 @@ void Humanoid::SelectRetainAnim() {
   currentAnim.id = *dataSet.begin();
   currentAnim.frameNum = 0;
   currentAnim.touchFrame = -1;
-  currentAnim.fullActionSmuggle = Vector3(0);
   currentAnim.actionSmuggle = Vector3(0);
   currentAnim.actionSmuggleOffset = Vector3(0);
   currentAnim.actionSmuggleSustain = Vector3(0);
@@ -1402,7 +1413,8 @@ bool Humanoid::SelectAnim(const PlayerCommand &command, e_InterruptAnim localInt
   // make it so
 
   if (selectedAnimID != -1) {
-    previousAnim = currentAnim;
+    previousAnim_frameNum = currentAnim.frameNum;
+    previousAnim_functionType = currentAnim.functionType;
 
     currentAnim.anim = anims->GetAnim(selectedAnimID);
     currentAnim.id = selectedAnimID;
@@ -1410,12 +1422,10 @@ bool Humanoid::SelectAnim(const PlayerCommand &command, e_InterruptAnim localInt
     currentAnim.frameNum = 0;
     currentAnim.touchFrame = touchFrame_tmp;
     currentAnim.originatingInterrupt = localInterruptAnim;
-    currentAnim.radiusOffset = radiusOffset_tmp;
     currentAnim.touchPos = touchPos_tmp;
     currentAnim.rotationSmuggle.begin = clamp(ModulateIntoRange(-pi, pi, spatialState.relBodyAngleNonquantized - currentAnim.anim->GetIncomingBodyAngle()) * bodyRotationSmoothingFactor, -bodyRotationSmoothingMaxAngle * (currentAnim.functionType == e_FunctionType_Movement ? 1.0f : 0.5f), bodyRotationSmoothingMaxAngle * (currentAnim.functionType == e_FunctionType_Movement ? 1.0f : 0.5f));
     currentAnim.rotationSmuggle.end = rotationSmuggle_tmp;
     currentAnim.rotationSmuggleOffset = 0;
-    currentAnim.fullActionSmuggle = fullActionSmuggle_tmp;
     currentAnim.actionSmuggle = actionSmuggle_tmp;
     currentAnim.actionSmuggleOffset = Vector3(0);
     currentAnim.actionSmuggleSustain = Vector3(0); // calculated below

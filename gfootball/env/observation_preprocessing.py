@@ -40,8 +40,6 @@ _MARKER_VALUE = 255
 
 
 def get_smm_layers(config):
-  if config and config['enable_sides_swap']:
-    return [] + SMM_LAYERS + ['is_left']
   return SMM_LAYERS
 
 
@@ -91,8 +89,6 @@ def generate_smm(observation, config=None,
                 else 'left_team')
         mark_points(frame[o_i, :, :, index],
                     np.array(o[team][o[layer]]).reshape(-1))
-      elif layer == 'is_left':
-        frame[o_i, :, :, index] = _MARKER_VALUE if o[layer] else 0
       else:
         mark_points(frame[o_i, :, :, index], np.array(o[layer]).reshape(-1))
   return frame

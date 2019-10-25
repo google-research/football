@@ -65,9 +65,7 @@ namespace blunted {
 
     surface->SetData(sdlSurface);
 
-    blackoutBackground = boost::static_pointer_cast<Image2D>(
-        GetContext().object_factory.CreateObject("gui2_blackoutbackground",
-                                                 e_ObjectType_Image2D));
+    blackoutBackground = new Image2D("gui2_blackoutbackground");
     scene2D->CreateSystemObjects(blackoutBackground);
     blackoutBackground->SetImage(resource);
     blackoutBackground->DrawRectangle(0, 0, contextW, contextH, Vector3(0, 0, 0), 255);
@@ -166,8 +164,7 @@ namespace blunted {
 
     surface->SetData(sdlSurface);
 
-    boost::intrusive_ptr<Image2D> image = boost::static_pointer_cast<Image2D>(
-        GetContext().object_factory.CreateObject(name, e_ObjectType_Image2D));
+    boost::intrusive_ptr<Image2D> image(new Image2D(name));
     if (sceneRegister) scene2D->CreateSystemObjects(image);
     image->SetImage(resource);
 

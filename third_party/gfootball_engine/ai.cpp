@@ -138,15 +138,10 @@ BOOST_PYTHON_MODULE(_gameplayfootball) {
                      &ScenarioConfig::game_engine_random_seed)
       .def_readwrite("reverse_team_processing",
                      &ScenarioConfig::reverse_team_processing)
-      .def_readwrite("symmetric_mode",
-                     &ScenarioConfig::symmetric_mode)
       .def_readwrite("offsides", &ScenarioConfig::offsides)
       .def_readwrite("real_time", &ScenarioConfig::real_time)
       .def_readwrite("render", &ScenarioConfig::render)
-      .def_readwrite("left_team_difficulty",
-                     &ScenarioConfig::left_team_difficulty)
-      .def_readwrite("right_team_difficulty",
-                     &ScenarioConfig::right_team_difficulty);
+      .def_readwrite("team_difficulty", &ScenarioConfig::team_difficulty);
 
   class_<std::vector<FormationEntry> >("FormationEntryVec").def(
       vector_indexing_suite<std::vector<FormationEntry> >());

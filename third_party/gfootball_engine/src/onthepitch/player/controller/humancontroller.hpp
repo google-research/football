@@ -75,6 +75,7 @@ class HumanController : public PlayerController {
     Vector3 previousDirection;
     Vector3 steadyDirection;
     int lastSteadyDirectionSnapshotTime_ms = 0;
+    float mirror = 1.0;
 };
 
 #endif

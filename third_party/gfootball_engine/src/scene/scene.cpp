@@ -33,7 +33,7 @@ namespace blunted {
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
       ISceneInterpreter *sceneInterpreter = static_cast<ISceneInterpreter*>(observers[i].get());
-      sceneInterpreter->CreateSystemObject(object);
+      sceneInterpreter->CreateSystemObject(object.get());
     }
   }
 

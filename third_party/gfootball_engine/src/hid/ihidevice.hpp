@@ -61,6 +61,7 @@ class IHIDevice {
     virtual bool GetPreviousButtonState(e_ButtonFunction buttonFunction) = 0;
     virtual Vector3 GetDirection() = 0;
     virtual void ProcessState(EnvState* state) = 0;
+    virtual void Mirror(float mirror) = 0;
 };
 
 #endif

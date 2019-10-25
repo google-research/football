@@ -132,9 +132,9 @@ Environment exposes following `raw` observations:
     - `right_team_yellow_card` - same as for left team.
     - `right_team_active` - same as for left team.
     - `right_team_roles` - same as for left team.
-- Controlled players information (M is the number of controlled players):
-    - `active` - M-elements list of {0..N-1} integers denoting indices of the controlled players. In most common case the list will contain just one element, but in multi-agent setup it will be more.
-    - `sticky_actions` - M-elements list of 11-elements vectors of 0s or 1s denoting whether corresponding action is active:
+- Controlled player information:
+    - `active` - {0..N-1} integer denoting index of the controlled players.
+    - `sticky_actions` - 11-elements vectors of 0s or 1s denoting whether corresponding action is active:
         - `0` - `game_left`
         - `1` - `game_top_left`
         - `2` - `game_top`
@@ -165,7 +165,9 @@ Where `N` is the number of players on the team.
 X coordinates are in the range `[-1, 1]`.
 Y coordinates are in the range `[-0.42, 0.42]`.
 Speed vectors represent a change in the position of the object within a single
-step.
+step. In case of controlling `M` players (see multi-agent section), environment returns a list
+of `M` observations, one per each controlled player. For convenience, even if you control players
+on the right team, observations are mirrored (center of your goal is at `[-1, 0]`).
 
 In addition, environment provides wrappers which convert `raw` observations to a different form:
 
@@ -183,7 +185,6 @@ In addition, environment provides wrappers which convert `raw` observations to a
    - 2nd plane: 255s represent positions of players on the right team
    - 2nd plane: 255s represent positions of a ball
    - 4th plane: 255s represent positions of an active player
-   - 5th plane (optional, available when `enable_sides_swap` is enabled): either all 0s if playing from the left, or all 255s if playing from the right
 - `pixels`/`pixels_gray` (aka PixelsStateWrapper) - pixel representation, downscaled to 72 * 96, and converted to a single grayscale channel for `pixels_gray`.
   In order to use this representation you have to enable rendering in create_environment call (and run on GPU).
 

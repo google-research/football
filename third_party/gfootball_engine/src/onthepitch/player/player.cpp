@@ -95,7 +95,10 @@ void Player::Activate(boost::intrusive_ptr<Node> humanoidSourceNode, boost::intr
   nameCaption = new Gui2Caption(GetMenuTask()->GetWindowManager(), "game_player_name_" + int_to_str(stable_id), 0, 0, 1, 2.0, playerData->GetLastName());
   nameCaption->SetTransparency(0.3f);
   GetMenuTask()->GetWindowManager()->GetRoot()->AddView(nameCaption);
-  CastHumanoid()->ResetPosition(GetFormationEntry().position * 25 * Vector3(-team->GetSide(), -team->GetSide(), 0), Vector3(0));
+  CastHumanoid()->ResetPosition(
+      GetFormationEntry().position * 25 *
+          Vector3(-team->GetDynamicSide(), -team->GetDynamicSide(), 0),
+      Vector3(0));
   SetDynamicFormationEntry(GetFormationEntry());
 }
 
@@ -461,7 +464,8 @@ void Player::_CalculateTacticalSituation() {
 
   // calculate how free the path forward is
   float time_sec = 0.5f;
-  Vector3 checkPos = GetPosition() + Vector3(-team->GetSide(), 0, 0) * sprintVelocity * time_sec;
+  Vector3 checkPos = GetPosition() + Vector3(-team->GetDynamicSide(), 0, 0) *
+                                         sprintVelocity * time_sec;
   tacticalSituation.forwardSpaceRating = AI_CalculateFreeSpace(match, mentalImage, team->GetID(), checkPos, 5.0f, time_sec); // FREESPACE :D :D
 
   // calculate the amount of space this player has
@@ -471,7 +475,12 @@ void Player::_CalculateTacticalSituation() {
   tacticalSituation.spaceRating = AI_CalculateFreeSpace(match, mentalImage, team->GetID(), checkPos, 5.0f, time_sec); // FREESPACE :D :D
 
   // distance to opponent goal 0 .. 1 == farthest .. closest
-  tacticalSituation.forwardRating = 1.0f - clamp((Vector3(pitchHalfW * -team->GetSide(), 0, 0) - GetPosition()).GetLength() / (pitchHalfW * 2.0f), 0.0f, 1.0f);
+  tacticalSituation.forwardRating =
+      1.0f - clamp((Vector3(pitchHalfW * -team->GetDynamicSide(), 0, 0) -
+                    GetPosition())
+                           .GetLength() /
+                       (pitchHalfW * 2.0f),
+                   0.0f, 1.0f);
   tacticalSituation.forwardRating =
       std::pow(tacticalSituation.forwardRating,
                1.5f);  // more important when close to goal

@@ -24,10 +24,8 @@
 #include "AIsupport/AIfunctions.hpp"
 #include "match.hpp"
 
-Team::Team(int id, Match *match, TeamData *teamData, float aiDifficulty,
-           int side)
-    : id(id), match(match), teamData(teamData), aiDifficulty(aiDifficulty),
-      side(side) {
+Team::Team(int id, Match *match, TeamData *teamData, float aiDifficulty)
+    : id(id), match(match), teamData(teamData), aiDifficulty(aiDifficulty) {
   assert(id == 0 || id == 1);
   // assert(teamData->GetPlayerNum() >= playerNum); // does team have enough
   // players?
@@ -109,10 +107,6 @@ void Team::InitPlayers(boost::intrusive_ptr<Node> fullbodyNode,
   }
 
   designatedTeamPossessionPlayer = players.at(0);
-}
-
-signed int Team::GetSide() {
-  return side;
 }
 
 FormationEntry Team::GetFormationEntry(void* player) {

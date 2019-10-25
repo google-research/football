@@ -52,8 +52,6 @@ namespace blunted {
 
     map_XMLTree::const_iterator objectIter = objectTree.children.begin();
     while (objectIter != objectTree.children.end()) {
-
-      e_ObjectType objectType;
       std::string objectName;
       Properties properties;
       e_LocalMode localMode = e_LocalMode_Relative;
@@ -87,9 +85,6 @@ namespace blunted {
       // GEOMETRY
 
       else if (objectIter->first == "geometry") {
-
-        objectType = e_ObjectType_Geometry;
-
         std::string aseFilename;
         Vector3 position;
         Quaternion rotation;
@@ -124,8 +119,7 @@ namespace blunted {
         }
         boost::intrusive_ptr<Resource<GeometryData> > geometry =
             GetContext().geometry_manager.Fetch(dirpart + aseFilename, true);
-        boost::intrusive_ptr<Geometry> object = static_pointer_cast<Geometry>(
-            GetContext().object_factory.CreateObject(objectName, objectType));
+        boost::intrusive_ptr<Geometry> object(new Geometry(objectName));
         if (properties.GetBool("dynamic")) geometry->GetResource()->SetDynamic(true);
 
         object->SetProperties(properties);
@@ -141,9 +135,6 @@ namespace blunted {
       // LIGHT
 
       else if (objectIter->first == "light") {
-
-        objectType = e_ObjectType_Light;
-
         Vector3 position;
 
         map_XMLTree::const_iterator iter = objectIter->second.children.begin();
@@ -166,8 +157,7 @@ namespace blunted {
           iter++;
         }
 
-        boost::intrusive_ptr<Light> object = static_pointer_cast<Light>(
-            GetContext().object_factory.CreateObject(objectName, objectType));
+        boost::intrusive_ptr<Light> object(new Light(objectName));
 
         //object->SetProperties(properties);
         GetScene3D()->CreateSystemObjects(object);

@@ -89,7 +89,7 @@ void PlayerController::AddDefensiveComponent(Vector3 &desiredPosition, float bia
         shootThreshold = possessionPlayerShootThreshold;
       }
 
-      Vector3 goalPos = Vector3(pitchHalfW * team->GetSide(), 0, 0);
+      Vector3 goalPos = Vector3(pitchHalfW * team->GetDynamicSide(), 0, 0);
 
       // calculate how close the opponent is to the goal/shooting treshold
       float oppToGoalDistance = (goalPos - oppPos).GetLength();
@@ -97,7 +97,8 @@ void PlayerController::AddDefensiveComponent(Vector3 &desiredPosition, float bia
       Vector3 shootingPoint = oppPos + (goalPos - oppPos).GetNormalized(0) * oppToThresholdDistance;
 
       // if shootingPoint.coords[0] exceeds offside trap line, alter oppToThresholdDistance in such a way, that it results in the shootingPoint being at least offsideTrapX distance away from goal (unless player is closer already)
-      if (shootingPoint.coords[0] * team->GetSide() > team->GetController()->GetOffsideTrapX() * team->GetSide()) {
+      if (shootingPoint.coords[0] * team->GetDynamicSide() >
+          team->GetController()->GetOffsideTrapX() * team->GetDynamicSide()) {
         Line oppToGoalLine;
         oppToGoalLine.SetVertex(0, oppPos);
         oppToGoalLine.SetVertex(1, goalPos);
@@ -143,7 +144,7 @@ Vector3 PlayerController::GetDefendPosition(Player *opp, float distance) {
   // 2) create another line CD perpendicular to AB, that intersects the middle point of AB
   // 3) find the intersection point of CD with the original opp to goal line. if this intersection point is between opp and goal, it's our target. (if not, we're too late, just run to goal :p)
 
-  Vector3 goalPos = Vector3(pitchHalfW * team->GetSide(), 0, 0);
+  Vector3 goalPos = Vector3(pitchHalfW * team->GetDynamicSide(), 0, 0);
   Vector3 oppPosition = oppImage.position; // lol @ varname
   Vector3 oppToGoal = goalPos - oppPosition;
 
@@ -275,7 +276,9 @@ void PlayerController::_KeeperDeflectCommand(PlayerCommandQueue &commandQueue, b
 
   // can't use hands outside of keeper's 16 yard box (todo: make precise, probably in humanoid.cpp's getbestcheatableanim)
   if (fabs(match->GetBall()->Predict(160).coords[1]) > 20.05f) return;
-  if (match->GetBall()->Predict(160).coords[0] * -team->GetSide() > -pitchHalfW + 16.4) return;
+  if (match->GetBall()->Predict(160).coords[0] * -team->GetDynamicSide() >
+      -pitchHalfW + 16.4)
+    return;
 
   PlayerCommand command;
   command.desiredFunctionType = e_FunctionType_Deflect;
@@ -322,7 +325,7 @@ void PlayerController::_BallControlCommand(PlayerCommandQueue &commandQueue, boo
     command.desiredVelocityFloat = inputVelocityFloat;
 
     if (FloatToEnumVelocity(command.desiredVelocityFloat) == e_Velocity_Idle && idleTurnToOpponentGoal) {
-      command.desiredDirection = Vector3(-team->GetSide(), 0, 0);
+      command.desiredDirection = Vector3(-team->GetDynamicSide(), 0, 0);
     }
 
     if (knockOn) command.modifier |= e_PlayerCommandModifier_KnockOn;
@@ -369,12 +372,12 @@ void PlayerController::_TrapCommand(PlayerCommandQueue &commandQueue, bool idleT
 
     command.desiredVelocityFloat = inputVelocityFloat;
     if (CastPlayer()->GetFormationEntry().role == e_PlayerRole_GK && !team->IsHumanControlled(player)) {
-      command.desiredDirection = Vector3(-team->GetSide(), 0, 0);
+      command.desiredDirection = Vector3(-team->GetDynamicSide(), 0, 0);
       command.desiredVelocityFloat = idleVelocity;
     }
 
     if (FloatToEnumVelocity(command.desiredVelocityFloat) == e_Velocity_Idle && idleTurnToOpponentGoal) {
-      command.desiredDirection = Vector3(-team->GetSide(), 0, 0);
+      command.desiredDirection = Vector3(-team->GetDynamicSide(), 0, 0);
     }
 
     if (knockOn) {
@@ -431,7 +434,10 @@ void PlayerController::_SlidingCommand(PlayerCommandQueue &commandQueue) {
       PlayerCommand command;
       command.desiredFunctionType = e_FunctionType_Sliding;
       command.useDesiredMovement = true;
-      command.desiredDirection = ((ballPos.Get2D() + _oppPlayer->GetMovement() * 0.2f) - playerPos).GetNormalized(Vector3(-team->GetSide(), 0, 0));//inputDirection;
+      command.desiredDirection =
+          ((ballPos.Get2D() + _oppPlayer->GetMovement() * 0.2f) - playerPos)
+              .GetNormalized(
+                  Vector3(-team->GetDynamicSide(), 0, 0));  // inputDirection;
       command.desiredVelocityFloat = sprintVelocity;
       command.useDesiredLookAt = true;
       command.desiredLookAt = CastPlayer()->GetPosition() + CastPlayer()->GetMovement() * 0.1f + command.desiredDirection * 10.0f;
@@ -485,7 +491,9 @@ void PlayerController::_MovementCommand(PlayerCommandQueue &commandQueue, bool f
 
   // decide what type of magnet is to be used
 
-  float inputDirIsOwnHalfFactor = NormalizedClamp(inputDirection.GetDotProduct(Vector3(team->GetSide(), 0, 0)), -1.0f, 1.0f);
+  float inputDirIsOwnHalfFactor = NormalizedClamp(
+      inputDirection.GetDotProduct(Vector3(team->GetDynamicSide(), 0, 0)),
+      -1.0f, 1.0f);
 
   if (match->GetBallRetainer() == player) {
 
@@ -577,7 +585,9 @@ void PlayerController::_MovementCommand(PlayerCommandQueue &commandQueue, bool f
       // virtual action area in front of opponent
       PlayerImage oppImage = _mentalImage->GetPlayerImage(_oppPlayer);
       Vector3 oppPos = oppImage.position + oppImage.movement * 0.14f + oppImage.directionVec * 0.6f;
-      Vector3 oppToGoalDirection = (Vector3(pitchHalfW * team->GetSide(), 0, 0) - oppPos).GetNormalized(0);
+      Vector3 oppToGoalDirection =
+          (Vector3(pitchHalfW * team->GetDynamicSide(), 0, 0) - oppPos)
+              .GetNormalized(0);
       float actionRadius = 5.0f;
       Vector3 focusPosition = oppPos + (oppToGoalDirection * actionRadius * 0.7f);
       float actionBias = 1.0f - curve(NormalizedClamp((player->GetPosition() - focusPosition).GetLength(), 0.0f, actionRadius), 0.7f);
@@ -599,7 +609,7 @@ void PlayerController::_MovementCommand(PlayerCommandQueue &commandQueue, bool f
             1.2f);
 
         Vector3 autoDirection_manMarking = oppImage.movement.GetNormalized(inputDirection);
-        float autoVelocityFloat_manMarking = oppImage.velocity;
+        float autoVelocityFloat_manMarking = EnumToFloatVelocity(oppImage.velocity);
         Vector3 autoLookDirection_manMarking = (_mentalImage->GetBallPrediction(defaultLookAtTime_ms).Get2D() - player->GetPosition()).GetNormalized(0);
 
         Vector3 huntTarget = oppPos + oppToGoalDirection * playerOppDistance * 0.3f;

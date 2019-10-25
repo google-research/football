@@ -34,7 +34,7 @@
 
 Vector3 AI_GetAdaptedFormationPosition(Match *match, Player *player, float backXBound, float frontXBound, float lowYBound, float highYBound, float xFocus, float xFocusStrength, float yFocus, float yFocusStrength, const Vector3 &microFocus, float microFocusStrength, float midfieldFocus, float midfieldFocusStrength, bool useDynamicFormationPosition) {
   Team *team = player->GetTeam();
-  int side = team->GetSide();
+  int side = team->GetDynamicSide();
 
   Vector3 position;
 
@@ -175,8 +175,7 @@ float AI_CalculateFreeSpace(Match *match, const MentalImage *mentalImage, int te
 }
 
 float AI_GetOffsideLine(Match *match, const MentalImage *mentalImage, int teamID, unsigned int futureSim_ms) {
-
-  signed int side = match->GetTeam(teamID)->GetSide();
+  signed int side = match->GetTeam(teamID)->GetDynamicSide();
 
   auto opponentPlayerImages = mentalImage->GetTeamPlayerImages(teamID);
 
@@ -224,7 +223,7 @@ void AI_GetBestDribbleMovement(Match *match, PlayerBase* p, const MentalImage *m
   PlayerImage thisPlayerImage = mentalImage->GetPlayerImage(player);
 
   Team *team = player->GetTeam();
-  signed int side = team->GetSide();
+  signed int side = team->GetDynamicSide();
 
   std::vector<PlayerImage> opponentPlayerImages;
 
@@ -829,8 +828,10 @@ Player *AI_GetBestSwitchTargetPlayer(Match *match, Team *team, const Vector3 &de
   Vector3 actionPosition = match->GetDesignatedPossessionPlayer()->GetPosition() * 0.5f +
                            match->GetBall()->Predict(100).Get2D() * 0.5f;
 
-  Vector3 defensePosition = (actionPosition * Vector3(1.0f, 0.8f, 0.0f)) + Vector3( team->GetSide() * 4.0f, 0.0f, 0.0f);
-  Vector3 offensePosition = (actionPosition * Vector3(1.0f, 0.8f, 0.0f)) + Vector3(-team->GetSide() * 8.0f, 0.0f, 0.0f);
+  Vector3 defensePosition = (actionPosition * Vector3(1.0f, 0.8f, 0.0f)) +
+                            Vector3(team->GetDynamicSide() * 4.0f, 0.0f, 0.0f);
+  Vector3 offensePosition = (actionPosition * Vector3(1.0f, 0.8f, 0.0f)) +
+                            Vector3(-team->GetDynamicSide() * 8.0f, 0.0f, 0.0f);
 
   // experiment: also take team possession player into account, try to pick one near
   defensePosition = defensePosition * 0.8f + team->GetDesignatedTeamPossessionPlayer()->GetPosition() * 0.2f;
@@ -869,7 +870,7 @@ Player *AI_GetBestSwitchTargetPlayer(Match *match, Team *team, const Vector3 &de
   Player *designated = match->GetDesignatedPossessionPlayer();
   if (designated->GetTeam() != team) {
     Player *opp = designated;
-    Vector3 goalPos = Vector3(team->GetSide() * pitchHalfW, 0.0f, 0.0f);
+    Vector3 goalPos = Vector3(team->GetDynamicSide() * pitchHalfW, 0.0f, 0.0f);
     float oppGoalDist = (goalPos - (opp->GetPosition() + opp->GetMovement() * 0.5f)).GetLength();
     for (unsigned int i = 0; i < teamPlayers.size(); i++) {
       float mateGoalDist = (goalPos - (teamPlayers[i]->GetPosition() + teamPlayers[i]->GetMovement() * 0.5f)).GetLength();
@@ -1027,7 +1028,8 @@ void AI_GetPass(Player *player, e_FunctionType passType, const Vector3 &inputDir
   if (passType == e_FunctionType_LongPass) {
     float targetDistance = autoTargetRel.GetLength()   * adaptedAutoDirectionBias +
                            manualTargetRel.GetLength() * (1.0f - adaptedAutoDirectionBias);
-    offset = Vector3(-player->GetTeam()->GetSide() * targetDistance * 0.2f, 0, 0);
+    offset = Vector3(
+        -player->GetTeam()->GetDynamicSide() * targetDistance * 0.2f, 0, 0);
     autoTargetRel += offset;
     manualTargetRel += offset;
   }
@@ -1041,7 +1043,8 @@ Vector3 AI_GetShotDirection(Player *player, const Vector3 &inputDirection, float
 
   Vector3 manualDirection = inputDirection;
 
-  Vector3 goalPos = Vector3(player->GetTeam()->GetSide() * -pitchHalfW, 0, 0);
+  Vector3 goalPos =
+      Vector3(player->GetTeam()->GetDynamicSide() * -pitchHalfW, 0, 0);
   Vector3 toGoal = (goalPos - (player->GetPosition() + player->GetMovement() * 0.12f)).GetNormalized(0);
   // if inputDirection ~== toGoal, it is considered as aiming 'through the middle'. so, get the deviation from inputDirection to toGoal, and make 90 degrees the maximum
   radian relAngle = toGoal.GetAngle2D(inputDirection);
@@ -1049,7 +1052,8 @@ Vector3 AI_GetShotDirection(Player *player, const Vector3 &inputDirection, float
   // more attenuation towards the sides
   sideFactor = std::pow(fabs(sideFactor), 0.7f) * signSide(sideFactor);
 
-  goalPos.coords[1] = sideFactor * goalHalfWidth * 0.9f * player->GetTeam()->GetSide();
+  goalPos.coords[1] =
+      sideFactor * goalHalfWidth * 0.9f * player->GetTeam()->GetDynamicSide();
   Vector3 autoDirection = (goalPos - (player->GetPosition() + player->GetMovement() * 0.12f)).GetNormalized(0);
 
   return (manualDirection * (1.0f - autoDirectionBias) + autoDirection * autoDirectionBias).GetNormalized(inputDirection);

@@ -105,12 +105,10 @@ Match::Match(MatchData *matchData, const std::vector<IHIDevice *> &controllers)
 
   teams[first_team] =
       new Team(first_team, this, &matchData->GetTeamData(first_team),
-          GetScenarioConfig().left_team_difficulty,
-          GetScenarioConfig().symmetric_mode || first_team == 0 ? -1 : 1);
+          GetScenarioConfig().team_difficulty);
   teams[second_team] =
       new Team(second_team, this, &matchData->GetTeamData(second_team),
-          GetScenarioConfig().right_team_difficulty,
-          GetScenarioConfig().symmetric_mode || second_team == 0 ? -1 : 1);
+          GetScenarioConfig().team_difficulty);
   teams[first_team]->SetOpponent(teams[second_team]);
   teams[second_team]->SetOpponent(teams[first_team]);
   teams[first_team]->InitPlayers(fullbodyNode, GetContext().colorCoords);
@@ -135,8 +133,7 @@ Match::Match(MatchData *matchData, const std::vector<IHIDevice *> &controllers)
 
   // camera
 
-  camera = static_pointer_cast<Camera>(
-      GetContext().object_factory.CreateObject("camera", e_ObjectType_Camera));
+  camera = new Camera("camera");
   GetScene3D()->CreateSystemObjects(camera);
   camera->Init();
 
@@ -252,21 +249,19 @@ Match::Match(MatchData *matchData, const std::vector<IHIDevice *> &controllers)
 Match::~Match() {
 }
 
-void Match::MaybeMirror(bool team_0, bool team_1, bool ball) {
-  if (GetScenarioConfig().symmetric_mode) {
-    if (team_0) {
-      teams[0]->Mirror();
-    }
-    if (team_1) {
-      teams[1]->Mirror();
-    }
-    if (ball) {
-      ball_mirrored = !ball_mirrored;
-      this->ball->Mirror();
-    }
-    for (auto& i : mentalImages) {
-      i.Mirror(team_0, team_1, ball);
-    }
+void Match::Mirror(bool team_0, bool team_1, bool ball) {
+  if (team_0) {
+    teams[0]->Mirror();
+  }
+  if (team_1) {
+    teams[1]->Mirror();
+  }
+  if (ball) {
+    ball_mirrored = !ball_mirrored;
+    this->ball->Mirror();
+  }
+  for (auto& i : mentalImages) {
+    i.Mirror(team_0, team_1, ball);
   }
 }
 
@@ -392,15 +387,20 @@ void Match::UpdateControllerSetup() {
   teams[second_team]->DeleteHumanGamers();
 
   // add new
-  const std::vector<SideSelection> sides = menuTask->GetControllerSetup();
-  for (unsigned int i = 0; i < sides.size(); i++) {
-    if (sides[i].side == -1) {
-      teams[0]->AddHumanGamer(controllers.at(sides[i].controllerID),
+  const std::vector<SideSelection> controller = menuTask->GetControllerSetup();
+  for (unsigned int i = 0; i < controller.size(); i++) {
+    float mirror = 1.0;
+    if (controller[i].side == -1) {
+      teams[0]->AddHumanGamer(controllers.at(controller[i].controllerID),
                               (e_PlayerColor)i);
-    } else if (sides[i].side == 1) {
-      teams[1]->AddHumanGamer(controllers.at(sides[i].controllerID),
+    } else if (controller[i].side == 1) {
+      teams[1]->AddHumanGamer(controllers.at(controller[i].controllerID),
                               (e_PlayerColor)i);
+      if (teams[1]->GetDynamicSide() == -1) {
+        mirror = -1.0;
+      }
     }
+    controllers.at(controller[i].controllerID)->Mirror(mirror);
   }
 }
 
@@ -488,9 +488,9 @@ void Match::UpdateIngameCamera() {
   // look in possession team's attacking direction
   ballPos +=
       Vector3(((teams[first_team]->GetFadingTeamPossessionAmount() - 1.0f) *
-                   -teams[first_team]->GetSide() +
+                   -teams[first_team]->GetDynamicSide() +
                (teams[second_team]->GetFadingTeamPossessionAmount() - 1.0f) *
-                   -teams[second_team]->GetSide()) *
+                   -teams[second_team]->GetDynamicSide()) *
                   4.0f,
               0, 0);
 
@@ -611,7 +611,7 @@ void Match::ProcessState(EnvState* state) {
   bool team_0_mirror = teams[0]->isMirrored();
   bool team_1_mirror = teams[1]->isMirrored();
   bool ball_mirror = ball_mirrored ^ GetScenarioConfig().reverse_team_processing;
-  MaybeMirror(team_0_mirror, team_1_mirror, ball_mirror);
+  Mirror(team_0_mirror, team_1_mirror, ball_mirror);
   std::vector<Player*> players;
   GetAllTeamPlayers(first_team, players);
   GetAllTeamPlayers(second_team, players);
@@ -704,7 +704,7 @@ void Match::ProcessState(EnvState* state) {
     resetNetting = true;
     nettingHasChanged = true;
   }
-  MaybeMirror(team_0_mirror, team_1_mirror, ball_mirror);
+  Mirror(team_0_mirror, team_1_mirror, ball_mirror);
 }
 
 void Match::GetState(SharedInfo *state) {
@@ -754,7 +754,7 @@ void Match::GetState(SharedInfo *state) {
       if (player->CastHumanoid() != NULL) {
         auto position = player->GetPosition();
         auto movement = player->GetMovement();
-        if (GetScenarioConfig().symmetric_mode && team_id == 1) {
+        if (team_id == 1) {
           position.Mirror();
           movement.Mirror();
         }
@@ -784,23 +784,23 @@ void Match::Process() {
   if (!pause) {
 
     if (IsInPlay()) {
-      MaybeMirror(reverse, !reverse, reverse);
+      Mirror(reverse, !reverse, reverse);
       CheckBallCollisions();
-      MaybeMirror(reverse, !reverse, reverse);
+      Mirror(reverse, !reverse, reverse);
     }
 
 
     // HIJ IS EEN HONDELUUUL
-    MaybeMirror(reverse, !reverse, reverse);
+    Mirror(reverse, !reverse, reverse);
     referee->Process();
-    MaybeMirror(reverse, !reverse, reverse);
+    Mirror(reverse, !reverse, reverse);
 
     // ball
 
     Vector3 previousBallPos = ball->Predict(0);
-    MaybeMirror(false, false, GetScenarioConfig().reverse_team_processing);
+    Mirror(false, false, GetScenarioConfig().reverse_team_processing);
     ball->Process();
-    MaybeMirror(false, false, GetScenarioConfig().reverse_team_processing);
+    Mirror(false, false, GetScenarioConfig().reverse_team_processing);
 
 
     // create mental images for the AI to use
@@ -815,35 +815,35 @@ void Match::Process() {
     teams[second_team]->UpdateSwitch();
 
     if (first_team == 0) {
-      MaybeMirror(false, true, false);
+      Mirror(false, true, false);
     } else {
-      MaybeMirror(true, false, true);
+      Mirror(true, false, true);
     }
     teams[first_team]->Process();
-    MaybeMirror(true, true, true);
+    Mirror(true, true, true);
     teams[second_team]->Process();
     if (first_team == 0) {
-      MaybeMirror(true, false, true);
+      Mirror(true, false, true);
     } else {
-      MaybeMirror(false, true, false);
+      Mirror(false, true, false);
     }
 
-    MaybeMirror(reverse, !reverse, reverse);
+    Mirror(reverse, !reverse, reverse);
     officials->Process();
-    MaybeMirror(reverse, !reverse, reverse);
+    Mirror(reverse, !reverse, reverse);
 
     if (first_team == 0) {
-      MaybeMirror(false, true, false);
+      Mirror(false, true, false);
     } else {
-      MaybeMirror(true, false, true);
+      Mirror(true, false, true);
     }
     teams[first_team]->UpdatePossessionStats();
-    MaybeMirror(true, true, true);
+    Mirror(true, true, true);
     teams[second_team]->UpdatePossessionStats();
     if (first_team == 0) {
-      MaybeMirror(true, false, true);
+      Mirror(true, false, true);
     } else {
-      MaybeMirror(false, true, false);
+      Mirror(false, true, false);
     }
 
     CalculateBestPossessionTeamID();
@@ -866,7 +866,7 @@ void Match::Process() {
     }
 
     bool rev = GetScenarioConfig().reverse_team_processing;
-    MaybeMirror(rev, !rev, rev);
+    Mirror(rev, !rev, rev);
     CheckHumanoidCollisions();
 
     // time
@@ -881,11 +881,11 @@ void Match::Process() {
 
     // check for goals
 
-    bool t1goal = CheckForGoal(teams[0]->GetSide(), previousBallPos);
-    bool t2goal = CheckForGoal(teams[1]->GetSide(), previousBallPos);
+    bool t1goal = CheckForGoal(teams[0]->GetDynamicSide(), previousBallPos);
+    bool t2goal = CheckForGoal(teams[1]->GetDynamicSide(), previousBallPos);
     if (t1goal) ballIsInGoal = true;
     if (t2goal) ballIsInGoal = true;
-    MaybeMirror(rev, !rev, rev);
+    Mirror(rev, !rev, rev);
     if (IsInPlay()) {
       if (t1goal) {
         matchData->SetGoalCount(teams[1]->GetID(), matchData->GetGoalCount(1) + 1);
@@ -934,8 +934,10 @@ void Match::Process() {
     if (IsInPlay()) {
       if (GetBestPossessionTeam()) {
         float sideValue = 0;
-        sideValue += (GetTeam(0)->GetFadingTeamPossessionAmount() - 0.5f) * GetTeam(0)->GetSide();
-        sideValue += (GetTeam(1)->GetFadingTeamPossessionAmount() - 0.5f) * GetTeam(1)->GetSide();
+        sideValue += (GetTeam(0)->GetFadingTeamPossessionAmount() - 0.5f) *
+                     GetTeam(0)->GetDynamicSide();
+        sideValue += (GetTeam(1)->GetFadingTeamPossessionAmount() - 0.5f) *
+                     GetTeam(1)->GetDynamicSide();
         possessionSideHistory.Insert(sideValue);
       }
     }
@@ -961,9 +963,9 @@ void Match::Process() {
 
   if (autoUpdateIngameCamera) {
     if (GetScenarioConfig().render) {
-      MaybeMirror(false, true, false);
+      Mirror(false, true, false);
       UpdateIngameCamera();
-      MaybeMirror(false, true, false);
+      Mirror(false, true, false);
     }
     if (IsGoalScored() && goalScoredTimer == 6000) {
       pause = true;
@@ -1001,15 +1003,15 @@ void Match::Process() {
 
 void Match::PreparePutBuffers() {
   if (!GetPause()) {
-    MaybeMirror(false, false, first_team == 1);
+    Mirror(false, false, first_team == 1);
     teams[first_team]->PreparePutBuffers();
-    MaybeMirror(false, false, true);
+    Mirror(false, false, true);
     teams[second_team]->PreparePutBuffers();
-    MaybeMirror(false, false, first_team == 0);
+    Mirror(false, false, first_team == 0);
 
-    MaybeMirror(false, false, first_team == 1);
+    Mirror(false, false, first_team == 1);
     officials->PreparePutBuffers();
-    MaybeMirror(false, false, first_team == 1);
+    Mirror(false, false, first_team == 1);
   }
 }
 
@@ -1035,10 +1037,8 @@ void Match::Put() {
 
   if (!GetPause()) {
     ball->Put();
-    teams[first_team]->Put(GetScenarioConfig().symmetric_mode &&
-                           GetScenarioConfig().reverse_team_processing);
-    teams[second_team]->Put(GetScenarioConfig().symmetric_mode &&
-                            !GetScenarioConfig().reverse_team_processing);
+    teams[first_team]->Put(GetScenarioConfig().reverse_team_processing);
+    teams[second_team]->Put(!GetScenarioConfig().reverse_team_processing);
     officials->Put();
 
   }
@@ -1048,10 +1048,8 @@ void Match::Put() {
     return;
   }
   if (!pause) {
-    teams[first_team]->Put2D(GetScenarioConfig().symmetric_mode &&
-                             GetScenarioConfig().reverse_team_processing);
-    teams[second_team]->Put2D(GetScenarioConfig().symmetric_mode &&
-                              !GetScenarioConfig().reverse_team_processing);
+    teams[first_team]->Put2D(GetScenarioConfig().reverse_team_processing);
+    teams[second_team]->Put2D(!GetScenarioConfig().reverse_team_processing);
 
     //if (buf_actualTime_ms % 100 == 0) { // a better way would be to count iterations (this modulo is irregular since not all process runs are put)
       // clock
@@ -1073,7 +1071,7 @@ void Match::Put() {
 
     // radar
 
-    radar->Put(GetScenarioConfig().symmetric_mode);
+    radar->Put();
 
 
     UpdateGoalNetting(GetBall()->BallTouchesNet());

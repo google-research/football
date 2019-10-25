@@ -55,7 +55,7 @@ namespace blunted {
       virtual void OnLoad() = 0;
       virtual void OnUnload() = 0;
 
-      virtual ISystemObject *CreateSystemObject(boost::intrusive_ptr<Object> object) = 0;
+      virtual ISystemObject *CreateSystemObject(Object* object) = 0;
 
     protected:
 

@@ -36,7 +36,7 @@ namespace blunted {
       void ReloadAvatars(int teamID, unsigned int playerCount);
 
       virtual void Process();
-      void Put(bool mirror);
+      void Put();
 
     protected:
       Gui2Image *bg;

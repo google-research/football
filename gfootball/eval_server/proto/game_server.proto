@@ -38,6 +38,7 @@ message CreateGameRequest {
   string game_id = 1;
   string left_player = 2;
   string right_player = 3;
+  bool include_rendering = 4;
 }
 
 message CreateGameResponse {}

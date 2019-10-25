@@ -33,6 +33,11 @@ _unused_engines = []
 _unused_rendering_engine = None
 _active_rendering = False
 
+try:
+  import cv2
+except ImportError:
+  import cv2
+
 
 class FootballEnvCore(object):
 
@@ -309,3 +314,22 @@ class FootballEnvCore(object):
   def set_state(self, state):
     return self._env.set_state(state)
 
+
+  def render(self, mode):
+    if 'frame' not in self._observation:
+      assert not self._config['render']
+      state = self.get_state()
+      self.close()
+      self._config['render'] = True
+      self.reset(self._trace)
+      self.set_state(state)
+      self._retrieve_observation()
+      assert 'frame' in self._observation
+    frame = self._observation['frame']
+    b,g,r = cv2.split(frame)
+    frame_rgb = cv2.merge((r,g,b))
+    if mode == 'rgb_array':
+      return frame_rgb
+    elif mode == 'human':
+      return True
+    return False

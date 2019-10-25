@@ -34,7 +34,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='gfootball.eval_server',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n(gfootball/eval_server/proto/master.proto\x12\x15gfootball.eval_server\"]\n\x10StartGameRequest\x12\x14\n\x0cgame_version\x18\x01 \x01(\t\x12\x10\n\x08username\x18\x02 \x01(\t\x12\r\n\x05token\x18\x03 \x01(\t\x12\x12\n\nmodel_name\x18\x04 \x01(\t\"A\n\x11StartGameResponse\x12\x1b\n\x13game_server_address\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t2j\n\x06Master\x12`\n\tStartGame\x12\'.gfootball.eval_server.StartGameRequest\x1a(.gfootball.eval_server.StartGameResponse\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n(gfootball/eval_server/proto/master.proto\x12\x15gfootball.eval_server\"x\n\x10StartGameRequest\x12\x14\n\x0cgame_version\x18\x01 \x01(\t\x12\x10\n\x08username\x18\x02 \x01(\t\x12\r\n\x05token\x18\x03 \x01(\t\x12\x12\n\nmodel_name\x18\x04 \x01(\t\x12\x19\n\x11include_rendering\x18\x05 \x01(\x08\"A\n\x11StartGameResponse\x12\x1b\n\x13game_server_address\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t2j\n\x06Master\x12`\n\tStartGame\x12\'.gfootball.eval_server.StartGameRequest\x1a(.gfootball.eval_server.StartGameResponse\"\x00\x62\x06proto3')
 )
 
 
@@ -75,6 +75,13 @@ _STARTGAMEREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='include_rendering', full_name='gfootball.eval_server.StartGameRequest.include_rendering', index=4,
+      number=5, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -88,7 +95,7 @@ _STARTGAMEREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=67,
-  serialized_end=160,
+  serialized_end=187,
 )
 
 
@@ -125,8 +132,8 @@ _STARTGAMERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=162,
-  serialized_end=227,
+  serialized_start=189,
+  serialized_end=254,
 )
 
 DESCRIPTOR.message_types_by_name['StartGameRequest'] = _STARTGAMEREQUEST
@@ -155,8 +162,8 @@ _MASTER = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=229,
-  serialized_end=335,
+  serialized_start=256,
+  serialized_end=362,
   methods=[
   _descriptor.MethodDescriptor(
     name='StartGame',

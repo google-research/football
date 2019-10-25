@@ -35,9 +35,9 @@ MentalImage::MentalImage(Match *match) : timeStamp_ms(match->GetActualTime_ms())
     playerImage.player = player;
     playerImage.position = player->GetPosition();
     playerImage.directionVec = player->GetDirectionVec();
-    playerImage.velocity = player->GetFloatVelocity();
+    playerImage.velocity = player->GetEnumVelocity();
     playerImage.movement = player->GetMovement();
-    playerImage.dynamicFormationEntry = player->GetDynamicFormationEntry();
+    playerImage.role = player->GetDynamicFormationEntry().role;
   }
 
   UpdateBallPredictions();
@@ -109,7 +109,7 @@ std::vector<PlayerImagePosition> MentalImage::GetTeamPlayerImages(int teamID) co
       Vector3 position = player.position + extrapolation;
       position = position.EnforceMaximumDeviation(player.player->GetPosition(), maxDistanceDeviation);
       Vector3 movement = player.movement.EnforceMaximumDeviation(player.player->GetMovement(), maxMovementDeviation); // new
-      result.emplace_back(position, movement, player.dynamicFormationEntry.role);
+      result.emplace_back(position, movement, player.role);
     }
   }
   return result;

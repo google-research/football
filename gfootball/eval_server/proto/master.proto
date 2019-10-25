@@ -8,6 +8,7 @@ message StartGameRequest {
   string username = 2;
   string token = 3;
   string model_name = 4;
+  bool include_rendering = 5;
 }
 
 message StartGameResponse {

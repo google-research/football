@@ -153,14 +153,13 @@ namespace blunted {
     state->process(position);
     state->process(rotation);
     state->process(scale);
-    state->process(_dirty_DerivedPosition);
-    state->process(_dirty_DerivedRotation);
-    state->process(_dirty_DerivedScale);
-    state->process(_cache_DerivedPosition);
-    state->process(_cache_DerivedRotation);
-    state->process(_cache_DerivedScale);
     state->process((void*) &localMode, sizeof(localMode));
-    aabb.ProcessState(state);
+    if (state->Load()) {
+      _dirty_DerivedPosition = true;
+      _dirty_DerivedRotation = true;
+      _dirty_DerivedScale = true;
+      aabb.dirty = true;
+    }
     for (auto& node : nodes) {
       node->ProcessState(state);
     }

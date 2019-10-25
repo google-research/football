@@ -98,6 +98,7 @@ class EnvState {
   }
   bool Load() { return load; }
   void process(void* ptr, int size);
+  bool eos();
   template<typename T> void process(T* ptr, int size) {
     if (load) {
       if (pos + size > state.size()) {

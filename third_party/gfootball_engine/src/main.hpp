@@ -82,12 +82,8 @@ struct ScenarioConfig {
   bool reverse_team_processing = false;
   // Is rendering enabled.
   bool render = true;
-  // Left team AI difficulty level, from 0.0 to 1.0.
-  float left_team_difficulty = 1.0;
-  // Right team AI difficulty level, from 0.0 to 1.0.
-  float right_team_difficulty = 0.8;
-  // Use symmetric mode, which makes sure game if fully symmetric.
-  bool symmetric_mode = false;
+  // team AI difficulty level, from 0.0 to 1.0.
+  float team_difficulty = 1.0;
 
   bool LeftTeamOwnsBall() {
     float leftDistance = 1000000;

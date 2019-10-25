@@ -31,7 +31,7 @@ bool AIControlledKeyboard::GetPreviousButtonState(e_ButtonFunction buttonFunctio
 }
 
 Vector3 AIControlledKeyboard::GetDirection() {
-  return direction_;
+  return direction_ * mirror;
 }
 
 void AIControlledKeyboard::SetDirection(const Vector3& new_direction) {
@@ -44,6 +44,13 @@ void AIControlledKeyboard::Reset() {
 }
 
 void AIControlledKeyboard::ProcessState(EnvState* state) {
+  state->setValidate(false);
+  state->process(mirror);
   state->process(direction_);
+  state->setValidate(true);
   state->process(buttons_pressed_, sizeof(buttons_pressed_));
+}
+
+void AIControlledKeyboard::Mirror(float mirror) {
+  this->mirror = mirror;
 }

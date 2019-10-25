@@ -18,7 +18,6 @@ It creates remote football game with given credentials and plays a few games.
 """
 
 import random
-import time
 
 from absl import app
 from absl import flags
@@ -33,6 +32,7 @@ flags.DEFINE_string('username', None, 'Username to use')
 flags.mark_flag_as_required('username')
 flags.DEFINE_string('token', None, 'Token to use.')
 flags.DEFINE_integer('how_many', 1000, 'How many games to play')
+flags.DEFINE_bool('render', False, 'Whether to render a game.')
 flags.DEFINE_string('track', '', 'Name of the competition track.')
 flags.DEFINE_string('model_name', '',
                     'A model identifier to be displayed on the leaderboard.')
@@ -65,7 +65,8 @@ def main(unused_argv):
   model = get_inference_model(FLAGS.inference_model)
   env = football_env.create_remote_environment(
       FLAGS.username, FLAGS.token, FLAGS.model_name, track=FLAGS.track,
-      representation='extracted', stacked=True)
+      representation='extracted', stacked=True,
+      include_rendering=FLAGS.render)
   for _ in range(FLAGS.how_many):
     ob = env.reset()
     cnt = 1

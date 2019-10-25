@@ -28,8 +28,7 @@ class Match;
 class Team {
 
   public:
-    Team(int id, Match *match, TeamData *teamData, float aiDifficulty,
-         int side);
+    Team(int id, Match *match, TeamData *teamData, float aiDifficulty);
     void Mirror();
     bool isMirrored() {
       return mirrored;
@@ -50,7 +49,12 @@ class Team {
     boost::intrusive_ptr<Node> GetSceneNode() { return teamNode; }
 
     int GetID() const { return id; }
-    signed int GetSide();
+    inline signed int GetDynamicSide() {
+      return side;
+    }
+    inline signed int GetStaticSide() {
+      return id == 0 ? -1 : 1;
+    }
     const TeamData *GetTeamData() { return teamData; }
 
     FormationEntry GetFormationEntry(void* player);

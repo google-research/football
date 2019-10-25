@@ -115,6 +115,10 @@ void EnvState::process(blunted::Animation*& value) {
   value = static_cast<blunted::Animation*>(v);
 }
 
+bool EnvState::eos() {
+  return pos == state.size();
+}
+
 void EnvState::process(void* ptr, int size) {
   if (load) {
     if (pos + size > state.size()) {

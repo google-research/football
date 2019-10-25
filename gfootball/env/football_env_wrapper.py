@@ -91,3 +91,6 @@ class FootballEnvWrapper(object):
   def set_state(self, state):
     return self._env.set_state(state)
 
+
+  def render(self, mode):
+    return self._env.render(mode)

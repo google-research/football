@@ -100,11 +100,9 @@ namespace blunted {
     for (int i = 0; i < (signed int)geomVec.size(); i++) {
       float x = geomVec[i].x;
       float y = geomVec[i].y;
-      boost::intrusive_ptr<Geometry> geom = static_pointer_cast<Geometry>(
-          GetContext().object_factory.CreateObject(
-              source->GetName() + " gridGeom @ " + int_to_str(x) + ", " +
-                  int_to_str(y),
-              e_ObjectType_Geometry));
+      boost::intrusive_ptr<Geometry> geom(
+          new Geometry(source->GetName() + " gridGeom @ " + int_to_str(x) +
+                       ", " + int_to_str(y)));
       scene3D->CreateSystemObjects(geom);
       geom->SetGeometryData(geomVec[i].geomData);
       resultNode->AddObject(geom);

@@ -56,7 +56,7 @@ class Match {
     virtual ~Match();
 
     void Exit();
-    void MaybeMirror(bool team_0, bool team_1, bool ball);
+    void Mirror(bool team_0, bool team_1, bool ball);
 
     void SetRandomSunParams();
     void RandomizeAdboards(boost::intrusive_ptr<Node> stadiumNode);
@@ -161,6 +161,7 @@ class Match {
     boost::signals2::signal<void(Match*)> sig_OnExitedMatch;
     int FirstTeam() { return first_team; }
     int SecondTeam() { return second_team; }
+    bool isBallMirrored() { return ball_mirrored; }
 
   private:
     bool CheckForGoal(signed int side, const Vector3& previousBallPos);

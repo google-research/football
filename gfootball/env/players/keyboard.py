@@ -42,6 +42,7 @@ class Player(controller_base.Controller):
 
   def __init__(self, player_config, env_config):
     controller_base.Controller.__init__(self, player_config)
+    self._can_play_right = True
     self._init_done = False
     pygame.init()
     event_queue.add_controller('keyboard')

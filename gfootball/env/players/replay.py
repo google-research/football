@@ -24,6 +24,7 @@ class Player(player_base.PlayerBase):
 
   def __init__(self, player_config, env_config):
     player_base.PlayerBase.__init__(self, player_config)
+    self._can_play_right = True
     with open(player_config['path'], 'rb') as f:
       self._replay = six.moves.cPickle.load(f)
     self._step = 0

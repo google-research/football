@@ -96,7 +96,6 @@ def create_environment(env_name='',
                        extra_players=None,
                        number_of_left_players_agent_controls=1,
                        number_of_right_players_agent_controls=0,
-                       enable_sides_swap=False,
                        channel_dimensions=(
                            observation_preprocessing.SMM_WIDTH,
                            observation_preprocessing.SMM_HEIGHT)):
@@ -166,8 +165,6 @@ def create_environment(env_name='',
         controls.
     number_of_right_players_agent_controls: Number of right players an agent
         controls.
-    enable_sides_swap: Whether to randomly pick a field side at the beginning of
-       each episode for the team that the agent controls.
     channel_dimensions: (width, height) tuple that represents the dimensions of
        SMM or pixels representation.
   Returns:
@@ -180,7 +177,6 @@ def create_environment(env_name='',
   if extra_players is not None:
     players.extend(extra_players)
   c = config.Config({
-      'enable_sides_swap': enable_sides_swap,
       'dump_full_episodes': write_full_episode_dumps,
       'dump_scores': write_goal_dumps,
       'players': players,
@@ -209,7 +205,8 @@ def create_remote_environment(
     rewards='scoring',
     channel_dimensions=(
         observation_preprocessing.SMM_WIDTH,
-        observation_preprocessing.SMM_HEIGHT)):
+        observation_preprocessing.SMM_HEIGHT),
+    include_rendering=False):
   """Creates a remote Google Research Football environment.
 
   Args:
@@ -228,13 +225,14 @@ def create_remote_environment(
        Currently supported rewards are 'scoring' and 'checkpoints'.
     channel_dimensions: (width, height) tuple that represents the dimensions of
        SMM or pixels representation.
+    include_rendering: Whether to return frame as part of the output.
   Returns:
     Google Research Football environment.
   """
   from gfootball.env import remote_football_env
-  env = remote_football_env.RemoteFootballEnv(username, token,
-                                              model_name=model_name,
-                                              track=track)
+  env = remote_football_env.RemoteFootballEnv(
+      username, token, model_name=model_name, track=track,
+      include_rendering=include_rendering)
   env = _apply_output_wrappers(
       env, rewards, representation, channel_dimensions, True, stacked)
   return env

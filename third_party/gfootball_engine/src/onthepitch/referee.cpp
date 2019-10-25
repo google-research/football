@@ -38,7 +38,13 @@ void RefereeBuffer::ProcessState(EnvState* state) {
   state->process(stopTime);
   state->process(prepareTime);
   state->process(startTime);
+  if (GetScenarioConfig().reverse_team_processing) {
+    restartPos.Mirror();
+  }
   state->process(restartPos);
+  if (GetScenarioConfig().reverse_team_processing) {
+    restartPos.Mirror();
+  }
   state->process(taker);
   state->process(endPhase);
 }
@@ -46,7 +52,7 @@ void RefereeBuffer::ProcessState(EnvState* state) {
 Referee::Referee(Match *match) : match(match) {
   buffer.desiredSetPiece = e_GameMode_KickOff;
   buffer.teamID = match->FirstTeam();
-  buffer.setpiece_team = match->GetTeam(GetScenarioConfig().reverse_team_processing ? 1 : 0);
+  buffer.setpiece_team = match->GetTeam(match->FirstTeam());
   buffer.stopTime = 0;
   buffer.prepareTime = 0;
   buffer.startTime = buffer.prepareTime + 2000;
@@ -71,6 +77,10 @@ void Referee::Process() {
   if (match->IsInPlay() && !match->IsInSetPiece()) {
 
     Vector3 ballPos = match->GetBall()->Predict(0);
+    // We process corner setup in not mirrored setup.
+    if (GetScenarioConfig().reverse_team_processing) {
+      ballPos.Mirror();
+    }
 
     // goal kick / corner
 
@@ -84,10 +94,9 @@ void Referee::Process() {
         match->StopPlay();
 
         // corner, goal kick or kick off?
-        signed int lastSide = -1;
         Team *lastTouchTeam = match->GetLastTouchTeam();
         if (lastTouchTeam == 0) lastTouchTeam = match->GetTeam(GetScenarioConfig().reverse_team_processing ? 1 : 0);
-        lastSide = lastTouchTeam->GetSide();
+        signed int lastSide = lastTouchTeam->GetStaticSide();
 
         if (match->IsGoalScored()) {
           buffer.desiredSetPiece = e_GameMode_KickOff;
@@ -109,15 +118,14 @@ void Referee::Process() {
           if (y > 0) y = pitchHalfH; else
                      y = -pitchHalfH;
           buffer.restartPos = Vector3(pitchHalfW * lastSide, y, 0);
-          buffer.teamID = abs(lastTouchTeam->GetID() - 1);
-
+          buffer.teamID = 1 - lastTouchTeam->GetID();
         } else {
           buffer.desiredSetPiece = e_GameMode_GoalKick;
           buffer.stopTime = match->GetActualTime_ms();
           buffer.prepareTime = match->GetActualTime_ms() + 2000;
           buffer.startTime = buffer.prepareTime + 2000;
           buffer.restartPos = Vector3(pitchHalfW * 0.92 * -lastSide, 0, 0);
-          buffer.teamID = abs(lastTouchTeam->GetID() - 1);
+          buffer.teamID = 1 - lastTouchTeam->GetID();
         }
 
         buffer.active = true;
@@ -134,7 +142,7 @@ void Referee::Process() {
           match->StopPlay();
           Team *lastTouchTeam = match->GetLastTouchTeam();
           if (lastTouchTeam == 0) lastTouchTeam = match->GetTeam(0);
-          buffer.teamID = abs(lastTouchTeam->GetID() - 1);
+          buffer.teamID = 1 - lastTouchTeam->GetID();
           buffer.desiredSetPiece = e_GameMode_ThrowIn;
           buffer.stopTime = match->GetActualTime_ms();
           buffer.prepareTime = match->GetActualTime_ms() + 2000;
@@ -197,8 +205,9 @@ void Referee::Process() {
 
 void Referee::PrepareSetPiece(e_GameMode setPiece) {
   // position players for set piece situation
-
-  match->ResetSituation(buffer.restartPos);
+  match->ResetSituation(GetScenarioConfig().reverse_team_processing
+                            ? -buffer.restartPos
+                            : buffer.restartPos);
 
   match->GetTeam(match->FirstTeam())
       ->GetController()
@@ -265,7 +274,8 @@ void Referee::BallTouched() {
     team->GetActivePlayers(players);
     for (auto player : players) {
       if (player != team->GetLastTouchPlayer()) {
-        if (player->GetPosition().coords[0] * team->GetSide() < offside * team->GetSide()) {
+        if (player->GetPosition().coords[0] * team->GetDynamicSide() <
+            offside * team->GetDynamicSide()) {
           offsidePlayers.push_back(player);
         }
       }
@@ -347,7 +357,11 @@ bool Referee::CheckFoul() {
 
   bool penalty = false;
   if (foul.foulType != 0) {
-    if (fabs(foul.foulPosition.coords[1]) < 20.15 - lineHalfW && foul.foulPosition.coords[0] * -foul.foulVictim->GetTeam()->GetSide() > pitchHalfW - 16.5 + lineHalfW) penalty = true;
+    if (fabs(foul.foulPosition.coords[1]) < 20.15 - lineHalfW &&
+        foul.foulPosition.coords[0] *
+                -foul.foulVictim->GetTeam()->GetStaticSide() >
+            pitchHalfW - 16.5 + lineHalfW)
+      penalty = true;
   }
 
   if (foul.advantage) {
@@ -386,7 +400,9 @@ bool Referee::CheckFoul() {
       buffer.prepareTime = match->GetActualTime_ms() + 2000;
       if (foul.foulType >= 2) buffer.prepareTime += 10000;
       buffer.startTime = buffer.prepareTime + 2000;
-      buffer.restartPos = Vector3((pitchHalfW - 11.0) * foul.foulPlayer->GetTeam()->GetSide(), 0, 0);
+      buffer.restartPos = Vector3(
+          (pitchHalfW - 11.0) * foul.foulPlayer->GetTeam()->GetStaticSide(), 0,
+          0);
     }
     buffer.teamID = foul.foulVictim->GetTeam()->GetID();
     buffer.active = true;

@@ -89,7 +89,6 @@ struct Anim {
   int frameNum = 0;
   e_FunctionType functionType = e_FunctionType_None;
   e_InterruptAnim originatingInterrupt = e_InterruptAnim_None;
-  Vector3 fullActionSmuggle; // without cheatdiscarddistance
   Vector3 actionSmuggle;
   Vector3 actionSmuggleOffset;
   Vector3 actionSmuggleSustain;
@@ -99,7 +98,6 @@ struct Anim {
   RotationSmuggle rotationSmuggle;
   radian rotationSmuggleOffset = 0;
   signed int touchFrame = -1;
-  float radiusOffset = 0.0f;
   Vector3 touchPos;
   Vector3 incomingMovement;
   Vector3 outgoingMovement;
@@ -112,7 +110,6 @@ struct Anim {
     state->process(frameNum);
     state->process(static_cast<void*>(&functionType), sizeof(functionType));
     state->process(static_cast<void*>(&originatingInterrupt), sizeof(originatingInterrupt));
-    state->process(fullActionSmuggle);
     state->process(actionSmuggle);
     state->process(actionSmuggleOffset);
     state->process(actionSmuggleSustain);
@@ -122,7 +119,6 @@ struct Anim {
     rotationSmuggle.ProcessState(state);
     state->process(rotationSmuggleOffset);
     state->process(touchFrame);
-    state->process(radiusOffset);
     state->process(touchPos);
     state->process(incomingMovement);
     state->process(outgoingMovement);
@@ -258,7 +254,7 @@ class HumanoidBase {
     inline radian GetRelBodyAngle() const { return spatialState.relBodyAngle; }
     inline e_Velocity GetEnumVelocity() const { return spatialState.enumVelocity; }
     inline e_FunctionType GetCurrentFunctionType() const { return currentAnim.functionType; }
-    inline e_FunctionType GetPreviousFunctionType() const { return previousAnim.functionType; }
+    inline e_FunctionType GetPreviousFunctionType() const { return previousAnim_functionType; }
     inline Vector3 GetMovement() const { return spatialState.movement; }
 
     Vector3 GetGeomPosition() { return humanoidNode->GetPosition(); }
@@ -374,7 +370,8 @@ class HumanoidBase {
     BiasedOffsets offsets;
 
     Anim currentAnim;
-    Anim previousAnim;
+    int previousAnim_frameNum;
+    e_FunctionType previousAnim_functionType = e_FunctionType_None;
 
     // position/rotation offsets at the start of currentAnim
     Vector3 startPos;

@@ -81,19 +81,15 @@ class Config(object):
     self._values = {
         'action_set': 'default',
         'custom_display_stats': None,
-        'enable_sides_swap': False,
         'display_game_stats': True,
         'dump_full_episodes': False,
         'dump_scores': False,
-        'left_team_difficulty': 1.0,
-        'right_team_difficulty': 0.6,
+        'team_difficulty': 0.6,
         'players': ['agent:left_players=1'],
         'level': '11_vs_11_stochastic',
         'physics_steps_per_frame': 10,
         'real_time': False,
         'render': False,
-        'reverse_team_processing': False,
-        'symmetric_mode': False,
         'tracesdir': '/tmp/dumps',
         'write_video': False
     }
@@ -126,6 +122,9 @@ class Config(object):
 
   def __setitem__(self, key, value):
     self._values[key] = value
+
+  def __contains__(self, key):
+    return key in self._scenario_values or key in self._values
 
   def get_dictionary(self):
     cfg = copy.deepcopy(self._values)

@@ -35,9 +35,11 @@ class AIControlledKeyboard : public IHIDevice {
     void SetDirection(const Vector3& new_direction);
     virtual void Reset();
     virtual void ProcessState(EnvState* state);
+    virtual void Mirror(float mirror);
 
   private:
     Vector3 direction_;
+    float mirror = 1.0f;
     bool buttons_pressed_[e_ButtonFunction_Size];
 };
 

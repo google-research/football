@@ -17,6 +17,7 @@
 import pickle
 import time
 from absl import logging
+import cv2
 from gfootball.env import football_action_set
 from gfootball.eval_server import config
 from gfootball.eval_server import utils
@@ -38,7 +39,6 @@ class FakeConfig(object):
 
   def __init__(self):
     self._values = {
-        'enable_sides_swap': True,
     }
 
   def number_of_players_agent_controls(self):
@@ -50,10 +50,12 @@ class FakeConfig(object):
 
 class RemoteFootballEnv(gym.Env):
 
-  def __init__(self, username, token, model_name='', track='default'):
+  def __init__(self, username, token, model_name='', track='default',
+               include_rendering=False):
     self._config = FakeConfig()
     self._num_actions = len(football_action_set.action_set_dict['default'])
     self._track = track
+    self._include_rendering = include_rendering
 
     self._username = username
     self._token = token
@@ -104,7 +106,8 @@ class RemoteFootballEnv(gym.Env):
     # Get game server address and side id from master.
     start_game_request = master_pb2.StartGameRequest(
         game_version=config.game_version, username=self._username,
-        token=self._token, model_name=self._model_name)
+        token=self._token, model_name=self._model_name,
+        include_rendering=self._include_rendering)
     response = self._reset_with_retries(start_game_request)
     self._game_id = response.game_id
     self._channel = utils.get_grpc_channel(response.game_server_address)
@@ -121,6 +124,13 @@ class RemoteFootballEnv(gym.Env):
         stub = master_pb2_grpc.MasterStub(self._master_channel)
         response = stub.StartGame(request, timeout=10*60)
         return response
+      except grpc.RpcError as e:
+        if e.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
+          continue
+        logging.warning('Exception during request: %s', e)
+        time.sleep(time_to_sleep)
+        if time_to_sleep < 1000:
+          time_to_sleep *= 2
       except BaseException as e:
         logging.warning('Exception during request: %s', e)
         logging.warning('Sleeping for %d seconds', time_to_sleep)
@@ -162,7 +172,10 @@ class RemoteFootballEnv(gym.Env):
     return env_result[0], env_result[1], env_result[2], env_result[3]
 
   def _process_env_result(self, env_result):
-    done = env_result[2]
+    ob, rew, done, info = env_result
+    if self._include_rendering and 'frame' in info:
+      cv2.imshow('GRF League', info['frame'][..., ::-1])
+      cv2.waitKey(1)
     if done:
       self._game_id = None
       self._channel.close()

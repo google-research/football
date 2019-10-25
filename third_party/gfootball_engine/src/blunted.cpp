@@ -37,8 +37,6 @@
 
 namespace blunted {
 
-  void RegisterObjectTypes(ObjectFactory* objectFactory);
-
   void Initialize(Properties &config) {
     // initialize resource managers
     GetContext().geometry_manager.RegisterLoader("ase",
@@ -50,7 +48,6 @@ namespace blunted {
     GetContext().surface_manager.RegisterLoader("bmp",
                                                 &GetContext().imageLoader);
     TTF_Init();
-    RegisterObjectTypes(&GetContext().object_factory);
   }
 
   void ProcessState(EnvState *state) {
@@ -63,26 +60,8 @@ namespace blunted {
   void Exit() {
     GetContext().scene2D->Exit();
     GetContext().scene3D->Exit();
-    GetContext().object_factory.Exit();
     GetContext().graphicsSystem->Exit();
     TTF_Quit();
     SDL_Quit();
   }
-
-
-  // additional functions
-
-  void RegisterObjectTypes(ObjectFactory *objectFactory) {
-    boost::intrusive_ptr<Camera> camera(new Camera("Camera prototype"));
-    objectFactory->RegisterPrototype(e_ObjectType_Camera, camera);
-    boost::intrusive_ptr<Image2D> image2D(new Image2D("Image2D prototype"));
-    objectFactory->RegisterPrototype(e_ObjectType_Image2D, image2D);
-    boost::intrusive_ptr<Geometry> geometry(new Geometry("Geometry prototype"));
-    objectFactory->RegisterPrototype(e_ObjectType_Geometry, geometry);
-    boost::intrusive_ptr<Skybox> skybox(new Skybox("Skybox prototype"));
-    objectFactory->RegisterPrototype(e_ObjectType_Skybox, skybox);
-    boost::intrusive_ptr<Light> light(new Light("Light prototype"));
-    objectFactory->RegisterPrototype(e_ObjectType_Light, light);
-  }
-
 }

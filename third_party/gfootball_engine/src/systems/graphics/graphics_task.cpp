@@ -43,18 +43,15 @@ namespace blunted {
     if (GetContext().scene2D) {
       GetContext().scene2D->PokeObjects(e_ObjectType_Image2D, e_SystemType_Graphics);
     }
-    if (GetContext().scene3D) {
-      std::list < boost::intrusive_ptr<Camera> > cameras;
-      GetContext().scene3D->GetObjects<Camera>(e_ObjectType_Camera, cameras);
-      std::list < boost::intrusive_ptr<Camera> >::iterator cameraIter = cameras.begin();
-      // enqueue all camera views
-      while (cameraIter != cameras.end()) {
-        if ((*cameraIter)->IsEnabled()) {
-          Execute(*cameraIter);
-        }
-        cameraIter++;
+    std::list < boost::intrusive_ptr<Camera> > cameras;
+    GetContext().scene3D->GetObjects<Camera>(e_ObjectType_Camera, cameras);
+    std::list < boost::intrusive_ptr<Camera> >::iterator cameraIter = cameras.begin();
+    // enqueue all camera views
+    while (cameraIter != cameras.end()) {
+      if ((*cameraIter)->IsEnabled()) {
+        Execute(*cameraIter);
       }
-
+      cameraIter++;
     }
   }
 
@@ -62,14 +59,10 @@ namespace blunted {
     Renderer3D *renderer3D = graphicsSystem->GetRenderer3D();
 
     // poke lights
-    if (GetContext().scene3D) {
-      GetContext().scene3D->PokeObjects(e_ObjectType_Light, e_SystemType_Graphics);
-    }
+    GetContext().scene3D->PokeObjects(e_ObjectType_Light, e_SystemType_Graphics);
 
     // poke camera
-    if (GetContext().scene3D) {
-      GetContext().scene3D->PokeObjects(e_ObjectType_Camera, e_SystemType_Graphics);
-    }
+    GetContext().scene3D->PokeObjects(e_ObjectType_Camera, e_SystemType_Graphics);
     // render the Overlay2D queue
     auto &overlay2DQueue = graphicsSystem->GetOverlay2DQueue();
     bool isMessage = true;
@@ -85,84 +78,77 @@ namespace blunted {
   }
 
   bool GraphicsTask::Execute(boost::intrusive_ptr<Camera> camera) {
-    if (GetContext().scene3D) {
-      // test
-      // camera->SetPosition(Vector3(sin((float)GetContext().environment_manager.GetTime_ms()
-      // * 0.001f) * 60, 0, 0), true);
-      Vector3 cameraPos = camera->GetDerivedPosition();
-      Quaternion cameraRot = camera->GetDerivedRotation();
-      float nearCap, farCap;
-      camera->GetCapping(nearCap, farCap);
+    // test
+    // camera->SetPosition(Vector3(sin((float)GetContext().environment_manager.GetTime_ms()
+    // * 0.001f) * 60, 0, 0), true);
+    Vector3 cameraPos = camera->GetDerivedPosition();
+    Quaternion cameraRot = camera->GetDerivedRotation();
+    float nearCap, farCap;
+    camera->GetCapping(nearCap, farCap);
 
-      float fov = camera->GetFOV() * 2.0f;
-      float wideScreenMultiplier = 2.5f;
-      vector_Planes bounding;
-      Plane plane(cameraPos + cameraRot * Vector3(0, 0, -nearCap), cameraRot * Vector3(0, 0, -1).GetNormalized());
-      bounding.push_back(plane);
-      plane.Set(cameraPos, cameraRot * Vector3(0, (3.6f * wideScreenMultiplier) / (fov / 24.0f), -1).GetNormalized());
-      bounding.push_back(plane);
-      plane.Set(cameraPos, cameraRot * Vector3(0, (-3.6f * wideScreenMultiplier) / (fov / 24.0f), -1).GetNormalized());
-      bounding.push_back(plane);
-      plane.Set(cameraPos, cameraRot * Vector3(2.4f / (fov / 24.0f), 0, -1).GetNormalized());
-      bounding.push_back(plane);
-      plane.Set(cameraPos, cameraRot * Vector3(-2.4f / (fov / 24.0f), 0, -1).GetNormalized());
-      bounding.push_back(plane);
-      plane.Set(cameraPos + cameraRot * Vector3(0, 0, -farCap), cameraRot * Vector3(0, 0, 1).GetNormalized());
-      bounding.push_back(plane);
+    float fov = camera->GetFOV() * 2.0f;
+    float wideScreenMultiplier = 2.5f;
+    vector_Planes bounding;
+    Plane plane(cameraPos + cameraRot * Vector3(0, 0, -nearCap), cameraRot * Vector3(0, 0, -1).GetNormalized());
+    bounding.push_back(plane);
+    plane.Set(cameraPos, cameraRot * Vector3(0, (3.6f * wideScreenMultiplier) / (fov / 24.0f), -1).GetNormalized());
+    bounding.push_back(plane);
+    plane.Set(cameraPos, cameraRot * Vector3(0, (-3.6f * wideScreenMultiplier) / (fov / 24.0f), -1).GetNormalized());
+    bounding.push_back(plane);
+    plane.Set(cameraPos, cameraRot * Vector3(2.4f / (fov / 24.0f), 0, -1).GetNormalized());
+    bounding.push_back(plane);
+    plane.Set(cameraPos, cameraRot * Vector3(-2.4f / (fov / 24.0f), 0, -1).GetNormalized());
+    bounding.push_back(plane);
+    plane.Set(cameraPos + cameraRot * Vector3(0, 0, -farCap), cameraRot * Vector3(0, 0, 1).GetNormalized());
+    bounding.push_back(plane);
 
-      // altogether function (may be slow in scenes with lots of objects)
+    // altogether function (may be slow in scenes with lots of objects)
 
-      std::deque < boost::intrusive_ptr<Object> > visibleObjects;
-      //std::list < boost::intrusive_ptr<Object> > visibleObjects;
-      GetContext().scene3D->GetObjects(visibleObjects, bounding);
+    std::deque < boost::intrusive_ptr<Object> > visibleObjects;
+    GetContext().scene3D->GetObjects(visibleObjects, bounding);
 
-      std::deque < boost::intrusive_ptr<Geometry> > visibleGeometry;
-      std::deque < boost::intrusive_ptr<Light> > visibleLights;
-      std::deque < boost::intrusive_ptr<Skybox> > skyboxes;
+    std::deque < boost::intrusive_ptr<Geometry> > visibleGeometry;
+    std::deque < boost::intrusive_ptr<Light> > visibleLights;
+    std::deque < boost::intrusive_ptr<Skybox> > skyboxes;
 
-      std::deque < boost::intrusive_ptr<Object> >::iterator objectIter = visibleObjects.begin();
-      while (objectIter != visibleObjects.end()) {
-        if ((*objectIter)->IsEnabled()) {
-          e_ObjectType objectType = (*objectIter)->GetObjectType();
-          if      (objectType == e_ObjectType_Geometry) visibleGeometry.push_back(boost::static_pointer_cast<Geometry>(*objectIter));
-          else if (objectType == e_ObjectType_Light)    visibleLights.push_back(boost::static_pointer_cast<Light>(*objectIter));
-          else if (objectType == e_ObjectType_Skybox)   skyboxes.push_back(boost::static_pointer_cast<Skybox>(*objectIter));
-        }
-        objectIter++;
+    std::deque < boost::intrusive_ptr<Object> >::iterator objectIter = visibleObjects.begin();
+    while (objectIter != visibleObjects.end()) {
+      if ((*objectIter)->IsEnabled()) {
+        e_ObjectType objectType = (*objectIter)->GetObjectType();
+        if      (objectType == e_ObjectType_Geometry) visibleGeometry.push_back(boost::static_pointer_cast<Geometry>(*objectIter));
+        else if (objectType == e_ObjectType_Light)    visibleLights.push_back(boost::static_pointer_cast<Light>(*objectIter));
+        else if (objectType == e_ObjectType_Skybox)   skyboxes.push_back(boost::static_pointer_cast<Skybox>(*objectIter));
       }
-
-
-      // prepare shadow maps
-      for (auto& light : visibleLights) {
-        if (light->IsEnabled() && light->GetShadow()) {
-          EnqueueShadowMap(camera, light);
-        }
-      }
-      // enqueue camera view
-
-      camera->EnqueueView(visibleGeometry, visibleLights, skyboxes);
+      objectIter++;
     }
 
+
+    // prepare shadow maps
+    for (auto& light : visibleLights) {
+      if (light->IsEnabled() && light->GetShadow()) {
+        EnqueueShadowMap(camera, light);
+      }
+    }
+    // enqueue camera view
+    camera->EnqueueView(visibleGeometry, visibleLights, skyboxes);
     return true;
   }
 
   void GraphicsTask::EnqueueShadowMap(boost::intrusive_ptr<Camera> camera, boost::intrusive_ptr<Light> light) {
 
-    if (GetContext().scene3D) {
-      std::deque < boost::intrusive_ptr<Geometry> > visibleGeometry;
-      vector_Planes bounding;
-      Plane plane(Vector3(0, -40, 0), Vector3(0, 1, 0.3).GetNormalized());
-      bounding.push_back(plane);
-      plane.Set(Vector3(0, 40, 0), Vector3(0, -1, 0.3).GetNormalized());
-      bounding.push_back(plane);
-      plane.Set(Vector3(-60, 0, 0), Vector3(1, 0, 0.3).GetNormalized());
-      bounding.push_back(plane);
-      plane.Set(Vector3(60, 0, 0), Vector3(-1, 0, 0.3).GetNormalized());
-      bounding.push_back(plane);
-      GetContext().scene3D->GetObjects<Geometry>(e_ObjectType_Geometry, visibleGeometry, bounding);
-      //boost::static_pointer_cast<Scene3D>(scene)->GetObjects<Geometry>(e_ObjectType_Geometry, visibleGeometry);
-      light->EnqueueShadowMap(camera, visibleGeometry);
-    }
+    std::deque < boost::intrusive_ptr<Geometry> > visibleGeometry;
+    vector_Planes bounding;
+    Plane plane(Vector3(0, -40, 0), Vector3(0, 1, 0.3).GetNormalized());
+    bounding.push_back(plane);
+    plane.Set(Vector3(0, 40, 0), Vector3(0, -1, 0.3).GetNormalized());
+    bounding.push_back(plane);
+    plane.Set(Vector3(-60, 0, 0), Vector3(1, 0, 0.3).GetNormalized());
+    bounding.push_back(plane);
+    plane.Set(Vector3(60, 0, 0), Vector3(-1, 0, 0.3).GetNormalized());
+    bounding.push_back(plane);
+    GetContext().scene3D->GetObjects<Geometry>(e_ObjectType_Geometry, visibleGeometry, bounding);
+    //boost::static_pointer_cast<Scene3D>(scene)->GetObjects<Geometry>(e_ObjectType_Geometry, visibleGeometry);
+    light->EnqueueShadowMap(camera, visibleGeometry);
   }
 
 }

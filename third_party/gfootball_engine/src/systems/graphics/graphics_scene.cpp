@@ -57,8 +57,8 @@ namespace blunted {
     return boost::intrusive_ptr<GraphicsScene_Scene3DInterpreter>();
   }
 
-  ISystemObject *GraphicsScene::CreateSystemObject(boost::intrusive_ptr<Object> object) {
-    assert(object.get());
+  ISystemObject *GraphicsScene::CreateSystemObject(Object *object) {
+    assert(object);
 
 
     if (object->GetObjectType() == e_ObjectType_Camera) {
@@ -73,7 +73,8 @@ namespace blunted {
     }
     if (object->GetObjectType() == e_ObjectType_Geometry) {
       GraphicsGeometry *graphicsObject = new GraphicsGeometry(this);
-      object->Attach(graphicsObject->GetInterpreter(e_ObjectType_Geometry), object.get());
+      object->Attach(graphicsObject->GetInterpreter(e_ObjectType_Geometry),
+                     object);
       return graphicsObject;
     }
     if (object->GetObjectType() == e_ObjectType_Skybox) {
@@ -90,7 +91,6 @@ namespace blunted {
     return NULL;
   }
 
-
   // Scene3D interpreter
 
   GraphicsScene_Scene3DInterpreter::GraphicsScene_Scene3DInterpreter(GraphicsScene *caller) : caller(caller) {
@@ -104,10 +104,10 @@ namespace blunted {
     caller = 0;
   }
 
-  ISystemObject *GraphicsScene_Scene3DInterpreter::CreateSystemObject(boost::intrusive_ptr<Object> object) {
+  ISystemObject *GraphicsScene_Scene3DInterpreter::CreateSystemObject(
+      Object *object) {
     return caller->CreateSystemObject(object);
   }
-
 
   // Scene2D interpreter
 
@@ -122,8 +122,8 @@ namespace blunted {
     caller = 0;
   }
 
-  ISystemObject *GraphicsScene_Scene2DInterpreter::CreateSystemObject(boost::intrusive_ptr<Object> object) {
+  ISystemObject *GraphicsScene_Scene2DInterpreter::CreateSystemObject(
+      Object *object) {
     return caller->CreateSystemObject(object);
   }
-
 }
