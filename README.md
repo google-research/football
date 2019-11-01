@@ -58,7 +58,7 @@ Then:
 In order to train with nice replays being saved, run
 `python3 -m gfootball.examples.run_ppo2 --dump_full_episodes=True --render=True`
 
-## Playing game yourself
+## Playing the game yourself
 Run `python3 -m gfootball.play_game`. By default, it starts the
 base scenario and the left player is controlled by the keyboard. Different types
 of players are supported (gamepad, external bots, agents...). For possible
