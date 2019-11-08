@@ -71,14 +71,16 @@ class RllibGFootball(MultiAgentEnv):
     o, r, d, i = self.env.step(actions)
     rewards = {}
     obs = {}
+    infos = {}
     for pos, key in enumerate(sorted(action_dict.keys())):
-      rewards[key] = r / len(action_dict)
+      infos[key] = i
       if self.num_agents > 1:
+        rewards[key] = r[pos]
         obs[key] = o[pos]
       else:
+        rewards[key] = r
         obs[key] = o
     dones = {'__all__': d}
-    infos = i
     return obs, rewards, dones, infos
 
 
