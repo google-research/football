@@ -14,14 +14,15 @@
 /* coherent noise function over 1, 2 or 3 dimensions */
 /* (copyright Ken Perlin) */
 
-#include <stdlib.h>
-#include <stdio.h>
+#include "perlin.h"
+
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include <cmath>
 
-#include "perlin.h"
-
+#include "../base/log.hpp"
 #include "../base/math/bluntmath.hpp"
 
 using namespace blunted;
@@ -51,7 +52,6 @@ float Perlin::noise2(float vec[2])
 
 	if (mStart)
   {
-    srand(mSeed);
 		mStart = false;
 		init();
 	}
@@ -169,12 +169,11 @@ float Perlin::perlin_noise_2D(float vec[2])
 
 
 
-Perlin::Perlin(int octaves,float freq,float amp,int seed)
+Perlin::Perlin(int octaves,float freq,float amp)
 {
   mOctaves = octaves;
   mFrequency = freq;
   mAmplitude = amp;
-  mSeed = seed;
   mStart = true;
 }
 

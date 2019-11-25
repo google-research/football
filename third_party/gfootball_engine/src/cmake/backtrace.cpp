@@ -24,4 +24,3 @@ void handler(int sig) {
 void install_stacktrace() {
   signal(SIGSEGV, handler);
 }
-

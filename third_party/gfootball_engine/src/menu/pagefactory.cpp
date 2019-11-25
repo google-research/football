@@ -22,19 +22,18 @@
 #include "../main.hpp"
 
 Gui2Page *PageFactory::GetMostRecentlyCreatedPage() {
+  DO_VALIDATION;
   return windowManager->GetPagePath()->GetMostRecentlyCreatedPage();
 }
 
 Gui2Page *PageFactory::CreatePage(const Gui2PageData &pageData) {
+  DO_VALIDATION;
   windowManager->GetPagePath()->DeleteCurrent();
 
   Gui2Page *page = 0;
 
-  if (GetGameTask()->GetMenuScene()) {
-    GetGameTask()->GetMenuScene()->RandomizeTargetLocation();
-  }
-
   switch (pageData.pageID) {
+    DO_VALIDATION;
 
     case e_PageID_Game:
       page = new GamePage(windowManager, pageData);
@@ -50,10 +49,10 @@ Gui2Page *PageFactory::CreatePage(const Gui2PageData &pageData) {
   }
 
   if (page != 0) {
+    DO_VALIDATION;
     windowManager->GetPagePath()->Push(pageData, page);
     windowManager->GetRoot()->AddView(page);
   }
 
   return page;
-
 }

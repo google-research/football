@@ -18,6 +18,7 @@
 #include <chrono>
 #include "log.hpp"
 #include "../main.hpp"
+#include "../defines.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -32,30 +33,32 @@ std::string now() {
 
 namespace blunted {
 
-  void Log(e_LogType logType, std::string className, std::string methodName, std::string message) {
-    std::string logTypeString;
+void Log(e_LogType logType, std::string className, std::string methodName,
+         std::string message) {
+  std::string logTypeString;
 
-    switch (logType) {
-      case e_Warning:
-        logTypeString = "Warning";
-        break;
-      case e_Error:
-        logTypeString = "ERROR";
-        break;
-      case e_FatalError:
-        logTypeString = "FATAL ERROR !!! N00000 !!!";
-        break;
-    }
-
-    std::string date = now();
-    date = date.substr(0, date.length() - 1);
-    printf("%s [%s] in [%s::%s]: %s\n", date.c_str(),
-            logTypeString.c_str(), className.c_str(), methodName.c_str(),
-            message.c_str());
-
-    if (logType == e_FatalError) {
-      exit(1);
-    }
+  switch (logType) {
+    case e_Warning:
+      logTypeString = "Warning";
+      break;
+    case e_Error:
+      logTypeString = "ERROR";
+      break;
+    case e_FatalError:
+      logTypeString = "FATAL ERROR !!! N00000 !!!";
+      break;
   }
 
+  std::string date = now();
+  date = date.substr(0, date.length() - 1);
+  printf("%s [%s] in [%s::%s]: %s\n", date.c_str(), logTypeString.c_str(),
+         className.c_str(), methodName.c_str(), message.c_str());
+
+  if (logType == e_FatalError) {
+    print_stacktrace();
+    int *foo = (int *)-1;  // make a bad pointer
+    printf("%d\n", *foo);  // causes segfault
+    exit(1);
+  }
+}
 }

@@ -73,8 +73,8 @@ def create_single_football_env(seed):
       env_name=FLAGS.level, stacked=('stacked' in FLAGS.state),
       rewards=FLAGS.reward_experiment,
       logdir=logger.get_dir(),
-      enable_goal_videos=FLAGS.dump_scores and (seed == 0),
-      enable_full_episode_videos=FLAGS.dump_full_episodes and (seed == 0),
+      write_goal_dumps=FLAGS.dump_scores and (seed == 0),
+      write_full_episode_dumps=FLAGS.dump_full_episodes and (seed == 0),
       render=FLAGS.render and (seed == 0),
       dump_frequency=50 if FLAGS.render and seed == 0 else 0)
   env = monitor.Monitor(env, logger.get_dir() and os.path.join(logger.get_dir(),

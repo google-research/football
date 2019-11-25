@@ -17,25 +17,21 @@
 
 #include "mentalimage.hpp"
 
+#include "../../main.hpp"
 #include "../match.hpp"
 
-MentalImage::MentalImage(Match *match) : match(match) {
-  timeStampNeg_ms = 0;
-  maxDistanceDeviation = 2.5f; // if reality is this much (or more) off from mental image, enforce as maximum offset
-  maxMovementDeviation = walkVelocity;
-}
-
-MentalImage::~MentalImage() {
-}
-
-void MentalImage::TakeSnapshot() {
+MentalImage::MentalImage(Match* match)
+    : timeStamp_ms(match->GetActualTime_ms()), match(match) {
+  DO_VALIDATION;
+  timeStamp_ms = match->GetActualTime_ms();
   std::vector<Player*> allPlayers;
-  allPlayers.reserve(players.size());
-  match->GetTeam(0)->GetActivePlayers(allPlayers);
-  match->GetTeam(1)->GetActivePlayers(allPlayers);
+  match->GetTeam(match->FirstTeam())->GetActivePlayers(allPlayers);
+  match->GetTeam(match->SecondTeam())->GetActivePlayers(allPlayers);
   players.resize(allPlayers.size());
 
-  for (int playerCounter = 0; playerCounter < (signed int)allPlayers.size(); playerCounter++) {
+  for (int playerCounter = 0; playerCounter < (signed int)allPlayers.size();
+       playerCounter++) {
+    DO_VALIDATION;
 
     Player *player = allPlayers.at(playerCounter);
 
@@ -43,17 +39,62 @@ void MentalImage::TakeSnapshot() {
     playerImage.player = player;
     playerImage.position = player->GetPosition();
     playerImage.directionVec = player->GetDirectionVec();
-    playerImage.velocity = player->GetFloatVelocity();
+    playerImage.velocity = player->GetEnumVelocity();
     playerImage.movement = player->GetMovement();
-    playerImage.dynamicFormationEntry = player->GetDynamicFormationEntry();
+    playerImage.role = player->GetDynamicFormationEntry().role;
   }
 
   UpdateBallPredictions();
 }
 
-PlayerImage MentalImage::GetPlayerImage(int playerID) const {
+void MentalImage::Mirror(bool team_0, bool team_1, bool ball) {
+  for (auto& i : players) {
+    if (i.player->GetTeamID() == 0 ? team_0 : team_1) {
+      i.Mirror();
+    }
+  }
+  if (ball) {
+    ballPredictions_mirrored = !ballPredictions_mirrored;
+    for (auto& i : ballPredictions) {
+      i.Mirror();
+    }
+  }
+}
+
+int MentalImage::GetTimeStampNeg_ms() const { return match->GetActualTime_ms() - timeStamp_ms; }
+
+void MentalImage::ProcessState(EnvState* state, Match* match) {
+  this->match = match;
+  state->process(timeStamp_ms);
+  state->process(maxDistanceDeviation);
+  state->process(maxMovementDeviation);
+  int size = players.size();
+  state->process(size);
+  players.resize(size);
+  for (auto& p : players) {
+    p.ProcessState(state);
+  }
+  size = ballPredictions.size();
+  state->process(size);
+  ballPredictions.resize(size);
+  for (auto& b : ballPredictions) {
+    if (state->getConfig()->reverse_team_processing &&
+        !ballPredictions_mirrored) {
+      b.Mirror();
+    }
+    state->process(b);
+    if (state->getConfig()->reverse_team_processing &&
+        !ballPredictions_mirrored) {
+      b.Mirror();
+    }
+  }
+}
+
+PlayerImage MentalImage::GetPlayerImage(PlayerBase* p) const {
   for (auto& player : players) {
-    if (player.player->GetID() == playerID) {
+    DO_VALIDATION;
+    if (player.player == p) {
+      DO_VALIDATION;
       PlayerImage newImage = player;
       Vector3 extrapolation = player.movement * GetTimeStampNeg_ms() * 0.001f;
       newImage.position = player.position + extrapolation;
@@ -71,24 +112,27 @@ std::vector<PlayerImagePosition> MentalImage::GetTeamPlayerImages(int teamID) co
   std::vector<PlayerImagePosition> result;
   result.reserve(11);
   for (auto& player : players) {
+    DO_VALIDATION;
     if (player.player->IsActive() && player.player->GetTeamID() == teamID) {
+      DO_VALIDATION;
       Vector3 extrapolation = player.movement * GetTimeStampNeg_ms() * 0.001f;
       Vector3 position = player.position + extrapolation;
       position = position.EnforceMaximumDeviation(player.player->GetPosition(), maxDistanceDeviation);
       Vector3 movement = player.movement.EnforceMaximumDeviation(player.player->GetMovement(), maxMovementDeviation); // new
-      result.emplace_back(position, movement, player.dynamicFormationEntry.role);
+      result.emplace_back(position, movement, player.role);
     }
   }
   return result;
 }
 
 void MentalImage::UpdateBallPredictions() {
+  DO_VALIDATION;
   match->GetBall()->GetPredictionArray(ballPredictions);
 }
 
 Vector3 MentalImage::GetBallPrediction(unsigned int time_ms) const {
 
-  unsigned int index = time_ms + timeStampNeg_ms;
+  unsigned int index = time_ms + match->GetActualTime_ms() - timeStamp_ms;
   if (index >= ballPredictionSize_ms) index = ballPredictionSize_ms - 10;
   index = index / 10;
   if (index < 0) index = 0;

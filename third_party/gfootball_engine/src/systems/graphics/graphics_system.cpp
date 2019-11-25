@@ -26,74 +26,89 @@
 
 namespace blunted {
 
-  GraphicsSystem::GraphicsSystem() {
+GraphicsSystem::GraphicsSystem() { DO_VALIDATION; }
+
+GraphicsSystem::~GraphicsSystem() { DO_VALIDATION; }
+
+void GraphicsSystem::Initialize(bool render) {
+  DO_VALIDATION;
+
+  if (render) {
+    renderer3DTask = new OpenGLRenderer3D();
+  } else {
+    renderer3DTask = new MockRenderer3D();
+  }
+  width = 1280;
+  height = 720;
+  bpp = 32;
+  if (!static_cast<Renderer3D *>(renderer3DTask)
+           ->CreateContext(width, height, bpp, false)) {
+    DO_VALIDATION;
+    Log(e_FatalError, "GraphicsSystem", "Initialize",
+        "Could not create context");
   }
 
-  GraphicsSystem::~GraphicsSystem() {
+  task = new GraphicsTask(this);
+}
+
+void GraphicsSystem::SetContext() {
+  if (renderer3DTask) {
+    renderer3DTask->SetContext();
   }
+}
 
-  void GraphicsSystem::Initialize(const Properties &config) {
-
-    // start thread for renderer
-    std::string renderer = config.Get("graphics3d_renderer", "opengl");
-
-    if (renderer == "opengl" || renderer == "egl" || renderer == "osmesa")
-      renderer3DTask = new OpenGLRenderer3D();
-    if (renderer == "mock") renderer3DTask = new MockRenderer3D();
-    width = config.GetInt("context_x", 1280);
-    height = config.GetInt("context_y", 720);
-    bpp = config.GetInt("context_bpp", 32);
-    bool fullscreen = config.GetBool("context_fullscreen", false);
-
-    if (!static_cast<Renderer3D*>(renderer3DTask)->CreateContext(width, height, bpp, fullscreen)) {
-      Log(e_FatalError, "GraphicsSystem", "Initialize", "Could not create context");
-    }
-
-    task = new GraphicsTask(this);
+void GraphicsSystem::DisableContext() {
+  if (renderer3DTask) {
+    renderer3DTask->DisableContext();
   }
+}
 
+const screenshoot &GraphicsSystem::GetScreen() {
+  return renderer3DTask->GetScreen();
+}
 
-  const screenshoot& GraphicsSystem::GetScreen() {
-    return renderer3DTask->GetScreen();
-  }
+void GraphicsSystem::Exit() {
+  DO_VALIDATION;
+  delete task;
+  task = NULL;
 
-  void GraphicsSystem::Exit() {
-    delete task;
-    task = NULL;
-
-    // shutdown renderer thread
-    delete renderer3DTask;
-    renderer3DTask = NULL;
-  }
+  // shutdown renderer thread
+  delete renderer3DTask;
+  renderer3DTask = NULL;
+}
 
   e_SystemType GraphicsSystem::GetSystemType() const {
     return systemType;
   }
 
-  ISystemScene *GraphicsSystem::CreateSystemScene(boost::shared_ptr<IScene> scene) {
-    if (scene->GetSceneType() == e_SceneType_Scene2D) {
-      GraphicsScene *graphicsScene = new GraphicsScene(this);
-      scene->Attach(graphicsScene->GetInterpreter(e_SceneType_Scene2D));
-      return graphicsScene;
-    }
-    if (scene->GetSceneType() == e_SceneType_Scene3D) {
-      GraphicsScene *graphicsScene = new GraphicsScene(this);
-      scene->Attach(graphicsScene->GetInterpreter(e_SceneType_Scene3D));
-      return graphicsScene;
-    }
-    return NULL;
+  GraphicsScene *GraphicsSystem::Create2DScene(
+      boost::shared_ptr<IScene> scene) {
+    DO_VALIDATION;
+    GraphicsScene *graphicsScene = new GraphicsScene(this);
+    scene->Attach(graphicsScene->GetInterpreter(e_SceneType_Scene2D));
+    return graphicsScene;
   }
 
-  ISystemTask *GraphicsSystem::GetTask() {
+  GraphicsScene *GraphicsSystem::Create3DScene(
+      boost::shared_ptr<IScene> scene) {
+    DO_VALIDATION;
+    GraphicsScene *graphicsScene = new GraphicsScene(this);
+    scene->Attach(graphicsScene->GetInterpreter(e_SceneType_Scene3D));
+    return graphicsScene;
+  }
+
+  GraphicsTask *GraphicsSystem::GetTask() {
+    DO_VALIDATION;
     return task;
   }
 
   Renderer3D *GraphicsSystem::GetRenderer3D() {
+    DO_VALIDATION;
     return renderer3DTask;
   }
 
   MessageQueue<Overlay2DQueueEntry> &GraphicsSystem::GetOverlay2DQueue() {
+    DO_VALIDATION;
     return overlay2DQueue;
   }
-
 }

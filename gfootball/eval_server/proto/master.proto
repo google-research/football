@@ -1,0 +1,23 @@
+
+syntax = "proto3";
+
+package gfootball.eval_server;
+
+message StartGameRequest {
+  string game_version = 1;  // string to check if client and server have matching versions
+  string username = 2;
+  string token = 3;
+  string model_name = 4;
+  bool include_rendering = 5;
+}
+
+message StartGameResponse {
+  string game_server_address = 1;
+  string game_id = 2;
+}
+
+service Master {
+  // Starts a game, returns side id and game server address.
+  rpc StartGame(StartGameRequest) returns (StartGameResponse) {}
+}
+

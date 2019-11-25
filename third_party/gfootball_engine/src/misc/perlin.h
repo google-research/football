@@ -24,7 +24,7 @@
 class Perlin {
 
   public:
-    Perlin(int octaves, float freq, float amp, int seed);
+    Perlin(int octaves, float freq, float amp);
 
     float Get(float x, float y) {
       float vec[2];
@@ -44,7 +44,6 @@ class Perlin {
     int   mOctaves;
     float mFrequency = 0.0f;
     float mAmplitude = 0.0f;
-    int   mSeed;
 
     int p[SAMPLE_SIZE + SAMPLE_SIZE + 2];
     float g3[SAMPLE_SIZE + SAMPLE_SIZE + 2][3];

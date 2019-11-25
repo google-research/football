@@ -58,8 +58,8 @@ namespace blunted {
                            std::vector<unsigned int> indices);
       std::vector < MaterializedTriangleMesh > GetTriangleMeshes();
       std::vector < MaterializedTriangleMesh > &GetTriangleMeshesRef();
-      void SetDynamic(bool dynamic) { isDynamic = dynamic; }
-      bool IsDynamic() { return isDynamic; }
+      void SetDynamic(bool dynamic) { DO_VALIDATION; isDynamic = dynamic; }
+      bool IsDynamic() { DO_VALIDATION; return isDynamic; }
 
       AABB GetAABB() const;
 

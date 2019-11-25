@@ -26,13 +26,45 @@ import gym
 import numpy as np
 
 
+class GetStateWrapper(gym.Wrapper):
+  """A wrapper that only dumps traces/videos periodically."""
+
+  def __init__(self, env):
+    gym.Wrapper.__init__(self, env)
+    self._wrappers_with_support = {
+        'CheckpointRewardWrapper', 'FrameStack', 'GetStateWrapper',
+        'SingleAgentRewardWrapper', 'SingleAgentObservationWrapper',
+        'SMMWrapper', 'PeriodicDumpWriter', 'Simple115StateWrapper',
+        'PixelsStateWrapper'
+    }
+
+  def _check_state_supported(self):
+    o = self
+    while True:
+      name = o.__class__.__name__
+      if o.__class__.__name__ == 'FootballEnv':
+        break
+      assert name in self._wrappers_with_support, (
+          'get/set state not supported'
+          ' by {} wrapper').format(name)
+      o = o.env
+
+  def get_state(self):
+    self._check_state_supported()
+    to_pickle = {}
+    return self.env.get_state(to_pickle)
+
+  def set_state(self, state):
+    self._check_state_supported()
+    self.env.set_state(state)
+
+
 class PeriodicDumpWriter(gym.Wrapper):
   """A wrapper that only dumps traces/videos periodically."""
 
   def __init__(self, env, dump_frequency):
     gym.Wrapper.__init__(self, env)
     self._dump_frequency = dump_frequency
-    self._original_render = env._config['render']
     self._original_dump_config = {
         'write_video': env._config['write_video'],
         'dump_full_episodes': env._config['dump_full_episodes'],
@@ -47,12 +79,12 @@ class PeriodicDumpWriter(gym.Wrapper):
     if (self._dump_frequency > 0 and
         (self._current_episode_number % self._dump_frequency == 0)):
       self.env._config.update(self._original_dump_config)
-      self.env._config.update({'render': True})
+      self.env.render()
     else:
-      self.env._config.update({'render': self._original_render,
-                               'write_video': False,
+      self.env._config.update({'write_video': False,
                                'dump_full_episodes': False,
                                'dump_scores': False})
+      self.env.disable_render()
     self._current_episode_number += 1
     return self.env.reset()
 
@@ -146,7 +178,7 @@ class PixelsStateWrapper(gym.ObservationWrapper):
 
 
 class SMMWrapper(gym.ObservationWrapper):
-  """A wrapper that converts an observation to a minimap."""
+  """A wrapper that returns an observation only for the first agent."""
 
   def __init__(self, env,
                channel_dimensions=(observation_preprocessing.SMM_WIDTH,
@@ -167,7 +199,7 @@ class SMMWrapper(gym.ObservationWrapper):
 
 
 class SingleAgentObservationWrapper(gym.ObservationWrapper):
-  """A wrapper that returns an observation only for the first agent."""
+  """A wrapper that returns a reward only for the first agent."""
 
   def __init__(self, env):
     gym.ObservationWrapper.__init__(self, env)
@@ -181,7 +213,7 @@ class SingleAgentObservationWrapper(gym.ObservationWrapper):
 
 
 class SingleAgentRewardWrapper(gym.RewardWrapper):
-  """A wrapper that returns a reward only for the first agent."""
+  """A wrapper that converts an observation to a minimap."""
 
   def __init__(self, env):
     gym.RewardWrapper.__init__(self, env)
@@ -195,56 +227,62 @@ class CheckpointRewardWrapper(gym.RewardWrapper):
 
   def __init__(self, env):
     gym.RewardWrapper.__init__(self, env)
-    self._collected_checkpoints = {True: 0, False: 0}
+    self._collected_checkpoints = {}
     self._num_checkpoints = 10
     self._checkpoint_reward = 0.1
 
   def reset(self):
-    self._collected_checkpoints = {True: 0, False: 0}
+    self._collected_checkpoints = {}
     return self.env.reset()
 
+  def get_state(self, to_pickle):
+    to_pickle['CheckpointRewardWrapper'] = self._collected_checkpoints
+    return self.env.get_state(to_pickle)
+
+  def set_state(self, state):
+    from_pickle = self.env.set_state(state)
+    self._collected_checkpoints = from_pickle['CheckpointRewardWrapper']
+    return from_pickle
+
   def reward(self, reward):
-    if self.env.unwrapped.last_observation is None:
+    observation = self.env.unwrapped.observation()
+    if observation is None:
       return reward
 
-    assert len(reward) == len(self.env.unwrapped.last_observation)
+    assert len(reward) == len(observation)
 
     for rew_index in range(len(reward)):
-      o = self.env.unwrapped.last_observation[rew_index]
-      is_left_to_right = o['is_left']
-
+      o = observation[rew_index]
       if reward[rew_index] == 1:
         reward[rew_index] += self._checkpoint_reward * (
             self._num_checkpoints -
-            self._collected_checkpoints[is_left_to_right])
-        self._collected_checkpoints[is_left_to_right] = self._num_checkpoints
+            self._collected_checkpoints.get(rew_index, 0))
+        self._collected_checkpoints[rew_index] = self._num_checkpoints
         continue
 
       # Check if the active player has the ball.
       if ('ball_owned_team' not in o or
-          o['ball_owned_team'] != (0 if is_left_to_right else 1) or
+          o['ball_owned_team'] != 0 or
           'ball_owned_player' not in o or
           o['ball_owned_player'] != o['active']):
         continue
 
-      if is_left_to_right:
-        d = ((o['ball'][0] - 1) ** 2 + o['ball'][1] ** 2) ** 0.5
-      else:
-        d = ((o['ball'][0] + 1) ** 2 + o['ball'][1] ** 2) ** 0.5
+      d = ((o['ball'][0] - 1) ** 2 + o['ball'][1] ** 2) ** 0.5
 
       # Collect the checkpoints.
       # We give reward for distance 1 to 0.2.
-      while (self._collected_checkpoints[is_left_to_right] <
+      while (self._collected_checkpoints.get(rew_index, 0) <
              self._num_checkpoints):
         if self._num_checkpoints == 1:
           threshold = 0.99 - 0.8
         else:
           threshold = (0.99 - 0.8 / (self._num_checkpoints - 1) *
-                       self._collected_checkpoints[is_left_to_right])
+                       self._collected_checkpoints.get(rew_index, 0))
         if d > threshold:
           break
         reward[rew_index] += self._checkpoint_reward
-        self._collected_checkpoints[is_left_to_right] += 1
+        self._collected_checkpoints[rew_index] = (
+            self._collected_checkpoints.get(rew_index, 0) + 1)
     return reward
 
 
@@ -265,6 +303,15 @@ class FrameStack(gym.Wrapper):
     observation = self.env.reset()
     self.obs.extend([observation] * self.obs.maxlen)
     return self._get_observation()
+
+  def get_state(self, to_pickle):
+    to_pickle['FrameStack'] = self.obs
+    return self.env.get_state(to_pickle)
+
+  def set_state(self, state):
+    from_pickle = self.env.set_state(state)
+    self.obs = from_pickle['FrameStack']
+    return from_pickle
 
   def step(self, action):
     observation, reward, done, info = self.env.step(action)

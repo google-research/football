@@ -30,21 +30,11 @@
 
 #include "../../base/geometry/triangle.hpp"
 
-Player::Player(Team *team, PlayerData *playerData) : PlayerBase(team->GetMatch(), playerData), team(team) {
-  menuTask = GetMenuTask();
-  hasPossession = false;
-  hasBestPossession = false;
-  hasUniquePossession = false;
-  possessionDuration_ms = 0;
-  timeNeededToGetToBall_ms = 1000;
-  timeNeededToGetToBall_optimistic_ms = 1000;
-  timeNeededToGetToBall_previous_ms = 1000;
+Player::Player(Team *team, PlayerData *playerData)
+    : PlayerBase(team->GetMatch(), playerData), team(team) {
+  DO_VALIDATION;
   SetDesiredTimeToBall_ms(0);
-  manMarkingID = -1;
-  buf_nameCaption = "...";
-  buf_debugCaption = "debug";
   nameCaption = 0;
-  debugCaption = 0;
 
   triggerControlledBallCollision = false;
 
@@ -58,59 +48,81 @@ Player::Player(Team *team, PlayerData *playerData) : PlayerBase(team->GetMatch()
 }
 
 Player::~Player() {
-  if (nameCaption) menuTask->GetWindowManager()->MarkForDeletion(nameCaption);
-  if (debugCaption) menuTask->GetWindowManager()->MarkForDeletion(debugCaption);
-  menuTask.reset();
+  DO_VALIDATION;
+  if (nameCaption) {
+    DO_VALIDATION;
+    nameCaption->Exit();
+    delete nameCaption;
+  }
 }
 
-Humanoid *Player::CastHumanoid() { return static_cast<Humanoid*>(humanoid); }
+Humanoid *Player::CastHumanoid() {
+  DO_VALIDATION;
+  return static_cast<Humanoid *>(humanoid.get());
+}
 
 ElizaController *Player::CastController() {
-  return static_cast<ElizaController*>(controller);
+  DO_VALIDATION;
+  return static_cast<ElizaController *>(controller.get());
 }
 
 int Player::GetTeamID() const {
   return team->GetID();
 }
 
+Vector3 Player::GetPitchPosition() {
+  DO_VALIDATION;
+  Vector3 pos = GetPosition();
+  if (!team->onOriginalSide()) {
+    pos.Mirror();
+  }
+  return pos;
+}
+
 Team *Player::GetTeam() {
+  DO_VALIDATION;
   return team;
 }
 
-void Player::Activate(boost::intrusive_ptr<Node> humanoidSourceNode, boost::intrusive_ptr<Node> fullbodySourceNode, std::map<Vector3, Vector3> &colorCoords, boost::intrusive_ptr < Resource<Surface> > kit, boost::shared_ptr<AnimCollection> animCollection, bool lazyPlayer) {
+void Player::Activate(boost::intrusive_ptr<Node> humanoidSourceNode,
+                      boost::intrusive_ptr<Node> fullbodySourceNode,
+                      std::map<Vector3, Vector3> &colorCoords,
+                      boost::intrusive_ptr<Resource<Surface> > kit,
+                      boost::shared_ptr<AnimCollection> animCollection,
+                      bool lazyPlayer) {
+  DO_VALIDATION;
 
   assert(!isActive);
 
   isActive = true;
 
-  humanoid = new Humanoid(this, humanoidSourceNode, fullbodySourceNode, colorCoords, animCollection, GetTeam()->GetSceneNode(), kit, GetTeam()->GetID());
+  humanoid.reset(new Humanoid(
+      this, humanoidSourceNode, fullbodySourceNode, colorCoords, animCollection,
+      GetTeam()->GetSceneNode(), kit));
 
-  controller = new ElizaController(match, lazyPlayer);
+  controller.reset(new ElizaController(match, lazyPlayer));
   CastController()->SetPlayer(this);
-  CastController()->LoadStrategies();
-
   buf_nameCaptionShowCondition = false;
 
-  nameCaption = new Gui2Caption(GetMenuTask()->GetWindowManager(), "game_player_name_" + int_to_str(id), 0, 0, 1, 2.0, playerData->GetLastName());
+  nameCaption = new Gui2Caption(GetMenuTask()->GetWindowManager(), "game_player_name_" + int_to_str(stable_id), 0, 0, 1, 2.0, playerData->GetLastName());
   nameCaption->SetTransparency(0.3f);
   GetMenuTask()->GetWindowManager()->GetRoot()->AddView(nameCaption);
-  debugCaption = new Gui2Caption(GetMenuTask()->GetWindowManager(), "game_player_debug_" + int_to_str(id), 0, 0, 1, 1.6, "debug");
-  GetMenuTask()->GetWindowManager()->GetRoot()->AddView(debugCaption);
-
-  CastHumanoid()->ResetPosition(GetFormationEntry().position * 25 * Vector3(-team->GetSide(), -team->GetSide(), 0), Vector3(0));
-
+  CastHumanoid()->ResetPosition(
+      GetFormationEntry().position * 25 *
+          Vector3(-team->GetDynamicSide(), -team->GetDynamicSide(), 0),
+      Vector3(0));
   SetDynamicFormationEntry(GetFormationEntry());
 }
 
 void Player::Deactivate() {
+  DO_VALIDATION;
   ResetSituation(GetPosition());
-
-  menuTask->GetWindowManager()->MarkForDeletion(nameCaption);
-  menuTask->GetWindowManager()->MarkForDeletion(debugCaption);
+  nameCaption->Exit();
+  delete nameCaption;
   nameCaption = 0;
-  debugCaption = 0;
 
-  if (team->IsHumanControlled(this->GetID())) {
+  if (team->IsHumanControlled(this)) {
+    DO_VALIDATION;
     team->DeselectPlayer(this); // don't want any humangamer to have control of this player anymore
   }
 
@@ -119,7 +131,8 @@ void Player::Deactivate() {
 }
 
 FormationEntry Player::GetFormationEntry() {
-  return team->GetFormationEntry(id);
+  DO_VALIDATION;
+  return team->GetFormationEntry(this);
 }
 
 bool Player::HasPossession() const {
@@ -140,6 +153,7 @@ bool Player::AllowLastDitch(bool includingPossessionAmount) const {
 }
 
 float Player::GetAverageVelocity(float timePeriod_sec) {
+  DO_VALIDATION;
   assert((int)timePeriod_sec > 0);
   unsigned int logSize = positionHistoryPerSecond.size();
   if (logSize == 0) return 0;
@@ -147,6 +161,7 @@ float Player::GetAverageVelocity(float timePeriod_sec) {
   float totalDistance = 0;
   unsigned int count = 0;
   while (count <= (unsigned int)timePeriod_sec) {
+    DO_VALIDATION;
     Vector3 pos = positionHistoryPerSecond.at(logSize - 1 - count);
     if (count > 0) totalDistance += (pos - prevPos).GetLength();
     count++;
@@ -156,10 +171,8 @@ float Player::GetAverageVelocity(float timePeriod_sec) {
   return totalDistance / timePeriod_sec; // don't divide by count, since lack of entries should not influence average
 }
 
-void Player::UpdatePossessionStats(bool onInterval) {
-
-  if (!onInterval) return;
-
+void Player::UpdatePossessionStats() {
+  DO_VALIDATION;
   timeNeededToGetToBall_previous_ms = timeNeededToGetToBall_ms;
 
   // default
@@ -176,7 +189,9 @@ void Player::UpdatePossessionStats(bool onInterval) {
   if ((CastHumanoid()->GetCurrentFunctionType() == e_FunctionType_ShortPass ||
        CastHumanoid()->GetCurrentFunctionType() == e_FunctionType_LongPass ||
        CastHumanoid()->GetCurrentFunctionType() == e_FunctionType_HighPass ||
-       CastHumanoid()->GetCurrentFunctionType() == e_FunctionType_Shot) && !TouchPending()) {
+       CastHumanoid()->GetCurrentFunctionType() == e_FunctionType_Shot) &&
+      !TouchPending()) {
+    DO_VALIDATION;
     startTime_ms = 500;
   }
 
@@ -185,36 +200,41 @@ void Player::UpdatePossessionStats(bool onInterval) {
   unsigned int previous_ms = 0;
   bool precise = (team->GetDesignatedTeamPossessionPlayer() == this) ? true : false;
   float previousDist = 0; // debug
-  for (unsigned int ms = startTime_ms; ms < ballPredictionSize_ms; ms += timeStep_ms) {
+  for (unsigned int ms = startTime_ms; ms < ballPredictionSize_ms;
+       ms += timeStep_ms) {
+    DO_VALIDATION;
     if (match->GetBall()->Predict(ms).coords[2] < 1.5f) {
+      DO_VALIDATION;
       TimeNeeded result = AI_GetTimeNeededForDistance_ms(GetPosition(), GetMovement(), match->GetBall()->Predict(ms).Get2D(), GetMaxVelocity(), precise, ms);
       unsigned int timeNeeded = result.usual_ms;
       unsigned int timeNeeded_optimistic = result.optimistic_ms;
 
       if (timeNeeded_optimistic <= ms) {
+        DO_VALIDATION;
         if (ms < timeNeededToGetToBall_optimistic_ms) timeNeededToGetToBall_optimistic_ms = ms;
       }
 
       if (timeNeeded <= ms) {
+        DO_VALIDATION;
 
         // refinement round!
         if (!refine) {
+          DO_VALIDATION;
 
           ms = previous_ms;
           timeStep_ms = 10;
           refine = true;
           // found!
         } else {
-
           timeNeededToGetToBall_ms = ms;
           break;
-
         }
       }
     }
 
     // refine timestep (optimisation)
     if (!refine) {
+      DO_VALIDATION;
       float balldist = (GetPosition() - match->GetBall()->Predict(ms).Get2D()).GetLength() + 0.2f; // add a little buffer
       float maxBallVelo = 50;
       // how long does it take for the ball at max velo to travel balldist?
@@ -223,18 +243,21 @@ void Player::UpdatePossessionStats(bool onInterval) {
       timeStep_ms = clamp(timeToGo_ms, 10, 500);
       // round to 10s
       timeStep_ms = (timeStep_ms / 10) * 10;
-    } else timeStep_ms = 10;
+    } else
+      timeStep_ms = 10;
 
     previous_ms = ms;
   }
 
   if (TouchAnim() && TouchPending()) {
+    DO_VALIDATION;
     unsigned int animTimeToBall_ms = (CastHumanoid()->GetTouchFrame() - GetCurrentFrame()) * 10;
     timeNeededToGetToBall_ms = std::min(timeNeededToGetToBall_ms, animTimeToBall_ms);
     timeNeededToGetToBall_optimistic_ms = timeNeededToGetToBall_ms;
   }
 
   if (timeNeededToGetToBall_ms < defaultTouchOffset_ms) {
+    DO_VALIDATION;
     // apply quantum mechanics on the scale of the very small ;)
     timeNeededToGetToBall_ms = NormalizedClamp(((GetPosition() + GetMovement() * (defaultTouchOffset_ms * 0.001)) - match->GetBall()->Predict(defaultTouchOffset_ms).Get2D()).GetLength(), 0.0f, 0.6f) * defaultTouchOffset_ms;
     timeNeededToGetToBall_optimistic_ms = timeNeededToGetToBall_ms;
@@ -243,7 +266,9 @@ void Player::UpdatePossessionStats(bool onInterval) {
   if ((CastHumanoid()->GetCurrentFunctionType() == e_FunctionType_ShortPass ||
        CastHumanoid()->GetCurrentFunctionType() == e_FunctionType_LongPass ||
        CastHumanoid()->GetCurrentFunctionType() == e_FunctionType_HighPass ||
-       CastHumanoid()->GetCurrentFunctionType() == e_FunctionType_Shot) && !TouchPending()) {
+       CastHumanoid()->GetCurrentFunctionType() == e_FunctionType_Shot) &&
+      !TouchPending()) {
+    DO_VALIDATION;
     hasPossession = false;
   } else {
     hasPossession = AI_HasPossession(match->GetBall(), this);
@@ -253,6 +278,7 @@ void Player::UpdatePossessionStats(bool onInterval) {
   this->hasUniquePossession = hasPossession && !match->GetTeam(abs(team->GetID() - 1))->HasPossession();
 
   if (match->GetBallRetainer() == this) {
+    DO_VALIDATION;
     timeNeededToGetToBall_ms = 1;
     timeNeededToGetToBall_optimistic_ms = 1;
     SetDesiredTimeToBall_ms(timeNeededToGetToBall_ms);
@@ -260,11 +286,11 @@ void Player::UpdatePossessionStats(bool onInterval) {
     hasBestPossession = true;
     hasUniquePossession = true;
   } else if (match->GetBallRetainer() != 0) {
+    DO_VALIDATION;
     hasPossession = false;
     hasBestPossession = false;
     hasUniquePossession = false;
   }
-
 }
 
 float Player::GetClosestOpponentDistance() const {
@@ -273,19 +299,27 @@ float Player::GetClosestOpponentDistance() const {
 }
 
 void Player::Process() {
+  DO_VALIDATION;
 
   if (isActive) {
+    DO_VALIDATION;
 
     desiredTimeToBall_ms = std::max(desiredTimeToBall_ms - 10, 0);
 
-    if (externalController) externalController->Process(); else CastController()->Process();
+    if (externalController) externalController->Process();
+    CastController()->Process();
 
     if (match->IsInPlay()) {
+      DO_VALIDATION;
       if (match->GetActualTime_ms() % 1000 == 0) {
+        DO_VALIDATION;
         positionHistoryPerSecond.push_back(GetPosition());
+        DO_VALIDATION;
       }
+      DO_VALIDATION;
       if (hasPossession) possessionDuration_ms += 10; else possessionDuration_ms = 0;
       if ((match->GetActualTime_ms() + GetStableID() * 10) % 100 == 0) {
+        DO_VALIDATION;
         _CalculateTacticalSituation();
       }
     }
@@ -294,129 +328,112 @@ void Player::Process() {
 
     CastHumanoid()->Process();
 
-    Vector3 posAfter = CastHumanoid()->GetPosition();
-
-    float distance = (posAfter - posBefore).GetLength();
-    fatigueFactorInv -= distance * 0.00003f * (2.0f - GetStaminaStat()) * (1.0f / match->GetMatchDurationFactor());
-    fatigueFactorInv = clamp(fatigueFactorInv, 0.01f, 1.0f);
+    if (match->IsInPlay()) {
+      Vector3 posAfter = CastHumanoid()->GetPosition();
+      float distance = (posAfter - posBefore).GetLength();
+      fatigueFactorInv -= distance * 0.00003f * (2.0f - GetStaminaStat()) * (1.0f / match->GetMatchDurationFactor());
+      fatigueFactorInv = clamp(fatigueFactorInv, 0.01f, 1.0f);
+    }
     // Don't send off the last player on the team.
-    if (cards > 1 && cardEffectiveTime_ms <= match->GetActualTime_ms()
-        && GetTeam()->GetActivePlayersCount() > 1) {
+    if (cards > 1 && cardEffectiveTime_ms <= match->GetActualTime_ms() &&
+        GetTeam()->GetActivePlayersCount() > 1) {
+      DO_VALIDATION;
       SendOff();
     }
   }
-
 }
 
-void Player::PreparePutBuffers(unsigned long snapshotTime_ms) {
-
-  PlayerBase::PreparePutBuffers(snapshotTime_ms);
-
-  buf_nameCaptionShowCondition = team->IsHumanControlled(id);
+void Player::PreparePutBuffers() {
+  DO_VALIDATION;
+  PlayerBase::PreparePutBuffers();
+  buf_nameCaptionShowCondition = team->IsHumanControlled(this);
   if (team->GetHumanGamerCount() == 0) buf_nameCaptionShowCondition = team->GetDesignatedTeamPossessionPlayer() == this;
-  e_PlayerColor playerColor = team->GetPlayerColor(id);
-  switch (playerColor) {
-    case e_PlayerColor_Green:
-      buf_playerColor = Vector3(100, 255, 140);
-      break;
-    case e_PlayerColor_Red:
-      buf_playerColor = Vector3(255, 110, 110);
-      break;
-    case e_PlayerColor_Blue:
-      buf_playerColor = Vector3(100, 140, 255);
-      break;
-    case e_PlayerColor_Yellow:
-      buf_playerColor = Vector3(255, 255, 60);
-      break;
-    case e_PlayerColor_Purple:
-      buf_playerColor = Vector3(200, 80, 200);
-      break;
-    case e_PlayerColor_Default:
-      buf_playerColor = Vector3(200, 200, 200);
-      break;
-  };
-
-  std::string name = playerData->GetLastName();
-
-  buf_nameCaption = name;
+  e_PlayerColor playerColor = team->GetPlayerColor(this);
+    switch (playerColor) {
+      case e_PlayerColor_Green:
+        buf_playerColor = Vector3(100, 255, 140);
+        break;
+      case e_PlayerColor_Red:
+        buf_playerColor = Vector3(255, 110, 110);
+        break;
+      case e_PlayerColor_Blue:
+        buf_playerColor = Vector3(100, 140, 255);
+        break;
+      case e_PlayerColor_Yellow:
+        buf_playerColor = Vector3(255, 255, 60);
+        break;
+      case e_PlayerColor_Purple:
+        buf_playerColor = Vector3(200, 80, 200);
+        break;
+      case e_PlayerColor_Default:
+        buf_playerColor = Vector3(200, 200, 200);
+        break;
+    };
 
   if (GetExternalController()) {
-    if (static_cast<HumanController*>(GetExternalController())->GetActionMode() == 1) {
+    DO_VALIDATION;
+    if (static_cast<HumanController *>(GetExternalController())
+            ->GetActionMode() == 1) {
+      DO_VALIDATION;
       //buf_nameCaption += " X";
-    } else if (static_cast<HumanController*>(GetExternalController())->GetActionMode() == 2) {
+    } else if (static_cast<HumanController *>(GetExternalController())
+                   ->GetActionMode() == 2) {
+      DO_VALIDATION;
       //buf_nameCaption += " !";
       buf_playerColor =
           buf_playerColor *
           (std::sin(match->GetActualTime_ms() * 0.02f) * 0.3f + 0.7f);
     }
-
-    //if (hasPossession) buf_nameCaption.append(" P");
   }
-
 }
 
-void Player::FetchPutBuffers(unsigned long putTime_ms) {
+void Player::FetchPutBuffers() {
+  DO_VALIDATION;
 
-  PlayerBase::FetchPutBuffers(putTime_ms);
-
-  fetchedbuf_nameCaptionShowCondition = buf_nameCaptionShowCondition;
-  fetchedbuf_debugCaptionShowCondition = false;
-  fetchedbuf_nameCaption = buf_nameCaption;
-  fetchedbuf_debugCaption = buf_debugCaption;
-  fetchedbuf_nameCaptionPos = buf_nameCaptionPos;
-  fetchedbuf_debugCaptionPos = buf_debugCaptionPos;
-  fetchedbuf_playerColor = buf_playerColor;
-  fetchedbuf_debugCaptionColor = buf_debugCaptionColor;
+  PlayerBase::FetchPutBuffers();
 }
 
-void Player::Put2D() {
-  if (fetchedbuf_nameCaptionShowCondition) {
-    //Vector3 captionPos3D = fetchedbuf_nameCaptionPos;
-    //Vector3 captionPos2D = GetProjectedCoord(captionPos3D, match->GetCamera());
-    Vector3 captionPos3D = GetProjectedCoord(GetGeomPosition() + Vector3(0, 0.5f, 2.4f), match->GetCamera()); // geom pos because in Put2D, we cannot access normal class vars (because multithreading)
+void Player::Put2D(bool mirror) {
+  DO_VALIDATION;
+  if (buf_nameCaptionShowCondition) {
+    DO_VALIDATION;
+    Vector3 captionPos3D = GetGeomPosition();
+    if (mirror) {
+      DO_VALIDATION;
+      captionPos3D *= Vector3(-1, -1, 0);
+    }
+    captionPos3D = GetProjectedCoord(captionPos3D + Vector3(0, 0.5f, 2.4f), match->GetCamera()); // geom pos because in Put2D, we cannot access normal class vars (because multithreading)
     float w, h;
     nameCaption->GetSize(w, h);
-    nameCaption->SetColor(fetchedbuf_playerColor);
-    nameCaption->SetOutlineColor(fetchedbuf_playerColor * 0.4f);
+    nameCaption->SetColor(buf_playerColor);
+    nameCaption->SetOutlineColor(buf_playerColor * 0.4f);
     nameCaption->SetPosition(captionPos3D.coords[0] - w * 0.5f, captionPos3D.coords[1] - h);
 
-    nameCaption->SetCaption(fetchedbuf_nameCaption);
+    nameCaption->SetCaption(playerData->GetLastName());
     nameCaption->Show();
   } else {
     nameCaption->Hide();
   }
-
-  if (fetchedbuf_debugCaptionShowCondition) {
-    Vector3 captionPos3D = GetProjectedCoord(GetGeomPosition() + Vector3(0, 0.3f, 2.0f), match->GetCamera());
-    float w, h;
-    debugCaption->GetSize(w, h);
-    debugCaption->SetPosition(captionPos3D.coords[0] - w * 0.5f, captionPos3D.coords[1] - h);
-    //printf("%s\n", fetchedbuf_debugCaption.c_str());
-    debugCaption->SetCaption(fetchedbuf_debugCaption);
-    debugCaption->SetColor(fetchedbuf_debugCaptionColor);
-    debugCaption->Show();
-  } else {
-    debugCaption->Hide();
-  }
 }
 
 void Player::Hide2D() {
-  if (fetchedbuf_nameCaptionShowCondition) {
+  DO_VALIDATION;
+  if (buf_nameCaptionShowCondition) {
+    DO_VALIDATION;
     assert(nameCaption);
     nameCaption->Hide();
-  }
-  if (fetchedbuf_debugCaptionShowCondition) {
-    assert(debugCaption);
-    debugCaption->Hide();
   }
 }
 
 void Player::SendOff() {
+  DO_VALIDATION;
   float x = boostrandom(0, 3);
   std::string message;
   if (x < 1.0) {
+    DO_VALIDATION;
     message = "an early shower for " + playerData->GetLastName() + "!";
   } else if (x < 2.0) {
+    DO_VALIDATION;
     message = playerData->GetLastName() + " is sent off!";
   } else {
     message = "it's all over for " + playerData->GetLastName() + "!";
@@ -426,22 +443,15 @@ void Player::SendOff() {
   Deactivate();
 
   if (GetFormationEntry().role == e_PlayerRole_GK) {
+    DO_VALIDATION;
     FormationEntry entry = GetFormationEntry();
     std::vector<Player*> activePlayers;
     team->GetActivePlayers(activePlayers);
     assert(activePlayers.size() > 0);
-    int newGoalieID = (*activePlayers.begin())->GetID();
-    team->SetFormationEntry(newGoalieID, entry);
+    team->SetFormationEntry(*activePlayers.begin(), entry);
   }
-
   std::vector<Player*> activePlayers;
   team->GetActivePlayers(activePlayers);
-
-  // For simplicity don't forfeit for now.
-  // int remainingPlayers = activePlayers.size();
-  // if (remainingPlayers <= 6) {
-    // too many red cards - forfeit
-
 }
 
 float Player::GetStaminaStat() const {
@@ -449,14 +459,37 @@ float Player::GetStaminaStat() const {
 }
 
 float Player::GetStat(PlayerStat name) const {
-  float multiplier = 1.0f;
-  if (team->GetHumanGamerCount() == 0) multiplier = 0.3f + 0.7f * team->GetMatch()->GetMatchDifficulty();
+  float multiplier = 0.3f + 0.7f * team->GetAiDifficulty();
   multiplier *= 0.7f + 0.3f * GetFatigueFactorInv();
 
   return playerData->GetStat(name) * multiplier;
 }
 
+void Player::ProcessState(EnvState *state) {
+  DO_VALIDATION;
+  ProcessStateBase(state);
+  state->process(manMarking);
+  dynamicFormationEntry.ProcessState(state);
+  state->process(hasPossession);
+  state->process(hasBestPossession);
+  state->process(hasUniquePossession);
+  state->process(possessionDuration_ms);
+  state->process(timeNeededToGetToBall_ms);
+  state->process(timeNeededToGetToBall_optimistic_ms);
+  state->process(timeNeededToGetToBall_previous_ms);
+  state->process(triggerControlledBallCollision);
+  tacticalSituation.ProcessState(state);
+  state->process(buf_nameCaptionShowCondition);
+  state->setValidate(false);
+  state->process(buf_playerColor);
+  state->setValidate(true);
+  state->process(desiredTimeToBall_ms);
+  state->process(cards);
+  state->process(cardEffectiveTime_ms);
+}
+
 void Player::ResetSituation(const Vector3 &focusPos) {
+  DO_VALIDATION;
   PlayerBase::ResetSituation(focusPos);
 
   hasPossession = false;
@@ -466,7 +499,7 @@ void Player::ResetSituation(const Vector3 &focusPos) {
   timeNeededToGetToBall_ms = 1000;
   timeNeededToGetToBall_optimistic_ms = 1000;
   SetDesiredTimeToBall_ms(0);
-  manMarkingID = -1;
+  manMarking = 0;
 
   triggerControlledBallCollision = false;
 
@@ -476,13 +509,15 @@ void Player::ResetSituation(const Vector3 &focusPos) {
 }
 
 void Player::_CalculateTacticalSituation() {
+  DO_VALIDATION;
   const MentalImage *mentalImage = static_cast<PlayerController*>(GetController())->GetMentalImage();
   assert(mentalImage);
   assert(IsActive());
 
   // calculate how free the path forward is
   float time_sec = 0.5f;
-  Vector3 checkPos = GetPosition() + Vector3(-team->GetSide(), 0, 0) * sprintVelocity * time_sec;
+  Vector3 checkPos = GetPosition() + Vector3(-team->GetDynamicSide(), 0, 0) *
+                                         sprintVelocity * time_sec;
   tacticalSituation.forwardSpaceRating = AI_CalculateFreeSpace(match, mentalImage, team->GetID(), checkPos, 5.0f, time_sec); // FREESPACE :D :D
 
   // calculate the amount of space this player has
@@ -492,7 +527,12 @@ void Player::_CalculateTacticalSituation() {
   tacticalSituation.spaceRating = AI_CalculateFreeSpace(match, mentalImage, team->GetID(), checkPos, 5.0f, time_sec); // FREESPACE :D :D
 
   // distance to opponent goal 0 .. 1 == farthest .. closest
-  tacticalSituation.forwardRating = 1.0f - clamp((Vector3(pitchHalfW * -team->GetSide(), 0, 0) - GetPosition()).GetLength() / (pitchHalfW * 2.0f), 0.0f, 1.0f);
+  tacticalSituation.forwardRating =
+      1.0f - clamp((Vector3(pitchHalfW * -team->GetDynamicSide(), 0, 0) -
+                    GetPosition())
+                           .GetLength() /
+                       (pitchHalfW * 2.0f),
+                   0.0f, 1.0f);
   tacticalSituation.forwardRating =
       std::pow(tacticalSituation.forwardRating,
                1.5f);  // more important when close to goal

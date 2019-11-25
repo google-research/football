@@ -21,16 +21,21 @@
 
 namespace blunted {
 
-  Gui2Frame::Gui2Frame(Gui2WindowManager *windowManager, const std::string &name, float x_percent, float y_percent, float width_percent, float height_percent, bool background) : Gui2View(windowManager, name, x_percent, y_percent, width_percent, height_percent) {
-    if (background) {
-      Gui2Image *bg = new Gui2Image(windowManager, name + "_frame", 0, 0, width_percent, height_percent);
-      this->AddView(bg);
-      bg->LoadImage("media/menu/backgrounds/black.png");
-      bg->Show();
-    }
+Gui2Frame::Gui2Frame(Gui2WindowManager *windowManager, const std::string &name,
+                     float x_percent, float y_percent, float width_percent,
+                     float height_percent, bool background)
+    : Gui2View(windowManager, name, x_percent, y_percent, width_percent,
+               height_percent) {
+  DO_VALIDATION;
+  if (background) {
+    DO_VALIDATION;
+    Gui2Image *bg = new Gui2Image(windowManager, name + "_frame", 0, 0,
+                                  width_percent, height_percent);
+    this->AddView(bg);
+    bg->LoadImage("media/menu/backgrounds/black.png");
+    bg->Show();
   }
+}
 
-  Gui2Frame::~Gui2Frame() {
-  }
-
+Gui2Frame::~Gui2Frame() { DO_VALIDATION; }
 }

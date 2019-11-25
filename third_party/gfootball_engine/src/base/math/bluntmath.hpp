@@ -18,21 +18,58 @@
 #ifndef _hpp_bluntmath
 #define _hpp_bluntmath
 
-#include "../../defines.hpp"
-
 #include <cmath>
 #include <limits>
+#include <assert.h>
+#include <iostream>
+#include "../log.hpp"
 
 
 
 namespace blunted {
+  typedef float real;
 
   real clamp(const real value, const real min, const real max);
   real NormalizedClamp(const real value, const real min, const real max);
 
   // you can never be too specific ;)
   constexpr real pi = 3.1415926535897932384626433832795028841972f; // last decimal rounded ;)
-  typedef real radian;
+  class radian {
+   public:
+    radian() { DO_VALIDATION;}
+    radian(float r) : _angle(r) { DO_VALIDATION;}
+    radian &operator+=(radian r) { DO_VALIDATION;
+      _angle += r._angle;
+      _rotated ^= r._rotated;
+      return *this;
+    }
+    radian &operator-=(radian r){
+      _angle -= r._angle;
+      _rotated ^= r._rotated;
+      return *this;
+    }
+    radian &operator/=(radian r) { DO_VALIDATION;
+      *this = radian(real(*this) / real(r));
+      return *this;
+    }
+    radian &operator*=(radian r) { DO_VALIDATION;
+      *this = radian(real(*this) * real(r));
+      return *this;
+    }
+    operator real() const {
+      if (_rotated) { DO_VALIDATION;
+        return _angle - pi;
+      }
+      return _angle;
+    }
+    void Mirror() { DO_VALIDATION;
+      _rotated = !_rotated;
+    }
+   private:
+    float _angle = 0.0f;
+    // Was angle rotated by PI.
+    bool _rotated = false;
+  };
 
   void normalize(real v[3]);
   signed int signSide(real n);  // returns -1 or 1
@@ -41,12 +78,12 @@ namespace blunted {
   real boostrandom(real min, real max);
   real random_non_determ(real min, real max);
 
-  inline float curve(float source, float bias = 1.0f) { // make linear / into sined _/-
+  inline float curve(float source, float bias = 1.0f) { DO_VALIDATION; // make linear / into sined _/-
     return (std::sin((source - 0.5f) * pi) * 0.5f + 0.5f) * bias +
            source * (1.0f - bias);
   }
 
-  real ModulateIntoRange(real min, real max, real value);
+  radian ModulateIntoRange(real min, real max, radian value);
 }
 
 #endif

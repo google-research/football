@@ -20,6 +20,4 @@
 
 #include "../base/math/bluntmath.hpp"
 #include "../blunted.hpp"
-#include "../managers/environmentmanager.hpp"
-#include "../managers/systemmanager.hpp"
 #include "../scene/objectfactory.hpp"

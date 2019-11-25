@@ -21,6 +21,7 @@ from __future__ import print_function
 
 from absl import app
 from absl import flags
+from absl import logging
 
 
 from gfootball.env import config
@@ -32,7 +33,7 @@ flags.DEFINE_string('players', 'keyboard:left_players=1',
                     'Semicolon separated list of players, single keyboard '
                     'player on the left by default')
 flags.DEFINE_string('level', '', 'Level to play')
-flags.DEFINE_enum('action_set', 'full', ['default', 'full'], 'Action set')
+flags.DEFINE_enum('action_set', 'default', ['default', 'full'], 'Action set')
 flags.DEFINE_bool('real_time', True,
                   'If true, environment will slow down so humans can play.')
 
@@ -46,18 +47,19 @@ def main(_):
       'dump_full_episodes': True,
       'players': players,
       'real_time': FLAGS.real_time,
-      'render': True
   })
   if FLAGS.level:
     cfg['level'] = FLAGS.level
   env = football_env.FootballEnv(cfg)
+  env.render()
   env.reset()
   try:
     while True:
-      _, _, done, _ = env.step(None)
+      _, _, done, _ = env.step([])
       if done:
         env.reset()
   except KeyboardInterrupt:
+    logging.warning('Game stopped, writing dump...')
     env.write_dump('shutdown')
     exit(1)
 

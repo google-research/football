@@ -28,36 +28,43 @@ using namespace std;
 
 namespace blunted {
 
-  Properties::Properties() {
-  }
+Properties::Properties() { DO_VALIDATION; }
 
-  Properties::~Properties() {
-  }
+Properties::Properties(std::vector<std::pair<std::string, float>> values) {
+  DO_VALIDATION;
+}
 
-  bool Properties::Exists(const std::string &name) const {
-    auto iter = properties.find(name);
-    if (iter == properties.end()) {
-      return false;
-    } else {
-      return true;
-    }
+Properties::~Properties() { DO_VALIDATION; }
+
+bool Properties::Exists(const std::string &name) const {
+  auto iter = properties.find(name);
+  if (iter == properties.end()) {
+    DO_VALIDATION;
+    return false;
+  } else {
+    return true;
+  }
   }
 
   void Properties::Set(const std::string &name, const std::string &value) {
+    DO_VALIDATION;
     properties[name] = value;
   }
 
   void Properties::SetInt(const std::string &name, int value) {
+    DO_VALIDATION;
     std::string value_str = int_to_str(value);
     Set(name, value_str);
   }
 
   void Properties::Set(const std::string &name, real value) {
+    DO_VALIDATION;
     std::string value_str = real_to_str(value);
     Set(name, value_str);
   }
 
   void Properties::SetBool(const std::string &name, bool value) {
+    DO_VALIDATION;
     std::string value_str = value ? "true" : "false";
     Set(name, value_str);
   }
@@ -65,6 +72,7 @@ namespace blunted {
   const std::string &Properties::Get(const std::string &name, const std::string &defaultValue) const {
     auto iter = properties.find(name);
     if (iter == properties.end()) {
+      DO_VALIDATION;
       return defaultValue;
     } else {
       return iter->second;
@@ -74,6 +82,7 @@ namespace blunted {
   bool Properties::GetBool(const std::string &name, bool defaultValue) const {
     auto iter = properties.find(name);
     if (iter == properties.end()) {
+      DO_VALIDATION;
       return defaultValue;
     } else {
       if (iter->second.compare("true") == 0) return true; else return false;
@@ -83,6 +92,7 @@ namespace blunted {
   real Properties::GetReal(const std::string& name, real defaultValue) const {
     auto iter = properties.find(name);
     if (iter == properties.end()) {
+      DO_VALIDATION;
       return defaultValue;
     } else {
       return atof(iter->second.c_str());
@@ -92,6 +102,7 @@ namespace blunted {
   int Properties::GetInt(const std::string &name, int defaultValue) const {
     auto iter = properties.find(name);
     if (iter == properties.end()) {
+      DO_VALIDATION;
       return defaultValue;
     } else {
       return int(floor(atof(iter->second.c_str())));
@@ -99,22 +110,26 @@ namespace blunted {
   }
 
   void Properties::AddProperties(const Properties *userprops) {
+    DO_VALIDATION;
     if (!userprops) return;
 
     const map_Properties *userpropdata = userprops->GetProperties();
     map_Properties::const_iterator iter = userpropdata->begin();
 
     while (iter != userpropdata->end()) {
+      DO_VALIDATION;
       properties[iter->first] = iter->second;
       iter++;
     }
   }
 
   void Properties::AddProperties(const Properties &userprops) {
+    DO_VALIDATION;
     const map_Properties *userpropdata = userprops.GetProperties();
     map_Properties::const_iterator iter = userpropdata->begin();
 
     while (iter != userpropdata->end()) {
+      DO_VALIDATION;
       properties[iter->first] = iter->second;
       iter++;
     }
@@ -122,6 +137,34 @@ namespace blunted {
 
   const map_Properties *Properties::GetProperties() const {
     return &properties;
+  }
+
+  void Properties::ProcessState(EnvState *state) {
+    DO_VALIDATION;
+    if (state->Load()) {
+      DO_VALIDATION;
+      properties.clear();
+      int size;
+      state->process(size);
+      while (size--) {
+        DO_VALIDATION;
+        string key;
+        string value;
+        state->process(key);
+        state->process(value);
+        properties[key] = value;
+      }
+    } else {
+      int size = properties.size();
+      state->process(size);
+      for (auto x : properties) {
+        DO_VALIDATION;
+        string key = x.first;
+        string value = x.second;
+        state->process(key);
+        state->process(value);
+      }
+    }
   }
 
   }  // namespace blunted

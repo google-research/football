@@ -36,10 +36,10 @@ MINIMAP_NORM_X_MAX = 1.0
 MINIMAP_NORM_Y_MIN = -1.0 / 2.25
 MINIMAP_NORM_Y_MAX = 1.0 / 2.25
 
+_MARKER_VALUE = 255
+
 
 def get_smm_layers(config):
-  if config and config['enable_sides_swap']:
-    return [] + SMM_LAYERS + ['is_left']
   return SMM_LAYERS
 
 
@@ -57,7 +57,7 @@ def mark_points(frame, points):
             (MINIMAP_NORM_Y_MAX - MINIMAP_NORM_Y_MIN) * frame.shape[0])
     x = max(0, min(frame.shape[1] - 1, x))
     y = max(0, min(frame.shape[0] - 1, y))
-    frame[y, x] = 255
+    frame[y, x] = _MARKER_VALUE
 
 
 def generate_smm(observation, config=None,
@@ -85,12 +85,8 @@ def generate_smm(observation, config=None,
       if layer == 'active':
         if o[layer] == -1:
           continue
-        team = ('right_team' if ('is_left' in o and not o['is_left'])
-                else 'left_team')
         mark_points(frame[o_i, :, :, index],
-                    np.array(o[team][o[layer]]).reshape(-1))
-      elif layer == 'is_left':
-        frame[o_i, :, :, index] = 1 if o[layer] else 0
+                    np.array(o['left_team'][o[layer]]).reshape(-1))
       else:
         mark_points(frame[o_i, :, :, index], np.array(o[layer]).reshape(-1))
   return frame

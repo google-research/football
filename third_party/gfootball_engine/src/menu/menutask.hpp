@@ -47,13 +47,12 @@ struct SideSelection {
 
 
 struct QueuedFixture {
-  QueuedFixture() {
+  QueuedFixture() { DO_VALIDATION;
     team1KitNum = 1;
     team2KitNum = 2;
     matchData = 0;
   }
   std::vector<SideSelection> sides; // queued match fixture
-  std::string teamID1, teamID2; // queued match fixture
   int team1KitNum, team2KitNum;
   MatchData *matchData;
 };
@@ -64,27 +63,15 @@ class MenuTask : public Gui2Task {
     MenuTask(float aspectRatio, float margin, TTF_Font *defaultFont, TTF_Font *defaultOutlineFont, const Properties* config);
     virtual ~MenuTask();
 
-    virtual void ProcessPhase();
-
-    void SetControllerSetup(const std::vector<SideSelection> &sides) { queuedFixture.sides = sides;  }
-    const std::vector<SideSelection> GetControllerSetup() {
+    void SetControllerSetup(const std::vector<SideSelection> &sides) { DO_VALIDATION; queuedFixture.sides = sides;  }
+    const std::vector<SideSelection> GetControllerSetup() { DO_VALIDATION;
       return queuedFixture.sides;
     }
-    int GetTeamID(int whichOne) {
-      if (whichOne == 0)
-        return atoi(queuedFixture.teamID1.c_str());
-      else
-        return atoi(queuedFixture.teamID2.c_str());
-    }
-    int GetTeamKitNum(int teamID) { if (teamID == 0) return queuedFixture.team1KitNum; else return queuedFixture.team2KitNum; }
-    void SetMatchData(MatchData *matchData) {  queuedFixture.matchData = matchData;  }
-    MatchData *GetMatchData() { return queuedFixture.matchData; } // hint: this lock is useless, since we are returning the pointer and not a copy
-
-    void SetMenuAction(e_MenuAction menuAction) { this->menuAction = menuAction; }
+    int GetTeamKitNum(int teamID) { DO_VALIDATION; if (teamID == 0) return queuedFixture.team1KitNum; else return queuedFixture.team2KitNum; }
+    void SetMatchData(MatchData *matchData) { DO_VALIDATION;  queuedFixture.matchData = matchData;  }
+    MatchData *GetMatchData() { DO_VALIDATION; return queuedFixture.matchData; } // hint: this lock is useless, since we are returning the pointer and not a copy
 
   protected:
-   e_MenuAction menuAction;
-
    QueuedFixture queuedFixture;
 
 };

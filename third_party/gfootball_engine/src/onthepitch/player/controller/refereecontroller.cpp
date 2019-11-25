@@ -25,21 +25,26 @@
 #include "../../../main.hpp"
 
 RefereeController::RefereeController(Match *match) : IController(match) {
+  DO_VALIDATION;
 }
 
-RefereeController::~RefereeController() {
-}
+RefereeController::~RefereeController() { DO_VALIDATION; }
 
-PlayerOfficial *RefereeController::CastPlayer() { return static_cast<PlayerOfficial*>(player); }
+PlayerOfficial *RefereeController::CastPlayer() {
+  DO_VALIDATION;
+  return static_cast<PlayerOfficial *>(player);
+}
 
 void RefereeController::GetForceField(std::vector<ForceSpot> &forceField) {
- {
-   ForceSpot forceSpot;
-   forceSpot.origin = match->GetBall()->GetAveragePosition(2000).Get2D() * 0.6f;
-   forceSpot.magnetType = e_MagnetType_Attract;
-   forceSpot.decayType = e_DecayType_Constant;
-   forceSpot.power = 0.5f;
-   forceField.push_back(forceSpot);
+  DO_VALIDATION;
+  {
+    ForceSpot forceSpot;
+    forceSpot.origin =
+        match->GetBall()->GetAveragePosition(2000).Get2D() * 0.6f;
+    forceSpot.magnetType = e_MagnetType_Attract;
+    forceSpot.decayType = e_DecayType_Constant;
+    forceSpot.power = 0.5f;
+    forceField.push_back(forceSpot);
   }
 
  {
@@ -53,9 +58,11 @@ void RefereeController::GetForceField(std::vector<ForceSpot> &forceField) {
   }
 
   std::vector<Player*> players;
-  match->GetActiveTeamPlayers(0, players);
-  match->GetActiveTeamPlayers(1, players);
+  match->GetActiveTeamPlayers(match->FirstTeam(),
+                              players);
+  match->GetActiveTeamPlayers(match->SecondTeam(), players);
   for (unsigned int i = 0; i < players.size(); i++) {
+    DO_VALIDATION;
     ForceSpot forceSpot;
     forceSpot.origin = players[i]->GetPosition() + players[i]->GetMovement() * 0.4f;
     forceSpot.magnetType = e_MagnetType_Repel;
@@ -67,17 +74,23 @@ void RefereeController::GetForceField(std::vector<ForceSpot> &forceField) {
 }
 
 void RefereeController::RequestCommand(PlayerCommandQueue &commandQueue) {
+  DO_VALIDATION;
 
   switch (CastPlayer()->GetOfficialType()) {
+    DO_VALIDATION;
 
     case e_OfficialType_Referee:
       if (match->GetReferee()->GetBuffer().active == true &&
-          (match->GetReferee()->GetCurrentFoulType() == 2 || match->GetReferee()->GetCurrentFoulType() == 3) &&
-          match->GetReferee()->GetBuffer().prepareTime > match->GetActualTime_ms() + 5000) { // FOUL, walk towards offender
+          (match->GetReferee()->GetCurrentFoulType() == 2 ||
+           match->GetReferee()->GetCurrentFoulType() == 3) &&
+          match->GetReferee()->GetBuffer().prepareTime >
+              match->GetActualTime_ms() + 5000) {
+        DO_VALIDATION;  // FOUL, walk towards offender
 
         Vector3 desiredPosition = match->GetReferee()->GetCurrentFoulPlayer()->GetPosition() + (CastPlayer()->GetPosition() - match->GetReferee()->GetCurrentFoulPlayer()->GetPosition()).GetNormalized(0) * 2.0;
 
         if ((CastPlayer()->GetPosition() - desiredPosition).GetLength() > 2.0) {
+          DO_VALIDATION;
           PlayerCommand command;
           command.desiredFunctionType = e_FunctionType_Movement;
           command.useDesiredMovement = true;
@@ -109,7 +122,7 @@ void RefereeController::RequestCommand(PlayerCommandQueue &commandQueue) {
           }
         }
 
-      } else { // NORMAL
+      } else {  // NORMAL
 
         PlayerCommand command;
         command.desiredFunctionType = e_FunctionType_Movement;
@@ -138,6 +151,7 @@ void RefereeController::RequestCommand(PlayerCommandQueue &commandQueue) {
         float offside = 0.0f;
         Vector3 desiredPosition;
         if (player->GetPosition().coords[1] < 0) {
+          DO_VALIDATION;
           offside = AI_GetOffsideLine(match, match->GetMentalImage(0), 1);
           desiredPosition = Vector3(offside, -(pitchHalfH + 0.8f), 0);
         } else {
@@ -152,24 +166,24 @@ void RefereeController::RequestCommand(PlayerCommandQueue &commandQueue) {
         commandQueue.push_back(command);
       }
       break;
-
   }
 }
 
-void RefereeController::Process() {
-}
+void RefereeController::Process() { DO_VALIDATION; }
 
 Vector3 RefereeController::GetDirection() {
+  DO_VALIDATION;
   return player->GetDirectionVec();
 }
 
 float RefereeController::GetFloatVelocity() {
+  DO_VALIDATION;
   return player->GetFloatVelocity();
 }
 
 int RefereeController::GetReactionTime_ms() {
+  DO_VALIDATION;
   return 60;
 }
 
-void RefereeController::Reset() {
-}
+void RefereeController::Reset() { DO_VALIDATION; }

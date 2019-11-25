@@ -25,69 +25,41 @@
 #include "../scene/objects/geometry.hpp"
 #include "../scene/objects/skybox.hpp"
 #include "../scene/objects/light.hpp"
-#include "../scene/objects/joint.hpp"
 
 namespace blunted {
 
-  ObjectFactory::ObjectFactory() {
+ObjectFactory::ObjectFactory() { DO_VALIDATION; }
+
+ObjectFactory::~ObjectFactory() { DO_VALIDATION; }
+
+boost::intrusive_ptr<Object> ObjectFactory::CopyObject(
+    boost::intrusive_ptr<Object> source, std::string postfix) {
+  DO_VALIDATION;
+  boost::intrusive_ptr<Object> bla;
+
+  switch (source->GetObjectType()) {
+    DO_VALIDATION;
+    case e_ObjectType_Camera:
+      bla = new Camera(*static_cast<Camera*>(source.get()));
+      break;
+    case e_ObjectType_Image2D:
+      bla = new Image2D(*static_cast<Image2D*>(source.get()));
+      break;
+    case e_ObjectType_Geometry:
+      bla = new Geometry(*static_cast<Geometry*>(source.get()), postfix);
+      break;
+    case e_ObjectType_Skybox:
+      bla = new Skybox(*static_cast<Skybox*>(source.get()));
+      break;
+    case e_ObjectType_Light:
+      bla = new Light(*static_cast<Light*>(source.get()));
+      break;
+    default:
+      Log(e_FatalError, "ObjectFactory", "CopyObject",
+          "Object type " + int_to_str(source->GetObjectType()) + " not found");
+      break;
   }
-
-  ObjectFactory::~ObjectFactory() {
-  }
-
-  void ObjectFactory::Exit() {
-    std::map <e_ObjectType, boost::intrusive_ptr<Object> >::iterator prototype_iter = prototypes.begin();
-    while (prototype_iter != prototypes.end()) {
-      prototype_iter->second->Exit();
-      prototype_iter++;
-    }
-    prototypes.clear();
-  }
-
-  boost::intrusive_ptr<Object> ObjectFactory::CreateObject(const std::string &name, e_ObjectType objectType, std::string postfix) {
-    std::map <e_ObjectType, boost::intrusive_ptr<Object> >::iterator prototype_iter = prototypes.find(objectType);
-    if (prototype_iter != prototypes.end()) {
-      boost::intrusive_ptr<Object> bla = CopyObject((*prototype_iter).second, postfix);
-      bla->SetName(name);
-      return bla;
-    } else {
-      Log(e_FatalError, "ObjectFactory", "CreateObject", "Object type " + int_to_str(objectType) + " not found in prototype registry");
-      return 0;
-    }
-  }
-
-  boost::intrusive_ptr<Object> ObjectFactory::CopyObject(boost::intrusive_ptr<Object> source, std::string postfix) {
-    boost::intrusive_ptr<Object> bla;
-
-    switch (source->GetObjectType()) {
-      case e_ObjectType_Camera:
-        bla = new Camera(*static_cast<Camera*>(source.get()));
-        break;
-      case e_ObjectType_Image2D:
-        bla = new Image2D(*static_cast<Image2D*>(source.get()));
-        break;
-      case e_ObjectType_Geometry:
-        bla = new Geometry(*static_cast<Geometry*>(source.get()), postfix);
-        break;
-      case e_ObjectType_Skybox:
-        bla = new Skybox(*static_cast<Skybox*>(source.get()));
-        break;
-      case e_ObjectType_Light:
-        bla = new Light(*static_cast<Light*>(source.get()));
-        break;
-      case e_ObjectType_Joint:
-        bla = new Joint(*static_cast<Joint*>(source.get()));
-        break;
-      default:
-        Log(e_FatalError, "ObjectFactory", "CopyObject", "Object type " + int_to_str(source->GetObjectType()) + " not found");
-        break;
-    }
-    assert(bla != boost::intrusive_ptr<Object>());
-    return bla;
-  }
-
-  void ObjectFactory::RegisterPrototype(e_ObjectType objectType, boost::intrusive_ptr<Object> prototype) {
-    prototypes.insert(std::pair<e_ObjectType, boost::intrusive_ptr<Object> >(objectType, prototype));
-  }
-
+  assert(bla != boost::intrusive_ptr<Object>());
+  return bla;
+}
 }

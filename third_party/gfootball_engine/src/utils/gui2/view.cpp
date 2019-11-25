@@ -21,106 +21,130 @@
 
 namespace blunted {
 
-  Gui2View::Gui2View(Gui2WindowManager *windowManager, const std::string &name, float x_percent, float y_percent, float width_percent, float height_percent) : windowManager(windowManager), name(name), x_percent(x_percent), y_percent(y_percent), width_percent(width_percent), height_percent(height_percent) {
-    parent = 0;
-    zPriority = 0;
-    isVisible = false;
-    isSelectable = false;
-    isInFocusPath = false;
-    isOverlay = false;
+Gui2View::Gui2View(Gui2WindowManager *windowManager, const std::string &name,
+                   float x_percent, float y_percent, float width_percent,
+                   float height_percent)
+    : windowManager(windowManager),
+      name(name),
+      x_percent(x_percent),
+      y_percent(y_percent),
+      width_percent(width_percent),
+      height_percent(height_percent) {
+  DO_VALIDATION;
+  parent = 0;
+  isVisible = false;
+  isSelectable = false;
+  isInFocusPath = false;
+  isOverlay = false;
+}
+
+Gui2View::~Gui2View() {
+  DO_VALIDATION;
+  CHECK(exit_called);
+}
+
+void Gui2View::Exit() {
+  DO_VALIDATION;
+  CHECK(!exit_called);
+  exit_called = true;
+
+  if (IsFocussed()) windowManager->SetFocus(0);
+
+  this->Hide();
+
+  std::vector<Gui2View *> childrenCopy =
+      children;  // need to make copy: child->Exit will remove itself from
+                 // *this->children
+  for (int i = (signed int)childrenCopy.size() - 1; i >= 0; i--) {
+    DO_VALIDATION;  // filo
+    childrenCopy[i]->Exit();
+    delete childrenCopy[i];
   }
+  children.clear();
 
-  Gui2View::~Gui2View() {
-    CHECK(exit_called);
-  }
+  if (parent) parent->RemoveView(this);
 
-  void Gui2View::Exit() {
-    CHECK(!exit_called);
-    exit_called = true;
-
-    //printf("exiting %s.. ", name.c_str());
-
-    this->sig_OnClose();
-
-    if (IsFocussed()) windowManager->SetFocus(0);
-
-    this->Hide();
-
-    std::vector<Gui2View*> childrenCopy = children; // need to make copy: child->Exit will remove itself from *this->children
-    for (int i = (signed int)childrenCopy.size() - 1; i >= 0; i--) { // filo
-      childrenCopy[i]->Exit();
-      delete childrenCopy[i];
+  std::vector<boost::intrusive_ptr<Image2D> > images;
+  GetImages(images);
+  for (unsigned int i = 0; i < images.size(); i++) {
+    DO_VALIDATION;
+    boost::intrusive_ptr<Image2D> &image = images[i];
+    if (image != boost::intrusive_ptr<Image2D>()) {
+      DO_VALIDATION;
+      windowManager->RemoveImage(image);
     }
-    children.clear();
-
-    if (parent) parent->RemoveView(this);
-
-    std::vector < boost::intrusive_ptr<Image2D> > images;
-    GetImages(images);
-    for (unsigned int i = 0; i < images.size(); i++) {
-      boost::intrusive_ptr<Image2D> &image = images[i];
-      if (image != boost::intrusive_ptr<Image2D>()) {
-        windowManager->RemoveImage(image);
-      }
-    }
-
-    //printf("exited %s\n", name.c_str()); // excited! XD
   }
 
-  void Gui2View::UpdateImagePosition() {
-    windowManager->UpdateImagePosition(this);
-    std::vector<Gui2View*>::iterator iter = children.begin();
-    while (iter != children.end()) {
-      (*iter)->UpdateImagePosition();
+  // printf("exited %s\n", name.c_str()); // excited! XD
+}
+
+void Gui2View::UpdateImagePosition() {
+  DO_VALIDATION;
+  windowManager->UpdateImagePosition(this);
+  std::vector<Gui2View *>::iterator iter = children.begin();
+  while (iter != children.end()) {
+    DO_VALIDATION;
+    (*iter)->UpdateImagePosition();
+    iter++;
+  }
+}
+
+void Gui2View::UpdateImageVisibility() {
+  DO_VALIDATION;
+  if (IsVisible())
+    windowManager->Show(this);
+  else
+    windowManager->Hide(this);
+  std::vector<Gui2View *>::iterator iter = children.begin();
+  while (iter != children.end()) {
+    DO_VALIDATION;
+    (*iter)->UpdateImageVisibility();
+    iter++;
+  }
+}
+
+void Gui2View::AddView(Gui2View *view) {
+  DO_VALIDATION;
+  children.push_back(view);
+  view->SetParent(this);
+  view->UpdateImagePosition();
+  view->UpdateImageVisibility();
+}
+
+void Gui2View::RemoveView(Gui2View *view) {
+  DO_VALIDATION;
+  std::vector<Gui2View *>::iterator iter = children.begin();
+  while (iter != children.end()) {
+    DO_VALIDATION;
+    if (*iter == view) {
+      DO_VALIDATION;
+      view->Hide();
+      view->SetParent(0);
+      iter = children.erase(iter);
+      return;
+    } else {
       iter++;
     }
   }
+  Log(e_FatalError, "Gui2View", "RemoveView", "Should not be here!");
+}
 
-  void Gui2View::UpdateImageVisibility() {
-    if (IsVisible()) windowManager->Show(this); else
-                     windowManager->Hide(this);
-    std::vector<Gui2View*>::iterator iter = children.begin();
-    while (iter != children.end()) {
-      (*iter)->UpdateImageVisibility();
-      iter++;
-    }
-  }
+void Gui2View::SetParent(Gui2View *view) {
+  DO_VALIDATION;
+  this->parent = view;
+}
 
-  void Gui2View::AddView(Gui2View *view) {
-    children.push_back(view);
-    view->SetParent(this);
-    view->UpdateImagePosition();
-    view->UpdateImageVisibility();
-  }
+Gui2View *Gui2View::GetParent() {
+  DO_VALIDATION;
+  return parent;
+}
 
-  void Gui2View::RemoveView(Gui2View *view) {
-    std::vector<Gui2View*>::iterator iter = children.begin();
-    while (iter != children.end()) {
-      if (*iter == view) {
-        view->Hide();
-        view->SetParent(0);
-        iter = children.erase(iter);
-        return;
-      } else {
-        iter++;
-      }
-    }
-    Log(e_FatalError, "Gui2View", "RemoveView", "Should not be here!");
-  }
-
-  void Gui2View::SetParent(Gui2View *view) {
-    this->parent = view;
-  }
-
-  Gui2View *Gui2View::GetParent() {
-    return parent;
-  }
-
-  void Gui2View::SetPosition(float x_percent, float y_percent) {
-    this->x_percent = x_percent;
-    this->y_percent = y_percent;
-    UpdateImagePosition();
-  }
+void Gui2View::SetPosition(float x_percent, float y_percent) {
+  DO_VALIDATION;
+  this->x_percent = x_percent;
+  this->y_percent = y_percent;
+  UpdateImagePosition();
+}
 
   void Gui2View::GetSize(float &width_percent, float &height_percent) const {
     width_percent = this->width_percent;
@@ -136,6 +160,7 @@ namespace blunted {
     float tmp_x_percent = this->x_percent;
     float tmp_y_percent = this->y_percent;
     if (parent) {
+      DO_VALIDATION;
       float tmp_parent_x_percent = 0.0f;
       float tmp_parent_y_percent = 0.0f;
       parent->GetDerivedPosition(tmp_parent_x_percent, tmp_parent_y_percent);
@@ -146,127 +171,71 @@ namespace blunted {
     y_percent = tmp_y_percent;
   }
 
-  void Gui2View::SnuglyFitSize(float margin) {
-    if (IsSelectable()) return;
+  void Gui2View::CenterPosition() { DO_VALIDATION; }
 
-    float maxW = 0;
-    float maxH = 0;
-
-    float x, y, w, h;
-
-    for (unsigned int i = 0; i < children.size(); i++) {
-      children[i]->SnuglyFitSize(margin);
-
-      children[i]->GetPosition(x, y);
-      children[i]->GetSize(w, h);
-      if (x + w > maxW) maxW = x + w;
-      if (y + h > maxH) maxH = y + h;
-    }
-
-    SetSize(maxW + margin * 2.0f, maxH + margin * 2.0f);
-  }
-
-  void Gui2View::CenterPosition() {
-  }
-
-  void Gui2View::GetImages(std::vector < boost::intrusive_ptr<Image2D> > &target) {
-  }
-
-  void Gui2View::Process() {
-    for (unsigned int i = 0; i < children.size(); i++) {
-      //printf("gui2view %s :: processing child %s\n", name.c_str(), children[i]->GetName().c_str());
-      children[i]->Process();
-    }
-  }
-
-  bool Gui2View::ProcessEvent(Gui2Event *event) {
-
-    event->Accept();
-
-    switch (event->GetType()) {
-
-      case e_Gui2EventType_Windowing:
-        ProcessWindowingEvent(static_cast<WindowingEvent*>(event));
-        break;
-
-      case e_Gui2EventType_Keyboard:
-        ProcessKeyboardEvent(static_cast<KeyboardEvent*>(event));
-        break;
-
-      default:
-        break;
-
-    }
-
-    if (!event->IsAccepted() && parent) parent->ProcessEvent(event);
-
-    return true;
-  }
-
-  void Gui2View::ProcessWindowingEvent(WindowingEvent *event) {
-    event->Ignore();
-  }
-
-  void Gui2View::ProcessKeyboardEvent(KeyboardEvent *event) {
-    event->Ignore();
+  void Gui2View::GetImages(
+      std::vector<boost::intrusive_ptr<Image2D> > &target) {
+    DO_VALIDATION;
   }
 
   bool Gui2View::IsFocussed() {
+    DO_VALIDATION;
     return windowManager->IsFocussed(this);
   }
 
   void Gui2View::SetFocus() {
+    DO_VALIDATION;
     windowManager->SetFocus(this);
   }
 
   void Gui2View::Show() {
+    DO_VALIDATION;
     if (!isVisible) {
+      DO_VALIDATION;
       isVisible = true;
       UpdateImageVisibility();
     }
   }
 
   void Gui2View::Hide() {
+    DO_VALIDATION;
     if (isVisible) {
+      DO_VALIDATION;
       isVisible = false;
       UpdateImageVisibility();
     }
   }
 
   void Gui2View::ShowAllChildren() {
+    DO_VALIDATION;
     std::vector<Gui2View*>::iterator iter = children.begin();
     while (iter != children.end()) {
+      DO_VALIDATION;
       (*iter)->Show();
       iter++;
     }
   }
 
-  void Gui2View::HideAllChildren() {
-    std::vector<Gui2View*>::iterator iter = children.begin();
-    while (iter != children.end()) {
-      (*iter)->Hide();
-      iter++;
-    }
-  }
-
   void Gui2View::SetRecursiveZPriority(int prio) {
+    DO_VALIDATION;
     float adaptedPrio = prio;
     if (isOverlay) adaptedPrio++;
     SetZPriority(adaptedPrio);
 
     std::vector<Gui2View*>::iterator iter = children.begin();
     while (iter != children.end()) {
+      DO_VALIDATION;
       (*iter)->SetRecursiveZPriority(adaptedPrio);
       iter++;
     }
   }
 
   void Gui2View::SetZPriority(int prio) {
-    zPriority = prio;
-
+    DO_VALIDATION;
     std::vector < boost::intrusive_ptr<Image2D> > images;
     GetImages(images);
     for (unsigned int i = 0; i < images.size(); i++) {
+      DO_VALIDATION;
       images[i]->SetPokePriority(prio);
     }
   }

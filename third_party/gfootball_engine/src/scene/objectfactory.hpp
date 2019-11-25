@@ -30,17 +30,7 @@ namespace blunted {
       ObjectFactory();
       virtual ~ObjectFactory();
 
-      virtual void Exit();
-
-      boost::intrusive_ptr<Object> CreateObject(const std::string &name,
-                                                e_ObjectType objectType,
-                                                std::string postfix = "_copy");
       boost::intrusive_ptr<Object> CopyObject(boost::intrusive_ptr<Object> source, std::string postfix = "_copy");
-      void RegisterPrototype(e_ObjectType objectType, boost::intrusive_ptr<Object> prototype);
-
-    protected:
-      std::map <e_ObjectType, boost::intrusive_ptr<Object> > prototypes;
-
   };
 
 }

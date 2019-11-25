@@ -27,7 +27,7 @@ class Player;
 class HumanController : public PlayerController {
 
   public:
-    HumanController(Match *match, IHIDevice *hid);
+    HumanController(Match *match = nullptr, IHIDevice *hid = nullptr);
     virtual ~HumanController();
 
     virtual void SetPlayer(PlayerBase *player);
@@ -37,11 +37,27 @@ class HumanController : public PlayerController {
     virtual Vector3 GetDirection();
     virtual float GetFloatVelocity();
 
+    void PreProcess(Match *match, IHIDevice *hid) {
+      this->match = match;
+      this->hid= hid;
+   }
+
+    void ProcessState(EnvState* state) { DO_VALIDATION;
+      ProcessPlayerController(state);
+      hid->ProcessState(state);
+      state->process(actionMode);
+      state->process(static_cast<void*>(&actionButton), sizeof(actionButton));
+      state->process(actionBufferTime_ms);
+      state->process(gauge_ms);
+      state->process(previousDirection);
+      state->process(steadyDirection);
+      state->process(lastSteadyDirectionSnapshotTime_ms);
+    }
     virtual int GetReactionTime_ms();
 
     IHIDevice *GetHIDevice() { return hid; }
 
-    int GetActionMode() { return actionMode; }
+    int GetActionMode() { DO_VALIDATION; return actionMode; }
 
     virtual void Reset();
 
@@ -64,7 +80,7 @@ class HumanController : public PlayerController {
     Vector3 previousDirection;
     Vector3 steadyDirection;
     int lastSteadyDirectionSnapshotTime_ms = 0;
-
+    float mirror = 1.0;
 };
 
 #endif

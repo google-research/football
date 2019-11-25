@@ -28,58 +28,67 @@ namespace blunted {
 #define SMOOTHING_OFF    0
 #define SMOOTHING_ON   1
 
-  Surface::Surface() : surface(0) {
-    //printf("CREATING SURFACE\n");
+Surface::Surface() : surface(0) {
+  DO_VALIDATION;
+  // printf("CREATING SURFACE\n");
+}
+
+Surface::~Surface() {
+  DO_VALIDATION;
+  // printf("ANNIHILATING SURFACE.. ");
+  if (surface) {
+    DO_VALIDATION;
+    SDL_FreeSurface(surface);
+    surface = 0;
   }
+}
 
-  Surface::~Surface() {
-    //printf("ANNIHILATING SURFACE.. ");
-    if (surface) {
-      SDL_FreeSurface(surface);
-      surface = 0;
-    }
+Surface::Surface(const Surface &src) {
+  DO_VALIDATION;
+  this->surface = SDL_ConvertSurface(src.surface, src.surface->format, 0);
+  assert(this->surface);
+}
+
+SDL_Surface *Surface::GetData() {
+  DO_VALIDATION;
+  return surface;
+}
+
+void Surface::SetData(SDL_Surface *surface) {
+  DO_VALIDATION;
+  if (this->surface) SDL_FreeSurface(this->surface);
+  this->surface = surface;
+}
+
+void Surface::Resize(int x, int y) {
+  DO_VALIDATION;
+
+  // zoomSurface doesn't seem to create a completely new surface; got some weird
+  // segfaults. not 100% sure if it's their fault though, or if i'm doing
+  // something wrong. either way, it works with this fix, though it's a bit of a
+  // performance hit, an extra surface copy.
+  bool buggyZoomSurface = true;
+
+  assert(this->surface);
+  int xcur = this->surface->w;
+  int ycur = this->surface->h;
+  double xfac, yfac;
+  xfac = x / (xcur * 1.0);
+  yfac = y / (ycur * 1.0);
+  if (yfac == 0) yfac = xfac;
+  if (xfac == 0) xfac = yfac;
+  if (xfac == 0 || yfac == 0) return;
+  SDL_Surface *newSurf = zoomSurface(this->surface, xfac, yfac, SMOOTHING_ON);
+  // printf("resize factors: %f %f\n", xfac, yfac);
+  // printf("surface size: %i %i\n", this->surface->w, this->surface->h);
+  // printf("new surface size: %i %i\n", newSurf->w, newSurf->h);
+  SDL_FreeSurface(this->surface);
+  if (buggyZoomSurface) {
+    DO_VALIDATION;
+    this->surface = SDL_ConvertSurface(newSurf, newSurf->format, 0);
+    SDL_FreeSurface(newSurf);
+  } else {
+    this->surface = newSurf;
   }
-
-  Surface::Surface(const Surface &src) {
-    this->surface = SDL_ConvertSurface(src.surface, src.surface->format, 0);
-    assert(this->surface);
-  }
-
-  SDL_Surface *Surface::GetData() {
-    return surface;
-  }
-
-  void Surface::SetData(SDL_Surface *surface) {
-    if (this->surface) SDL_FreeSurface(this->surface);
-    this->surface = surface;
-  }
-
-  void Surface::Resize(int x, int y) {
-
-    // zoomSurface doesn't seem to create a completely new surface; got some weird segfaults.
-    // not 100% sure if it's their fault though, or if i'm doing something wrong. either way,
-    // it works with this fix, though it's a bit of a performance hit, an extra surface copy.
-    bool buggyZoomSurface = true;
-
-    assert(this->surface);
-    int xcur = this->surface->w;
-    int ycur = this->surface->h;
-    double xfac, yfac;
-    xfac = x / (xcur * 1.0);
-    yfac = y / (ycur * 1.0);
-    if (yfac == 0) yfac = xfac;
-    if (xfac == 0) xfac = yfac;
-    if (xfac == 0 || yfac == 0) return;
-    SDL_Surface *newSurf = zoomSurface(this->surface, xfac, yfac, SMOOTHING_ON);
-    //printf("resize factors: %f %f\n", xfac, yfac);
-    //printf("surface size: %i %i\n", this->surface->w, this->surface->h);
-    //printf("new surface size: %i %i\n", newSurf->w, newSurf->h);
-    SDL_FreeSurface(this->surface);
-    if (buggyZoomSurface) {
-      this->surface = SDL_ConvertSurface(newSurf, newSurf->format, 0);
-      SDL_FreeSurface(newSurf);
-    } else {
-      this->surface = newSurf;
-    }
-  }
+}
 }

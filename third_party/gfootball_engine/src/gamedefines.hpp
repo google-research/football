@@ -63,7 +63,7 @@ const float distanceToVelocityMultiplier = 2.6f; // for example: when we need to
 
 const unsigned int ballPredictionSize_ms = 3000;
 const unsigned int cachedPredictions = 100;
-const unsigned int ballHistorySize_ms = 4000;
+const unsigned int ballHistorySize = 401;
 
 const float ballDistanceOptimizeThreshold = 10.0f;
 
@@ -121,10 +121,6 @@ enum e_TouchType {
 enum e_MatchPhase {
   e_MatchPhase_PreMatch,
   e_MatchPhase_1stHalf,
-  e_MatchPhase_2ndHalf,
-  e_MatchPhase_1stExtraTime,
-  e_MatchPhase_2ndExtraTime,
-  e_MatchPhase_Penalties,
 };
 
 enum e_PlayerCommandModifier {
@@ -135,27 +131,26 @@ enum e_PlayerCommandModifier {
 class IController;
 
 struct TouchInfo {
-
-  TouchInfo() {
-    inputPower = 0;
-    autoDirectionBias = 0;
-    autoPowerBias = 0;
-    targetPlayer = 0;
-    forcedTargetPlayer = 0;
-    desiredPower = 0;
-  }
-
   Vector3         inputDirection;
-  float           inputPower;
+  float           inputPower = 0;
 
-  float           autoDirectionBias;
-  float           autoPowerBias;
+  float           autoDirectionBias = 0;
+  float           autoPowerBias = 0;
 
   Vector3         desiredDirection; // inputdirection after pass function
-  float           desiredPower;
-  Player          *targetPlayer; // null == do not use
-  Player          *forcedTargetPlayer; // null == do not use
-
+  float           desiredPower = 0;
+  Player          *targetPlayer = 0; // null == do not use
+  Player          *forcedTargetPlayer = 0; // null == do not use
+  void ProcessState(EnvState* state) { DO_VALIDATION;
+    state->process(inputDirection);
+    state->process(inputPower);
+    state->process(autoDirectionBias);
+    state->process(autoPowerBias);
+    state->process(desiredDirection);
+    state->process(desiredPower);
+    state->process(targetPlayer);
+    state->process(forcedTargetPlayer);
+  }
 };
 
 enum e_StrictMovement {
@@ -173,7 +168,7 @@ struct PlayerCommand {
     3: referee showing card
   */
 
-  PlayerCommand() {
+  PlayerCommand() { DO_VALIDATION;
     desiredFunctionType = e_FunctionType_Movement;
     useDesiredMovement = false;
     desiredVelocityFloat = idleVelocity;
@@ -201,7 +196,7 @@ struct PlayerCommand {
   bool           useDesiredLookAt;
   Vector3        desiredLookAt; // absolute 'look at' position on pitch
 
-  bool           useTouchInfo;
+  bool           useTouchInfo = false;
   TouchInfo      touchInfo;
 
   bool           onlyDeflectAnimsThatPickupBall;
@@ -218,6 +213,27 @@ struct PlayerCommand {
   int            specialVar2;
 
   int            modifier;
+  void ProcessState(EnvState* state) { DO_VALIDATION;
+    state->process(static_cast<void*>(&desiredFunctionType), sizeof(desiredFunctionType));
+    state->process(useDesiredMovement);
+    state->process(desiredDirection);
+    state->process(static_cast<void*>(&strictMovement), sizeof(strictMovement));
+    state->process(desiredVelocityFloat);
+    state->process(useDesiredLookAt);
+    state->process(desiredLookAt);
+    state->process(useTouchInfo);
+    touchInfo.ProcessState(state);
+    state->process(onlyDeflectAnimsThatPickupBall);
+    state->process(useTripType);
+    state->process(tripType);
+    state->process(useDesiredTripDirection);
+    state->process(desiredTripDirection);
+    state->process(useSpecialVar1);
+    state->process(specialVar1);
+    state->process(useSpecialVar2);
+    state->process(specialVar2);
+    state->process(modifier);
+  }
 };
 
 typedef std::vector<PlayerCommand> PlayerCommandQueue;
@@ -237,31 +253,45 @@ const float goalHalfWidth = 3.7f;
 const float FORMATION_Y_SCALE = -2.36f;
 
 struct FormationEntry {
-  FormationEntry() {}
+  FormationEntry() { DO_VALIDATION;}
   // Constructor accepts environment coordinates.
-  FormationEntry(float x, float y, e_PlayerRole role, bool lazy)
-      : role(role),
-        databasePosition(x, y * FORMATION_Y_SCALE, 0),
+  FormationEntry(float x, float y, e_PlayerRole role, bool lazy,
+                 bool controllable)
+      : databasePosition(x, y * FORMATION_Y_SCALE, 0),
         position(x, y * FORMATION_Y_SCALE, 0),
         start_position(x, y * FORMATION_Y_SCALE, 0),
-        lazy(lazy) {
+        role(role),
+        lazy(lazy),
+        controllable(controllable) {
+    DO_VALIDATION;
   }
   bool operator == (const FormationEntry& f) const {
     return role == f.role &&
         lazy == f.lazy &&
         databasePosition == f.databasePosition &&
-        position == f.position;
+        position == f.position &&
+        controllable == f.controllable;
   }
-  Vector3 position_env() {
+  Vector3 position_env() { DO_VALIDATION;
     return Vector3(position.coords[0],
                    position.coords[1] / FORMATION_Y_SCALE,
                    position.coords[2]);
   }
-  e_PlayerRole role = e_PlayerRole_GK;
+  void ProcessState(EnvState* state) { DO_VALIDATION;
+    state->process(static_cast<void*>(&role), sizeof(role));
+    state->process(databasePosition);
+    state->process(position);
+    state->process(start_position);
+    state->process(lazy);
+    state->process(controllable);
+  }
   Vector3 databasePosition;
   Vector3 position; // adapted to player role (combination of databasePosition and hardcoded role position)
   Vector3 start_position;
+  e_PlayerRole role = e_PlayerRole_GK;
   bool lazy = false; // Computer doesn't perform any actions for lazy player.
+  // Can be controlled by the player?
+  bool controllable = true;
 };
 
 struct PlayerImage {
@@ -269,12 +299,25 @@ struct PlayerImage {
   Vector3 directionVec;
   Vector3 movement;
   Player *player;
-  float velocity = 0.0f;
-  FormationEntry dynamicFormationEntry;
+  e_Velocity velocity = e_Velocity_Idle;
+  e_PlayerRole role;
+  void ProcessState(EnvState* state) { DO_VALIDATION;
+    state->process(position);
+    state->process(directionVec);
+    state->process(movement);
+    state->process(player);
+    state->process(&velocity, sizeof(velocity));
+    state->process(&role, sizeof(role));
+  }
+  void Mirror() { DO_VALIDATION;
+    position.Mirror();
+    directionVec.Mirror();
+    movement.Mirror();
+  }
 };
 
 struct PlayerImagePosition {
-  PlayerImagePosition(const Vector3& position, const Vector3& movement, e_PlayerRole player_role) : position(position), movement(movement), player_role(player_role) {}
+  PlayerImagePosition(const Vector3& position, const Vector3& movement, e_PlayerRole player_role) : position(position), movement(movement), player_role(player_role) { DO_VALIDATION;}
   Vector3 position;
   Vector3 movement;
   e_PlayerRole player_role;
@@ -301,7 +344,4 @@ struct ForceSpot {
 };
 
 void GetVertexColors(std::map<Vector3, Vector3> &colorCoords);
-
-e_FunctionType StringToFunctionType(const std::string &fun);
-
 #endif

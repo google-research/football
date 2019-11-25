@@ -5,6 +5,17 @@ should not change, as modifications made to the environment are either
 new features or backward compatible bug fixes. We will maintain vX branches
 pointing at the most recent vX.Y.
 
+v2.0 - this release is not backward-compatible due to making game fully symmetric (training agents can behave differently).
+- Game is fully symmetric now (playing left to right and right to left is equivalent). All observations are modified inside of the
+  environment and from agent's perspective the game is always presented as playing from left to right (no need to train from both
+  sides).
+- Introduction of get_state() and set_state() API methods, which allow for saving and loading state of the entire environment.
+  Using these methods it is possible to move back in time and investigate possible outcomes of different actions taken
+  at exactly the same non-initial state of the episode.
+- Introduction of GYM-like render() method to the environment API which enables rendering dynamically. It is not needed anymore to
+  pro-actively start environment with --render flag in order to see rendered episodes at any time.
+- By default team losing the goal starts the game with the ball.
+
 v1.5
 - Fix to numerical issue resulting in asserts in long runs (https://github.com/google-research/football/issues/78).
 - Eliminate dependense on Glee (https://github.com/google-research/football/issues/77)

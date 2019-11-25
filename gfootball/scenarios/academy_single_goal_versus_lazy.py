@@ -25,12 +25,12 @@ episode = 0
 def build_scenario(builder):
   global episode
   episode += 1
-  builder.SetFlag('game_duration', 3000)
-  builder.SetFlag('deterministic', False)
-  builder.SetFlag('offsides', False)
-  builder.SetFlag('end_episode_on_score', True)
-  builder.SetFlag('end_episode_on_out_of_play', True)
-  builder.SetFlag('end_episode_on_possession_change', True)
+  builder.config().game_duration = 3000
+  builder.config().deterministic = False
+  builder.config().offsides = False
+  builder.config().end_episode_on_score = True
+  builder.config().end_episode_on_out_of_play = True
+  builder.config().end_episode_on_possession_change = True
   builder.SetBallPosition(-0.48, -0.06356)
 
   builder.SetTeam(Team.e_Left)

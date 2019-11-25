@@ -22,31 +22,36 @@
 
 namespace blunted {
 
-  AABB::AABB() {
-  }
+AABB::AABB() { DO_VALIDATION; }
 
-  AABB::AABB(const AABB &src) {
-    this->minxyz = src.minxyz;
-    this->maxxyz = src.maxxyz;
-    radius_needupdate = true;
-    center_needupdate = true;
-  }
+AABB::AABB(const AABB &src) {
+  DO_VALIDATION;
+  this->minxyz = src.minxyz;
+  this->maxxyz = src.maxxyz;
+  radius_needupdate = true;
+  center_needupdate = true;
+}
 
-  AABB::~AABB() {
-  }
+AABB::~AABB() { DO_VALIDATION; }
 
-
-  AABB AABB::operator += (const AABB &add) {
-    if (minxyz.coords[0] > add.minxyz.coords[0]) minxyz.coords[0] = add.minxyz.coords[0];
-    if (minxyz.coords[1] > add.minxyz.coords[1]) minxyz.coords[1] = add.minxyz.coords[1];
-    if (minxyz.coords[2] > add.minxyz.coords[2]) minxyz.coords[2] = add.minxyz.coords[2];
-    if (maxxyz.coords[0] < add.maxxyz.coords[0]) maxxyz.coords[0] = add.maxxyz.coords[0];
-    if (maxxyz.coords[1] < add.maxxyz.coords[1]) maxxyz.coords[1] = add.maxxyz.coords[1];
-    if (maxxyz.coords[2] < add.maxxyz.coords[2]) maxxyz.coords[2] = add.maxxyz.coords[2];
-    radius_needupdate = true;
-    center_needupdate = true;
-    return *this;
-  }
+AABB AABB::operator+=(const AABB &add) {
+  DO_VALIDATION;
+  if (minxyz.coords[0] > add.minxyz.coords[0])
+    minxyz.coords[0] = add.minxyz.coords[0];
+  if (minxyz.coords[1] > add.minxyz.coords[1])
+    minxyz.coords[1] = add.minxyz.coords[1];
+  if (minxyz.coords[2] > add.minxyz.coords[2])
+    minxyz.coords[2] = add.minxyz.coords[2];
+  if (maxxyz.coords[0] < add.maxxyz.coords[0])
+    maxxyz.coords[0] = add.maxxyz.coords[0];
+  if (maxxyz.coords[1] < add.maxxyz.coords[1])
+    maxxyz.coords[1] = add.maxxyz.coords[1];
+  if (maxxyz.coords[2] < add.maxxyz.coords[2])
+    maxxyz.coords[2] = add.maxxyz.coords[2];
+  radius_needupdate = true;
+  center_needupdate = true;
+  return *this;
+}
 
   AABB AABB::operator + (const Vector3 &vec) const {
     AABB aabb(*this);
@@ -79,12 +84,14 @@ namespace blunted {
     vecs.push_back(vec);
 
     for (int i = 0; i < (signed int)vecs.size(); i++) {
+      DO_VALIDATION;
       vecs[i] = rot * vecs[i];
     }
 
     aabb.Reset();
 
     for (int i = 0; i < (signed int)vecs.size(); i++) {
+      DO_VALIDATION;
       if (vecs[i].coords[0] < aabb.minxyz.coords[0]) aabb.minxyz.coords[0] = vecs[i].coords[0];
       if (vecs[i].coords[0] > aabb.maxxyz.coords[0]) aabb.maxxyz.coords[0] = vecs[i].coords[0];
       if (vecs[i].coords[1] < aabb.minxyz.coords[1]) aabb.minxyz.coords[1] = vecs[i].coords[1];
@@ -108,17 +115,20 @@ namespace blunted {
   }
 
   void AABB::SetMinXYZ(const Vector3 &min) {
+    DO_VALIDATION;
     minxyz = min;
     MakeDirty();
   }
 
   void AABB::SetMaxXYZ(const Vector3 &max) {
+    DO_VALIDATION;
     maxxyz = max;
     MakeDirty();
   }
 
   real AABB::GetRadius() const {
     if (radius_needupdate) {
+      DO_VALIDATION;
       real x, y, z;
       x = maxxyz.coords[0] - minxyz.coords[0];
       y = maxxyz.coords[1] - minxyz.coords[1];
@@ -132,6 +142,7 @@ namespace blunted {
 
   void AABB::GetCenter(Vector3 &center) const {
     if (center_needupdate) {
+      DO_VALIDATION;
       real x = (minxyz.coords[0] + maxxyz.coords[0]) / 2.0;
       real y = (minxyz.coords[1] + maxxyz.coords[1]) / 2.0;
       real z = (minxyz.coords[2] + maxxyz.coords[2]) / 2.0;
@@ -145,10 +156,13 @@ namespace blunted {
     real s, d = 0;
 
     for (int i = 0; i < 3; i++) {
+      DO_VALIDATION;
       if (center.coords[i] < minxyz.coords[i]) {
+        DO_VALIDATION;
         s = center.coords[i] - minxyz.coords[i];
         d += s * s;
       } else if (center.coords[i] > maxxyz.coords[i]) {
+        DO_VALIDATION;
         s = center.coords[i] - maxxyz.coords[i];
         d += s * s;
       }
@@ -174,16 +188,19 @@ namespace blunted {
     real distance;
     int planes_size = planes.size();
     for (int p = 0; p < planes_size; p++) {
+      DO_VALIDATION;
       // check if there is any point (that defines this aabb) on the inside of this plane
       aabb_intersects_planecollection = false;
 
       determinant = planes.at(p).GetDeterminant();
       for (int ap = 0; ap < 8; ap++) {
+        DO_VALIDATION;
         distance = determinant + planes.at(p).GetVertex(1).coords[0] * aabb_points[ap].coords[0] +
                                  planes.at(p).GetVertex(1).coords[1] * aabb_points[ap].coords[1] +
                                  planes.at(p).GetVertex(1).coords[2] * aabb_points[ap].coords[2];
 
         if (distance > 0) {
+          DO_VALIDATION;
           aabb_intersects_planecollection = true;
           break;
         }
@@ -201,6 +218,7 @@ namespace blunted {
         (src.maxxyz.coords[0] > minxyz.coords[0] &&
          src.maxxyz.coords[1] > minxyz.coords[1] &&
          src.maxxyz.coords[2] > minxyz.coords[2])) {
+      DO_VALIDATION;
       return true;
     } else {
       return false;

@@ -30,6 +30,7 @@ struct index3 {
 };
 
 void GetVertexColors(std::map<Vector3, Vector3> &colorCoords) {
+  DO_VALIDATION;
   std::vector<Vector3> vertices;
   std::vector<Vector3> colors;
   std::vector<index3> faces;
@@ -39,6 +40,7 @@ void GetVertexColors(std::map<Vector3, Vector3> &colorCoords) {
   int pos = 0;
   int last_pos = 0;
   while (pos < data.length()) {
+    DO_VALIDATION;
     while (pos < data.length() && data[pos] != '\n') pos++;
     std::string line_str = data.substr(last_pos, pos - last_pos);
     pos++;
@@ -48,15 +50,20 @@ void GetVertexColors(std::map<Vector3, Vector3> &colorCoords) {
     tokenize(line_str, tokens, " \t");
 
     if (tokens.size() > 0) {
-      if (tokens.at(0).compare("*MESH_NORMALS") == 0) {  // end of useful block
+      DO_VALIDATION;
+      if (tokens.at(0).compare("*MESH_NORMALS") == 0) {
+        DO_VALIDATION;  // end of useful block
 
         // complete previous object
 
         for (unsigned int i = 0; i < colorFaces.size(); i++) {
+          DO_VALIDATION;
           for (unsigned int v = 0; v < 3; v++) {
+            DO_VALIDATION;
             Vector3 coord = vertices.at(faces[i].index[v]);
             Vector3 color = colors.at(colorFaces[i].index[v]);
             if (colorCoords.find(coord) == colorCoords.end()) {
+              DO_VALIDATION;
               colorCoords.insert(std::pair<Vector3, Vector3>(coord, color));
             } else {
               // assert(colorCoords.find(coord)->second == color);
@@ -73,6 +80,7 @@ void GetVertexColors(std::map<Vector3, Vector3> &colorCoords) {
       }
 
       if (tokens.at(0).compare("*MESH_VERTEX") == 0) {
+        DO_VALIDATION;
         assert(tokens.size() > 4);
         Vector3 bla(atof(tokens.at(2).c_str()), atof(tokens.at(3).c_str()),
                     atof(tokens.at(4).c_str()));
@@ -80,6 +88,7 @@ void GetVertexColors(std::map<Vector3, Vector3> &colorCoords) {
       }
 
       if (tokens.at(0).compare("*MESH_FACE") == 0) {
+        DO_VALIDATION;
         assert(tokens.size() > 7);
         index3 bla;
         bla.index[0] = atoi(tokens.at(3).c_str());
@@ -89,6 +98,7 @@ void GetVertexColors(std::map<Vector3, Vector3> &colorCoords) {
       }
 
       if (tokens.at(0).compare("*MESH_VERTCOL") == 0) {
+        DO_VALIDATION;
         assert(tokens.size() > 4);
         Vector3 bla(atof(tokens.at(2).c_str()), atof(tokens.at(3).c_str()),
                     atof(tokens.at(4).c_str()));
@@ -100,6 +110,7 @@ void GetVertexColors(std::map<Vector3, Vector3> &colorCoords) {
       }
 
       if (tokens.at(0).compare("*MESH_CFACE") == 0) {
+        DO_VALIDATION;
         assert(tokens.size() > 4);
         index3 bla;
         bla.index[0] = atoi(tokens.at(2).c_str());
@@ -111,24 +122,8 @@ void GetVertexColors(std::map<Vector3, Vector3> &colorCoords) {
   }
 }
 
-e_FunctionType StringToFunctionType(const std::string &fun) {
-  if (fun.compare("movement") == 0) return e_FunctionType_Movement;
-  if (fun.compare("ballcontrol") == 0) return e_FunctionType_BallControl;
-  if (fun.compare("trap") == 0) return e_FunctionType_Trap;
-  if (fun.compare("shortpass") == 0) return e_FunctionType_ShortPass;
-  if (fun.compare("longpass") == 0) return e_FunctionType_LongPass;
-  if (fun.compare("highpass") == 0) return e_FunctionType_HighPass;
-  if (fun.compare("shot") == 0) return e_FunctionType_Shot;
-  if (fun.compare("deflect") == 0) return e_FunctionType_Deflect;
-  if (fun.compare("catch") == 0) return e_FunctionType_Catch;
-  if (fun.compare("interfere") == 0) return e_FunctionType_Interfere;
-  if (fun.compare("trip") == 0) return e_FunctionType_Trip;
-  if (fun.compare("sliding") == 0) return e_FunctionType_Sliding;
-  if (fun.compare("special") == 0) return e_FunctionType_Special;
-  return e_FunctionType_None;
-}
-
 e_PlayerRole GetRoleFromString(const std::string &roleString) {
+  DO_VALIDATION;
   if (roleString.compare("GK") == 0) return e_PlayerRole_GK;
   if (roleString.compare("CB") == 0) return e_PlayerRole_CB;
   if (roleString.compare("LB") == 0) return e_PlayerRole_LB;

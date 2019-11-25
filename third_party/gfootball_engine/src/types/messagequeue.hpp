@@ -24,29 +24,27 @@
 
 #include "../types/command.hpp"
 
-#include "../managers/environmentmanager.hpp"
-
 namespace blunted {
 
   template <typename T = boost::intrusive_ptr<Command> >
   class MessageQueue {
 
     public:
-      MessageQueue() {}
-      virtual ~MessageQueue() {}
+      MessageQueue() { DO_VALIDATION;}
+      virtual ~MessageQueue() { DO_VALIDATION;}
 
-      inline void PushMessage(T message, bool notify = true) {
+      inline void PushMessage(T message, bool notify = true) { DO_VALIDATION;
         queue.push_back(message);
         if (notify) NotifyWaiting();
       }
 
-      inline void NotifyWaiting() {
+      inline void NotifyWaiting() { DO_VALIDATION;
         messageNotification.notify_one();
       }
 
-      inline T GetMessage(bool &MsgAvail) {
+      inline T GetMessage(bool &MsgAvail) { DO_VALIDATION;
         T message;
-        if (queue.size() > 0) {
+        if (queue.size() > 0) { DO_VALIDATION;
           message = *queue.begin();
           queue.pop_front();
           MsgAvail = true;

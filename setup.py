@@ -41,7 +41,7 @@ packages = find_packages() + find_packages('third_party')
 
 setup(
     name='gfootball',
-    version='1.5',
+    version='2.0',
     description=('Google Research Football - RL environment based on '
                  'open-source game Gameplay Football'),
     author='Google LLC',
@@ -55,7 +55,7 @@ setup(
         'pygame==1.9.6',
         'opencv-python',
         'scipy',
-        'gym',
+        'gym>=0.11.0',
         'absl-py',
     ],
     include_package_data=True,

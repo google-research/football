@@ -19,7 +19,10 @@
 #define _HPP_FOOTBALL_ONTHEPITCH_ELIZACONTROLLER
 
 #include "playercontroller.hpp"
-
+#include "strategies/offtheball/default_def.hpp"
+#include "strategies/offtheball/default_mid.hpp"
+#include "strategies/offtheball/default_off.hpp"
+#include "strategies/offtheball/goalie_default.hpp"
 #include "../../../gamedefines.hpp"
 
 struct Prerequisites;
@@ -39,14 +42,13 @@ class ElizaController : public PlayerController {
     virtual Vector3 GetDirection();
     virtual float GetFloatVelocity();
 
-    void LoadStrategies();
-
     float GetLazyVelocity(float desiredVelocityFloat);
     Vector3 GetSupportPosition_ForceField(const MentalImage *mentalImage,
                                           const Vector3 &basePosition,
                                           bool makeRun = false);
 
     virtual void Reset();
+    virtual void ProcessState(EnvState* state);
 
   protected:
     void GetOnTheBallCommands(std::vector<PlayerCommand> &commandQueue, Vector3 &rawInputDirection, float &rawInputVelocity);
@@ -57,15 +59,14 @@ class ElizaController : public PlayerController {
     float _GetPassingOdds(const Vector3 &target, e_FunctionType passType, const std::vector<PlayerImagePosition> &opponentPlayerImages, float ballVelocityMultiplier = 1.0f);
     void _AddCelebration(std::vector<PlayerCommand> &commandQueue);
 
-    Strategy *defenseStrategy;
-    Strategy *midfieldStrategy;
-    Strategy *offenseStrategy;
-    Strategy *goalieStrategy;
+    DefaultDefenseStrategy defenseStrategy;
+    DefaultMidfieldStrategy midfieldStrategy;
+    DefaultOffenseStrategy offenseStrategy;
+    GoalieDefaultStrategy goalieStrategy;
 
     Vector3 lastDesiredDirection;
     float lastDesiredVelocity = 0.0f;
     const bool lazyPlayer = false;
-
 };
 
 #endif

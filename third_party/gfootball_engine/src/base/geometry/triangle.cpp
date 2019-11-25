@@ -33,36 +33,49 @@ namespace blunted {
       b=c;     \
   }
 
-  #define COMPUTE_INTERVALS(VV0,VV1,VV2,D0,D1,D2,D0D1,D0D2,A,B,C,X0,X1) { \
-    if(D0D1>0.0f) \
-    { \
-            /* here we know that D0D2<=0.0 */ \
-            /* that is D0, D1 are on the same side, D2 on the other or on the plane */ \
-            A=VV2; B=(VV0-VV2)*D2; C=(VV1-VV2)*D2; X0=D2-D0; X1=D2-D1; \
-    } \
-    else if(D0D2>0.0f)\
-    { \
-            /* here we know that d0d1<=0.0 */ \
-        A=VV1; B=(VV0-VV1)*D1; C=(VV2-VV1)*D1; X0=D1-D0; X1=D1-D2; \
-    } \
-    else if(D1*D2>0.0f || D0!=0.0f) \
-    { \
-            /* here we know that d0d1<=0.0 or that D0!=0.0 */ \
-            A=VV0; B=(VV1-VV0)*D0; C=(VV2-VV0)*D0; X0=D0-D1; X1=D0-D2; \
-    } \
-    else if(D1!=0.0f) \
-    { \
-            A=VV1; B=(VV0-VV1)*D1; C=(VV2-VV1)*D1; X0=D1-D0; X1=D1-D2; \
-    } \
-    else if(D2!=0.0f) \
-    { \
-            A=VV2; B=(VV0-VV2)*D2; C=(VV1-VV2)*D2; X0=D2-D0; X1=D2-D1; \
-    } \
-    else \
-    { \
-            /* triangles are coplanar */ \
-            return IsCoplanar(N1,triangle); \
-    } \
+#define COMPUTE_INTERVALS(VV0, VV1, VV2, D0, D1, D2, D0D1, D0D2, A, B, C, X0, \
+                          X1)                                                 \
+  {                                                                           \
+    DO_VALIDATION;                                                            \
+    if (D0D1 > 0.0f) {                                                        \
+      /* here we know that D0D2<=0.0 */                                       \
+      /* that is D0, D1 are on the same side, D2 on the other or on the plane \
+       */                                                                     \
+      A = VV2;                                                                \
+      B = (VV0 - VV2) * D2;                                                   \
+      C = (VV1 - VV2) * D2;                                                   \
+      X0 = D2 - D0;                                                           \
+      X1 = D2 - D1;                                                           \
+    } else if (D0D2 > 0.0f) {                                                 \
+      /* here we know that d0d1<=0.0 */                                       \
+      A = VV1;                                                                \
+      B = (VV0 - VV1) * D1;                                                   \
+      C = (VV2 - VV1) * D1;                                                   \
+      X0 = D1 - D0;                                                           \
+      X1 = D1 - D2;                                                           \
+    } else if (D1 * D2 > 0.0f || D0 != 0.0f) {                                \
+      /* here we know that d0d1<=0.0 or that D0!=0.0 */                       \
+      A = VV0;                                                                \
+      B = (VV1 - VV0) * D0;                                                   \
+      C = (VV2 - VV0) * D0;                                                   \
+      X0 = D0 - D1;                                                           \
+      X1 = D0 - D2;                                                           \
+    } else if (D1 != 0.0f) {                                                  \
+      A = VV1;                                                                \
+      B = (VV0 - VV1) * D1;                                                   \
+      C = (VV2 - VV1) * D1;                                                   \
+      X0 = D1 - D0;                                                           \
+      X1 = D1 - D2;                                                           \
+    } else if (D2 != 0.0f) {                                                  \
+      A = VV2;                                                                \
+      B = (VV0 - VV2) * D2;                                                   \
+      C = (VV1 - VV2) * D2;                                                   \
+      X0 = D2 - D0;                                                           \
+      X1 = D2 - D1;                                                           \
+    } else {                                                                  \
+      /* triangles are coplanar */                                            \
+      return IsCoplanar(N1, triangle);                                        \
+    }                                                                         \
   }
 
   /* this edge to edge test is based on Franlin Antonio's gem:
@@ -126,41 +139,45 @@ namespace blunted {
     }                                         \
   }
 
-  Triangle::Triangle() {
-  }
+Triangle::Triangle() { DO_VALIDATION; }
 
-  Triangle::Triangle(const Triangle &triangle) {
+Triangle::Triangle(const Triangle &triangle) {
+  DO_VALIDATION;
 
-    memcpy(vertices, triangle.vertices, sizeof(triangle.vertices));
-    memcpy(textureVertices, triangle.textureVertices, sizeof(triangle.textureVertices));
-    memcpy(normals, triangle.normals, sizeof(triangle.normals));
-    memcpy(tangents, triangle.tangents, sizeof(triangle.tangents));
-    memcpy(biTangents, triangle.biTangents, sizeof(triangle.biTangents));
-  }
+  memcpy(vertices, triangle.vertices, sizeof(triangle.vertices));
+  memcpy(textureVertices, triangle.textureVertices,
+         sizeof(triangle.textureVertices));
+  memcpy(normals, triangle.normals, sizeof(triangle.normals));
+  memcpy(tangents, triangle.tangents, sizeof(triangle.tangents));
+  memcpy(biTangents, triangle.biTangents, sizeof(triangle.biTangents));
+}
 
-  Triangle::Triangle(const Vector3 &v1, const Vector3 &v2, const Vector3 &v3) {
-    SetVertex(0, v1);
-    SetVertex(1, v2);
-    SetVertex(2, v3);
-    for (int v = 0; v < 3; v++) {
-      for (int tu = 0; tu < 8; tu++) {
-        textureVertices[v][tu].Set(0, 0, 0);
-      }
-      normals[v].Set(0, 0, 0);
-      tangents[v].Set(0, 0, 0);
-      biTangents[v].Set(0, 0, 0);
+Triangle::Triangle(const Vector3 &v1, const Vector3 &v2, const Vector3 &v3) {
+  DO_VALIDATION;
+  SetVertex(0, v1);
+  SetVertex(1, v2);
+  SetVertex(2, v3);
+  for (int v = 0; v < 3; v++) {
+    DO_VALIDATION;
+    for (int tu = 0; tu < 8; tu++) {
+      DO_VALIDATION;
+      textureVertices[v][tu].Set(0, 0, 0);
     }
+    normals[v].Set(0, 0, 0);
+    tangents[v].Set(0, 0, 0);
+    biTangents[v].Set(0, 0, 0);
   }
+}
 
-  Triangle::~Triangle() {
+Triangle::~Triangle() { DO_VALIDATION; }
+bool Triangle::operator==(const Triangle &triangle) const {
+  if (vertices[0] == triangle.GetVertex(0) &&
+      vertices[1] == triangle.GetVertex(1) &&
+      vertices[2] == triangle.GetVertex(2)) {
+    DO_VALIDATION;
+    return true;
   }
-  bool Triangle::operator == (const Triangle &triangle) const {
-    if (vertices[0] == triangle.GetVertex(0) &&
-        vertices[1] == triangle.GetVertex(1) &&
-        vertices[2] == triangle.GetVertex(2)) {
-      return true;
-    }
-    return false;
+  return false;
   }
 
   bool Triangle::IntersectsLine(const Line &u_ray, Vector3 &intersectVec) const {
@@ -176,7 +193,8 @@ namespace blunted {
     w0 = u_ray.GetVertex(0) - vertices[0];
     a = -normals[0].GetDotProduct(w0);
     b = normals[0].GetDotProduct(dir);
-    if (fabs(b) < 0.000001f) {     // ray is parallel to triangle plane
+    if (fabs(b) < 0.000001f) {
+      // ray is parallel to triangle plane
       if (a == 0)                // ray lies in triangle plane
         return false; // 2
       else return false;             // ray disjoint from plane
@@ -217,6 +235,7 @@ namespace blunted {
   // ----- utility
 
   void Triangle::CalculateTangents() {
+    DO_VALIDATION;
 
     // http://www.3dkingdoms.com/weekly/weekly.php?a=37
 
@@ -228,18 +247,24 @@ namespace blunted {
     float cp = edge1uv.coords[1] * edge2uv.coords[0] - edge1uv.coords[0] * edge2uv.coords[1];
 
     if (cp != 0.0f) {
+      DO_VALIDATION;
       float mul = 1.0f / cp;
       for (int v = 0; v < 3; v++) {
+        DO_VALIDATION;
         tangents[v]   = (edge1 * -edge2uv.coords[1] + edge2 * edge1uv.coords[1]) * mul;
         biTangents[v] = (edge1 * -edge2uv.coords[0] + edge2 * edge1uv.coords[0]) * mul;
         tangents[v].Normalize();
         biTangents[v].Normalize();
 
-        // handedness check: http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-13-normal-mapping/#Handedness
-        // "To check whether it must be inverted or not, the check is simple : TBN must form a right-handed coordinate system, i.e. cross(n,t) must have the same orientation than b.
-        //  In mathematics, “Vector A has the same orientation as Vector B” translates as dot(A,B)>0, so we need to check if dot( cross(n,t) , b ) > 0.
-        //  If it’s false, just invert t :
-        //  if (glm::dot(glm::cross(n, t), b) < 0.0f) {
+        // handedness check:
+        // http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-13-normal-mapping/#Handedness
+        // "To check whether it must be inverted or not, the check is simple :
+        // TBN must form a right-handed coordinate system, i.e. cross(n,t) must
+        // have the same orientation than b.
+        //  In mathematics, “Vector A has the same orientation as Vector B”
+        //  translates as dot(A,B)>0, so we need to check if dot( cross(n,t) , b
+        //  ) > 0. If it’s false, just invert t : if (glm::dot(glm::cross(n, t),
+        //  b) < 0.0f) { DO_VALIDATION;
         //    t = t * -1.0f;
         //  }"
         Vector3 crossProduct = normals[v].GetCrossProduct(tangents[v]);
@@ -247,12 +272,13 @@ namespace blunted {
         //printf("dot: %f\n", dotProduct);
         // check for > 0 and change bitangents, since we want a left handed TBN (todo: is that so?)
         if (dotProduct > 0.0f) {
+          DO_VALIDATION;
           biTangents[v] = -biTangents[v];
         }
-
       }
     } else {
       for (int v = 0; v < 3; v++) {
+        DO_VALIDATION;
         // no texture coords; make something up
         tangents[v].Set(1, 0, 0);
         biTangents[v].Set(0, 1, 0);

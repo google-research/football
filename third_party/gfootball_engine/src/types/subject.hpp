@@ -32,24 +32,24 @@ namespace blunted {
   class Subject {
 
     public:
-      Subject() {
+      Subject() { DO_VALIDATION;
       }
       
-      virtual ~Subject() {
+      virtual ~Subject() { DO_VALIDATION;
         observers.clear();
       }
 
-      virtual void Attach(boost::intrusive_ptr<T> observer, void *thisPtr = 0) {
+      virtual void Attach(boost::intrusive_ptr<T> observer, void *thisPtr = 0) { DO_VALIDATION;
 
         observer->SetSubjectPtr(thisPtr);
 
         observers.push_back(observer);
       }
 
-      virtual void Detach(boost::intrusive_ptr<T> observer) {
+      virtual void Detach(boost::intrusive_ptr<T> observer) { DO_VALIDATION;
         typename std::vector < boost::intrusive_ptr<T> >::iterator o_iter = observers.begin();
-        while (o_iter != observers.end()) {
-          if ((*o_iter).get() == observer.get()) {
+        while (o_iter != observers.end()) { DO_VALIDATION;
+          if ((*o_iter).get() == observer.get()) { DO_VALIDATION;
             (*o_iter).reset();
             o_iter = observers.erase(o_iter);
           } else {
@@ -58,9 +58,9 @@ namespace blunted {
         }
       }
 
-      virtual void DetachAll() {
+      virtual void DetachAll() { DO_VALIDATION;
         typename std::vector < boost::intrusive_ptr<T> >::iterator o_iter = observers.begin();
-        while (o_iter != observers.end()) {
+        while (o_iter != observers.end()) { DO_VALIDATION;
           (*o_iter).reset();
           o_iter = observers.erase(o_iter);
         }

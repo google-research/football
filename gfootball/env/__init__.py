@@ -24,12 +24,72 @@ from gfootball.env import observation_preprocessing
 from gfootball.env import wrappers
 
 
+def _process_reward_wrappers(env, rewards):
+  assert 'scoring' in rewards.split(',')
+  if 'checkpoints' in rewards.split(','):
+    env = wrappers.CheckpointRewardWrapper(env)
+  return env
+
+
+def _process_representation_wrappers(env, representation, channel_dimensions):
+  """Wraps with necessary representation wrappers.
+
+  Args:
+    env: A GFootball gym environment.
+    representation: See create_environment.representation comment.
+    channel_dimensions: (width, height) tuple that represents the dimensions of
+       SMM or pixels representation.
+  Returns:
+    Google Research Football environment.
+  """
+  if representation.startswith('pixels'):
+    env = wrappers.PixelsStateWrapper(env, 'gray' in representation,
+                                      channel_dimensions)
+  elif representation == 'simple115':
+    env = wrappers.Simple115StateWrapper(env)
+  elif representation == 'extracted':
+    env = wrappers.SMMWrapper(env, channel_dimensions)
+  elif representation == 'raw':
+    pass
+  else:
+    raise ValueError('Unsupported representation: {}'.format(representation))
+  return env
+
+
+def _apply_output_wrappers(env, rewards, representation, channel_dimensions,
+                           apply_single_agent_wrappers, stacked):
+  """Wraps with necessary wrappers modifying the output of the environment.
+
+  Args:
+    env: A GFootball gym environment.
+    rewards: What rewards to apply.
+    representation: See create_environment.representation comment.
+    channel_dimensions: (width, height) tuple that represents the dimensions of
+       SMM or pixels representation.
+    apply_single_agent_wrappers: Whether to reduce output to single agent case.
+    stacked: Should observations be stacked.
+  Returns:
+    Google Research Football environment.
+  """
+  env = _process_reward_wrappers(env, rewards)
+  env = _process_representation_wrappers(env, representation,
+                                         channel_dimensions)
+  if apply_single_agent_wrappers:
+    if representation != 'raw':
+      env = wrappers.SingleAgentObservationWrapper(env)
+    env = wrappers.SingleAgentRewardWrapper(env)
+  if stacked:
+    env = wrappers.FrameStack(env, 4)
+  env = wrappers.GetStateWrapper(env)
+  return env
+
+
 def create_environment(env_name='',
                        stacked=False,
                        representation='extracted',
                        rewards='scoring',
-                       enable_goal_videos=False,
-                       enable_full_episode_videos=False,
+                       write_goal_dumps=False,
+                       write_full_episode_dumps=False,
                        render=False,
                        write_video=False,
                        dump_frequency=1,
@@ -37,7 +97,6 @@ def create_environment(env_name='',
                        extra_players=None,
                        number_of_left_players_agent_controls=1,
                        number_of_right_players_agent_controls=0,
-                       enable_sides_swap=False,
                        channel_dimensions=(
                            observation_preprocessing.SMM_WIDTH,
                            observation_preprocessing.SMM_HEIGHT)):
@@ -91,8 +150,8 @@ def create_environment(env_name='',
          (i.e. 11 versus 11 players).
     rewards: Comma separated list of rewards to be added.
        Currently supported rewards are 'scoring' and 'checkpoints'.
-    enable_goal_videos: whether to dump traces up to 200 frames before goals.
-    enable_full_episode_videos: whether to dump traces for every episode.
+    write_goal_dumps: whether to dump traces up to 200 frames before goals.
+    write_full_episode_dumps: whether to dump traces for every episode.
     render: whether to render game frames.
        Must be enable when rendering videos or when using pixels
        representation.
@@ -107,8 +166,6 @@ def create_environment(env_name='',
         controls.
     number_of_right_players_agent_controls: Number of right players an agent
         controls.
-    enable_sides_swap: Whether to randomly pick a field side at the beginning of
-       each episode for the team that the agent controls.
     channel_dimensions: (width, height) tuple that represents the dimensions of
        SMM or pixels representation.
   Returns:
@@ -121,35 +178,63 @@ def create_environment(env_name='',
   if extra_players is not None:
     players.extend(extra_players)
   c = config.Config({
-      'enable_sides_swap': enable_sides_swap,
-      'dump_full_episodes': enable_full_episode_videos,
-      'dump_scores': enable_goal_videos,
+      'dump_full_episodes': write_full_episode_dumps,
+      'dump_scores': write_goal_dumps,
       'players': players,
       'level': env_name,
-      'render': render,
       'tracesdir': logdir,
       'write_video': write_video,
   })
   env = football_env.FootballEnv(c)
+  if render:
+    env.render()
   if dump_frequency > 1:
     env = wrappers.PeriodicDumpWriter(env, dump_frequency)
-  assert 'scoring' in rewards.split(',')
-  if 'checkpoints' in rewards.split(','):
-    env = wrappers.CheckpointRewardWrapper(env)
-  if representation.startswith('pixels'):
-    env = wrappers.PixelsStateWrapper(env, 'gray' in representation,
-                                      channel_dimensions)
-  elif representation == 'simple115':
-    env = wrappers.Simple115StateWrapper(env)
-  elif representation == 'extracted':
-    env = wrappers.SMMWrapper(env, channel_dimensions)
-  else:
-    raise ValueError('Unsupported representation: {}'.format(representation))
-  if (number_of_left_players_agent_controls +
-      number_of_right_players_agent_controls == 1):
-    env = wrappers.SingleAgentObservationWrapper(env)
-    env = wrappers.SingleAgentRewardWrapper(env)
-  if stacked:
-    env = wrappers.FrameStack(env, 4)
+  env = _apply_output_wrappers(
+      env, rewards, representation, channel_dimensions,
+      (number_of_left_players_agent_controls +
+       number_of_right_players_agent_controls == 1), stacked)
+  return env
 
+
+def create_remote_environment(
+    username,
+    token,
+    model_name='',
+    track='',
+    stacked=False,
+    representation='raw',
+    rewards='scoring',
+    channel_dimensions=(
+        observation_preprocessing.SMM_WIDTH,
+        observation_preprocessing.SMM_HEIGHT),
+    include_rendering=False):
+  """Creates a remote Google Research Football environment.
+
+  Args:
+    username: User name.
+    token: User token.
+    model_name: A model identifier to be displayed on the leaderboard.
+    track: which competition track to connect to.
+    stacked: If True, stack 4 observations, otherwise, only the last
+      observation is returned by the environment.
+      Stacking is only possible when representation is one of the following:
+      "pixels", "pixels_gray" or "extracted".
+      In that case, the stacking is done along the last (i.e. channel)
+      dimension.
+    representation: See create_environment.representation comment.
+    rewards: Comma separated list of rewards to be added.
+       Currently supported rewards are 'scoring' and 'checkpoints'.
+    channel_dimensions: (width, height) tuple that represents the dimensions of
+       SMM or pixels representation.
+    include_rendering: Whether to return frame as part of the output.
+  Returns:
+    Google Research Football environment.
+  """
+  from gfootball.env import remote_football_env
+  env = remote_football_env.RemoteFootballEnv(
+      username, token, model_name=model_name, track=track,
+      include_rendering=include_rendering)
+  env = _apply_output_wrappers(
+      env, rewards, representation, channel_dimensions, True, stacked)
   return env

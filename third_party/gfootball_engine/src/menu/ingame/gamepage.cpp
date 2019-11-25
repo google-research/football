@@ -25,102 +25,12 @@
 
 using namespace blunted;
 
-GamePage::GamePage(Gui2WindowManager *windowManager, const Gui2PageData &pageData) : Gui2Page(windowManager, pageData), match(0) {
-
-  // Gui2Caption *betaSign = new Gui2Caption(windowManager, "caption_betasign", 0, 0, 0, 2, "Google Research Football alpha v0.7");
-  // betaSign->SetColor(Vector3(180, 180, 180));
-  // betaSign->SetTransparency(0.3f);
-  // this->AddView(betaSign);
-  // float w = betaSign->GetTextWidthPercent();
-  // betaSign->SetPosition(50 - w * 0.5f, 97.0f);
-  // betaSign->Show();
-
+GamePage::GamePage(Gui2WindowManager *windowManager_,
+                   const Gui2PageData &pageData_)
+    : Gui2Page(windowManager_, pageData_) {
+  DO_VALIDATION;
   this->Show();
-
   this->SetFocus();
 }
 
-GamePage::~GamePage() {
-
-
-  if (match) {
-    match->sig_OnMatchPhaseChange.disconnect(boost::bind(&GamePage::GoMatchPhasePage, this));
-    match->sig_OnExtendedReplayMoment.disconnect(boost::bind(&GamePage::GoExtendedReplayPage, this));
-    match->sig_OnGameOver.disconnect(boost::bind(&GamePage::GoGameOverPage, this));
-  }
-
-}
-
-void GamePage::Process() {
-
-  if (!match) {
-    //GetGameTask()->matchLifetimeMutex.lock();
-    if (GetGameTask()->GetMatch() != 0) {
-
-      match = GetGameTask()->GetMatch();
-
-      match->sig_OnMatchPhaseChange.connect(boost::bind(&GamePage::GoMatchPhasePage, this));
-      match->sig_OnExtendedReplayMoment.connect(boost::bind(&GamePage::GoExtendedReplayPage, this));
-      match->sig_OnGameOver.connect(boost::bind(&GamePage::GoGameOverPage, this));
-
-    }
-    //GetGameTask()->matchLifetimeMutex.unlock();
-  }
-
-}
-
-void GamePage::GoExtendedReplayPage() {
-  Properties properties;
-  int replayHistoryOffset_ms = match->GetReplaySize_ms();
-  bool stayInReplay = true;
-}
-
-void GamePage::GoMatchPhasePage() {
-
-  e_MatchPhase nextPhase = match->GetMatchPhase();
-
-  Properties properties;
-  properties.Set("nextphase", (int)nextPhase);
-  //CreatePage((int)e_PageID_MatchPhase, properties);
-
-}
-
-void GamePage::GoGameOverPage() {
-  //CreatePage((int)e_PageID_GameOver);
-}
-
-void GamePage::ProcessWindowingEvent(WindowingEvent *event) {
-  event->Ignore();
-}
-
-void GamePage::ProcessKeyboardEvent(KeyboardEvent *event) {
-
-  if (event->GetKeyOnce(SDLK_ESCAPE)) {
-
-    // check which team the keyboard belongs to
-    int controllerID = 0;
-    const std::vector<IHIDevice*> &controllers = GetControllers();
-    for (unsigned int c = 0; c < controllers.size(); c++) {
-      if (controllers.at(c)->GetDeviceType() == e_HIDeviceType_Keyboard) {
-        controllerID = c;
-        break;
-      }
-    }
-
-    int teamID = 0;
-    const std::vector<SideSelection> sides = GetMenuTask()->GetControllerSetup();
-    for (unsigned int s = 0; s < sides.size(); s++) {
-      if (sides.at(s).controllerID == (signed int)controllerID) {
-        teamID = int(round(sides.at(s).side * 0.5 + 0.5));
-        break;
-      }
-    }
-
-    Properties properties;
-    properties.Set("teamID", teamID);
-    //CreatePage((int)e_PageID_Ingame, properties);
-    return;
-  }
-
-  event->Ignore();
-}
+GamePage::~GamePage() { DO_VALIDATION; }

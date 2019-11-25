@@ -32,7 +32,10 @@ namespace blunted {
     boost::intrusive_ptr < Resource<GeometryData> > geomData;
   };
 
-  boost::intrusive_ptr < Resource<GeometryData> > GetGridGeom(const std::string &name, boost::shared_ptr<Scene3D> scene3D, std::vector<GeomIndex> &geomVec, const AABB &aabb, float gridSize) {
+  boost::intrusive_ptr<Resource<GeometryData> > GetGridGeom(
+      const std::string &name, boost::shared_ptr<Scene3D> scene3D,
+      std::vector<GeomIndex> &geomVec, const AABB &aabb, float gridSize) {
+    DO_VALIDATION;
 
     // calculate grid position
 
@@ -54,12 +57,13 @@ namespace blunted {
     // check if geom exists
 
     for (int i = 0; i < (signed int)geomVec.size(); i++) {
+      DO_VALIDATION;
       if (geomVec[i].x == x && geomVec[i].y == y) {
+        DO_VALIDATION;
         //printf("%f %f %f %f\n", geomVec[i].x, x, geomVec[i].y, y);
         return geomVec[i].geomData; // found! return geomdata
       }
     }
-
 
     // not found! create geomdata
 
@@ -74,7 +78,10 @@ namespace blunted {
     return newIndex.geomData;
   }
 
-  boost::intrusive_ptr<Node> SplitGeometry(boost::shared_ptr<Scene3D> scene3D, boost::intrusive_ptr<Geometry> source, float gridSize) {
+  boost::intrusive_ptr<Node> SplitGeometry(
+      boost::shared_ptr<Scene3D> scene3D, boost::intrusive_ptr<Geometry> source,
+      float gridSize) {
+    DO_VALIDATION;
 
     boost::intrusive_ptr<Node> resultNode(new Node(source->GetName()));
 
@@ -87,6 +94,7 @@ namespace blunted {
 
     //printf("%i subgeoms found\n", tmeshes.size());
     for (int i = 0; i < (signed int)tmeshes.size(); i++) {
+      DO_VALIDATION;
 
       std::vector<unsigned int> indices; // empty == don't use indices
       AABB aabb = GetTriangleMeshAABB(tmeshes[i].vertices, tmeshes[i].verticesDataSize, indices);
@@ -98,13 +106,12 @@ namespace blunted {
     }
 
     for (int i = 0; i < (signed int)geomVec.size(); i++) {
+      DO_VALIDATION;
       float x = geomVec[i].x;
       float y = geomVec[i].y;
-      boost::intrusive_ptr<Geometry> geom = static_pointer_cast<Geometry>(
-          GetContext().object_factory.CreateObject(
-              source->GetName() + " gridGeom @ " + int_to_str(x) + ", " +
-                  int_to_str(y),
-              e_ObjectType_Geometry));
+      boost::intrusive_ptr<Geometry> geom(
+          new Geometry(source->GetName() + " gridGeom @ " + int_to_str(x) +
+                       ", " + int_to_str(y)));
       scene3D->CreateSystemObjects(geom);
       geom->SetGeometryData(geomVec[i].geomData);
       resultNode->AddObject(geom);
@@ -112,5 +119,4 @@ namespace blunted {
 
     return resultNode;
   }
-
 }

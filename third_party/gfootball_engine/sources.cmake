@@ -52,14 +52,11 @@ set(BASE_SOURCES
 )
 
 set(SYSTEMS_COMMON_HEADERS
-   src/systems/isystemscene.hpp
    src/systems/isystem.hpp
-   src/systems/isystemtask.hpp
    src/systems/isystemobject.hpp
 )
 
 set(SYSTEMS_COMMON_SOURCES
-   src/systems/isystemtask.cpp
 )
 
 set(SYSTEMS_GRAPHICS_HEADERS
@@ -136,7 +133,6 @@ set(LOADERS_SOURCES
 set(TYPES_HEADERS
    src/types/subject.hpp
    src/types/spatial.hpp
-   src/types/iusertask.hpp
    src/types/resource.hpp
    src/types/material.hpp
    src/types/observer.hpp
@@ -148,21 +144,10 @@ set(TYPES_HEADERS
 )
 
 set(TYPES_SOURCES
-   src/types/iusertask.cpp
    src/types/spatial.cpp
    src/types/refcounted.cpp
    src/types/observer.cpp
    src/types/command.cpp
-)
-
-set(FRAMEWORK_HEADERS
-   src/framework/tasksequence.hpp
-   src/framework/scheduler.hpp
-)
-
-set(FRAMEWORK_SOURCES
-   src/framework/tasksequence.cpp
-   src/framework/scheduler.cpp
 )
 
 set(SCENE_HEADERS
@@ -180,7 +165,6 @@ set(SCENE_OBJECTS_HEADERS
    src/scene/objects/skybox.hpp
    src/scene/objects/geometry.hpp
    src/scene/objects/light.hpp
-   src/scene/objects/joint.hpp
    src/scene/objects/image2d.hpp
    src/scene/objects/camera.hpp
 )
@@ -203,7 +187,6 @@ set(SCENE_SOURCES
    src/scene/objects/light.cpp
    src/scene/objects/geometry.cpp
    src/scene/objects/skybox.cpp
-   src/scene/objects/joint.cpp
    src/scene/objects/camera.cpp
    src/scene/scene3d/scene3d.cpp
    src/scene/scene3d/node.cpp
@@ -214,15 +197,9 @@ set(SCENE_SOURCES
 
 set(MANAGERS_HEADERS
    src/managers/resourcemanager.hpp
-   src/managers/environmentmanager.hpp
-   src/managers/scenemanager.hpp
-   src/managers/systemmanager.hpp
 )
 
 set(MANAGERS_SOURCES
-   src/managers/scenemanager.cpp
-   src/managers/environmentmanager.cpp
-   src/managers/systemmanager.cpp
 )
 
 set(UTILS_HEADERS
@@ -248,7 +225,6 @@ set(UTILS_SOURCES
 )
 
 set(UTILS_GUI2_HEADERS
-   src/utils/gui2/events.hpp
    src/utils/gui2/windowmanager.hpp
    src/utils/gui2/page.hpp
    src/utils/gui2/style.hpp
@@ -269,7 +245,6 @@ set(UTILS_GUI2_SOURCES
    src/utils/gui2/widgets/image.cpp
    src/utils/gui2/widgets/root.cpp
    src/utils/gui2/widgets/frame.cpp
-   src/utils/gui2/events.cpp
    src/utils/gui2/view.cpp
    src/utils/gui2/windowmanager.cpp
    src/utils/gui2/guitask.cpp
@@ -293,15 +268,18 @@ set(BLUNTED_CORE_SOURCES
 set(AI_HEADERS
   ai.cpp
   src/ai/ai_keyboard.hpp
+  src/game_env.cpp
 )
 
 set(AI_SOURCES
   ai.hpp
   src/ai/ai_keyboard.cpp
+  src/game_env.hpp
 )
 
 set(CLIENT_SOURCES
    src/client.cpp
+   src/game_env.hpp
 )
 
 set(CORE_HEADERS
@@ -311,7 +289,6 @@ set(CORE_HEADERS
    src/utils.hpp
    src/main.hpp
    src/gametask.hpp
-   src/synchronizationTask.hpp
    src/misc/hungarian.h
 )
 
@@ -319,12 +296,12 @@ set(CORE_SOURCES
    src/cmake/backtrace.cpp
    src/cmake/file.cpp
    src/misc/perlin.cpp
-   src/misc/hungarian.c
+   src/misc/hungarian.cpp
    src/gametask.cpp
    src/utils.cpp
    src/main.cpp
-   src/synchronizationTask.cpp
    src/gamedefines.cpp
+   src/defines.cpp
 )
 
 set(GAME_HEADERS
@@ -391,7 +368,6 @@ set(MENU_HEADERS
    src/menu/pagefactory.hpp
    src/menu/startmatch/loadingmatch.hpp
    src/menu/menutask.hpp
-   src/menu/menuscene.hpp
    src/menu/ingame/gamepage.hpp
    src/menu/ingame/scoreboard.hpp
    src/menu/ingame/radar.hpp
@@ -401,7 +377,6 @@ set(MENU_SOURCES
    src/menu/startmatch/loadingmatch.cpp
    src/menu/pagefactory.cpp
    src/menu/menutask.cpp
-   src/menu/menuscene.cpp
    src/menu/ingame/radar.cpp
    src/menu/ingame/gamepage.cpp
    src/menu/ingame/scoreboard.cpp

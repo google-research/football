@@ -32,6 +32,7 @@ namespace blunted {
 
     public:
       Properties();
+      Properties(std::vector<std::pair<std::string, float>> values);
       virtual ~Properties();
 
       bool Exists(const std::string &name) const;
@@ -49,6 +50,7 @@ namespace blunted {
       void AddProperties(const Properties *userprops);
       void AddProperties(const Properties &userprops);
       const map_Properties *GetProperties() const;
+      void ProcessState(EnvState* state);
 
      protected:
       map_Properties properties;

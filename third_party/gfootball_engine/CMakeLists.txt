@@ -94,9 +94,9 @@ include(sources.cmake)
 
 set(OWN_LIBRARIES $<TARGET_OBJECTS:baselib> $<TARGET_OBJECTS:systemscommonlib>
    $<TARGET_OBJECTS:systemsgraphicslib> $<TARGET_OBJECTS:loaderslib>
-   $<TARGET_OBJECTS:typeslib> $<TARGET_OBJECTS:frameworklib>
-   $<TARGET_OBJECTS:scenelib> $<TARGET_OBJECTS:managerslib>
-   $<TARGET_OBJECTS:utilslib> $<TARGET_OBJECTS:gui2lib>)
+   $<TARGET_OBJECTS:typeslib> $<TARGET_OBJECTS:scenelib>
+   $<TARGET_OBJECTS:managerslib> $<TARGET_OBJECTS:utilslib>
+   $<TARGET_OBJECTS:gui2lib>)
 
 # Join all created static libraries into the single static or share one.
 
@@ -107,7 +107,6 @@ set(OWN_LIBRARIES $<TARGET_OBJECTS:baselib> $<TARGET_OBJECTS:systemscommonlib>
 #set_property(TARGET systemsgraphicslib PROPERTY POSITION_INDEPENDENT_CODE 1)
 #set_property(TARGET loaderslib PROPERTY POSITION_INDEPENDENT_CODE 1)
 #set_property(TARGET typeslib PROPERTY POSITION_INDEPENDENT_CODE 1)
-#set_property(TARGET frameworklib PROPERTY POSITION_INDEPENDENT_CODE 1)
 #set_property(TARGET scenelib PROPERTY POSITION_INDEPENDENT_CODE 1)
 #set_property(TARGET managerslib PROPERTY POSITION_INDEPENDENT_CODE 1)
 #set_property(TARGET utilslib PROPERTY POSITION_INDEPENDENT_CODE 1)
@@ -143,7 +142,6 @@ add_library(systemsgraphicslib OBJECT ${SYSTEMS_GRAPHICS_SOURCES}
    ${SYSTEMS_GRAPHICS_RESOURCES_HEADERS} ${SYSTEMS_GRAPHICS_RENDERING_HEADERS})
 add_library(loaderslib OBJECT ${LOADERS_SOURCES} ${LOADERS_HEADERS})
 add_library(typeslib OBJECT ${TYPES_SOURCES} ${TYPES_HEADERS})
-add_library(frameworklib OBJECT ${FRAMEWORK_SOURCES} ${FRAMEWORK_HEADERS})
 add_library(scenelib OBJECT ${SCENE_SOURCES} ${SCENE_HEADERS}
    ${SCENE2D_HEADERS} ${SCENE3D_HEADERS} ${SCENE_OBJECTS_HEADERS}
    ${SCENE_RESOURCES_HEADERS})

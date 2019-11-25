@@ -216,13 +216,13 @@ namespace blunted {
   class Renderer3D {
 
     public:
-      virtual ~Renderer3D() {};
+      virtual ~Renderer3D() { DO_VALIDATION;};
+      virtual void SetContext() = 0;
+      virtual void DisableContext() = 0;
       virtual const screenshoot& GetScreen() = 0;
 
       virtual void SwapBuffers() = 0;
 
-      virtual void LoadMatrix(const Matrix4 &mat) = 0; // TO BE DEPRECATED
-      virtual Matrix4 GetMatrix(e_MatrixMode matrixMode) const = 0; // TO BE DEPRECATED
       virtual void SetMatrix(const std::string &shaderUniformName, const Matrix4 &matrix) = 0;
 
       virtual void RenderOverlay2D(const std::vector<Overlay2DQueueEntry> &overlay2DQueue) = 0;
@@ -261,8 +261,6 @@ namespace blunted {
       virtual void UpdateVertexBuffer(VertexBufferID vertexBufferID, float *vertices, unsigned int verticesDataSize) = 0;
       virtual void DeleteVertexBuffer(VertexBufferID vertexBufferID) = 0;
       virtual void RenderVertexBuffer(const std::deque<VertexBufferQueueEntry> &vertexBufferQueue, e_RenderMode renderMode = e_RenderMode_Full) = 0;
-      virtual void RenderAABB(std::list<VertexBufferQueueEntry> &vertexBufferQueue) = 0;
-      virtual void RenderAABB(std::list<LightQueueEntry> &lightQueue) = 0;
 
       // lights
       virtual void SetLight(const Vector3 &position, const Vector3 &color, float radius) = 0;
@@ -286,12 +284,6 @@ namespace blunted {
       virtual bool CheckFrameBufferStatus() = 0;
       virtual void SetFramebufferGammaCorrection(bool onOff) = 0;
 
-      // render buffers
-      virtual int CreateRenderBuffer() = 0;
-      virtual void DeleteRenderBuffer(int rbID) = 0;
-      virtual void BindRenderBuffer(int rbID) = 0;
-      virtual void SetRenderBufferStorage(e_InternalPixelFormat internalPixelFormat, int width, int height) = 0;
-
       // render targets
       virtual void SetRenderTargets(std::vector<e_TargetAttachment> targetAttachments) = 0;
 
@@ -301,7 +293,6 @@ namespace blunted {
       virtual void PopAttribute() = 0;
       virtual void SetViewport(int x, int y, int width, int height) = 0;
       virtual void GetContextSize(int &width, int &height, int &bpp) = 0;
-      virtual void SetPolygonOffset(float scale, float bias) = 0;
 
       // shaders
       virtual void LoadShader(const std::string &name, const std::string &filename) = 0;
@@ -313,9 +304,6 @@ namespace blunted {
       virtual void SetUniformFloat3Array(const std::string &shaderName, const std::string &varName, int count, float *values) = 0;
       virtual void SetUniformMatrix4(const std::string &shaderName, const std::string &varName, const Matrix4 &mat) = 0;
 
-      virtual void HDRCaptureOverallBrightness() = 0;
-      virtual float HDRGetOverallBrightness() = 0;
-
     protected:
       std::map<std::string, Shader> shaders;
       std::map<std::string, Shader>::iterator currentShader;
@@ -325,115 +313,103 @@ namespace blunted {
 
   class MockRenderer3D: public Renderer3D {
    public:
-    MockRenderer3D() {
+    MockRenderer3D() { DO_VALIDATION;
       view_.x = 0;
       view_.y = 0;
       view_.width = 10;
       view_.height = 10;
     }
-    virtual const screenshoot& GetScreen() { return screen_; }
-    virtual ~MockRenderer3D() {};
+    virtual void SetContext() {}
+    virtual void DisableContext() {}
+    virtual const screenshoot& GetScreen() { DO_VALIDATION; return screen_; }
+    virtual ~MockRenderer3D() { DO_VALIDATION;};
 
-    virtual void SwapBuffers() {};
+    virtual void SwapBuffers() { DO_VALIDATION;};
 
-    virtual void LoadMatrix(const Matrix4 &mat) {}
-    virtual Matrix4 GetMatrix(e_MatrixMode matrixMode) const { return Matrix4(); }
-    virtual void SetMatrix(const std::string &shaderUniformName, const Matrix4 &matrix) {}
+    virtual void SetMatrix(const std::string &shaderUniformName, const Matrix4 &matrix) { DO_VALIDATION;}
 
-    virtual void RenderOverlay2D(const std::vector<Overlay2DQueueEntry> &overlay2DQueue) {}
-    virtual void RenderOverlay2D() {}
-    virtual void RenderLights(std::deque<LightQueueEntry> &lightQueue, const Matrix4 &projectionMatrix, const Matrix4 &viewMatrix) {}
+    virtual void RenderOverlay2D(const std::vector<Overlay2DQueueEntry> &overlay2DQueue) { DO_VALIDATION;}
+    virtual void RenderOverlay2D() { DO_VALIDATION;}
+    virtual void RenderLights(std::deque<LightQueueEntry> &lightQueue, const Matrix4 &projectionMatrix, const Matrix4 &viewMatrix) { DO_VALIDATION;}
 
 
       // --- new & improved
 
       // init & exit
-    virtual bool CreateContext(int width, int height, int bpp, bool fullscreen) { return true;};
-    virtual void Exit() {};
+    virtual bool CreateContext(int width, int height, int bpp, bool fullscreen) { DO_VALIDATION; return true;};
+    virtual void Exit() { DO_VALIDATION;};
 
-    virtual int CreateView(float x_percent, float y_percent, float width_percent, float height_percent) {
+    virtual int CreateView(float x_percent, float y_percent, float width_percent, float height_percent) { DO_VALIDATION;
       return 1;
     }
-    virtual View &GetView(int viewID) { return view_; }
-    virtual void DeleteView(int viewID) {}
+    virtual View &GetView(int viewID) { DO_VALIDATION; return view_; }
+    virtual void DeleteView(int viewID) { DO_VALIDATION;}
 
       // general
-      virtual void SetCullingMode(e_CullingMode cullingMode) {}
-      virtual void SetBlendingMode(e_BlendingMode blendingMode) {}
-      virtual void SetDepthFunction(e_DepthFunction depthFunction) {}
-      virtual void SetDepthTesting(bool OnOff) {}
-      virtual void SetDepthMask(bool OnOff) {}
-      virtual void SetBlendingFunction(e_BlendingFunction blendingFunction1, e_BlendingFunction blendingFunction2) {}
-      virtual void SetTextureMode(e_TextureMode textureMode) {}
-      virtual void SetColor(const Vector3 &color, float alpha) {}
-      virtual void SetColorMask(bool r, bool g, bool b, bool alpha) {}
+      virtual void SetCullingMode(e_CullingMode cullingMode) { DO_VALIDATION;}
+      virtual void SetBlendingMode(e_BlendingMode blendingMode) { DO_VALIDATION;}
+      virtual void SetDepthFunction(e_DepthFunction depthFunction) { DO_VALIDATION;}
+      virtual void SetDepthTesting(bool OnOff) { DO_VALIDATION;}
+      virtual void SetDepthMask(bool OnOff) { DO_VALIDATION;}
+      virtual void SetBlendingFunction(e_BlendingFunction blendingFunction1, e_BlendingFunction blendingFunction2) { DO_VALIDATION;}
+      virtual void SetTextureMode(e_TextureMode textureMode) { DO_VALIDATION;}
+      virtual void SetColor(const Vector3 &color, float alpha) { DO_VALIDATION;}
+      virtual void SetColorMask(bool r, bool g, bool b, bool alpha) { DO_VALIDATION;}
 
-      virtual void ClearBuffer(const Vector3 &color, bool clearDepth, bool clearColor) {}
+      virtual void ClearBuffer(const Vector3 &color, bool clearDepth, bool clearColor) { DO_VALIDATION;}
 
-      virtual Matrix4 CreatePerspectiveMatrix(float aspectRatio, float nearCap = -1, float farCap = -1) {
+      virtual Matrix4 CreatePerspectiveMatrix(float aspectRatio, float nearCap = -1, float farCap = -1) { DO_VALIDATION;
         return Matrix4(); }
 
-      virtual Matrix4 CreateOrthoMatrix(float left, float right, float bottom, float top, float nearCap = -1, float farCap = -1) { return Matrix4(); }
+      virtual Matrix4 CreateOrthoMatrix(float left, float right, float bottom, float top, float nearCap = -1, float farCap = -1) { DO_VALIDATION; return Matrix4(); }
 
       // vertex buffers
-      virtual VertexBufferID CreateVertexBuffer(float *vertices, unsigned int verticesDataSize, const std::vector<unsigned int>& indices, e_VertexBufferUsage usage) { return VertexBufferID(); }
-      virtual void UpdateVertexBuffer(VertexBufferID vertexBufferID, float *vertices, unsigned int verticesDataSize) {}
-      virtual void DeleteVertexBuffer(VertexBufferID vertexBufferID) {}
-      virtual void RenderVertexBuffer(const std::deque<VertexBufferQueueEntry> &vertexBufferQueue, e_RenderMode renderMode = e_RenderMode_Full) {}
-      virtual void RenderAABB(std::list<VertexBufferQueueEntry> &vertexBufferQueue) {}
-      virtual void RenderAABB(std::list<LightQueueEntry> &lightQueue) {}
+      virtual VertexBufferID CreateVertexBuffer(float *vertices, unsigned int verticesDataSize, const std::vector<unsigned int>& indices, e_VertexBufferUsage usage) { DO_VALIDATION; return VertexBufferID(); }
+      virtual void UpdateVertexBuffer(VertexBufferID vertexBufferID, float *vertices, unsigned int verticesDataSize) { DO_VALIDATION;}
+      virtual void DeleteVertexBuffer(VertexBufferID vertexBufferID) { DO_VALIDATION;}
+      virtual void RenderVertexBuffer(const std::deque<VertexBufferQueueEntry> &vertexBufferQueue, e_RenderMode renderMode = e_RenderMode_Full) { DO_VALIDATION;}
 
       // lights
-      virtual void SetLight(const Vector3 &position, const Vector3 &color, float radius) {}
+      virtual void SetLight(const Vector3 &position, const Vector3 &color, float radius) { DO_VALIDATION;}
 
       // textures
-      virtual int CreateTexture(e_InternalPixelFormat internalPixelFormat, e_PixelFormat pixelFormat, int width, int height, bool alpha = false, bool repeat = true, bool mipmaps = true, bool filter = true, bool multisample = false, bool compareDepth = false) { return 1;}
-      virtual void ResizeTexture(int textureID, SDL_Surface *source, e_InternalPixelFormat internalPixelFormat, e_PixelFormat pixelFormat, bool alpha = false, bool mipmaps = true) {}
-      virtual void UpdateTexture(int textureID, SDL_Surface *source, bool alpha = false, bool mipmaps = true) {}
-      virtual void DeleteTexture(int textureID) {}
-      virtual void CopyFrameBufferToTexture(int textureID, int width, int height) {}
-      virtual void BindTexture(int textureID) {}
-      virtual void SetTextureUnit(int textureUnit) {}
-      virtual void SetClientTextureUnit(int textureUnit) {}
+      virtual int CreateTexture(e_InternalPixelFormat internalPixelFormat, e_PixelFormat pixelFormat, int width, int height, bool alpha = false, bool repeat = true, bool mipmaps = true, bool filter = true, bool multisample = false, bool compareDepth = false) { DO_VALIDATION; return 1;}
+      virtual void ResizeTexture(int textureID, SDL_Surface *source, e_InternalPixelFormat internalPixelFormat, e_PixelFormat pixelFormat, bool alpha = false, bool mipmaps = true) { DO_VALIDATION;}
+      virtual void UpdateTexture(int textureID, SDL_Surface *source, bool alpha = false, bool mipmaps = true) { DO_VALIDATION;}
+      virtual void DeleteTexture(int textureID) { DO_VALIDATION;}
+      virtual void CopyFrameBufferToTexture(int textureID, int width, int height) { DO_VALIDATION;}
+      virtual void BindTexture(int textureID) { DO_VALIDATION;}
+      virtual void SetTextureUnit(int textureUnit) { DO_VALIDATION;}
+      virtual void SetClientTextureUnit(int textureUnit) { DO_VALIDATION;}
 
       // frame buffer
-      virtual int CreateFrameBuffer() { return 1;}
-      virtual void DeleteFrameBuffer(int fbID) {}
-      virtual void BindFrameBuffer(int fbID) {}
-      virtual void SetFrameBufferRenderBuffer(e_TargetAttachment targetAttachment, int rbID) {}
-      virtual void SetFrameBufferTexture2D(e_TargetAttachment targetAttachment, int texID) {}
-      virtual bool CheckFrameBufferStatus() { return true; }
-      virtual void SetFramebufferGammaCorrection(bool onOff) {}
-
-      // render buffers
-      virtual int CreateRenderBuffer() { return 1;}
-      virtual void DeleteRenderBuffer(int rbID) {}
-      virtual void BindRenderBuffer(int rbID) {}
-      virtual void SetRenderBufferStorage(e_InternalPixelFormat internalPixelFormat, int width, int height) {}
+      virtual int CreateFrameBuffer() { DO_VALIDATION; return 1;}
+      virtual void DeleteFrameBuffer(int fbID) { DO_VALIDATION;}
+      virtual void BindFrameBuffer(int fbID) { DO_VALIDATION;}
+      virtual void SetFrameBufferRenderBuffer(e_TargetAttachment targetAttachment, int rbID) { DO_VALIDATION;}
+      virtual void SetFrameBufferTexture2D(e_TargetAttachment targetAttachment, int texID) { DO_VALIDATION;}
+      virtual bool CheckFrameBufferStatus() { DO_VALIDATION; return true; }
+      virtual void SetFramebufferGammaCorrection(bool onOff) { DO_VALIDATION;}
 
       // render targets
-      virtual void SetRenderTargets(std::vector<e_TargetAttachment> targetAttachments) {}
+      virtual void SetRenderTargets(std::vector<e_TargetAttachment> targetAttachments) { DO_VALIDATION;}
 
       // utility
-      virtual void SetFOV(float angle) {}
-      virtual void PushAttribute(int attr) {}
-      virtual void PopAttribute() {}
-      virtual void SetViewport(int x, int y, int width, int height) {}
-      virtual void GetContextSize(int &width, int &height, int &bpp) {}
-      virtual void SetPolygonOffset(float scale, float bias) {}
+      virtual void SetFOV(float angle) { DO_VALIDATION;}
+      virtual void PushAttribute(int attr) { DO_VALIDATION;}
+      virtual void PopAttribute() { DO_VALIDATION;}
+      virtual void SetViewport(int x, int y, int width, int height) { DO_VALIDATION;}
+      virtual void GetContextSize(int &width, int &height, int &bpp) { DO_VALIDATION;}
 
       // shaders
-      virtual void LoadShader(const std::string &name, const std::string &filename) {}
-      virtual void UseShader(const std::string &name) {}
-      virtual void SetUniformInt(const std::string &shaderName, const std::string &varName, int value) {}
-      virtual void SetUniformFloat(const std::string &shaderName, const std::string &varName, float value) {}
-      virtual void SetUniformFloat2(const std::string &shaderName, const std::string &varName, float value1, float value2) {}
-      virtual void SetUniformFloat3(const std::string &shaderName, const std::string &varName, float value1, float value2, float value3) {}
-      virtual void SetUniformFloat3Array(const std::string &shaderName, const std::string &varName, int count, float *values) {}
-      virtual void SetUniformMatrix4(const std::string &shaderName, const std::string &varName, const Matrix4 &mat) {}
-
-      virtual void HDRCaptureOverallBrightness() {}
-      virtual float HDRGetOverallBrightness() { return 1.0; }
+      virtual void LoadShader(const std::string &name, const std::string &filename) { DO_VALIDATION;}
+      virtual void UseShader(const std::string &name) { DO_VALIDATION;}
+      virtual void SetUniformInt(const std::string &shaderName, const std::string &varName, int value) { DO_VALIDATION;}
+      virtual void SetUniformFloat(const std::string &shaderName, const std::string &varName, float value) { DO_VALIDATION;}
+      virtual void SetUniformFloat2(const std::string &shaderName, const std::string &varName, float value1, float value2) { DO_VALIDATION;}
+      virtual void SetUniformFloat3(const std::string &shaderName, const std::string &varName, float value1, float value2, float value3) { DO_VALIDATION;}
+      virtual void SetUniformFloat3Array(const std::string &shaderName, const std::string &varName, int count, float *values) { DO_VALIDATION;}
+      virtual void SetUniformMatrix4(const std::string &shaderName, const std::string &varName, const Matrix4 &mat) { DO_VALIDATION;}
 
     protected:
       View view_;

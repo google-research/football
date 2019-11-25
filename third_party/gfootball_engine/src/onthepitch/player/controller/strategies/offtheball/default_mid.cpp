@@ -17,34 +17,38 @@
 
 #include "default_mid.hpp"
 #include <cmath>
+#include "../strategy.hpp"
 
 #include "../../../../../main.hpp"
 
-DefaultMidfieldStrategy::DefaultMidfieldStrategy(ElizaController *controller) : Strategy(controller) {
-  name = "default midfield";
-}
-
-DefaultMidfieldStrategy::~DefaultMidfieldStrategy() {
-}
-
-void DefaultMidfieldStrategy::RequestInput(const MentalImage *mentalImage, Vector3 &direction, float &velocity) {
+void DefaultMidfieldStrategy::RequestInput(ElizaController *controller,
+                                           const MentalImage *mentalImage,
+                                           Vector3 &direction,
+                                           float &velocity) {
+  DO_VALIDATION;
 
   bool offensiveComponents = true;
   bool defensiveComponents = true;
   bool laziness = true;
 
-  Vector3 desiredPosition_static = team->GetController()->GetAdaptedFormationPosition(CastPlayer(), false);
-  Vector3 desiredPosition_dynamic = team->GetController()->GetAdaptedFormationPosition(CastPlayer(), true);
-  float actionDistance = NormalizedClamp(player->GetPosition().GetDistance(match->GetDesignatedPossessionPlayer()->GetPosition()), 15.0f, 20.0f);
+  Vector3 desiredPosition_static = controller->GetTeam()->GetController()->GetAdaptedFormationPosition(static_cast<Player*>(controller->GetPlayer()), false);
+  Vector3 desiredPosition_dynamic = controller->GetTeam()->GetController()->GetAdaptedFormationPosition(static_cast<Player*>(controller->GetPlayer()), true);
+  float actionDistance = NormalizedClamp(controller->GetPlayer()->GetPosition().GetDistance(controller->GetMatch()->GetDesignatedPossessionPlayer()->GetPosition()), 15.0f, 20.0f);
   float staticPositionBias = curve(0.9f * actionDistance, 1.0f); // lower values = swap position with other players' formation positions more easily
   Vector3 desiredPosition = desiredPosition_static * staticPositionBias + desiredPosition_dynamic * (1.0f - staticPositionBias);
 
   if (offensiveComponents) {
+    DO_VALIDATION;
     // support position
     float attackBias = NormalizedClamp((controller->GetFadingTeamPossessionAmount() - 0.5f) * 1.0f, 0.1f, 0.7f);
     bool makeRun = false;
     if (attackBias > 0.9f) {
-      if (team->GetController()->GetEndApplyAttackingRun_ms() > match->GetActualTime_ms() && team->GetController()->GetAttackingRunPlayer() == player) {
+      DO_VALIDATION;
+      if (controller->GetTeam()->GetController()->GetEndApplyAttackingRun_ms() >
+              controller->GetMatch()->GetActualTime_ms() &&
+          controller->GetTeam()->GetController()->GetAttackingRunPlayer() ==
+              controller->GetPlayer()) {
+        DO_VALIDATION;
         makeRun = true;
       }
     }
@@ -53,8 +57,9 @@ void DefaultMidfieldStrategy::RequestInput(const MentalImage *mentalImage, Vecto
   }
 
   if (defensiveComponents) {
+    DO_VALIDATION;
 
-    float mindset = AI_GetMindSet(CastPlayer()->GetDynamicFormationEntry().role);
+    float mindset = AI_GetMindSet(static_cast<Player*>(controller->GetPlayer())->GetDynamicFormationEntry().role);
     controller->AddDefensiveComponent(
         desiredPosition,
         std::pow(
@@ -63,11 +68,11 @@ void DefaultMidfieldStrategy::RequestInput(const MentalImage *mentalImage, Vecto
             0.7f));
 
     // offside trap (used to be applied before AddDefensiveComponent)
-    team->GetController()->ApplyOffsideTrap(desiredPosition);
+    controller->GetTeam()->GetController()->ApplyOffsideTrap(desiredPosition);
   }
 
-  direction = (desiredPosition - player->GetPosition()).GetNormalized(player->GetDirectionVec());
-  float desiredVelocity = (desiredPosition - player->GetPosition()).GetLength() * distanceToVelocityMultiplier;
+  direction = (desiredPosition - controller->GetPlayer()->GetPosition()).GetNormalized(controller->GetPlayer()->GetDirectionVec());
+  float desiredVelocity = (desiredPosition - controller->GetPlayer()->GetPosition()).GetLength() * distanceToVelocityMultiplier;
 
   // laziness
   if (laziness) desiredVelocity = controller->GetLazyVelocity(desiredVelocity);

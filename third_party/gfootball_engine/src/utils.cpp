@@ -24,10 +24,12 @@
 #include <cmath>
 
 float GetQuantizedDirectionBias() {
+  DO_VALIDATION;
   return GetConfiguration()->GetReal("gameplay_quantizeddirectionbias", _default_QuantizedDirectionBias);
 }
 
 void QuantizeDirection(Vector3 &inputDirection, float bias) {
+  DO_VALIDATION;
 
   // digitize input
 
@@ -44,7 +46,9 @@ void QuantizeDirection(Vector3 &inputDirection, float bias) {
   inputDirection = (inputDirectionNorm * (1.0 - bias) + (Vector3(1, 0, 0).GetRotated2D(angle) * bias)).GetNormalized(inputDirectionNorm) * inputDirection.GetLength();
 }
 
-Vector3 GetProjectedCoord(const Vector3 &pos3D, boost::intrusive_ptr<Camera> camera) {
+Vector3 GetProjectedCoord(const Vector3 &pos3D,
+                          boost::intrusive_ptr<Camera> camera) {
+  DO_VALIDATION;
   Matrix4 rotMat;
   rotMat.ConstructInverse(camera->GetDerivedPosition(), Vector3(1, 1, 1), camera->GetDerivedRotation());
   float fov = camera->GetFOV();
@@ -91,8 +95,10 @@ Vector3 GetProjectedCoord(const Vector3 &pos3D, boost::intrusive_ptr<Camera> cam
 }
 
 int GetVelocityID(e_Velocity velo, bool treatDribbleAsWalk) {
+  DO_VALIDATION;
   int id = 0;
   switch (velo) {
+    DO_VALIDATION;
     case e_Velocity_Idle:
       id = 0;
       break;
@@ -115,7 +121,9 @@ int GetVelocityID(e_Velocity velo, bool treatDribbleAsWalk) {
 
 std::map < e_PositionName, std::vector<Stat> > defaultProfiles;
 
-float CalculateStat(float baseStat, float profileStat, float age, e_DevelopmentCurveType developmentCurveType) {
+float CalculateStat(float baseStat, float profileStat, float age,
+                    e_DevelopmentCurveType developmentCurveType) {
+  DO_VALIDATION;
 
 
   float idealAge = 27;
@@ -130,81 +138,3 @@ float CalculateStat(float baseStat, float profileStat, float age, e_DevelopmentC
 
   return agedProfileStat;
 }
-
-template <> TemporalValue<Quaternion>::TemporalValue() {
-  data = QUATERNION_IDENTITY;
-  time_ms = 0;
-};
-
-template <typename T> TemporalSmoother<T>::TemporalSmoother() {
-  //snapshotSize = 3;
-  snapshotSize =
-      3 + int(std::ceil(temporalSmoother_history_ms /
-                        10.0f));  // not sure how to calculate proper number?
-  values = boost::circular_buffer< TemporalValue<T> >(snapshotSize);
-}
-
-template <typename T> void TemporalSmoother<T>::SetValue(const T &data, unsigned long valueTime_ms) {
-  TemporalValue<T> value;
-  value.data = data;
-  value.time_ms = valueTime_ms;
-  values.push_back(value);
-}
-
-template <typename T> T TemporalSmoother<T>::GetValue(unsigned long currentTime_ms, unsigned long history_ms) const {
-
-  if (values.size() == 0) {
-    TemporalValue<T> bla; // do it like this so the struct constructor is invoked for T
-    return bla.data;
-  }
-  if (values.size() == 1) return (*values.begin()).data; // only one value yet
-
-  //return (values.back()).data; // disable smoother
-
-  unsigned long now_ms = currentTime_ms;
-  unsigned long targetTime_ms = 0;
-  if (history_ms <= now_ms) targetTime_ms = now_ms - history_ms; // this makes sure targetTime_ms won't become negative (and loop-around since it's an unsigned var)
-
-
-  // find the 2 values we need
-
-  TemporalValue<T> value1;
-  TemporalValue<T> value2;
-
-  int t1index = -1;
-  int t2index = -1;
-  for (unsigned int i = 0; i < values.size(); i++) {
-    const TemporalValue<T> *iter = &values[i];
-    if ((*iter).time_ms <= targetTime_ms) {
-      value1.data = (*iter).data;
-      value1.time_ms = (*iter).time_ms;
-      t1index = i;
-    }
-    else if ((*iter).time_ms > targetTime_ms) {
-      value2.data = (*iter).data;
-      value2.time_ms = (*iter).time_ms;
-      t2index = i;
-      break;
-    }
-  }
-  if (value1.time_ms == 0) return value2.data;
-  if (value2.time_ms == 0) return value1.data;
-
-  float bias = NormalizedClamp(targetTime_ms, value1.time_ms, std::max(value2.time_ms, value1.time_ms + 1));
-
-  return DataMix(value1.data, value2.data, bias);
-}
-
-template <typename T> T TemporalSmoother<T>::DataMix(const T &data1, const T &data2, float bias) const {
-  return data1 * (1.0f - bias) + data2 * bias;
-}
-
-template <> Quaternion TemporalSmoother<Quaternion>::DataMix(const Quaternion &data1, const Quaternion &data2, float bias) const {
-  return data1.GetLerped(bias, data2);
-}
-
-template class TemporalSmoother<Vector3>;
-template class TemporalSmoother<Quaternion>;
-template class TemporalSmoother<float>;
-template class TemporalSmoother<unsigned long>;
-template class TemporalSmoother<int>;

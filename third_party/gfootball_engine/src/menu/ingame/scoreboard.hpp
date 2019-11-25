@@ -43,16 +43,9 @@ class Gui2ScoreBoard : public Gui2View {
 
   protected:
     boost::intrusive_ptr<Image2D> image;
-
-    float content_yOffset = 0.0f;
-
-    std::string timeStr;
-    int goalCount[2];
-
     Gui2Caption *timeCaption;
     Gui2Caption *teamNameCaption[2];
     Gui2Caption *goalCountCaption[2];
-
     Gui2Image *leagueLogo;
     Gui2Image *teamLogo[2];
 };

@@ -19,8 +19,6 @@
 #define _UTILS_ORBITCAMERA
 
 #include "../types/command.hpp"
-#include "../types/iusertask.hpp"
-
 #include "../scene/objects/camera.hpp"
 #include "../scene/scene3d/scene3d.hpp"
 #include "../scene/objects/light.hpp"

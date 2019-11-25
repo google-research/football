@@ -27,74 +27,89 @@
 
 #include "../../base/geometry/triangle.hpp"
 
-PlayerBase::PlayerBase(Match *match, PlayerData *playerData) : match(match), playerData(playerData), id(GetContext().playerCount++), stable_id(GetContext().stablePlayerCount++), humanoid(0), controller(0), externalController(0), isActive(false) {
+PlayerBase::PlayerBase(Match *match, PlayerData *playerData)
+    : match(match),
+      playerData(playerData),
+      stable_id(GetContext().stablePlayerCount++) {
+  DO_VALIDATION;
   lastTouchTime_ms = 0;
   lastTouchType = e_TouchType_None;
   fatigueFactorInv = 1.0;
 }
 
 PlayerBase::~PlayerBase() {
+  DO_VALIDATION;
   if (isActive) Deactivate();
-  if (humanoid) delete humanoid;
+}
+
+void PlayerBase::Mirror() {
+  humanoid->Mirror();
 }
 
 void PlayerBase::Deactivate() {
+  DO_VALIDATION;
   ResetSituation(GetPosition());
 
+  if (humanoid) humanoid->Hide();
   isActive = false;
 
-  if (humanoid) humanoid->Hide();
-
   externalController = nullptr;
-  delete controller;
 }
 
 IController *PlayerBase::GetController() {
+  DO_VALIDATION;
   if (externalController) return externalController;
-                     else return controller;
+  else
+    return controller.get();
 }
 
 void PlayerBase::RequestCommand(PlayerCommandQueue &commandQueue) {
+  DO_VALIDATION;
   if (externalController) externalController->RequestCommand(commandQueue);
                      else controller->RequestCommand(commandQueue);
 }
 
 void PlayerBase::SetExternalController(HumanController *externalController) {
+  DO_VALIDATION;
   this->externalController = externalController;
   if (this->externalController) {
+    DO_VALIDATION;
     this->externalController->Reset();
     this->externalController->SetPlayer(this);
-    //debug = true;
   } else {
     controller->Reset();
-    //debug = false;
   }
 }
 
 HumanController *PlayerBase::GetExternalController() {
+  DO_VALIDATION;
   return externalController;
 }
 
 void PlayerBase::Process() {
+  DO_VALIDATION;
   if (isActive) {
+    DO_VALIDATION;
     if (externalController) externalController->Process(); else controller->Process();
     humanoid->Process();
   } else {
     if (humanoid) humanoid->Hide();
   }
-  //if (debug) printf("::%f velo\n", GetMovement().GetLength());
 }
 
-void PlayerBase::PreparePutBuffers(unsigned long snapshotTime_ms) {
-  humanoid->PreparePutBuffers(snapshotTime_ms);
+void PlayerBase::PreparePutBuffers() {
+  DO_VALIDATION;
+  humanoid->PreparePutBuffers();
 }
 
-void PlayerBase::FetchPutBuffers(unsigned long putTime_ms) {
-  humanoid->FetchPutBuffers(putTime_ms);
+void PlayerBase::FetchPutBuffers() {
+  DO_VALIDATION;
+  humanoid->FetchPutBuffers();
 }
 
-void PlayerBase::Put() {
-  humanoid->Put();
+void PlayerBase::Put(bool mirror) {
+  DO_VALIDATION;
+  humanoid->Put(mirror);
 }
 
 float PlayerBase::GetStat(PlayerStat name) const {
@@ -112,6 +127,7 @@ float PlayerBase::GetVelocityMultiplier() const {
 }
 
 float PlayerBase::GetLastTouchBias(int decay_ms, unsigned long time_ms) {
+  DO_VALIDATION;
   unsigned long adaptedTime_ms = time_ms;
   if (time_ms == 0) adaptedTime_ms = match->GetActualTime_ms();
   if (decay_ms > 0) return 1.0f - clamp((adaptedTime_ms - GetLastTouchTime_ms()) / (float)decay_ms, 0.0f, 1.0f);
@@ -119,9 +135,24 @@ float PlayerBase::GetLastTouchBias(int decay_ms, unsigned long time_ms) {
 }
 
 void PlayerBase::ResetSituation(const Vector3 &focusPos) {
+  DO_VALIDATION;
   positionHistoryPerSecond.clear();
   lastTouchTime_ms = 0;
   lastTouchType = e_TouchType_None;
   if (IsActive()) humanoid->ResetSituation(focusPos);
   if (GetController()) GetController()->Reset();
+}
+
+void PlayerBase::ProcessStateBase(EnvState *state) {
+  DO_VALIDATION;
+  state->process(isActive);
+  humanoid->ProcessState(state);
+  if (IsActive()) {
+    controller->ProcessState(state);
+  }
+  state->process(externalController);
+  state->process(lastTouchTime_ms);
+  state->process(&lastTouchType, sizeof(e_TouchType));
+  state->process(fatigueFactorInv);
+  state->process(positionHistoryPerSecond);
 }

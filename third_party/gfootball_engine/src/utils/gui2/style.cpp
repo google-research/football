@@ -19,19 +19,20 @@
 
 namespace blunted {
 
-  Gui2Style::Gui2Style() {
-  }
+Gui2Style::Gui2Style() { DO_VALIDATION; }
 
-  Gui2Style::~Gui2Style() {
-  }
+Gui2Style::~Gui2Style() { DO_VALIDATION; }
 
-  void Gui2Style::SetFont(e_TextType textType, TTF_Font *font) {
-    fonts.insert(std::pair<e_TextType, TTF_Font*>(textType, font));
-  }
+void Gui2Style::SetFont(e_TextType textType, TTF_Font *font) {
+  DO_VALIDATION;
+  fonts.insert(std::pair<e_TextType, TTF_Font *>(textType, font));
+}
 
-  void Gui2Style::SetColor(e_DecorationType decorationType, const Vector3 &color) {
-    colors.insert(std::pair<e_DecorationType, Vector3>(decorationType, color));
-  }
+void Gui2Style::SetColor(e_DecorationType decorationType,
+                         const Vector3 &color) {
+  DO_VALIDATION;
+  colors.insert(std::pair<e_DecorationType, Vector3>(decorationType, color));
+}
 
   TTF_Font *Gui2Style::GetFont(e_TextType textType) const {
     std::map<e_TextType, TTF_Font*>::const_iterator iter = fonts.find(textType);
@@ -42,6 +43,7 @@ namespace blunted {
   Vector3 Gui2Style::GetColor(e_DecorationType decorationType) const {
     std::map<e_DecorationType, Vector3>::const_iterator iter = colors.find(decorationType);
     if (iter == colors.end()) {
+      DO_VALIDATION;
       return Vector3(0);
     } else {
       return iter->second;

@@ -28,11 +28,14 @@
 
 #include "../main.hpp"
 
-bool ReverseSortTacticalOpponentInfo(const TacticalOpponentInfo &a, const TacticalOpponentInfo &b) {
+bool ReverseSortTacticalOpponentInfo(const TacticalOpponentInfo &a,
+                                     const TacticalOpponentInfo &b) {
+  DO_VALIDATION;
   return a.dangerFactor > b.dangerFactor;
 }
 
 TeamAIController::TeamAIController(Team *team) : team(team) {
+  DO_VALIDATION;
   match = team->GetMatch();
   taker = 0;
 
@@ -82,19 +85,21 @@ TeamAIController::TeamAIController(Team *team) : team(team) {
   UpdateTactics();
 }
 
-TeamAIController::~TeamAIController() {
-}
+TeamAIController::~TeamAIController() { DO_VALIDATION; }
 
 Player *SelectAttackingRunPlayer(Team *team) {
+  DO_VALIDATION;
   Player *possessionPlayer = team->GetDesignatedTeamPossessionPlayer();
 
-  Vector3 offenseFocusPos = possessionPlayer->GetPosition() + Vector3(-team->GetSide() * 26.0f, 0, 0);
+  Vector3 offenseFocusPos = possessionPlayer->GetPosition() +
+                            Vector3(-team->GetDynamicSide() * 26.0f, 0, 0);
 
   Player *attackingRunPlayer = AI_GetClosestPlayer(team, offenseFocusPos, true, possessionPlayer);
   return attackingRunPlayer;
 }
 
 void TeamAIController::Process() {
+  DO_VALIDATION;
 
   if (match->GetActualTime_ms() % 1000 == 0) UpdateTactics();
 
@@ -103,32 +108,45 @@ void TeamAIController::Process() {
   float startDistance = 30.0f + 20.0f * offensivenessBias; // distance from goal where we start holding the opponents (but are likely to fallback somewhat)
   float forceDistance = 6.0f; // minimum distance from goal - try to 'hold' the opp there
 
-  float deepestDanger = (pitchHalfW - startDistance) * team->GetSide();
+  float deepestDanger = (pitchHalfW - startDistance) * team->GetDynamicSide();
 
   // ball as max
   float adaptedBallX = match->GetBall()->Predict(0).coords[0];
   // when far away from our goal (startDistance), drop back more easily. closer to forceDistance, don't buckle.
-  adaptedBallX *= team->GetSide(); // > 0 == on our half (easier to work with)
+  adaptedBallX *=
+      team->GetDynamicSide();  // > 0 == on our half (easier to work with)
   float offsetX = 20.0f + 10.0f * (1.0f - offensivenessBias); // when ball is this distance away from startDistance, we start falling back more towards forceDistance.
   float startToForcedBias = NormalizedClamp(adaptedBallX, pitchHalfW - startDistance - offsetX, pitchHalfW - forceDistance); // where, between startDistance and forceDistance, is the ball? 0 .. 1
   adaptedBallX += offsetX * (1.0f - startToForcedBias); // the fall back intensity gradually diminishes when getting closer to forceDistance
-  adaptedBallX *= team->GetSide(); // back to absolute space
-  if (adaptedBallX * team->GetSide() > deepestDanger * team->GetSide()) deepestDanger = adaptedBallX;
+  adaptedBallX *= team->GetDynamicSide();  // back to absolute space
+  if (adaptedBallX * team->GetDynamicSide() >
+      deepestDanger * team->GetDynamicSide())
+    deepestDanger = adaptedBallX;
 
   // ballfuture as max
-  if (match->GetBall()->Predict(700).coords[0] * team->GetSide() > deepestDanger * team->GetSide()) deepestDanger = match->GetBall()->Predict(700).coords[0];
+  if (match->GetBall()->Predict(700).coords[0] * team->GetDynamicSide() >
+      deepestDanger * team->GetDynamicSide())
+    deepestDanger = match->GetBall()->Predict(700).coords[0];
 
   // opp as max
   Player *opp = match->GetTeam(abs(team->GetID() - 1))->GetDesignatedTeamPossessionPlayer();
-  float cautionDistance = 4.0f * team->GetSide();
-  if ((opp->GetPosition().coords[0] + opp->GetMovement().coords[0] * 0.15f + cautionDistance) * team->GetSide() > deepestDanger * team->GetSide()) deepestDanger = opp->GetPosition().coords[0] + opp->GetMovement().coords[0] * 0.1f + cautionDistance;
+  float cautionDistance = 4.0f * team->GetDynamicSide();
+  if ((opp->GetPosition().coords[0] + opp->GetMovement().coords[0] * 0.15f +
+       cautionDistance) *
+          team->GetDynamicSide() >
+      deepestDanger * team->GetDynamicSide())
+    deepestDanger = opp->GetPosition().coords[0] +
+                    opp->GetMovement().coords[0] * 0.1f + cautionDistance;
 
   // slacking teammate as max
-  float lineX = AI_GetOffsideLine(match, match->GetMentalImage(0), abs(team->GetID()));
+  float lineX = AI_GetOffsideLine(match, match->GetMentalImage(0),
+                                  abs(team->GetID()));
   float allowSlackDistance = 4.0f; // despite teammates slacking behind line this much, just hold the line
-  if (lineX * team->GetSide() - allowSlackDistance > deepestDanger * team->GetSide()) {
+  if (lineX * team->GetDynamicSide() - allowSlackDistance >
+      deepestDanger * team->GetDynamicSide()) {
+    DO_VALIDATION;
     //printf("previous: %f\n", deepestDanger);
-    deepestDanger = lineX - allowSlackDistance * team->GetSide();
+    deepestDanger = lineX - allowSlackDistance * team->GetDynamicSide();
     //printf("now:      %f\n", deepestDanger);
   }
 
@@ -147,12 +165,14 @@ void TeamAIController::Process() {
   std::vector<Player*> players;
   match->GetActiveTeamPlayers(abs(team->GetID() - 1), players);
 
-  Vector3 mostDangerousPos = Vector3((pitchHalfW - 2.0) * team->GetSide(), 0, 0);
+  Vector3 mostDangerousPos =
+      Vector3((pitchHalfW - 2.0) * team->GetDynamicSide(), 0, 0);
   mostDangerousPos = mostDangerousPos * 0.8f + match->GetBall()->Predict(100).Get2D() * 0.2f;
 
   tacticalOpponentInfo.clear();
 
   for (unsigned int i = 0; i < players.size(); i++) {
+    DO_VALIDATION;
     TacticalOpponentInfo info;
     info.player = players[i];
 
@@ -171,52 +191,61 @@ void TeamAIController::Process() {
 
   // team pressure
 
-/* DISABLED, interferes with other defense AI code for now
-  if (team->GetHumanGamerCount() == 0) {
-    if (match->GetBestPossessionTeamID() != team->GetID()) {
+  /* DISABLED, interferes with other defense AI code for now
+    if (team->GetHumanGamerCount() == 0) { DO_VALIDATION;
+      if (match->GetBestPossessionTeamID() != team->GetID()) { DO_VALIDATION;
 
-      bool opponentFreeRun = false;
-      Player *opp = match->GetTeam(abs(team->GetID() - 1))->GetDesignatedTeamPossessionPlayer();
-      Vector3 dangerPos = Vector3(pitchHalfW * team->GetSide(), opp->GetPosition().coords[1] * 0.5, 0);
-      float oppDangerDistance = (opp->GetPosition() - dangerPos).GetLength();
-      Vector3 adaptedGoalPos = Vector3(pitchHalfW * team->GetSide(), 0, 0) * 0.5 + opp->GetPosition() * 0.5;
-      float oppGoalDistance = (opp->GetPosition() - adaptedGoalPos).GetLength();
-      Player *p = AI_GetClosestPlayer(team, adaptedGoalPos, false);
-      float usGoalDistance = (p->GetPosition() - adaptedGoalPos).GetLength();
-      if (usGoalDistance > oppGoalDistance - 3.2) opponentFreeRun = true;
+        bool opponentFreeRun = false;
+        Player *opp = match->GetTeam(abs(team->GetID() -
+    1))->GetDesignatedTeamPossessionPlayer(); Vector3 dangerPos =
+    Vector3(pitchHalfW * team->GetSide(), opp->GetPosition().coords[1] * 0.5,
+    0); float oppDangerDistance = (opp->GetPosition() - dangerPos).GetLength();
+        Vector3 adaptedGoalPos = Vector3(pitchHalfW * team->GetSide(), 0, 0) *
+    0.5 + opp->GetPosition() * 0.5; float oppGoalDistance = (opp->GetPosition()
+    - adaptedGoalPos).GetLength(); Player *p = AI_GetClosestPlayer(team,
+    adaptedGoalPos, false); float usGoalDistance = (p->GetPosition() -
+    adaptedGoalPos).GetLength(); if (usGoalDistance > oppGoalDistance - 3.2)
+    opponentFreeRun = true;
 
-      bool closeEnemy = false;
-      if (oppDangerDistance < 20) closeEnemy = true;
+        bool closeEnemy = false;
+        if (oppDangerDistance < 20) closeEnemy = true;
 
-      if (opponentFreeRun || closeEnemy) {
-        ApplyTeamPressure();
+        if (opponentFreeRun || closeEnemy) { DO_VALIDATION;
+          ApplyTeamPressure();
+        }
       }
     }
-  }
-*/
-
+  */
 
   // trigger attacking runs
 
-  if (match->GetActualTime_ms() % 500 == 0 && endApplyAttackingRun_ms <= match->GetActualTime_ms()) {
-    if (team->GetHumanGamerCount() < 2) { // with >= 2 human players, one can do the running manually
+  if (match->GetActualTime_ms() % 500 == 0 &&
+      endApplyAttackingRun_ms <= match->GetActualTime_ms()) {
+    DO_VALIDATION;
+    if (team->GetHumanGamerCount() < 2) {
+      DO_VALIDATION;  // with >= 2 human players, one can do the running
+                      // manually
       if (match->GetBestPossessionTeam() == team) {
+        DO_VALIDATION;
 
         float neededRating = 0.5f;
 
         // from a certain distance, running is not very useful (can't pass that far)
         Player *runner = SelectAttackingRunPlayer(team);
         if (runner) {
+          DO_VALIDATION;
           float distance = (runner->GetPosition() - team->GetDesignatedTeamPossessionPlayer()->GetPosition()).GetLength();
           float distanceRating =
               std::pow(1.0f - NormalizedClamp(distance, 0, 40), 0.5f);
 
           // more likely to run when there's less defenders in front
           std::vector<Player*> opponents;
-          Vector3 spot = runner->GetPosition() * Vector3(1.0f, 0.8f, 0.0f) + Vector3(team->GetSide() * 10.0f, 0, 0);
+          Vector3 spot = runner->GetPosition() * Vector3(1.0f, 0.8f, 0.0f) +
+                         Vector3(team->GetDynamicSide() * 10.0f, 0, 0);
           AI_GetClosestPlayers(team->GetMatch()->GetTeam(abs(team->GetID() - 1)), spot, false, opponents, 4);
           float oppDensityRating = 1.0f;
           for (unsigned int i = 0; i < opponents.size(); i++) {
+            DO_VALIDATION;
             float oppDistance = (opponents[i]->GetPosition() - spot).GetLength();
             float oppDistanceRatingInv = std::pow(
                 curve(1.0f - NormalizedClamp(oppDistance, 0, 15), 1.0f), 0.5f);
@@ -226,51 +255,63 @@ void TeamAIController::Process() {
           float runConditionsRating = distanceRating * oppDensityRating;
 
           if (runConditionsRating >= neededRating) {
+            DO_VALIDATION;
             ApplyAttackingRun();
           }
         }
-
       }
     }
   }
 
   if (match->GetActualTime_ms() % 1500 == 0) {
-    forwardSupportPlayer = AI_GetClosestPlayer(team, team->GetDesignatedTeamPossessionPlayer()->GetPosition() * Vector3(1.0f, 1.0f, 0.0f) + Vector3(-team->GetSide() * 1.5f, 0, 0), false, team->GetDesignatedTeamPossessionPlayer());
+    DO_VALIDATION;
+    forwardSupportPlayer = AI_GetClosestPlayer(
+        team,
+        team->GetDesignatedTeamPossessionPlayer()->GetPosition() *
+                Vector3(1.0f, 1.0f, 0.0f) +
+            Vector3(-team->GetDynamicSide() * 1.5f, 0, 0),
+        false, team->GetDesignatedTeamPossessionPlayer());
   }
-
 }
 
 float mixup(float base, const std::string &varname, e_PlayerRole role) {
+  DO_VALIDATION;
 
   float value = -100.0f;
 
   if (role == e_PlayerRole_CB) {
+    DO_VALIDATION;
     if (varname.compare("position_offense_width_factor") == 0) value = 0.2f; // wider defense
   }
 
   if (role == e_PlayerRole_LB || role == e_PlayerRole_RB) {
+    DO_VALIDATION;
     if (varname.compare("position_defense_ownhalf_factor") == 0) value = -0.075f; // go forward
     if (varname.compare("position_offense_width_factor") == 0) value = 0.2f; // wider defense
     if (varname.compare("position_offense_ownhalf_factor") == 0) value = -0.1f; // go forward
   }
 
   if (role == e_PlayerRole_LM || role == e_PlayerRole_RM) {
+    DO_VALIDATION;
     // wingers stay high up to offer counter-attack support
     if (varname.compare("position_defense_ownhalf_factor") == 0) value = -0.05f;
     if (varname.compare("position_offense_ownhalf_factor") == 0) value = -0.1f; // go forward
   }
 
   if (role == e_PlayerRole_AM) {
+    DO_VALIDATION;
     // attackers stay high up to offer counter-attack support
     if (varname.compare("position_defense_depth_factor") == 0) value = 0.125f;
   }
 
   if (role == e_PlayerRole_CF) {
+    DO_VALIDATION;
     // strikers stay high up to offer counter-attack support
     if (varname.compare("position_defense_depth_factor") == 0) value = 0.125f;
   }
 
   if (value > -100.0f) {
+    DO_VALIDATION;
 
     // bias version
     //float rolebias = 0.5f;
@@ -280,14 +321,13 @@ float mixup(float base, const std::string &varname, e_PlayerRole role) {
     return clamp(base + value, 0.0f, 1.0f);
 
   } else {
-
     return base;
-
   }
-
 }
 
-Vector3 TeamAIController::GetAdaptedFormationPosition(Player *player, bool useDynamicFormationPosition) {
+Vector3 TeamAIController::GetAdaptedFormationPosition(
+    Player *player, bool useDynamicFormationPosition) {
+  DO_VALIDATION;
 
   bool toggle_yFocus = true;
   bool toggle_microFocus = true;
@@ -324,8 +364,11 @@ Vector3 TeamAIController::GetAdaptedFormationPosition(Player *player, bool useDy
 
   float possessionAmountBias = NormalizedClamp(fadingTeamPossessionAmount - 0.5f, 0.3f, 0.7f);
   // also take the ball's position as part of the possessionBias equation
-  float ballBias = NormalizedClamp(((ballX / pitchHalfW) * -team->GetSide()), -0.7f, 0.7f); // 0 == own half, 1 == opponent half
-  // if possessionBias is unclear (near 0.5), take ballBias more seriously as indicator of possession.
+  float ballBias =
+      NormalizedClamp(((ballX / pitchHalfW) * -team->GetDynamicSide()), -0.7f,
+                      0.7f);  // 0 == own half, 1 == opponent half
+  // if possessionBias is unclear (near 0.5), take ballBias more seriously as
+  // indicator of possession.
   float ballBiasBias = 1.0f - fabs(possessionAmountBias * 2.0f - 1.0f); // biasception
   ballBiasBias *= 0.6f; // don't take ballBias too serious - we need defenders to somewhat keep watch when possession team is unclear, even when the ball is forward
   float possessionBias = possessionAmountBias * (1.0f - ballBiasBias) +
@@ -342,15 +385,17 @@ Vector3 TeamAIController::GetAdaptedFormationPosition(Player *player, bool useDy
   float adaptedWidth = width * (offense_widthFactor * possessionBias +
                                 defense_widthFactor * (1.0f - possessionBias));
 
-  float offsetX = pitchHalfW * team->GetSide() * ((offense_ownHalfFactor * 2.0f - 1.0f) * possessionBias +
-                                                  (defense_ownHalfFactor * 2.0f - 1.0f) * (1.0f - possessionBias));
+  float offsetX =
+      pitchHalfW * team->GetDynamicSide() *
+      ((offense_ownHalfFactor * 2.0f - 1.0f) * possessionBias +
+       (defense_ownHalfFactor * 2.0f - 1.0f) * (1.0f - possessionBias));
 
   float sideFocusStrength = (offense_sideFocusStrength * possessionBias +
                              defense_sideFocusStrength * (1.0f - possessionBias));
 
   float sideFocus = possessionBias * 2.0f - 1.0f; // -1 == own side, 1 == opp side
 
-  float sideX = 0.2f * sideFocus * -team->GetSide() * pitchHalfW +
+  float sideX = 0.2f * sideFocus * -team->GetDynamicSide() * pitchHalfW +
                 0.8f * -match->GetAveragePossessionSide(6000) * pitchHalfW;
   // exaggerate: sideX = clamp(sideX * 2.0f, -pitchHalfW, pitchHalfW);
   float centerX = clamp((ballX * (1.0f - sideFocusStrength) + sideX * sideFocusStrength) + offsetX, -pitchHalfW, pitchHalfW);
@@ -364,19 +409,23 @@ Vector3 TeamAIController::GetAdaptedFormationPosition(Player *player, bool useDy
   centerX *= ( (1.0f - adaptedDepth) / 1.0f ) * adaptCenterToFitDepthBias + (1.0f - adaptCenterToFitDepthBias);
   centerY *= ( (1.0f - adaptedWidth) / 1.0f ) * adaptCenterToFitWidthBias + (1.0f - adaptCenterToFitWidthBias);
 
-  float backXBound = centerX - adaptedDepth * pitchHalfW * -team->GetSide();
-  float frontXBound = centerX + adaptedDepth * pitchHalfW * -team->GetSide();
+  float backXBound =
+      centerX - adaptedDepth * pitchHalfW * -team->GetDynamicSide();
+  float frontXBound =
+      centerX + adaptedDepth * pitchHalfW * -team->GetDynamicSide();
   float lowYBound = centerY - adaptedWidth * pitchHalfH;
   float highYBound = centerY + adaptedWidth * pitchHalfH;
 
-  // if (player->GetTeam()->GetID() == 0) {
+  // if (player->GetTeam()->GetID() == 0) { DO_VALIDATION;
   //   SetGreenDebugPilon(Vector3(backXBound, 0, 0));
   //   SetBlueDebugPilon(Vector3(frontXBound, 0, 0));
   // }
 
   // maybe setting offside trap this way doesn't work too well: after all, defensive positioning stuff is done after this, thereby diminishing trap sometimes.
   // on the other hand, maybe this is a good basic trap setup, and we could apply the trap with the applyoffsidetrap function after the defensive positioning as well. (done from the def/mid strategies code)
-  if (backXBound * team->GetSide() > GetOffsideTrapX() * team->GetSide()) backXBound = GetOffsideTrapX();
+  if (backXBound * team->GetDynamicSide() >
+      GetOffsideTrapX() * team->GetDynamicSide())
+    backXBound = GetOffsideTrapX();
 
   float xFocus = 0.0f;
   float xFocusStrength = 0.0f;
@@ -386,14 +435,23 @@ Vector3 TeamAIController::GetAdaptedFormationPosition(Player *player, bool useDy
 
   float defendFactor = (1.0f - AI_GetMindSet(role)) * (1.0f - possessionBias);
   Vector3 microFocus = focalPoint;// * Vector3(1.0f, 0.8f + (1.0f - defendFactor) * 0.2f, 0.0f); // defenders stay in the middle more
-  Vector3 defensiveFocusPos = Vector3(clamp(microFocus.coords[0] + team->GetSide() * 2.0f, -pitchHalfW, backXBound * team->GetSide()), microFocus.coords[1] * 0.9f, 0);
-  microFocus = (Vector3(clamp(microFocus.coords[0] - team->GetSide() * 1.0f, -pitchHalfW, pitchHalfW), microFocus.coords[1] * 0.9f, 0)) * possessionBias +
-               (defensiveFocusPos) * (1.0f - possessionBias);
+  Vector3 defensiveFocusPos =
+      Vector3(clamp(microFocus.coords[0] + team->GetDynamicSide() * 2.0f,
+                    -pitchHalfW, backXBound * team->GetDynamicSide()),
+              microFocus.coords[1] * 0.9f, 0);
+  microFocus =
+      (Vector3(clamp(microFocus.coords[0] - team->GetDynamicSide() * 1.0f,
+                     -pitchHalfW, pitchHalfW),
+               microFocus.coords[1] * 0.9f, 0)) *
+          possessionBias +
+      (defensiveFocusPos) * (1.0f - possessionBias);
   float microFocusStrength = (offense_microFocusStrength * possessionBias +
                               defense_microFocusStrength * (1.0f - possessionBias));
 
   // on own half in possession: little microfocus strength. on own half not in possession: lots of microfocus. other half: the other way around.
-  float microFocusSideBias = NormalizedClamp((ballX / pitchHalfW) * -team->GetSide(), -0.7f, 0.7f); // ball on own half == lower values
+  float microFocusSideBias =
+      NormalizedClamp((ballX / pitchHalfW) * -team->GetDynamicSide(), -0.7f,
+                      0.7f);  // ball on own half == lower values
   microFocusSideBias = microFocusSideBias * 0.7f + 0.3f;
   float autoMicroFocusStrength =
       (std::pow(microFocusSideBias, 0.8f) * possessionBias +
@@ -404,8 +462,11 @@ Vector3 TeamAIController::GetAdaptedFormationPosition(Player *player, bool useDy
   // midfield focus. higher == more on opponent's half
   float manualMidfieldFocus = (offense_midfieldFocus * possessionBias +
                                defense_midfieldFocus * (1.0f - possessionBias));
-  float autoMidfieldFocus = NormalizedClamp((ballX / pitchHalfW) * -team->GetSide(), -0.8f, 0.8f); // midfield follows ball
-  //autoMidfieldFocus *= 0.5f + 0.5f * possessionBias; // auto defensive stance on no possession (deemed too defensive)
+  float autoMidfieldFocus =
+      NormalizedClamp((ballX / pitchHalfW) * -team->GetDynamicSide(), -0.8f,
+                      0.8f);  // midfield follows ball
+  // autoMidfieldFocus *= 0.5f + 0.5f * possessionBias; // auto defensive stance
+  // on no possession (deemed too defensive)
   float midfieldFocus = manualMidfieldFocus * 0.7f + autoMidfieldFocus * 0.3f;
   float midfieldFocusStrength = (offense_midfieldFocusStrength * possessionBias +
                                  defense_midfieldFocusStrength * (1.0f - possessionBias));
@@ -422,13 +483,16 @@ Vector3 TeamAIController::GetAdaptedFormationPosition(Player *player, bool useDy
 }
 
 void TeamAIController::CalculateDynamicRoles() {
+  DO_VALIDATION;
 
   std::vector<Player*> players;
   team->GetActivePlayers(players);
 
   std::vector<Player*>::iterator iter = players.begin();
   while (iter != players.end()) {
+    DO_VALIDATION;
     if ((*iter)->GetFormationEntry().role == e_PlayerRole_GK) {
+      DO_VALIDATION;
       players.erase(iter);
       break;
     }
@@ -439,13 +503,16 @@ void TeamAIController::CalculateDynamicRoles() {
   // collect adapted formation positions
   std::vector<Vector3> adaptedFormationPositions;
   for (unsigned int y = 0; y < playerNum; y++) {
+    DO_VALIDATION;
     adaptedFormationPositions.push_back(GetAdaptedFormationPosition(players.at(y), false));
   }
 
   // first make a sorted list on all possible distances between players and formation targets
   std::vector<int> distances;
   for (unsigned int x = 0; x < playerNum; x++) {
+    DO_VALIDATION;
     for (unsigned int y = 0; y < playerNum; y++) {
+      DO_VALIDATION;
       const Vector3 &playerPos = players.at(x)->GetPosition() + players.at(x)->GetMovement() * 0.5;
       const Vector3 &formationPos = adaptedFormationPositions.at(y);
       float distance = (playerPos - formationPos).GetLength();
@@ -456,6 +523,7 @@ void TeamAIController::CalculateDynamicRoles() {
   std::sort(distances.begin(), distances.end());
 
   for (unsigned int i = playerNum; i < distances.size(); i += 5) {
+    DO_VALIDATION;
 
     // libhungarian by Cyrill Stachniss, 2004
 
@@ -464,7 +532,9 @@ void TeamAIController::CalculateDynamicRoles() {
     int r[playerNum * playerNum];
 
     for (unsigned int x = 0; x < playerNum; x++) {
+      DO_VALIDATION;
       for (unsigned int y = 0; y < playerNum; y++) {
+        DO_VALIDATION;
         const Vector3 &playerPos = players.at(x)->GetPosition() + players.at(x)->GetMovement() * 0.5;
         const Vector3 &formationPos = adaptedFormationPositions.at(y);
         float cost = (playerPos - formationPos).GetLength();
@@ -494,11 +564,15 @@ void TeamAIController::CalculateDynamicRoles() {
 
     bool ready = false;
     if (totalCost != -1 && (totalCost < 50000 || i >= distances.size() - 5)) {
+      DO_VALIDATION;
       //printf("total cost: %i\n", totalCost);
       // assign dynamic role with best cost
       for (unsigned int x = 0; x < playerNum; x++) {
+        DO_VALIDATION;
         for (unsigned int y = 0; y < playerNum; y++) {
+          DO_VALIDATION;
           if ((&p)->assignment[y][x] == 1) {
+            DO_VALIDATION;
             FormationEntry formationEntry = players.at(y)->GetFormationEntry();
             players.at(x)->SetDynamicFormationEntry(formationEntry);
           }
@@ -511,16 +585,17 @@ void TeamAIController::CalculateDynamicRoles() {
     /* free used memory */
     hungarian_free(&p);
     for (unsigned int blah = 0; blah < playerNum; blah++) {
+      DO_VALIDATION;
       free(m[blah]);
     }
     free(m);
 
     if (ready) break;
   }
-
 }
 
 float TeamAIController::CalculateMarkingQuality(Player *player, Player *opp) {
+  DO_VALIDATION;
 
 
 
@@ -530,11 +605,12 @@ float TeamAIController::CalculateMarkingQuality(Player *player, Player *opp) {
   // draw virtual line from 'left' to 'right' of player, perpendicular to the goal. anything 'above' this line he can catch up with. well,
   // not if it's too much to the side of this line / closer to goal; there just isn't enough time then to catch up.
 
-  Vector3 goalPos = Vector3(pitchHalfW * team->GetSide(), 0, 0);
+  Vector3 goalPos = Vector3(pitchHalfW * team->GetDynamicSide(), 0, 0);
   Vector3 toGoal = goalPos - playerPosition;
   float lineLength = clamp((toGoal).GetLength(), 4.0f, 14.0f);
   Line line;
-  Vector3 toGoalNorm = toGoal.GetNormalized(Vector3(team->GetSide(), 0, 0));
+  Vector3 toGoalNorm =
+      toGoal.GetNormalized(Vector3(team->GetDynamicSide(), 0, 0));
   Vector3 safetyVec = -toGoalNorm * 0.5f;
   line.SetVertex(0, playerPosition + safetyVec + toGoalNorm.GetRotated2D(-0.5 * pi) * lineLength); // left of player (seen from goal)
   line.SetVertex(1, playerPosition + safetyVec + toGoalNorm.GetRotated2D( 0.5 * pi) * lineLength); // right of player (seen from goal)
@@ -568,6 +644,7 @@ float TeamAIController::CalculateMarkingQuality(Player *player, Player *opp) {
 }
 
 void TeamAIController::CalculateManMarking() {
+  DO_VALIDATION;
 
   // new method
 
@@ -580,12 +657,17 @@ void TeamAIController::CalculateManMarking() {
 
   // reset previous man marking
   for (unsigned int i = 0; i < players.size(); i++) {
-    players[i]->SetManMarkingID(-1);
+    DO_VALIDATION;
+    players[i]->SetManMarking(0);
   }
 
   // most dangerous opponent gets closest player to cover him, and so on
   // (oppInfo is already sorted, most dangerous first. this is done in this->process() which is called earlier from team->process())
-  for (unsigned int opp = 0; opp < (unsigned int)std::min((signed int)oppInfo.size(), numMarkedOpponents); opp++) {
+  for (unsigned int opp = 0;
+       opp <
+       (unsigned int)std::min((signed int)oppInfo.size(), numMarkedOpponents);
+       opp++) {
+    DO_VALIDATION;
 
     Player *closestPlayer = 0;
     float bestMarkingQuality = -1.0f;
@@ -596,12 +678,15 @@ void TeamAIController::CalculateManMarking() {
 
     // find closest player for this opponent
     while (iter != players.end()) {
+      DO_VALIDATION;
 
       if ((*iter)->GetFormationEntry().role != e_PlayerRole_GK) {
+        DO_VALIDATION;
 
         float markingQuality = CalculateMarkingQuality((*iter), oppPlayer);
 
         if (markingQuality > bestMarkingQuality) {
+          DO_VALIDATION;
           closestPlayer = *iter;
           bestMarkingQuality = markingQuality;
           closestPlayerIter = iter;
@@ -612,8 +697,8 @@ void TeamAIController::CalculateManMarking() {
     }
 
     if (closestPlayer) {
-      //printf("oppID: %i\n", oppPlayer->GetID());
-      closestPlayer->SetManMarkingID(oppPlayer->GetID());
+      DO_VALIDATION;
+      closestPlayer->SetManMarking(oppPlayer);
       players.erase(closestPlayerIter);
     }
 
@@ -632,10 +717,11 @@ void TeamAIController::ApplyOffsideTrap(Vector3 &position) const {
   // area, centered around offsideTrapX, that will be compressed.
   // so the area from [offsideTrapX - areaLength .. offsideTrapX + areaLength] will be compressed into [offsideTrapX .. offsideTrapX + areaLength]
   float areaHalfLength = 2.0f;//4.0f;
-  float absPosX = position.coords[0] * team->GetSide();
-  float absOffsideTrapX = offsideTrapX * team->GetSide();
+  float absPosX = position.coords[0] * team->GetDynamicSide();
+  float absOffsideTrapX = offsideTrapX * team->GetDynamicSide();
 
   if (absPosX > absOffsideTrapX - areaHalfLength) {
+    DO_VALIDATION;
 
     float areaFront = absOffsideTrapX - areaHalfLength;
     float posFromAreaFront = absPosX - areaFront;
@@ -645,13 +731,14 @@ void TeamAIController::ApplyOffsideTrap(Vector3 &position) const {
 
     float absResultPosX = areaFront + areaHalfLength * posFactor; // this compresses the 2 * areaHalfLength into 1 * areaHalfLength
 
-    position.coords[0] = absResultPosX * team->GetSide();
+    position.coords[0] = absResultPosX * team->GetDynamicSide();
   }
-
 }
 
-void TeamAIController::PrepareSetPiece(e_GameMode setPiece, Team* other_team,
-    int kickoffTakerTeamId, int takerTeamID) {
+void TeamAIController::PrepareSetPiece(e_GameMode setPiece, Team *other_team,
+                                       int kickoffTakerTeamId,
+                                       int takerTeamID) {
+  DO_VALIDATION;
   setPieceType = setPiece;
 
   if (takerTeamID == -1) assert(setPieceType == e_GameMode_Normal);
@@ -661,13 +748,17 @@ void TeamAIController::PrepareSetPiece(e_GameMode setPiece, Team* other_team,
 
   std::vector<Player*>::iterator iter = players.begin();
   while (iter != players.end()) {
+    DO_VALIDATION;
     Vector3 focus = match->GetBall()->Predict(0).Get2D();
     if ((*iter)->GetFormationEntry().role == e_PlayerRole_GK) {
+      DO_VALIDATION;
       if (setPiece == e_GameMode_KickOff) {
+        DO_VALIDATION;
         focus.coords[0] = 0;
         focus.coords[1] = 0;
       }
-      (*iter)->ResetPosition(Vector3(pitchHalfW * team->GetSide() * 0.98, 0, 0), focus);
+      (*iter)->ResetPosition(
+          Vector3(pitchHalfW * team->GetDynamicSide() * 0.98, 0, 0), focus);
       iter = players.erase(iter);
     } else {
       iter++;
@@ -682,294 +773,458 @@ void TeamAIController::PrepareSetPiece(e_GameMode setPiece, Team* other_team,
   if (isTakerTeam) team->SetFadingTeamPossessionAmount(1.5);
               else team->SetFadingTeamPossessionAmount(0.5);
 
-  switch (setPiece) {
+              switch (setPiece) {
+                DO_VALIDATION;
 
-    case e_GameMode_KickOff:
-      for (unsigned int i = 0; i < players.size(); i++) {
-        Vector3 basePos = players[i]->GetFormationEntry().position * Vector3(-team->GetSide() * pitchHalfW * 0.6, -team->GetSide() * pitchHalfH * 0.6, 0);
-        basePos.coords[1] += boostrandom(
-            -2.0f,
-            2.0f);  // to stop people from bumping into each other and such
-        basePos.coords[0] *= 0.5;
-        basePos.coords[0] += (pitchHalfW * 0.2) * team->GetSide();
-        if (basePos.coords[0] * team->GetSide() < 0.5) basePos.coords[0] = 0.5 * team->GetSide(); // not allowed to stand on opp side
-        if (basePos.GetLength() < 9.4) { // not allowed to stand in center spot
-          basePos.Normalize(Vector3(team->GetSide(), 0, 0));
-          basePos *= 9.4;
-        }
-        players[i]->ResetPosition(basePos, match->GetBall()->Predict(0).Get2D());
+                case e_GameMode_KickOff:
+                  for (unsigned int i = 0; i < players.size(); i++) {
+                    DO_VALIDATION;
+                    Vector3 basePos =
+                        players[i]->GetFormationEntry().position *
+                        Vector3(-team->GetDynamicSide() * pitchHalfW * 0.6,
+                                -team->GetDynamicSide() * pitchHalfH * 0.6, 0);
+                    basePos.coords[1] +=
+                        boostrandom(-2.0f,
+                                    2.0f);  // to stop people from bumping into
+                                            // each other and such
+                    basePos.coords[0] *= 0.5;
+                    basePos.coords[0] +=
+                        (pitchHalfW * 0.2) * team->GetDynamicSide();
+                    if (basePos.coords[0] * team->GetDynamicSide() < 0.5)
+                      basePos.coords[0] =
+                          0.5 * team->GetDynamicSide();  // not allowed to stand
+                                                         // on opp side
+                    if (basePos.GetLength() < 9.4) {
+                      DO_VALIDATION;  // not allowed to stand in center spot
+                      basePos.Normalize(Vector3(team->GetDynamicSide(), 0, 0));
+                      basePos *= 9.4;
+                    }
+                    players[i]->ResetPosition(
+                        basePos, match->GetBall()->Predict(0).Get2D());
 
-        // supporting players
-        if (isTakerTeam) {
-          std::vector<Player*> result;
-          AI_GetClosestPlayers(team, Vector3(0), false, result, 2);
-          for (unsigned int i = 0; i < result.size(); i++) {
-            result[i]->ResetPosition(Vector3(0, i * 1.4 * team->GetSide(), 0), match->GetBall()->Predict(0).Get2D());
-          }
-        }
-      }
-    break;
+                    // supporting players
+                    if (isTakerTeam) {
+                      DO_VALIDATION;
+                      std::vector<Player *> result;
+                      AI_GetClosestPlayers(team, Vector3(0), false, result, 2);
+                      for (unsigned int i = 0; i < result.size(); i++) {
+                        DO_VALIDATION;
+                        result[i]->ResetPosition(
+                            Vector3(0, i * 1.4 * team->GetDynamicSide(), 0),
+                            match->GetBall()->Predict(0).Get2D());
+                      }
+                    }
+                  }
+                  break;
 
-    case e_GameMode_GoalKick:
-      for (unsigned int i = 0; i < players.size(); i++) {
-        float backXBound, frontXBound, lowYBound, highYBound;
-        if (isTakerTeam) {
-          backXBound = team->GetSide() * pitchHalfW * 0.5;
-          frontXBound = -team->GetSide() * pitchHalfW * 0.2;
-        } else {
-          backXBound = team->GetSide() * pitchHalfW * 0.4;
-          frontXBound = -team->GetSide() * pitchHalfW * 0.1;
-        }
-        lowYBound = -pitchHalfH * 0.7;
-        highYBound = pitchHalfH * 0.7;
-        Vector3 basePos = AI_GetAdaptedFormationPosition(match, players[i], backXBound, frontXBound, lowYBound, highYBound, 0, 0, 0, 0, 0, 0, 0, 0, false);
-        players[i]->ResetPosition(basePos, match->GetBall()->Predict(0).Get2D());
-      }
-      break;
+                case e_GameMode_GoalKick:
+                  for (unsigned int i = 0; i < players.size(); i++) {
+                    DO_VALIDATION;
+                    float backXBound, frontXBound, lowYBound, highYBound;
+                    if (isTakerTeam) {
+                      DO_VALIDATION;
+                      backXBound = team->GetDynamicSide() * pitchHalfW * 0.5;
+                      frontXBound = -team->GetDynamicSide() * pitchHalfW * 0.2;
+                    } else {
+                      backXBound = team->GetDynamicSide() * pitchHalfW * 0.4;
+                      frontXBound = -team->GetDynamicSide() * pitchHalfW * 0.1;
+                    }
+                    lowYBound = -pitchHalfH * 0.7;
+                    highYBound = pitchHalfH * 0.7;
+                    Vector3 basePos = AI_GetAdaptedFormationPosition(
+                        match, players[i], backXBound, frontXBound, lowYBound,
+                        highYBound, 0, 0, 0, 0, 0, 0, 0, 0, false);
+                    players[i]->ResetPosition(
+                        basePos, match->GetBall()->Predict(0).Get2D());
+                  }
+                  break;
 
-    case e_GameMode_Corner:
-      for (unsigned int i = 0; i < players.size(); i++) {
-        float backXBound, frontXBound, lowYBound, highYBound, xFocus, xFocusStrength, yFocus, yFocusStrength, midfieldFocus, midfieldFocusStrength;
-        Vector3 ballPos = match->GetBall()->Predict(0).Get2D();
-        if (isTakerTeam) {
-          backXBound = -team->GetSide() * pitchHalfW * 0.2;
-          frontXBound = -team->GetSide() * pitchHalfW * 0.96;
-          xFocus = frontXBound * 0.85;
-          xFocusStrength = 0.7f;
-          yFocus = ballPos.coords[1] * 0.1f;
-          yFocusStrength = 0.7f;
-          midfieldFocus = 0.9f;
-          midfieldFocusStrength = 0.5f;
-        } else {
-          backXBound = team->GetSide() * pitchHalfW * 0.98;
-          frontXBound = team->GetSide() * pitchHalfW * 0.5;
-          xFocus = backXBound * 0.94;
-          xFocusStrength = 0.8f;
-          yFocus = ballPos.coords[1] * 0.1f;
-          yFocusStrength = 0.9f;
-          midfieldFocus = 0.1f;
-          midfieldFocusStrength = 0.7f;
-        }
-        lowYBound = -pitchHalfH * 0.6;
-        highYBound = pitchHalfH * 0.6;
-        Vector3 basePos = AI_GetAdaptedFormationPosition(match, players[i], backXBound, frontXBound, lowYBound, highYBound, xFocus, xFocusStrength, yFocus, yFocusStrength, Vector3(ballPos.coords[0] * 0.95f, ballPos.coords[1] * 0.1f, 0), 0.9, midfieldFocus, midfieldFocusStrength, false);
-        players[i]->ResetPosition(basePos, match->GetBall()->Predict(0).Get2D());
-      }
-      break;
+                case e_GameMode_Corner:
+                  for (unsigned int i = 0; i < players.size(); i++) {
+                    DO_VALIDATION;
+                    float backXBound, frontXBound, lowYBound, highYBound,
+                        xFocus, xFocusStrength, yFocus, yFocusStrength,
+                        midfieldFocus, midfieldFocusStrength;
+                    Vector3 ballPos = match->GetBall()->Predict(0).Get2D();
+                    if (isTakerTeam) {
+                      DO_VALIDATION;
+                      backXBound = -team->GetDynamicSide() * pitchHalfW * 0.2;
+                      frontXBound = -team->GetDynamicSide() * pitchHalfW * 0.96;
+                      xFocus = frontXBound * 0.85;
+                      xFocusStrength = 0.7f;
+                      yFocus = ballPos.coords[1] * 0.1f;
+                      yFocusStrength = 0.7f;
+                      midfieldFocus = 0.9f;
+                      midfieldFocusStrength = 0.5f;
+                    } else {
+                      backXBound = team->GetDynamicSide() * pitchHalfW * 0.98;
+                      frontXBound = team->GetDynamicSide() * pitchHalfW * 0.5;
+                      xFocus = backXBound * 0.94;
+                      xFocusStrength = 0.8f;
+                      yFocus = ballPos.coords[1] * 0.1f;
+                      yFocusStrength = 0.9f;
+                      midfieldFocus = 0.1f;
+                      midfieldFocusStrength = 0.7f;
+                    }
+                    lowYBound = -pitchHalfH * 0.6;
+                    highYBound = pitchHalfH * 0.6;
+                    Vector3 basePos = AI_GetAdaptedFormationPosition(
+                        match, players[i], backXBound, frontXBound, lowYBound,
+                        highYBound, xFocus, xFocusStrength, yFocus,
+                        yFocusStrength,
+                        Vector3(ballPos.coords[0] * 0.95f,
+                                ballPos.coords[1] * 0.1f, 0),
+                        0.9, midfieldFocus, midfieldFocusStrength, false);
+                    players[i]->ResetPosition(
+                        basePos, match->GetBall()->Predict(0).Get2D());
+                  }
+                  break;
 
-    case e_GameMode_ThrowIn:
-      for (unsigned int i = 0; i < players.size(); i++) {
-        float backXBound, frontXBound, lowYBound, highYBound, xFocus, xFocusStrength, yFocus, yFocusStrength;
-        Vector3 ballPos = match->GetBall()->Predict(0).Get2D();
-        if (isTakerTeam) {
-          backXBound = clamp(ballPos.coords[0] + 30 * team->GetSide(), -pitchHalfW, pitchHalfW);
-          frontXBound = clamp(ballPos.coords[0] + 20 * -team->GetSide(), -pitchHalfW, pitchHalfW);
-          xFocus = clamp(ballPos.coords[0] + 4 * -team->GetSide(), -pitchHalfW, pitchHalfW);
-          xFocusStrength = 0.4;
-          yFocus = ballPos.coords[1] * 0.996;
-          yFocusStrength = 0.6;
-        } else {
-          backXBound = clamp(ballPos.coords[0] + 30 * team->GetSide(), -pitchHalfW, pitchHalfW);
-          frontXBound = clamp(ballPos.coords[0] + 15 * -team->GetSide(), -pitchHalfW, pitchHalfW);
-          xFocus = clamp(ballPos.coords[0] + 16 * team->GetSide(), -pitchHalfW, pitchHalfW);
-          xFocusStrength = 0.2;
-          yFocus = ballPos.coords[1] * 0.95;
-          yFocusStrength = 0.5;
-        }
-        lowYBound = -pitchHalfH * 0.75f + ballPos.coords[1] * 0.25f;
-        highYBound = pitchHalfH * 0.75f + ballPos.coords[1] * 0.25f;
-        Vector3 basePos = AI_GetAdaptedFormationPosition(match, players[i], backXBound, frontXBound, lowYBound, highYBound, xFocus, xFocusStrength, yFocus, yFocusStrength, ballPos, 0.7, 0, 0, false);
-        players[i]->ResetPosition(basePos, match->GetBall()->Predict(0).Get2D());
-      }
-      break;
+                case e_GameMode_ThrowIn:
+                  for (unsigned int i = 0; i < players.size(); i++) {
+                    DO_VALIDATION;
+                    float backXBound, frontXBound, lowYBound, highYBound,
+                        xFocus, xFocusStrength, yFocus, yFocusStrength;
+                    Vector3 ballPos = match->GetBall()->Predict(0).Get2D();
+                    if (isTakerTeam) {
+                      DO_VALIDATION;
+                      backXBound =
+                          clamp(ballPos.coords[0] + 30 * team->GetDynamicSide(),
+                                -pitchHalfW, pitchHalfW);
+                      frontXBound = clamp(
+                          ballPos.coords[0] + 20 * -team->GetDynamicSide(),
+                          -pitchHalfW, pitchHalfW);
+                      xFocus =
+                          clamp(ballPos.coords[0] + 4 * -team->GetDynamicSide(),
+                                -pitchHalfW, pitchHalfW);
+                      xFocusStrength = 0.4;
+                      yFocus = ballPos.coords[1] * 0.996;
+                      yFocusStrength = 0.6;
+                    } else {
+                      backXBound =
+                          clamp(ballPos.coords[0] + 30 * team->GetDynamicSide(),
+                                -pitchHalfW, pitchHalfW);
+                      frontXBound = clamp(
+                          ballPos.coords[0] + 15 * -team->GetDynamicSide(),
+                          -pitchHalfW, pitchHalfW);
+                      xFocus =
+                          clamp(ballPos.coords[0] + 16 * team->GetDynamicSide(),
+                                -pitchHalfW, pitchHalfW);
+                      xFocusStrength = 0.2;
+                      yFocus = ballPos.coords[1] * 0.95;
+                      yFocusStrength = 0.5;
+                    }
+                    lowYBound = -pitchHalfH * 0.75f + ballPos.coords[1] * 0.25f;
+                    highYBound = pitchHalfH * 0.75f + ballPos.coords[1] * 0.25f;
+                    Vector3 basePos = AI_GetAdaptedFormationPosition(
+                        match, players[i], backXBound, frontXBound, lowYBound,
+                        highYBound, xFocus, xFocusStrength, yFocus,
+                        yFocusStrength, ballPos, 0.7, 0, 0, false);
+                    players[i]->ResetPosition(
+                        basePos, match->GetBall()->Predict(0).Get2D());
+                  }
+                  break;
 
-    case e_GameMode_FreeKick:
-      for (unsigned int i = 0; i < players.size(); i++) {
-        float backXBound, frontXBound, lowYBound, highYBound, xFocus, xFocusStrength, yFocus, yFocusStrength;
-        Vector3 ballPos = match->GetBall()->Predict(0).Get2D();
-        if (isTakerTeam) {
-          float xOffset = clamp((ballPos.coords[0] * -team->GetSide()) / pitchHalfW, -1.0, 1.0) * 0.5 + 0.5; // 0 == close to our goal, 1 == far from our goal
-          backXBound = clamp(team->GetSide() * pitchHalfW * (0.7 - xOffset * 0.7), -pitchHalfW, pitchHalfW);
-          frontXBound = clamp(team->GetSide() * pitchHalfW * (-0.3 - xOffset * 0.7), -pitchHalfW, pitchHalfW);
-          //printf("fb: %f %f\n", backXBound, frontXBound);
-          xFocus = clamp(ballPos.coords[0] + 10 * -team->GetSide(), -pitchHalfW, pitchHalfW);
-          xFocusStrength = 0.5 + xOffset * 0.2;
-          yFocus = ballPos.coords[1] * 0.4;
-          yFocusStrength = 0.6 + xOffset * 0.2;
-        } else {
-          float xOffset = clamp((ballPos.coords[0] * -team->GetSide()) / pitchHalfW, -1.0, 1.0) * 0.5 + 0.5; // 0 == close to our goal, 1 == far from our goal
-          //xOffset *= 40.0;
-          backXBound = clamp(team->GetSide() * pitchHalfW * (1.0 - xOffset * 0.6), -pitchHalfW, pitchHalfW);
-          frontXBound = clamp(team->GetSide() * pitchHalfW * (0.5 - xOffset * 0.8), -pitchHalfW, pitchHalfW);
-          xFocus = clamp(ballPos.coords[0] + 20 * team->GetSide(), -pitchHalfW, pitchHalfW);
-          xFocusStrength = 0.6 - xOffset * 0.4;
-          yFocus = ballPos.coords[1] * 0.2;
-          yFocusStrength = 0.8 - xOffset * 0.4;
-        }
-        lowYBound = -pitchHalfH * 0.7;
-        highYBound = pitchHalfH * 0.7;
-        Vector3 basePos = AI_GetAdaptedFormationPosition(match, players[i], backXBound, frontXBound, lowYBound, highYBound, xFocus, xFocusStrength, yFocus, yFocusStrength, ballPos, 0.4, 0, 0, false);
+                case e_GameMode_FreeKick:
+                  for (unsigned int i = 0; i < players.size(); i++) {
+                    DO_VALIDATION;
+                    float backXBound, frontXBound, lowYBound, highYBound,
+                        xFocus, xFocusStrength, yFocus, yFocusStrength;
+                    Vector3 ballPos = match->GetBall()->Predict(0).Get2D();
+                    if (isTakerTeam) {
+                      DO_VALIDATION;
+                      float xOffset =
+                          clamp((ballPos.coords[0] * -team->GetDynamicSide()) /
+                                    pitchHalfW,
+                                -1.0, 1.0) *
+                              0.5 +
+                          0.5;  // 0 == close to our goal, 1 == far from our
+                                // goal
+                      backXBound = clamp(team->GetDynamicSide() * pitchHalfW *
+                                             (0.7 - xOffset * 0.7),
+                                         -pitchHalfW, pitchHalfW);
+                      frontXBound = clamp(team->GetDynamicSide() * pitchHalfW *
+                                              (-0.3 - xOffset * 0.7),
+                                          -pitchHalfW, pitchHalfW);
+                      // printf("fb: %f %f\n", backXBound, frontXBound);
+                      xFocus = clamp(
+                          ballPos.coords[0] + 10 * -team->GetDynamicSide(),
+                          -pitchHalfW, pitchHalfW);
+                      xFocusStrength = 0.5 + xOffset * 0.2;
+                      yFocus = ballPos.coords[1] * 0.4;
+                      yFocusStrength = 0.6 + xOffset * 0.2;
+                    } else {
+                      float xOffset =
+                          clamp((ballPos.coords[0] * -team->GetDynamicSide()) /
+                                    pitchHalfW,
+                                -1.0, 1.0) *
+                              0.5 +
+                          0.5;  // 0 == close to our goal, 1 == far from our
+                                // goal
+                      // xOffset *= 40.0;
+                      backXBound = clamp(team->GetDynamicSide() * pitchHalfW *
+                                             (1.0 - xOffset * 0.6),
+                                         -pitchHalfW, pitchHalfW);
+                      frontXBound = clamp(team->GetDynamicSide() * pitchHalfW *
+                                              (0.5 - xOffset * 0.8),
+                                          -pitchHalfW, pitchHalfW);
+                      xFocus =
+                          clamp(ballPos.coords[0] + 20 * team->GetDynamicSide(),
+                                -pitchHalfW, pitchHalfW);
+                      xFocusStrength = 0.6 - xOffset * 0.4;
+                      yFocus = ballPos.coords[1] * 0.2;
+                      yFocusStrength = 0.8 - xOffset * 0.4;
+                    }
+                    lowYBound = -pitchHalfH * 0.7;
+                    highYBound = pitchHalfH * 0.7;
+                    Vector3 basePos = AI_GetAdaptedFormationPosition(
+                        match, players[i], backXBound, frontXBound, lowYBound,
+                        highYBound, xFocus, xFocusStrength, yFocus,
+                        yFocusStrength, ballPos, 0.4, 0, 0, false);
 
-        // keep distance
-        if (!isTakerTeam) {
-          if ((basePos - match->GetBall()->Predict(0).Get2D()).GetLength() < 9.15) {
-            basePos = match->GetBall()->Predict(0).Get2D() + (basePos - match->GetBall()->Predict(0).Get2D()).GetNormalized() * 9.15;
-          }
-        }
+                    // keep distance
+                    if (!isTakerTeam) {
+                      DO_VALIDATION;
+                      if ((basePos - match->GetBall()->Predict(0).Get2D())
+                              .GetLength() < 9.15) {
+                        DO_VALIDATION;
+                        basePos =
+                            match->GetBall()->Predict(0).Get2D() +
+                            (basePos - match->GetBall()->Predict(0).Get2D())
+                                    .GetNormalized() *
+                                9.15;
+                      }
+                    }
 
-        players[i]->ResetPosition(basePos, match->GetBall()->Predict(0).Get2D());
-      }
+                    players[i]->ResetPosition(
+                        basePos, match->GetBall()->Predict(0).Get2D());
+                  }
 
-      // wall
-      if (!isTakerTeam && (match->GetBall()->Predict(0).Get2D() - Vector3(team->GetSide() * pitchHalfW, 0, 0)).GetLength() < 40.0) {
-        std::vector<Player*> result;
-        AI_GetClosestPlayers(team, match->GetBall()->Predict(0).Get2D(), false, result, 3);
-        for (unsigned int i = 0; i < result.size(); i++) {
-          Vector3 toGoal = (Vector3(team->GetSide() * pitchHalfW, 0, 0) - match->GetBall()->Predict(0).Get2D()).GetNormalized(0);
-          toGoal += Vector3(0, 1.0 - i, 0) * 0.07;
-          toGoal.Normalize();
-          result[i]->ResetPosition(match->GetBall()->Predict(0).Get2D() + toGoal * 9.15f, match->GetBall()->Predict(0).Get2D());
-        }
-      }
+                  // wall
+                  if (!isTakerTeam &&
+                      (match->GetBall()->Predict(0).Get2D() -
+                       Vector3(team->GetDynamicSide() * pitchHalfW, 0, 0))
+                              .GetLength() < 40.0) {
+                    DO_VALIDATION;
+                    std::vector<Player *> result;
+                    AI_GetClosestPlayers(team,
+                                         match->GetBall()->Predict(0).Get2D(),
+                                         false, result, 3);
+                    for (unsigned int i = 0; i < result.size(); i++) {
+                      DO_VALIDATION;
+                      Vector3 toGoal =
+                          (Vector3(team->GetDynamicSide() * pitchHalfW, 0, 0) -
+                           match->GetBall()->Predict(0).Get2D())
+                              .GetNormalized(0);
+                      toGoal += Vector3(0, 1.0 - i, 0) * 0.07;
+                      toGoal.Normalize();
+                      result[i]->ResetPosition(
+                          match->GetBall()->Predict(0).Get2D() + toGoal * 9.15f,
+                          match->GetBall()->Predict(0).Get2D());
+                    }
+                  }
 
-      break;
+                  break;
 
-    case e_GameMode_Penalty:
-      for (unsigned int i = 0; i < players.size(); i++) {
-        float backXBound, frontXBound, lowYBound, highYBound, xFocus, xFocusStrength, yFocus, yFocusStrength;
-        Vector3 ballPos = match->GetBall()->Predict(0).Get2D();
-        if (isTakerTeam) {
-          backXBound = clamp(ballPos.coords[0] + 50 * team->GetSide(), -pitchHalfW, pitchHalfW);
-          frontXBound = clamp(ballPos.coords[0] + 10 * -team->GetSide(), -pitchHalfW, pitchHalfW);
-          xFocus = ballPos.coords[0];
-          xFocusStrength = 0.6;
-          yFocus = 0.0;
-          yFocusStrength = 0.8;
-        } else {
-          backXBound = clamp(ballPos.coords[0] + 11 * team->GetSide(), -pitchHalfW, pitchHalfW);
-          frontXBound = clamp(ballPos.coords[0] + 20 * -team->GetSide(), -pitchHalfW, pitchHalfW);
-          xFocus = ballPos.coords[0];
-          xFocusStrength = 1.0;
-          yFocus = 0.0;
-          yFocusStrength = 1.0;
-        }
-        lowYBound = -pitchHalfH * 0.8;
-        highYBound = pitchHalfH * 0.8;
-        Vector3 basePos = AI_GetAdaptedFormationPosition(match, players[i], backXBound, frontXBound, lowYBound, highYBound, xFocus, xFocusStrength, yFocus, yFocusStrength, 0, 0, 0, 0, false);
+                case e_GameMode_Penalty:
+                  for (unsigned int i = 0; i < players.size(); i++) {
+                    DO_VALIDATION;
+                    float backXBound, frontXBound, lowYBound, highYBound,
+                        xFocus, xFocusStrength, yFocus, yFocusStrength;
+                    Vector3 ballPos = match->GetBall()->Predict(0).Get2D();
+                    if (isTakerTeam) {
+                      DO_VALIDATION;
+                      backXBound =
+                          clamp(ballPos.coords[0] + 50 * team->GetDynamicSide(),
+                                -pitchHalfW, pitchHalfW);
+                      frontXBound = clamp(
+                          ballPos.coords[0] + 10 * -team->GetDynamicSide(),
+                          -pitchHalfW, pitchHalfW);
+                      xFocus = ballPos.coords[0];
+                      xFocusStrength = 0.6;
+                      yFocus = 0.0;
+                      yFocusStrength = 0.8;
+                    } else {
+                      backXBound =
+                          clamp(ballPos.coords[0] + 11 * team->GetDynamicSide(),
+                                -pitchHalfW, pitchHalfW);
+                      frontXBound = clamp(
+                          ballPos.coords[0] + 20 * -team->GetDynamicSide(),
+                          -pitchHalfW, pitchHalfW);
+                      xFocus = ballPos.coords[0];
+                      xFocusStrength = 1.0;
+                      yFocus = 0.0;
+                      yFocusStrength = 1.0;
+                    }
+                    lowYBound = -pitchHalfH * 0.8;
+                    highYBound = pitchHalfH * 0.8;
+                    Vector3 basePos = AI_GetAdaptedFormationPosition(
+                        match, players[i], backXBound, frontXBound, lowYBound,
+                        highYBound, xFocus, xFocusStrength, yFocus,
+                        yFocusStrength, 0, 0, 0, 0, false);
 
-        // outside the box
-        signed int penaltySide = (match->GetBall()->Predict(0).coords[0] < 0) ? -1 : 1;
-        if (basePos.coords[0] * penaltySide > pitchHalfW - 16.5 - 0.5) basePos.coords[0] = (pitchHalfW - 16.5 - 0.5) * penaltySide;
+                    // outside the box
+                    signed int penaltySide =
+                        (match->GetBall()->Predict(0).coords[0] < 0) ? -1 : 1;
+                    if (basePos.coords[0] * penaltySide >
+                        pitchHalfW - 16.5 - 0.5)
+                      basePos.coords[0] =
+                          (pitchHalfW - 16.5 - 0.5) * penaltySide;
 
-        // outside penalty arc as well
-        if ((basePos - match->GetBall()->Predict(0).Get2D()).GetLength() < 9.15 + 0.5) {
-          basePos = match->GetBall()->Predict(0).Get2D() + (basePos - match->GetBall()->Predict(0).Get2D()).GetNormalized() * (9.15 + 0.5);
-        }
+                    // outside penalty arc as well
+                    if ((basePos - match->GetBall()->Predict(0).Get2D())
+                            .GetLength() < 9.15 + 0.5) {
+                      DO_VALIDATION;
+                      basePos = match->GetBall()->Predict(0).Get2D() +
+                                (basePos - match->GetBall()->Predict(0).Get2D())
+                                        .GetNormalized() *
+                                    (9.15 + 0.5);
+                    }
 
-        players[i]->ResetPosition(basePos, match->GetBall()->Predict(0).Get2D());
-      }
-      break;
+                    players[i]->ResetPosition(
+                        basePos, match->GetBall()->Predict(0).Get2D());
+                  }
+                  break;
 
-    default:
-      for (unsigned int i = 0; i < players.size(); i++) {
-        Vector3 basePos = players[i]->GetFormationEntry().position * Vector3(-team->GetSide() * pitchHalfW * 0.7, -team->GetSide() * pitchHalfH * 0.7, 0);
+                default:
+                  for (unsigned int i = 0; i < players.size(); i++) {
+                    DO_VALIDATION;
+                    Vector3 basePos =
+                        players[i]->GetFormationEntry().position *
+                        Vector3(-team->GetDynamicSide() * pitchHalfW * 0.7,
+                                -team->GetDynamicSide() * pitchHalfH * 0.7, 0);
 
-        players[i]->ResetPosition(basePos, match->GetBall()->Predict(0).Get2D());
-      }
-      break;
+                    players[i]->ResetPosition(
+                        basePos, match->GetBall()->Predict(0).Get2D());
+                  }
+                  break;
+              }
 
-  }
+              if (setPiece == e_GameMode_KickOff) {
+                DO_VALIDATION;
+                auto formation_players = team->GetAllPlayers();
+                auto players_to_position = team->GetAllPlayers();
+                if (match->GetMatchTime_ms() > 0 &&
+                    other_team->GetAllPlayers().size() ==
+                        team->GetAllPlayers().size() &&
+                    (GetScenarioConfig().LeftTeamOwnsBall() ^
+                     kickoffTakerTeamId == 0)) {
+                  formation_players = other_team->GetAllPlayers();
+                }
+                assert(formation_players.size() == players_to_position.size());
+                for (int x = 0; x < formation_players.size(); x++) {
+                  DO_VALIDATION;
+                  if (players_to_position[x]->IsActive()) {
+                    DO_VALIDATION;
+                    Vector3 basePos =
+                        formation_players[x]
+                            ->GetFormationEntry()
+                            .start_position *
+                        Vector3(-team->GetDynamicSide() * pitchHalfW,
+                                -team->GetDynamicSide() * pitchHalfH, 0);
+                    players_to_position[x]->ResetPosition(
+                        basePos, match->GetBall()->Predict(0).Get2D());
+                  }
+                }
+              }
 
-  auto& config = GetGameConfig();
-  if (setPiece == e_GameMode_KickOff) {
-    auto formation_players = team->GetAllPlayers();
-    auto players_to_position = team->GetAllPlayers();
-    if (GetScenarioConfig().kickoff_for_goal_loosing_team &&
-        match->GetMatchTime_ms() > 0 &&
-        (GetScenarioConfig().LeftTeamOwnsBall() ^ kickoffTakerTeamId == 0)) {
-      formation_players = other_team->GetAllPlayers();
-    }
-    assert(formation_players.size() == players_to_position.size());
-    for (int x = 0; x < formation_players.size(); x++) {
-      if (players_to_position[x]->IsActive()) {
-        Vector3 basePos = formation_players[x]->GetFormationEntry().start_position *
-            Vector3(-team->GetSide() * pitchHalfW, -team->GetSide() * pitchHalfH, 0);
-        players_to_position[x]->ResetPosition(basePos, match->GetBall()->Predict(0).Get2D());
-      }
-    }
-  }
+              if (isTakerTeam) {
+                DO_VALIDATION;
+                auto ball_pos = match->GetBall()->Predict(0).Get2D();
+                std::vector<Player *> players;
+                AI_GetClosestPlayers(team, match->GetBall()->Predict(0).Get2D(),
+                                     false, players, 2);
+                taker = players[0];
+                if (setPiece == e_GameMode_KickOff) {
+                  DO_VALIDATION;
+                  // Do nothing
+                } else if (setPiece == e_GameMode_ThrowIn) {
+                  DO_VALIDATION;
+                  players[0]->ResetPosition(
+                      ball_pos +
+                          match->GetBall()->Predict(0).Get2D().GetNormalized(
+                              Vector3(0, -team->GetDynamicSide(), 0)) *
+                              0.3f,
+                      ball_pos);
+                } else if (setPiece == e_GameMode_FreeKick) {
+                  DO_VALIDATION;
+                  taker->ResetPosition(
+                      ball_pos + Vector3(team->GetDynamicSide(), 0, 0) * 2.3f,
+                      ball_pos);
+                } else {
+                  taker->ResetPosition(
+                      ball_pos +
+                          match->GetBall()->Predict(0).Get2D().GetNormalized(
+                              Vector3(0, -team->GetDynamicSide(), 0)) *
+                              2.3f,
+                      ball_pos);
+                }
+                if (setPiece == e_GameMode_ThrowIn) {
+                  DO_VALIDATION;
+                  taker->SelectRetainAnim();
+                }
+                if (setPiece == e_GameMode_Penalty) {
+                  DO_VALIDATION;
+                  taker->ResetPosition(
+                      ball_pos + Vector3(team->GetDynamicSide(), 0, 0) * 3.0,
+                      ball_pos);
+                }
 
-  if (isTakerTeam) {
-    auto ball_pos = match->GetBall()->Predict(0).Get2D();
-    std::vector<Player*> players;
-    AI_GetClosestPlayers(team, match->GetBall()->Predict(0).Get2D(), false, players, 2);
-    taker = players[0];
-    if (setPiece == e_GameMode_KickOff) {
-      // Do nothing
-    } else if (setPiece == e_GameMode_ThrowIn) {
-      players[0]->ResetPosition(ball_pos + match->GetBall()->Predict(0).Get2D().GetNormalized(Vector3(0, -team->GetSide(), 0)) * 0.3f, ball_pos);
-    } else if (setPiece == e_GameMode_FreeKick) {
-      taker->ResetPosition(ball_pos + Vector3(team->GetSide(), 0, 0) * 2.3f, ball_pos);
-    } else {
-      taker->ResetPosition(ball_pos + match->GetBall()->Predict(0).Get2D().GetNormalized(Vector3(0, -team->GetSide(), 0)) * 2.3f, ball_pos);
-    }
-    if (setPiece == e_GameMode_ThrowIn) {
-      taker->SelectRetainAnim();
-    }
-    if (setPiece == e_GameMode_Penalty) {
-      taker->ResetPosition(ball_pos + Vector3(team->GetSide(), 0, 0) * 3.0, ball_pos);
-    }
-
-  } else taker = 0;
+              } else
+                taker = 0;
 }
 
 void TeamAIController::ApplyAttackingRun(Player *manualPlayer) {
+  DO_VALIDATION;
   endApplyAttackingRun_ms = match->GetActualTime_ms() + 4000;//1500;
 
   attackingRunPlayer = manualPlayer ? manualPlayer : SelectAttackingRunPlayer(team);
 }
 
 void TeamAIController::ApplyTeamPressure() {
+  DO_VALIDATION;
   endApplyTeamPressure_ms = match->GetActualTime_ms() + 500;
 
   Player *opp = match->GetTeam(abs(team->GetID() - 1))->GetBestPossessionPlayer();
   Vector3 opponentPos = opp->GetPosition() + opp->GetMovement() * 0.24f;
 
-  teamPressurePlayer = AI_GetClosestPlayer(team, opponentPos + Vector3(team->GetSide() * 1.0f, 0, 0), true, team->GetGoalie());
+  teamPressurePlayer = AI_GetClosestPlayer(
+      team, opponentPos + Vector3(team->GetDynamicSide() * 1.0f, 0, 0), true,
+      team->GetGoalie());
 
   if (teamPressurePlayer) {
+    DO_VALIDATION;
     // switch man marking
-    int prevMarking = teamPressurePlayer->GetManMarkingID();
-    teamPressurePlayer->SetManMarkingID(opp->GetID());
-
-    //SetRedDebugPilon(teamPressurePlayer->GetPosition());
+    teamPressurePlayer->SetManMarking(opp);
   }
 }
 
 void TeamAIController::ApplyKeeperRush() {
+  DO_VALIDATION;
   endApplyKeeperRush_ms = match->GetActualTime_ms() + 300;
 }
 
 void TeamAIController::CalculateSituation() {
+  DO_VALIDATION;
   teamHasPossession = team->HasPossession();
   teamHasUniquePossession = team->HasUniquePossession();
-  oppTeamHasPossession = match->GetTeam(abs(team->GetID() - 1))->HasPossession();
-  oppTeamHasUniquePossession = match->GetTeam(abs(team->GetID() - 1))->HasUniquePossession();
+  oppTeamHasPossession = match->GetTeam(1 - team->GetID())->HasPossession();
+  oppTeamHasUniquePossession = match->GetTeam(1 - team->GetID())->HasUniquePossession();
   teamHasBestPossession = match->GetBestPossessionTeam() == team;
   teamPossessionAmount = team->GetTeamPossessionAmount();
   fadingTeamPossessionAmount = team->GetFadingTeamPossessionAmount();
   timeNeededToGetToBall = team->GetTimeNeededToGetToBall_ms();
-  oppTimeNeededToGetToBall = match->GetTeam(abs(team->GetID() - 1))->GetTimeNeededToGetToBall_ms();
+  oppTimeNeededToGetToBall = match->GetTeam(1 - team->GetID())->GetTimeNeededToGetToBall_ms();
 }
 
 void TeamAIController::UpdateTactics() {
+  DO_VALIDATION;
   const TeamTactics &teamTactics = team->GetTeamData()->GetTactics();
-  TeamTactics &teamTacticsWritable = team->GetTeamData()->GetTacticsWritable();
 
   const Properties &userTacticsModifiers = teamTactics.userProperties;
 
   int goals = match->GetMatchData()->GetGoalCount(team->GetID());
-  int oppGoals = match->GetMatchData()->GetGoalCount(abs(team->GetID() - 1));
+  int oppGoals = match->GetMatchData()->GetGoalCount(1 - team->GetID());
 
   liveTeamTactics = baseTeamTactics;
 
@@ -983,9 +1238,13 @@ void TeamAIController::UpdateTactics() {
 
 
   float possessionFactor = match->GetMatchData()->GetPossessionFactor_60seconds();
-  float recentPossessionBias = 1.0f - fabs(possessionFactor - team->GetID());
-  // if (team->GetID() == 0) printf("team 0 recentPossessionBias: %f (possessionFactor: %f)\n", recentPossessionBias, possessionFactor);
-  // if (team->GetID() == 1) printf("team 1 recentPossessionBias: %f (possessionFactor: %f)\n", recentPossessionBias, possessionFactor);
+  float recentPossessionBias;
+  DO_VALIDATION;
+  if (team->GetID() == 0) {
+    recentPossessionBias = 0.5 - possessionFactor * 0.5f;
+  } else {
+    recentPossessionBias = 0.5 + possessionFactor * 0.5f;
+  }
 
   offensivenessBias = offenseBias * 0.5f + recentPossessionBias * 0.5f;
   //if (team->GetID() == 0) printf("T1 offensivenessBias: %f\n", offensivenessBias);
@@ -996,6 +1255,7 @@ void TeamAIController::UpdateTactics() {
   const map_Properties *userMods = userTacticsModifiers.GetProperties();
   map_Properties::const_iterator iter = userMods->begin();
   while (iter != userMods->end()) {
+    DO_VALIDATION;
     float multiplier = teamTacticsModMultipliers.GetReal(iter->first.c_str(), 0.0f);
 
     float userOffset = atof(iter->second.c_str());
@@ -1008,15 +1268,18 @@ void TeamAIController::UpdateTactics() {
 
     float baseValue = baseTeamTactics.GetReal(iter->first.c_str(), -1.0f);
     // printf("value: %s\n", iter->first.c_str());
-    if (baseValue >= 0.0f) { // not all user mods from teamdata are used in this class (for example, individual settings like dribble stuff), ignore them
+    if (baseValue >= 0.0f) {
+      DO_VALIDATION;  // not all user mods from teamdata are used in this class
+                      // (for example, individual settings like dribble stuff),
+                      // ignore them
       liveTeamTactics.Set(iter->first.c_str(), clamp(baseValue + offset, 0.0f, 1.0f));
     }
     iter++;
   }
-
 }
 
 void TeamAIController::Reset() {
+  DO_VALIDATION;
   taker = 0;
 
   setPieceType = e_GameMode_Normal;
@@ -1038,4 +1301,39 @@ void TeamAIController::Reset() {
   fadingTeamPossessionAmount = 1.0f;
   timeNeededToGetToBall = 100;
   oppTimeNeededToGetToBall = 100;
+}
+
+void TeamAIController::ProcessState(EnvState *state) {
+  DO_VALIDATION;
+  state->process(taker);
+  state->process(static_cast<void*>(&setPieceType), sizeof(setPieceType));
+  //baseTeamTactics.ProcessState(state);
+  //teamTacticsModMultipliers.ProcessState(state);
+  liveTeamTactics.ProcessState(state);
+  state->process(offensivenessBias);
+  state->process(teamHasPossession);
+  state->process(teamHasUniquePossession);
+  state->process(oppTeamHasPossession);
+  state->process(oppTeamHasUniquePossession);
+  state->process(teamHasBestPossession);
+  state->process(teamPossessionAmount);
+  state->process(fadingTeamPossessionAmount);
+  state->process(timeNeededToGetToBall);
+  state->process(oppTimeNeededToGetToBall);
+  state->process(depth);
+  state->process(width);
+  state->process(offsideTrapX);
+  state->process(endApplyAttackingRun_ms);
+  state->process(attackingRunPlayer);
+  state->process(endApplyTeamPressure_ms);
+  state->process(teamPressurePlayer);
+  state->process(endApplyKeeperRush_ms);
+  state->process(forwardSupportPlayer);
+  int size = tacticalOpponentInfo.size();
+  state->process(size);
+  tacticalOpponentInfo.resize(size);
+  for (auto &a : tacticalOpponentInfo) {
+    DO_VALIDATION;
+    a.ProcessState(state);
+  }
 }

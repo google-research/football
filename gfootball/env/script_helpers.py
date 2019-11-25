@@ -28,7 +28,7 @@ import copy
 import six.moves.cPickle
 import os
 import tempfile
-import tensorflow as tf
+
 
 class ScriptHelpers(object):
   """Set of methods used by command line scripts."""
@@ -88,7 +88,7 @@ class ScriptHelpers(object):
       processor.update(frame)
     processor.write_dump('episode_done')
 
-  def replay(self, dump, fps=10, config_update={}, directory=None):
+  def replay(self, dump, fps=10, config_update={}, directory=None, render=True):
     with open(dump, 'rb') as f:
       replay = six.moves.cPickle.load(f)
     trace = self.__modify_trace(replay, fps)
@@ -101,18 +101,18 @@ class ScriptHelpers(object):
     cfg['players'] = self.__build_players(temp_path, cfg['players'])
     config_update['physics_steps_per_frame'] = int(100 / fps)
     config_update['real_time'] = False
-    if 'render' not in config_update:
-      config_update['render'] = True
     if directory:
       config_update['tracesdir'] = directory
     config_update['write_video'] = True
     cfg.update(config_update)
     env = football_env.FootballEnv(cfg)
+    if render:
+      env.render()
     env.reset()
     done = False
     try:
       while not done:
-        _, _, done, _ = env.step(None)
+        _, _, done, _ = env.step([])
     except KeyboardInterrupt:
       env.write_dump('shutdown')
       exit(1)

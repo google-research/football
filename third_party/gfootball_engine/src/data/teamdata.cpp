@@ -24,7 +24,9 @@
 #include "../main.hpp"
 
 Vector3 GetDefaultRolePosition(e_PlayerRole role) {
+  DO_VALIDATION;
   switch (role) {
+    DO_VALIDATION;
     case e_PlayerRole_GK:
       return Vector3(-1.0, 0.0, 0);
       break;
@@ -65,177 +67,98 @@ Vector3 GetDefaultRolePosition(e_PlayerRole role) {
   }
 }
 
-TeamData::TeamData(int teamDatabaseID, int playersTeamDatabaseID,
-                   const std::vector<FormationEntry> &f)
-    : databaseID(teamDatabaseID) {
+TeamData::TeamData(int teamDatabaseID, const std::vector<FormationEntry> &f) {
+  DO_VALIDATION;
   formation.resize(f.empty() ? playerNum : f.size());
   int player_count = formation.size();
-
-  std::string formationString;
-  std::string factoryFormationString;
-  std::string factoryTacticsString;
-  std::string tacticsString;
-
   color1.Set(0, 0, 0);
   color2.Set(255, 255, 255);
 
-  bool national = false;
-
-  switch (databaseID) {
+  const bool national = false;
+  const std::string formationString =
+      "<p1><position> -1.0,  0.0 "
+      "</position><role>GK</role></p1><p2><position> -0.7,  "
+      "0.75</position><role>LB</role></p2><p3><position> -1.0,  "
+      "0.25</position><role>CB</role></p3><p4><position> -1.0, "
+      "-0.25</position><role>CB</role></p4><p5><position> -0.7, "
+      "-0.75</position><role>RB</role></p5><p6><position>  0.0,  0.5 "
+      "</position><role>CM</role></p6><p7><position> -0.2,  0.0 "
+      "</position><role>CM</role></p7><p8><position>  0.0, -0.5 "
+      "</position><role>CM</role></p8><p9><position>  0.6,  0.75 "
+      "</position><role>LM</role></p9><p10><position> 1.0,  0.0 "
+      "</position><role>CF</role></p10><p11><position> 0.6, -0.75 "
+      "</position><role>RM</role></p11>";
+  const std::string factoryFormationString =
+      "<p1><position> -1.0,  0.0 "
+      "</position><role>GK</role></p1><p2><position> -0.7,  "
+      "0.75</position><role>LB</role></p2><p3><position> -1.0,  "
+      "0.25</position><role>CB</role></p3><p4><position> -1.0, "
+      "-0.25</position><role>CB</role></p4><p5><position> -0.7, "
+      "-0.75</position><role>RB</role></p5><p6><position>  0.0,  0.5 "
+      "</position><role>CM</role></p6><p7><position> -0.2,  0.0 "
+      "</position><role>CM</role></p7><p8><position>  0.0, -0.5 "
+      "</position><role>CM</role></p8><p9><position>  0.6,  0.75 "
+      "</position><role>LM</role></p9><p10><position> 1.0,  0.0 "
+      "</position><role>CF</role></p10><p11><position> 0.6, -0.75 "
+      "</position><role>RM</role></p11>";
+  const std::string tacticsString =
+      "<dribble_centermagnet>0.720000</"
+      "dribble_centermagnet><dribble_offensiveness>0.500000</"
+      "dribble_offensiveness><position_defense_depth_factor>0.300000</"
+      "position_defense_depth_factor><position_defense_microfocus_strength>"
+      "0.960000</"
+      "position_defense_microfocus_strength><position_defense_"
+      "midfieldfocus>0.960000</"
+      "position_defense_midfieldfocus><position_defense_sidefocus_strength>"
+      "0.160000</"
+      "position_defense_sidefocus_strength><position_defense_width_factor>"
+      "0.700000</"
+      "position_defense_width_factor><position_offense_depth_factor>0."
+      "340000</"
+      "position_offense_depth_factor><position_offense_microfocus_strength>"
+      "0.920000</"
+      "position_offense_microfocus_strength><position_offense_"
+      "midfieldfocus>0.880000</"
+      "position_offense_midfieldfocus><position_offense_sidefocus_strength>"
+      "0.880000</"
+      "position_offense_sidefocus_strength><position_offense_width_factor>"
+      "0.740000</position_offense_width_factor>";
+  const std::string factoryTacticsString =
+      "<dribble_centermagnet>0.720000</"
+      "dribble_centermagnet><dribble_offensiveness>0.500000</"
+      "dribble_offensiveness><position_defense_depth_factor>0.300000</"
+      "position_defense_depth_factor><position_defense_microfocus_strength>"
+      "0.960000</"
+      "position_defense_microfocus_strength><position_defense_"
+      "midfieldfocus>0.960000</"
+      "position_defense_midfieldfocus><position_defense_sidefocus_strength>"
+      "0.160000</"
+      "position_defense_sidefocus_strength><position_defense_width_factor>"
+      "0.700000</"
+      "position_defense_width_factor><position_offense_depth_factor>0."
+      "340000</"
+      "position_offense_depth_factor><position_offense_microfocus_strength>"
+      "0.920000</"
+      "position_offense_microfocus_strength><position_offense_"
+      "midfieldfocus>0.880000</"
+      "position_offense_midfieldfocus><position_offense_sidefocus_strength>"
+      "0.880000</"
+      "position_offense_sidefocus_strength><position_offense_width_factor>"
+      "0.740000</position_offense_width_factor>";
+  switch (teamDatabaseID) {
+    DO_VALIDATION;
     case 3:
-      national = 0;
       name = "Frequentists United";
       logo_url = "images_teams/primeradivision/fcbarcelona_logo.png";
       kit_url = "images_teams/primeradivision/fcbarcelona";
-      formationString =
-          "<p1><position> -1.0,  0.0 "
-          "</position><role>GK</role></p1><p2><position> -0.7,  "
-          "0.75</position><role>LB</role></p2><p3><position> -1.0,  "
-          "0.25</position><role>CB</role></p3><p4><position> -1.0, "
-          "-0.25</position><role>CB</role></p4><p5><position> -0.7, "
-          "-0.75</position><role>RB</role></p5><p6><position>  0.0,  0.5 "
-          "</position><role>CM</role></p6><p7><position> -0.2,  0.0 "
-          "</position><role>CM</role></p7><p8><position>  0.0, -0.5 "
-          "</position><role>CM</role></p8><p9><position>  0.6,  0.75 "
-          "</position><role>LM</role></p9><p10><position> 1.0,  0.0 "
-          "</position><role>CF</role></p10><p11><position> 0.6, -0.75 "
-          "</position><role>RM</role></p11>";
-      factoryFormationString =
-          "<p1><position> -1.0,  0.0 "
-          "</position><role>GK</role></p1><p2><position> -0.7,  "
-          "0.75</position><role>LB</role></p2><p3><position> -1.0,  "
-          "0.25</position><role>CB</role></p3><p4><position> -1.0, "
-          "-0.25</position><role>CB</role></p4><p5><position> -0.7, "
-          "-0.75</position><role>RB</role></p5><p6><position>  0.0,  0.5 "
-          "</position><role>CM</role></p6><p7><position> -0.2,  0.0 "
-          "</position><role>CM</role></p7><p8><position>  0.0, -0.5 "
-          "</position><role>CM</role></p8><p9><position>  0.6,  0.75 "
-          "</position><role>LM</role></p9><p10><position> 1.0,  0.0 "
-          "</position><role>CF</role></p10><p11><position> 0.6, -0.75 "
-          "</position><role>RM</role></p11>";
-      tacticsString =
-          "<dribble_centermagnet>0.720000</"
-          "dribble_centermagnet><dribble_offensiveness>0.500000</"
-          "dribble_offensiveness><position_defense_depth_factor>0.300000</"
-          "position_defense_depth_factor><position_defense_microfocus_strength>"
-          "0.960000</"
-          "position_defense_microfocus_strength><position_defense_"
-          "midfieldfocus>0.960000</"
-          "position_defense_midfieldfocus><position_defense_sidefocus_strength>"
-          "0.160000</"
-          "position_defense_sidefocus_strength><position_defense_width_factor>"
-          "0.700000</"
-          "position_defense_width_factor><position_offense_depth_factor>0."
-          "340000</"
-          "position_offense_depth_factor><position_offense_microfocus_strength>"
-          "0.920000</"
-          "position_offense_microfocus_strength><position_offense_"
-          "midfieldfocus>0.880000</"
-          "position_offense_midfieldfocus><position_offense_sidefocus_strength>"
-          "0.880000</"
-          "position_offense_sidefocus_strength><position_offense_width_factor>"
-          "0.740000</position_offense_width_factor>";
-      factoryTacticsString =
-          "<dribble_centermagnet>0.720000</"
-          "dribble_centermagnet><dribble_offensiveness>0.500000</"
-          "dribble_offensiveness><position_defense_depth_factor>0.300000</"
-          "position_defense_depth_factor><position_defense_microfocus_strength>"
-          "0.960000</"
-          "position_defense_microfocus_strength><position_defense_"
-          "midfieldfocus>0.960000</"
-          "position_defense_midfieldfocus><position_defense_sidefocus_strength>"
-          "0.160000</"
-          "position_defense_sidefocus_strength><position_defense_width_factor>"
-          "0.700000</"
-          "position_defense_width_factor><position_offense_depth_factor>0."
-          "340000</"
-          "position_offense_depth_factor><position_offense_microfocus_strength>"
-          "0.920000</"
-          "position_offense_microfocus_strength><position_offense_"
-          "midfieldfocus>0.880000</"
-          "position_offense_midfieldfocus><position_offense_sidefocus_strength>"
-          "0.880000</"
-          "position_offense_sidefocus_strength><position_offense_width_factor>"
-          "0.740000</position_offense_width_factor>";
       shortName = "FRQ";
       color1 = Vector3(255, 100, 100);
       color2 = Vector3(100, 100, 255);
       break;
     case 8:
-      national = 0;
       name = "Real Bayesians";
       logo_url = "images_teams/primeradivision/realmadrid_logo.png";
       kit_url = "images_teams/primeradivision/realmadrid";
-      formationString =
-          "<p1><position>-1.0,  "
-          "0.0</position><role>GK</role></p1><p2><position>-0.7,  "
-          "0.75</position><role>LB</role></p2><p3><position>-1.0,  "
-          "0.25</position><role>CB</role></p3><p4><position>-1.0, "
-          "-0.25</position><role>CB</role></p4><p5><position>-0.7, "
-          "-0.75</position><role>RB</role></p5><p6><position>-0.2,  "
-          "0.3</position><role>CM</role></p6><p7><position>-0.2, "
-          "-0.3</position><role>CM</role></p7><p8><position> 0.7,  "
-          "0.9</position><role>LM</role></p8><p9><position> 0.2,  "
-          "0.0</position><role>AM</role></p9><p10><position>0.7, "
-          "-0.9</position><role>RM</role></p10><p11><position>1.0,  "
-          "0.0</position><role>CF</role></p11>";
-      factoryFormationString =
-          "<p1><position>-1.0,  "
-          "0.0</position><role>GK</role></p1><p2><position>-0.7,  "
-          "0.75</position><role>LB</role></p2><p3><position>-1.0,  "
-          "0.25</position><role>CB</role></p3><p4><position>-1.0, "
-          "-0.25</position><role>CB</role></p4><p5><position>-0.7, "
-          "-0.75</position><role>RB</role></p5><p6><position>-0.2,  "
-          "0.3</position><role>CM</role></p6><p7><position>-0.2, "
-          "-0.3</position><role>CM</role></p7><p8><position> 0.7,  "
-          "0.9</position><role>LM</role></p8><p9><position> 0.2,  "
-          "0.0</position><role>AM</role></p9><p10><position>0.7, "
-          "-0.9</position><role>RM</role></p10><p11><position>1.0,  "
-          "0.0</position><role>CF</role></p11>";
-      tacticsString =
-          "<dribble_centermagnet>0.500000</"
-          "dribble_centermagnet><dribble_offensiveness>0.900000</"
-          "dribble_offensiveness><position_defense_depth_factor>0.180000</"
-          "position_defense_depth_factor><position_defense_microfocus_strength>"
-          "0.380000</"
-          "position_defense_microfocus_strength><position_defense_"
-          "midfieldfocus>0.660000</"
-          "position_defense_midfieldfocus><position_defense_sidefocus_strength>"
-          "0.760000</"
-          "position_defense_sidefocus_strength><position_defense_width_factor>"
-          "0.540000</"
-          "position_defense_width_factor><position_offense_depth_factor>0."
-          "900000</"
-          "position_offense_depth_factor><position_offense_microfocus_strength>"
-          "0.140000</"
-          "position_offense_microfocus_strength><position_offense_"
-          "midfieldfocus>0.740000</"
-          "position_offense_midfieldfocus><position_offense_sidefocus_strength>"
-          "0.960000</"
-          "position_offense_sidefocus_strength><position_offense_width_factor>"
-          "0.940000</position_offense_width_factor>";
-      factoryTacticsString =
-          "<dribble_centermagnet>0.500000</"
-          "dribble_centermagnet><dribble_offensiveness>0.900000</"
-          "dribble_offensiveness><position_defense_depth_factor>0.180000</"
-          "position_defense_depth_factor><position_defense_microfocus_strength>"
-          "0.380000</"
-          "position_defense_microfocus_strength><position_defense_"
-          "midfieldfocus>0.660000</"
-          "position_defense_midfieldfocus><position_defense_sidefocus_strength>"
-          "0.760000</"
-          "position_defense_sidefocus_strength><position_defense_width_factor>"
-          "0.540000</"
-          "position_defense_width_factor><position_offense_depth_factor>0."
-          "900000</"
-          "position_offense_depth_factor><position_offense_microfocus_strength>"
-          "0.140000</"
-          "position_offense_microfocus_strength><position_offense_"
-          "midfieldfocus>0.740000</"
-          "position_offense_midfieldfocus><position_offense_sidefocus_strength>"
-          "0.960000</"
-          "position_offense_sidefocus_strength><position_offense_width_factor>"
-          "0.940000</position_offense_width_factor>";
       shortName = "RBA";
       color1 = Vector3(255, 255, 255);
       color2 = Vector3(50, 50, 126);
@@ -243,6 +166,7 @@ TeamData::TeamData(int teamDatabaseID, int playersTeamDatabaseID,
   }
 
   if (shortName.compare("") == 0) {
+    DO_VALIDATION;
     shortName = name;
     shortName.erase(remove_if(shortName.begin(), shortName.end(), isspace),
                     shortName.end());
@@ -258,8 +182,11 @@ TeamData::TeamData(int teamDatabaseID, int playersTeamDatabaseID,
   map_XMLTree::const_iterator iter = tree.children.begin();
 
   while (iter != tree.children.end()) {
+    DO_VALIDATION;
     for (int num = 0; num < player_count; num++) {
+      DO_VALIDATION;
       if ((*iter).first == "p" + int_to_str(num + 1)) {
+        DO_VALIDATION;
         formation[num].databasePosition = GetVectorFromString(
             (*iter).second.children.find("position")->second.value);
         formation[num].role = GetRoleFromString(
@@ -289,19 +216,23 @@ TeamData::TeamData(int teamDatabaseID, int playersTeamDatabaseID,
   bool changed = true;
 
   while (changed && iterations < maxIterations) {
+    DO_VALIDATION;
     Vector3 offset[player_count];
 
     changed = false;
     for (int p1 = 0; p1 < player_count - 1; p1++) {
+      DO_VALIDATION;
       if (formation[p1].role == e_PlayerRole_GK) continue;
 
       for (int p2 = p1 + 1; p2 < player_count; p2++) {
+        DO_VALIDATION;
         if (formation[p2].role == e_PlayerRole_GK) continue;
 
         Vector3 diff = (formation[p1].position - formation[p2].position);
         // if (diff.GetLength() < 0.1f) diff = Vector3(0, 0.1, 0);
 
         if (diff.GetLength() < minDistanceFraction) {
+          DO_VALIDATION;
           changed = true;
 
           float distanceFactor =
@@ -316,7 +247,9 @@ TeamData::TeamData(int teamDatabaseID, int playersTeamDatabaseID,
     }
 
     if (changed) {
+      DO_VALIDATION;
       for (int p = 0; p < player_count; p++) {
+        DO_VALIDATION;
         formation[p].position += offset[p];
         formation[p].position.coords[0] =
             clamp(formation[p].position.coords[0], -1, 1);
@@ -329,12 +262,15 @@ TeamData::TeamData(int teamDatabaseID, int playersTeamDatabaseID,
   }
 
   for (int x = 0; x < player_count; x++) {
+    DO_VALIDATION;
     if (f.empty()) {
+      DO_VALIDATION;
       formation[x].start_position = formation[x].position;
     } else {
       formation[x].start_position = f[x].start_position;
       formation[x].lazy = f[x].lazy;
       formation[x].role = f[x].role;
+      formation[x].controllable = f[x].controllable;
     }
   }
 
@@ -344,6 +280,7 @@ TeamData::TeamData(int teamDatabaseID, int playersTeamDatabaseID,
 
   iter = tree.children.begin();
   while (iter != tree.children.end()) {
+    DO_VALIDATION;
     tactics.userProperties.Set((*iter).first,
                                atof((*iter).second.value.c_str()));
     iter++;
@@ -351,16 +288,6 @@ TeamData::TeamData(int teamDatabaseID, int playersTeamDatabaseID,
   // factory tactics
 
   tree = loader.Load(factoryTacticsString);
-
-  iter = tree.children.begin();
-  while (iter != tree.children.end()) {
-    tactics.factoryProperties.Set((*iter).first.c_str(),
-                                  atof((*iter).second.value.c_str()));
-    // printf("value name: %s, value: %f\n", (*iter).first.c_str(),
-    // atof((*iter).second.value.c_str()));
-    iter++;
-  }
-
   // load players
   playerData.push_back(new PlayerData(398));
   playerData.push_back(new PlayerData(11));
@@ -377,16 +304,19 @@ TeamData::TeamData(int teamDatabaseID, int playersTeamDatabaseID,
 }
 
 TeamData::~TeamData() {
+  DO_VALIDATION;
   for (int i = 0; i < (signed int)playerData.size(); i++) {
+    DO_VALIDATION;
     delete playerData[i];
   }
 }
 
-FormationEntry TeamData::GetFormationEntry(int num) {
+FormationEntry TeamData::GetFormationEntry(int num) const {
   assert(num >= 0 && num < formation.size());
   return formation[num];
 }
 
 void TeamData::SetFormationEntry(int num, FormationEntry entry) {
+  DO_VALIDATION;
   formation[num] = entry;
 }

@@ -32,14 +32,6 @@ class LoadingMatchPage : public Gui2Page {
   public:
     LoadingMatchPage(Gui2WindowManager *windowManager, const Gui2PageData &pageData);
     virtual ~LoadingMatchPage();
-
-    virtual void Process();
-
-    void Close();
-
-  protected:
-    bool sentStartGameSignal = false;
-
 };
 
 #endif

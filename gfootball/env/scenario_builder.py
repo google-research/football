@@ -16,7 +16,7 @@
 """Class responsible for generating scenarios."""
 
 import importlib
-import logging
+from absl import logging
 import os
 import pkgutil
 import random
@@ -49,23 +49,17 @@ class Scenario(object):
 
   def __init__(self, config):
     # Game config controls C++ engine and is derived from the main config.
-    self._scenario_cfg = libgame.ScenarioConfig()
+    self._scenario_cfg = libgame.ScenarioConfig.make()
     self._config = config
-    self.SetFlag('swap_sides', False)
-    self.SetFlag('kickoff_for_goal_loosing_team', False)
     self._active_team = Team.e_Left
     scenario = None
     try:
       scenario = importlib.import_module('gfootball.scenarios.{}'.format(config['level']))
     except ImportError as e:
-      logging.warning('Loading scenario "%s" failed' % config['level'])
-      logging.warning(e)
+      logging.error('Loading scenario "%s" failed' % config['level'])
+      logging.error(e)
       exit(1)
     scenario.build_scenario(self)
-    if self._config['enable_sides_swap']:
-      self.SetFlag('swap_sides', random.choice([True, False]))
-      # Swapping sides also enabled kickoff_for_goal_loosing_team.
-      self.SetFlag('kickoff_for_goal_loosing_team', True)
     self.SetTeam(libgame.e_Team.e_Left)
     self._FakePlayersForEmptyTeam(self._scenario_cfg.left_team)
     self.SetTeam(libgame.e_Team.e_Right)
@@ -79,33 +73,29 @@ class Scenario(object):
   def _BuildScenarioConfig(self):
     """Builds scenario config from gfootball.environment config."""
     self._scenario_cfg.real_time = self._config['real_time']
-    if self._config['swap_sides']:
-      self._scenario_cfg.left_agents = self._config.number_of_right_players()
-      self._scenario_cfg.right_agents = self._config.number_of_left_players()
-    else:
-      self._scenario_cfg.left_agents = self._config.number_of_left_players()
-      self._scenario_cfg.right_agents = self._config.number_of_right_players()
-    self._scenario_cfg.offsides = self._config['offsides']
-    self._scenario_cfg.render = self._config['render']
-    self._scenario_cfg.game_difficulty = self._config['game_difficulty']
-    if self._config['kickoff_for_goal_loosing_team']:
-      self._scenario_cfg.kickoff_for_goal_loosing_team = True
+    self._scenario_cfg.left_agents = self._config.number_of_left_players()
+    self._scenario_cfg.right_agents = self._config.number_of_right_players()
     # This is needed to record 'game_engine_random_seed' in the dump.
     if 'game_engine_random_seed' not in self._config._values:
       self._config.set_scenario_value('game_engine_random_seed',
                                       random.randint(0, 2000000000))
-
-    if not self._config['deterministic']:
+    if not self._scenario_cfg.deterministic:
       self._scenario_cfg.game_engine_random_seed = (
           self._config['game_engine_random_seed'])
+      if 'reverse_team_processing' not in self._config:
+        self._config['reverse_team_processing'] = (
+            bool(self._config['game_engine_random_seed'] % 2))
+    if 'reverse_team_processing' in self._config:
+      self._scenario_cfg.reverse_team_processing = (
+          self._config['reverse_team_processing'])
 
-  def SetFlag(self, name, value):
-    self._config.set_scenario_value(name, value)
+  def config(self):
+    return self._scenario_cfg
 
   def SetTeam(self, team):
     self._active_team = team
 
-  def AddPlayer(self, x, y, role, lazy=False):
+  def AddPlayer(self, x, y, role, lazy=False, controllable=True):
     """Build player for the current scenario.
 
     Args:
@@ -113,8 +103,9 @@ class Scenario(object):
       y: y coordinate of the player in the range [-0.42, 0.42].
       role: Player's role in the game (goal keeper etc.).
       lazy: Computer doesn't perform any automatic actions for lazy player.
+      controllable: Whether player can be controlled.
     """
-    player = Player(x, y, role, lazy)
+    player = Player(x, y, role, lazy, controllable)
     if self._active_team == Team.e_Left:
       self._scenario_cfg.left_team.append(player)
     else:

@@ -25,13 +25,12 @@
 
 #include "../main.hpp"
 
-#include "../framework/scheduler.hpp"
-
 using namespace blunted;
 
 MenuTask::MenuTask(float aspectRatio, float margin, TTF_Font *defaultFont,
                    TTF_Font *defaultOutlineFont, const Properties *config)
     : Gui2Task(GetScene2D(), aspectRatio, margin) {
+  DO_VALIDATION;
   Gui2Style *style = windowManager->GetStyle();
 
   style->SetFont(e_TextType_Default, defaultFont);
@@ -60,15 +59,16 @@ MenuTask::MenuTask(float aspectRatio, float margin, TTF_Font *defaultFont,
   int size = GetControllers().size();
 
   for (int i = 0; i < size; i++) {
+    DO_VALIDATION;
     SideSelection side;
     side.controllerID = i;
     // Everybody plays in the same team.
     side.side = -1;
-//      if ((size > 1 && i == 1) || (size == 1 && i == 0)) {
-//        side.side = -1;
-//      } else {
-//        side.side = 0;
-//      }
+    //      if ((size > 1 && i == 1) || (size == 1 && i == 0)) { DO_VALIDATION;
+    //        side.side = -1;
+    //      } else {
+    //        side.side = 0;
+    //      }
     queuedFixture.sides.push_back(side);
   }
 
@@ -80,37 +80,11 @@ MenuTask::MenuTask(float aspectRatio, float margin, TTF_Font *defaultFont,
   // 6 == man utd
   // 7 == psv
   // 8 == real madrid
-  queuedFixture.teamID1 = "3";
-  queuedFixture.teamID2 = "8";
   queuedFixture.team1KitNum = 2;
   queuedFixture.team2KitNum = 2;
-  menuAction = e_MenuAction_Menu;
 }
 
 MenuTask::~MenuTask() {
+  DO_VALIDATION;
   delete windowManager->GetPageFactory();
 }
-
-void MenuTask::ProcessPhase() {
-
-  Gui2Task::ProcessPhase();
-
-  if (menuAction == e_MenuAction_Menu) {
-
-    windowManager->GetPagePath()->Clear();
-
-    GetGameTask()->Action(e_GameTaskMessage_StopMatch);
-    GetGameTask()->Action(e_GameTaskMessage_StartMenuScene);
-
-    Properties properties;
-    windowManager->GetPageFactory()->CreatePage((int)e_PageID_LoadingMatch, properties, 0);
-  } else if (menuAction == e_MenuAction_Game) {
-
-    GetGameTask()->Action(e_GameTaskMessage_StopMenuScene);
-    GetGameTask()->Action(e_GameTaskMessage_StartMatch);
-
-  }
-
-  menuAction = e_MenuAction_None;
-}
-

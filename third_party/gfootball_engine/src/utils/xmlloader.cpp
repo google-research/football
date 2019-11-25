@@ -22,87 +22,93 @@
 
 namespace blunted {
 
-  XMLLoader::XMLLoader() {
+XMLLoader::XMLLoader() { DO_VALIDATION; }
+
+XMLLoader::~XMLLoader() { DO_VALIDATION; }
+
+XMLTree XMLLoader::LoadFile(const std::string &filename) {
+  DO_VALIDATION;
+  std::string source;
+  source = file_to_string(filename);
+
+  XMLTree tree;
+  BuildTree(tree, source);
+
+  return tree;
+}
+
+XMLTree XMLLoader::Load(const std::string &file) {
+  DO_VALIDATION;
+  XMLTree tree;
+  BuildTree(tree, file);
+
+  return tree;
+}
+
+void XMLLoader::BuildTree(XMLTree &tree, const std::string &source) {
+  DO_VALIDATION;
+
+  size_t index_end = 0;
+  size_t index = source.find("<", 0);
+
+  if (index == std::string::npos) {
+    DO_VALIDATION;
+    // no tags, must be a value
+    tree.value = source;
+    tree.value.erase(remove_if(tree.value.begin(), tree.value.end(), isspace),
+                     tree.value.end());
+    // printf("value: '%s'\n", source.c_str());
+    return;
   }
 
-  XMLLoader::~XMLLoader() {
-  }
+  // a tag (or multiple), so must contain children
 
+  while (index != std::string::npos) {
+    DO_VALIDATION;
+    index_end = source.find(">", index);
+    std::string tag = source.substr(index + 1, index_end - index - 1);
+    // printf("tag: '%s'\n", tag.c_str());
+    index = index_end;
+    // index is now directly behind opening tag
 
-  XMLTree XMLLoader::LoadFile(const std::string &filename) {
-    std::string source;
-    source = file_to_string(filename);
-
-    XMLTree tree;
-    BuildTree(tree, source);
-
-    return tree;
-  }
-
-  XMLTree XMLLoader::Load(const std::string &file) {
-    XMLTree tree;
-    BuildTree(tree, file);
-
-    return tree;
-  }
-
-  void XMLLoader::BuildTree(XMLTree &tree, const std::string &source) {
-
-    size_t index_end = 0;
-    size_t index = source.find("<", 0);
-
-    if (index == std::string::npos) {
-      // no tags, must be a value
-      tree.value = source;
-      tree.value.erase(remove_if(tree.value.begin(), tree.value.end(), isspace), tree.value.end());
-      //printf("value: '%s'\n", source.c_str());
-      return;
-    }
-
-
-    // a tag (or multiple), so must contain children
-
-    while (index != std::string::npos) {
-      index_end = source.find(">", index);
-      std::string tag = source.substr(index + 1, index_end - index - 1);
-      //printf("tag: '%s'\n", tag.c_str());
-      index = index_end;
-      // index is now directly behind opening tag
-
-      // find closing tag
-      int recurse_counter = 1;
-      size_t index_nexttag_open = 0;
-      size_t index_nexttag_close = 0;
-      while (recurse_counter != 0) {
-        index_nexttag_open = source.find("<" + tag + ">", index_end + 1);
-        index_nexttag_close = source.find("</" + tag + ">", index_end + 1);
-        //printf("%i %i\n", index_nexttag_open, index_nexttag_close);
-        if (index_nexttag_open > index_nexttag_close || index_nexttag_open == std::string::npos) {
-          recurse_counter--;
-          index_end = index_nexttag_close;
-        } else {
-          recurse_counter++;
-          index_end = index_nexttag_open;
-        }
-        //printf("%i\n", recurse_counter);
-        if (index_end == std::string::npos) {
-          Log(e_FatalError, "XMLLoader", "BuildTree", "No closing tag found for <" + tag + ">");
-        }
+    // find closing tag
+    int recurse_counter = 1;
+    size_t index_nexttag_open = 0;
+    size_t index_nexttag_close = 0;
+    while (recurse_counter != 0) {
+      DO_VALIDATION;
+      index_nexttag_open = source.find("<" + tag + ">", index_end + 1);
+      index_nexttag_close = source.find("</" + tag + ">", index_end + 1);
+      // printf("%i %i\n", index_nexttag_open, index_nexttag_close);
+      if (index_nexttag_open > index_nexttag_close ||
+          index_nexttag_open == std::string::npos) {
+        DO_VALIDATION;
+        recurse_counter--;
+        index_end = index_nexttag_close;
+      } else {
+        recurse_counter++;
+        index_end = index_nexttag_open;
       }
-
-      std::string data = source.substr(index + 1, index_end - index - 1);
-      //printf("data: '%s'\n", data.c_str());
-
-      XMLTree child;
-      BuildTree(child, data);
-      tree.children.insert(std::make_pair(tag, child));
-
-      // close
-      index = source.find(">", index_end);
-
-      // find next tag
-      index = source.find("<", index);
+      // printf("%i\n", recurse_counter);
+      if (index_end == std::string::npos) {
+        DO_VALIDATION;
+        Log(e_FatalError, "XMLLoader", "BuildTree",
+            "No closing tag found for <" + tag + ">");
+      }
     }
-  }
 
+    std::string data = source.substr(index + 1, index_end - index - 1);
+    // printf("data: '%s'\n", data.c_str());
+
+    XMLTree child;
+    BuildTree(child, data);
+    tree.children.insert(std::make_pair(tag, child));
+
+    // close
+    index = source.find(">", index_end);
+
+    // find next tag
+    index = source.find("<", index);
+  }
+}
 }

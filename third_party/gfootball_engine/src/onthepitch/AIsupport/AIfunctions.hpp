@@ -25,13 +25,14 @@ class Ball;
 class Match;
 class Team;
 class Player;
+class PlayerBase;
 
 #include "../../base/math/vector3.hpp"
 
 #include "../../data/teamdata.hpp"
 
 struct TimeNeeded {
-  TimeNeeded() {
+  TimeNeeded() { DO_VALIDATION;
     usual_ms = 0;
     optimistic_ms = 0;
   }
@@ -50,14 +51,14 @@ float AI_CalculateFreeSpace(Match *match, const MentalImage *mentalImage,
                             float safeDistance = 8.0,
                             float futureTime_sec = 0.3);
 float AI_GetOffsideLine(Match *match, const MentalImage *mentalImage, int teamID, unsigned int futureSim_ms = 0);
-void AI_GetBestDribbleMovement(Match *match, int thisPlayerID, const MentalImage *mentalImage, Vector3 &desiredDirection, float &desiredVelocity, const TeamTactics &teamTactics);
+void AI_GetBestDribbleMovement(Match *match, PlayerBase* player, const MentalImage *mentalImage, Vector3 &desiredDirection, float &desiredVelocity, const TeamTactics &teamTactics);
 Vector3 AI_GetForceFieldMovement(const std::vector<ForceSpot> &forceField, const Vector3 &currentPos, float attractorDampingDistance = 10);
-TimeNeeded AI_GetTimeNeededForDistance_ms(const Vector3 &playerPos, const Vector3 &playerMovement, const Vector3 &targetPos, float maxVelocity = sprintVelocity, bool precise = false, int maxTime_ms = -1);
+TimeNeeded AI_GetTimeNeededForDistance_ms(const Vector3 &playerPos, const Vector3 &playerMovement, const Vector3 &targetPos, float maxVelocity = sprintVelocity, bool precise = false, unsigned int maxTime_ms = -1);
 unsigned int AI_GetToBallMovement(Match *match, const MentalImage *mentalImage, Player *player, const Vector3 &desiredDirection, float desiredVelocityFloat, Vector3 &bestDirection, float &bestVelocityFloat, Vector3 &bestLookAt, float haste = 0.0f);
 unsigned int AI_GetBallControlMovement(const MentalImage *mentalImage, Player *player, const Vector3 &desiredDirection, float desiredVelocityFloat, Vector3 &bestDirection, float &bestVelocityFloat, Vector3 &bestLookAt);
 bool AI_HasPossession(Ball *ball, Player *player);
 Player *AI_GetClosestPlayer(Team *team, const Vector3 &position,
-                            bool onlyAIControlled, Player *except = 0);
+                            bool onlyAIControlled, Player *except = 0, bool onlySelectable = false);
 void AI_GetClosestPlayers(Team *team, const Vector3 &position, bool onlyAIControlled, std::vector<Player*> &result, unsigned int playerCount = 3);
 Player *AI_GetBestSwitchTargetPlayer(Match *match, Team *team, const Vector3 &desiredMovement);
 void AI_GetAutoPass(e_FunctionType passType, const Vector3 &vector, Vector3 &resultingDirection, float &resultingPower);

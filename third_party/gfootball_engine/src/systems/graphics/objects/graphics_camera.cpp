@@ -27,31 +27,39 @@
 
 namespace blunted {
 
-  GraphicsCamera::GraphicsCamera(GraphicsScene *graphicsScene) : GraphicsObject(graphicsScene) {
-    fov = 45;
-  }
+GraphicsCamera::GraphicsCamera(GraphicsScene *graphicsScene)
+    : GraphicsObject(graphicsScene) {
+  DO_VALIDATION;
+  fov = 45;
+}
 
-  GraphicsCamera::~GraphicsCamera() {
-  }
+GraphicsCamera::~GraphicsCamera() { DO_VALIDATION; }
 
-  boost::intrusive_ptr<Interpreter> GraphicsCamera::GetInterpreter(e_ObjectType objectType) {
-    if (objectType == e_ObjectType_Camera) {
-      boost::intrusive_ptr<GraphicsCamera_CameraInterpreter> CameraInterpreter(new GraphicsCamera_CameraInterpreter(this));
-      return CameraInterpreter;
-    }
-    Log(e_FatalError, "GraphicsCamera", "GetInterpreter", "No appropriate interpreter found for this ObjectType");
-    return boost::intrusive_ptr<GraphicsCamera_CameraInterpreter>();
+boost::intrusive_ptr<Interpreter> GraphicsCamera::GetInterpreter(
+    e_ObjectType objectType) {
+  DO_VALIDATION;
+  if (objectType == e_ObjectType_Camera) {
+    DO_VALIDATION;
+    boost::intrusive_ptr<GraphicsCamera_CameraInterpreter> CameraInterpreter(
+        new GraphicsCamera_CameraInterpreter(this));
+    return CameraInterpreter;
   }
+  Log(e_FatalError, "GraphicsCamera", "GetInterpreter",
+      "No appropriate interpreter found for this ObjectType");
+  return boost::intrusive_ptr<GraphicsCamera_CameraInterpreter>();
+}
 
-  void GraphicsCamera::SetPosition(const Vector3 &newPosition) {
-    position = newPosition;
-  }
+void GraphicsCamera::SetPosition(const Vector3 &newPosition) {
+  DO_VALIDATION;
+  position = newPosition;
+}
 
   Vector3 GraphicsCamera::GetPosition() const {
     return position;
   }
 
   void GraphicsCamera::SetRotation(const Quaternion &newRotation) {
+    DO_VALIDATION;
     rotation = newRotation;
   }
 
@@ -59,18 +67,23 @@ namespace blunted {
     return rotation;
   }
 
-  void GraphicsCamera::SetSize(float x_percent, float y_percent, float width_percent, float height_percent) {
+  void GraphicsCamera::SetSize(float x_percent, float y_percent,
+                               float width_percent, float height_percent) {
+    DO_VALIDATION;
     this->x_percent = x_percent;
     this->y_percent = y_percent;
     this->width_percent = width_percent;
     this->height_percent = height_percent;
   }
 
-
-  GraphicsCamera_CameraInterpreter::GraphicsCamera_CameraInterpreter(GraphicsCamera *caller) : caller(caller) {
+  GraphicsCamera_CameraInterpreter::GraphicsCamera_CameraInterpreter(
+      GraphicsCamera *caller)
+      : caller(caller) {
+    DO_VALIDATION;
   }
 
   void GraphicsCamera_CameraInterpreter::OnLoad(const Properties &properties) {
+    DO_VALIDATION;
     caller->SetSize(properties.GetReal("x_percent", 0), properties.GetReal("y_percent", 0), properties.GetReal("width_percent", 100), properties.GetReal("height_percent", 100));
 
     Renderer3D *renderer3D = caller->GetGraphicsScene()->GetGraphicsSystem()->GetRenderer3D();
@@ -78,6 +91,7 @@ namespace blunted {
   }
 
   void GraphicsCamera_CameraInterpreter::OnUnload() {
+    DO_VALIDATION;
     Renderer3D *renderer3D = caller->GetGraphicsScene()->GetGraphicsSystem()->GetRenderer3D();
 
     renderer3D->DeleteView(caller->viewID);
@@ -86,20 +100,30 @@ namespace blunted {
   }
 
   void GraphicsCamera_CameraInterpreter::SetFOV(float fov) {
+    DO_VALIDATION;
     caller->fov = fov;
   }
 
-  void GraphicsCamera_CameraInterpreter::SetCapping(float nearCap, float farCap) {
+  void GraphicsCamera_CameraInterpreter::SetCapping(float nearCap,
+                                                    float farCap) {
+    DO_VALIDATION;
     caller->nearCap = nearCap;
     caller->farCap = farCap;
   }
 
-  void GraphicsCamera_CameraInterpreter::OnSpatialChange(const Vector3 &position, const Quaternion &rotation) {
+  void GraphicsCamera_CameraInterpreter::OnSpatialChange(
+      const Vector3 &position, const Quaternion &rotation) {
+    DO_VALIDATION;
     caller->SetPosition(position);
     caller->SetRotation(rotation);
   }
 
-  void GraphicsCamera_CameraInterpreter::EnqueueView(const std::string &camName, std::deque < boost::intrusive_ptr<Geometry> > &visibleGeometry, std::deque < boost::intrusive_ptr<Light> > &visibleLights, std::deque < boost::intrusive_ptr<Skybox> > &skyboxes) {
+  void GraphicsCamera_CameraInterpreter::EnqueueView(
+      const std::string &camName,
+      std::deque<boost::intrusive_ptr<Geometry> > &visibleGeometry,
+      std::deque<boost::intrusive_ptr<Light> > &visibleLights,
+      std::deque<boost::intrusive_ptr<Skybox> > &skyboxes) {
+    DO_VALIDATION;
 
     ViewBuffer *buffer = &caller->viewBuffer;
 
@@ -108,6 +132,7 @@ namespace blunted {
 
     std::deque < boost::intrusive_ptr<Geometry> >::iterator visibleGeometryIter = visibleGeometry.begin();
     while (visibleGeometryIter != visibleGeometry.end()) {
+      DO_VALIDATION;
       boost::intrusive_ptr<GraphicsGeometry_GeometryInterpreter> interpreter = static_pointer_cast<GraphicsGeometry_GeometryInterpreter>((*visibleGeometryIter)->GetInterpreter(e_SystemType_Graphics));
 
       // add buffers to visible geometry queue
@@ -119,18 +144,20 @@ namespace blunted {
       visibleGeometryIter++;
     }
 
-
     // lights
 
     std::deque < boost::intrusive_ptr<Light> >::iterator visibleLightIter = visibleLights.begin();
     while (visibleLightIter != visibleLights.end()) {
+      DO_VALIDATION;
       LightQueueEntry entry;
 
       boost::intrusive_ptr<GraphicsLight_LightInterpreter> interpreter = static_pointer_cast<GraphicsLight_LightInterpreter>((*visibleLightIter)->GetInterpreter(e_SystemType_Graphics));
 
       if (interpreter->GetShadow()) {
+        DO_VALIDATION;
         ShadowMap shadowMap = interpreter->GetShadowMap(camName);
         if (shadowMap.cameraName != "") {
+          DO_VALIDATION;
           entry.shadowMapTexture = shadowMap.texture;
           entry.lightProjectionMatrix = shadowMap.lightProjectionMatrix;
           entry.lightViewMatrix = shadowMap.lightViewMatrix;
@@ -154,17 +181,16 @@ namespace blunted {
       visibleLightIter++;
     }
 
-
     // skyboxes
 
     std::deque < boost::intrusive_ptr<Skybox> >::iterator skyboxIter = skyboxes.begin();
     while (skyboxIter != skyboxes.end()) {
+      DO_VALIDATION;
       boost::intrusive_ptr<GraphicsGeometry_SkyboxInterpreter> interpreter = static_pointer_cast<GraphicsGeometry_SkyboxInterpreter>((*skyboxIter)->GetInterpreter(e_SystemType_Graphics));
       // add buffers to skybox queue
       interpreter->GetVertexBufferQueue(buffer->skyboxes);
       skyboxIter++;
     }
-
 
     // camera matrix
 
@@ -176,6 +202,7 @@ namespace blunted {
   }
 
   void GraphicsCamera_CameraInterpreter::OnPoke() {
+    DO_VALIDATION;
     Renderer3D *renderer = caller->GetGraphicsScene()->GetGraphicsSystem()->GetRenderer3D();
     auto viewID = caller->viewID;
     auto &buffer = caller->viewBuffer;
@@ -205,10 +232,12 @@ namespace blunted {
     float depthParamFar = 0;
     volatile float division = buffer.cameraNearCap - buffer.cameraFarCap;
     if (fabs(division) > EPSILON) {
+      DO_VALIDATION;
       division = 1 / division;
       depthParamFar = (buffer.cameraFarCap * buffer.cameraNearCap) * division;
     }
     if (fabs(division) > EPSILON) {
+      DO_VALIDATION;
       depthParamNear = buffer.cameraFarCap / (buffer.cameraFarCap - buffer.cameraNearCap);
     }
 
@@ -218,6 +247,7 @@ namespace blunted {
     // render skybox
 
     if (buffer.skyboxes.size() > 0) {
+      DO_VALIDATION;
       Matrix4 skyboxMatrix = viewMatrix;
       skyboxMatrix.SetTranslation(Vector3(0, 0, 0));
       //XX renderer->SetMatrixMode(e_MatrixMode_ModelView);
@@ -242,7 +272,6 @@ namespace blunted {
       renderer->SetDepthTesting(true);
     }
 
-
     // render vertexbuffers
 
 
@@ -255,6 +284,7 @@ namespace blunted {
 
     bool zphase = false;
     if (zphase) {
+      DO_VALIDATION;
       //XXrenderer->SetMatrixMode(e_MatrixMode_ModelView);
 
       renderer->SetMatrix("projectionMatrix", projectionMatrix);
@@ -276,8 +306,6 @@ namespace blunted {
       renderer->ClearBuffer(Vector3(0, 0, 0), true, false);
       renderer->RenderVertexBuffer(buffer.visibleGeometry, e_RenderMode_GeometryOnly);
     }
-
-
 
     // geometry phase
 
@@ -306,6 +334,7 @@ namespace blunted {
     renderer->SetDepthTesting(true);
 
     if (zphase) {
+      DO_VALIDATION;
       renderer->SetDepthFunction(e_DepthFunction_Equal); // changed from less
       renderer->SetDepthMask(false); // changed
       renderer->ClearBuffer(Vector3(0, 0, 0), false, true); // changed
@@ -455,5 +484,4 @@ namespace blunted {
     buffer.visibleLights.clear();
     buffer.skyboxes.clear();
   }
-
 }

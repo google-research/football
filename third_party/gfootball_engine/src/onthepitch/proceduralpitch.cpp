@@ -35,7 +35,9 @@ constexpr int seamlessTexH = 1200;
 constexpr int overlayTexW = 4096;
 constexpr int overlayTexH = 2048;
 
-template <typename T> T BilinearSample(T* tex, float x, float y, int w, int h) {
+template <typename T>
+T BilinearSample(T *tex, float x, float y, int w, int h) {
+  DO_VALIDATION;
   // nearest neighbor version
   //return tex[int(y) * w + int(x)];
 
@@ -56,7 +58,11 @@ template <typename T> T BilinearSample(T* tex, float x, float y, int w, int h) {
   return result;
 }
 
-Uint32 GetPitchDiffuseColor(SDL_Surface *pitchSurf, Vector3 *seamlessTex, float *perlinTex, Vector3* overlayTex, float* overlay_alphaTex, float xCoord, float yCoord) {
+Uint32 GetPitchDiffuseColor(SDL_Surface *pitchSurf, Vector3 *seamlessTex,
+                            float *perlinTex, Vector3 *overlayTex,
+                            float *overlay_alphaTex, float xCoord,
+                            float yCoord) {
+  DO_VALIDATION;
 
   float texMultiplier = 0.3f;
   float texScale = 0.32f;
@@ -94,14 +100,14 @@ Uint32 GetPitchDiffuseColor(SDL_Surface *pitchSurf, Vector3 *seamlessTex, float 
   float perlinNoiseG = perlinNoise;
   float perlinNoiseB = perlinNoise;
 
-/* mud
-  if (noise < 0.1) {
-    float bias = noise / 1.0;
-    r = (r * bias) + r * 1.0  * (1 - bias);
-    g = (g * bias) + g * 0.9  * (1 - bias);
-    b = (b * bias) + b * 0.9  * (1 - bias);
-  }
-*/
+  /* mud
+    if (noise < 0.1) { DO_VALIDATION;
+      float bias = noise / 1.0;
+      r = (r * bias) + r * 1.0  * (1 - bias);
+      g = (g * bias) + g * 0.9  * (1 - bias);
+      b = (b * bias) + b * 0.9  * (1 - bias);
+    }
+  */
 
   float randomNoise = 0.0f;
   if (randomNoiseMultiplier > 0.0f) randomNoise = random_non_determ(-1, 1);
@@ -135,7 +141,9 @@ Uint32 GetPitchDiffuseColor(SDL_Surface *pitchSurf, Vector3 *seamlessTex, float 
   return color;
 }
 
-inline Uint32 GetPitchSpecularColor(SDL_Surface *pitchSurf, float* perlinTex, float xCoord, float yCoord) {
+inline Uint32 GetPitchSpecularColor(SDL_Surface *pitchSurf, float *perlinTex,
+                                    float xCoord, float yCoord) {
+  DO_VALIDATION;
 
   float base = 2.0f;
   float noisefac = 18.0f;
@@ -153,11 +161,14 @@ inline Uint32 GetPitchSpecularColor(SDL_Surface *pitchSurf, float* perlinTex, fl
   return color;
 }
 
-float GetSmoothGrassDirection(float coord, float repeat, int transitionSharpness = 5) {
+float GetSmoothGrassDirection(float coord, float repeat,
+                              int transitionSharpness = 5) {
+  DO_VALIDATION;
   float iteration = std::floor(coord / repeat);
   float bias = coord - repeat * iteration; // goes from 0 to 1 over two bands (since bands are split by being < 0.5 and > 0.5)
   bias = std::sin(bias * 2 * pi) * 0.5f + 0.5f;
   for (int i = 0; i < transitionSharpness; i++) {
+    DO_VALIDATION;
     bias = curve(bias, 1.0f);
   }
 
@@ -167,17 +178,15 @@ float GetSmoothGrassDirection(float coord, float repeat, int transitionSharpness
   return bias;
 }
 
-Uint32 GetPitchNormalColor(SDL_Surface *pitchSurf, float xCoord, float yCoord, float repeatMultiplier) {
-  if (!GetGameConfig().high_quality) {
-    // Below logic is super slow, so we return fixed color (at least for now).
-    return 0xffaaaa;
-  }
-
+Uint32 GetPitchNormalColor(SDL_Surface *pitchSurf, float xCoord, float yCoord,
+                           float repeatMultiplier) {
+  DO_VALIDATION;
   float noisefac = 0.06f;
 
   Vector3 normal = Vector3(0, 0, 1);
 
   if (fabs(xCoord) < pitchHalfW && fabs(yCoord) < pitchHalfH) {
+    DO_VALIDATION;
 
     float xRepeat = 11.0f * repeatMultiplier;
     float yRepeat = 11.0f * repeatMultiplier;
@@ -187,7 +196,6 @@ Uint32 GetPitchNormalColor(SDL_Surface *pitchSurf, float xCoord, float yCoord, f
     int transitionSharpness = 5;
     if (repeatMultiplier > 0.75f) transitionSharpness = 7; // wider mow lines == more sharpening to correct for upscale
     normal += Vector3(GetSmoothGrassDirection(yCoord / yRepeat, 1.0f, transitionSharpness) * yStrength, GetSmoothGrassDirection(xCoord / xRepeat, 1.0f, transitionSharpness) * xStrength, 0);
-
   }
 
   normal.coords[0] += random_non_determ(-1, 1) * noisefac;
@@ -204,14 +212,17 @@ Uint32 GetPitchNormalColor(SDL_Surface *pitchSurf, float xCoord, float yCoord, f
 }
 
 /* todo
-void DrawMud(SDL_PixelFormat *pixelFormat, Uint32 *diffuseBitmap, int resX, int resY, signed int offsetW, signed int offsetH) {
+void DrawMud(SDL_PixelFormat *pixelFormat, Uint32 *diffuseBitmap, int resX, int
+resY, signed int offsetW, signed int offsetH) { DO_VALIDATION;
 }
 */
 
 void CreateChunk(int i, int resX, int resY, int resSpecularX, int resSpecularY,
-                 int resNormalX, int resNormalY, float grassNormalRepeatMultiplier,
-                 Vector3* seamlessTex, float* perlinTex, Vector3* overlayTex,
-                 float* overlay_alphaTex) {
+                 int resNormalX, int resNormalY,
+                 float grassNormalRepeatMultiplier, Vector3 *seamlessTex,
+                 float *perlinTex, Vector3 *overlayTex,
+                 float *overlay_alphaTex) {
+  DO_VALIDATION;
 
   signed int offsetW, offsetH;
   if (i == 1 || i == 3) offsetW = -1; else
@@ -230,23 +241,28 @@ void CreateChunk(int i, int resX, int resY, int resSpecularX, int resSpecularY,
   Uint32 *normalBitmap;
   normalBitmap = new Uint32[resNormalX * resNormalY];
 
-
   for (int x = 0; x < resX; x++) {
+    DO_VALIDATION;
     for (int y = 0; y < resY; y++) {
+      DO_VALIDATION;
       float xCoord = x / (resX * 1.0) * pitchFullHalfW + pitchFullHalfW * offsetW;
       float yCoord = y / (resY * 1.0) * pitchFullHalfH + pitchFullHalfH * offsetH;
       diffuseBitmap[y * resX + x] = GetPitchDiffuseColor(pitchDiffuseSurf, seamlessTex, perlinTex, overlayTex, overlay_alphaTex, xCoord, yCoord);
     }
   }
   for (int x = 0; x < resSpecularX; x++) {
+    DO_VALIDATION;
     for (int y = 0; y < resSpecularY; y++) {
+      DO_VALIDATION;
       float xSpecularCoord = x / (resSpecularX * 1.0) * pitchFullHalfW + pitchFullHalfW * offsetW;
       float ySpecularCoord = y / (resSpecularY * 1.0) * pitchFullHalfH + pitchFullHalfH * offsetH;
       specularBitmap[y * resSpecularX + x] = GetPitchSpecularColor(pitchSpecularSurf, perlinTex, xSpecularCoord, ySpecularCoord);
     }
   }
   for (int x = 0; x < resNormalX; x++) {
+    DO_VALIDATION;
     for (int y = 0; y < resNormalY; y++) {
+      DO_VALIDATION;
       float xNormalCoord = x / (resNormalX * 1.0) * pitchFullHalfW + pitchFullHalfW * offsetW;
       float yNormalCoord = y / (resNormalY * 1.0) * pitchFullHalfH + pitchFullHalfH * offsetH;
       normalBitmap[y * resNormalX + x] = GetPitchNormalColor(pitchNormalSurf, xNormalCoord, yNormalCoord, grassNormalRepeatMultiplier);
@@ -297,8 +313,11 @@ void CreateChunk(int i, int resX, int resY, int resSpecularX, int resSpecularY,
   SDL_FreeSurface(pitchNormalSurf);
 }
 
-void GeneratePitch(int resX, int resY, int resSpecularX, int resSpecularY, int resNormalX, int resNormalY) {
+void GeneratePitch(int resX, int resY, int resSpecularX, int resSpecularY,
+                   int resNormalX, int resNormalY) {
+  DO_VALIDATION;
   if (GetContext().already_loaded) {
+    DO_VALIDATION;
     return;
   }
   GetContext().already_loaded = true;
@@ -309,7 +328,9 @@ void GeneratePitch(int resX, int resY, int resSpecularX, int resSpecularY, int r
   assert(seamlessTexH == seamless->h);
   Vector3 *seamlessTex = new Vector3[seamlessTexW * seamlessTexH];
   for (int x = 0; x < seamlessTexW; x++) {
+    DO_VALIDATION;
     for (int y = 0; y < seamlessTexH; y++) {
+      DO_VALIDATION;
       Uint32 pixel = sdl_getpixel(seamless, x, y);
       Uint8 r, g, b;
       SDL_GetRGB(pixel, &seamlessFormat, &r, &g, &b);
@@ -325,7 +346,9 @@ void GeneratePitch(int resX, int resY, int resSpecularX, int resSpecularY, int r
   Vector3 *overlayTex = new Vector3[overlayTexW * overlayTexH];
   float* overlay_alphaTex = new float[overlayTexW * overlayTexH];
   for (int x = 0; x < overlayTexW; x++) {
+    DO_VALIDATION;
     for (int y = 0; y < overlayTexH; y++) {
+      DO_VALIDATION;
       Uint32 pixel = sdl_getpixel(overlay, x, y);
       Uint8 r, g, b, a;
       SDL_GetRGBA(pixel, &overlayFormat, &r, &g, &b, &a);
@@ -338,8 +361,8 @@ void GeneratePitch(int resX, int resY, int resSpecularX, int resSpecularY, int r
 
   float scale = 0.06f;
 
-  Perlin *perlin1 = new Perlin(4, 0.06 * scale, 0.5, time(NULL)); // low freq
-  Perlin *perlin2 = new Perlin(4, 0.14 * scale, 0.5, time(NULL) + 139882); // mid freq
+  Perlin *perlin1 = new Perlin(4, 0.06 * scale, 0.5); // low freq
+  Perlin *perlin2 = new Perlin(4, 0.14 * scale, 0.5); // mid freq
 //  Perlin *perlin3 = new Perlin(4, 25.4 / 20.0,   3, 423423); // high freq
   float* perlinTex = new float[perlinTexW * perlinTexH];
 
@@ -349,6 +372,7 @@ void GeneratePitch(int resX, int resY, int resSpecularX, int resSpecularY, int r
   float sinScale = 4.0f; // smaller is larger (heh)
   float ynoise[perlinTexH];
   for (int y = 0; y < perlinTexH; y++) {
+    DO_VALIDATION;
     ynoise[y] = (std::sin(y / (float)perlinTexH * 13 * sinScale) +
                  std::sin(y / (float)perlinTexH * 43 * sinScale) +
                  std::sin(y / (float)perlinTexH * 107 * sinScale) +
@@ -357,12 +381,14 @@ void GeneratePitch(int resX, int resY, int resSpecularX, int resSpecularY, int r
   }
 
   for (int x = 0; x < perlinTexW; x++) {
+    DO_VALIDATION;
     float xnoise = (std::sin(x / (float)perlinTexW * 15 * sinScale) +
                     std::sin(x / (float)perlinTexW * 41 * sinScale) +
                     std::sin(x / (float)perlinTexW * 109 * sinScale) +
                     std::sin(x / (float)perlinTexW * 241 * sinScale)) *
                    0.25f;
     for (int y = 0; y < perlinTexH; y++) {
+      DO_VALIDATION;
       float noise = xnoise * 0.65f + ynoise[y] * 0.35f;
       noise = curve(noise * 0.5f + 0.5f, 0.4f) * 2.0f - 1.0f; // compress
       //printf("%f ", perlin1->Get(x, y));
@@ -378,13 +404,14 @@ void GeneratePitch(int resX, int resY, int resSpecularX, int resSpecularY, int r
 //  boost::thread pitchThread[4];
   float grassNormalRepeatMultiplier = (boostrandom(0, 1) > 0.5f) ? 1.0f : 0.5f;
   for (int i = 0; i < 4; i++) {
+    DO_VALIDATION;
     CreateChunk(i + 1, resX, resY, resSpecularX, resSpecularY, resNormalX,
                 resNormalY, grassNormalRepeatMultiplier, seamlessTex, perlinTex,
                 overlayTex, overlay_alphaTex);
   }
 
-//  for (int i = 0; i < 4; i++) {
-    //pitchThread[i].join();
+  //  for (int i = 0; i < 4; i++) { DO_VALIDATION;
+  // pitchThread[i].join();
   //}
 
   delete perlin1;
