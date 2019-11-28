@@ -212,6 +212,8 @@ void PlayerController::ProcessPlayerController(EnvState *state) {
   player = p;
   state->process(inputDirection);
   state->process(inputVelocityFloat);
+  state->process(team);
+  state->process(oppTeam);
   state->process(_oppPlayer);
   state->process(_timeNeeded_ms);
   state->process(_mentalImageTime);

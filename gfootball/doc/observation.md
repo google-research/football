@@ -85,7 +85,8 @@ In addition, environment provides wrappers which convert `raw` observations to a
    - 3rd plane: 255s represent positions of a ball
    - 4th plane: 255s represent positions of an active player
 - `pixels`/`pixels_gray` (aka PixelsStateWrapper) - pixel representation, downscaled to 72 * 96, and converted to a single grayscale channel for `pixels_gray`.
-  In order to use this representation you have to enable rendering in create_environment call (and run on GPU).
+  In order to use this representation you have to enable rendering in `create_environment` call (render=True parameter)
+  or call `render` method on the environment object (in case of not using `create_environment`).
 
 For trivial integration with single agent/player learning algorithms we provide a SingleAgentWrapper wrapper,
 that strips the first dimension of the representation in the case of only one player being controlled.
