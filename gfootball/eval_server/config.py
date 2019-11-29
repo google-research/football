@@ -20,3 +20,9 @@ master_address_file = 'eval_server_master_ip'
 master_address_public_path = 'https://storage.googleapis.com/{}/{}'.format(
     master_address_bucket, master_address_file)
 game_version = '2.0'
+
+track_to_num_controlled_players = {
+    'mini': 1,
+    '11vs11': 1,
+    'multiagent': 4,
+}

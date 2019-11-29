@@ -115,7 +115,10 @@ class FootballEnvCore(object):
     self.close()
 
   def step(self, action, extra_data={}):
-    assert self._env.state == GameState.game_running
+    assert self._env.state != GameState.game_done, (
+        'Cant call step() once episode finished (call reset() instead)')
+    assert self._env.state == GameState.game_running, (
+        'reset() must be called before step()')
     action = [
         football_action_set.named_action_from_action_set(self._action_set, a)
         for a in action
@@ -319,7 +322,8 @@ class FootballEnvCore(object):
   def observation(self):
     """Returns the current observation of the game."""
     assert (self._env.state == GameState.game_running or
-            self._env.state == GameState.game_done)
+            self._env.state == GameState.game_done), (
+                'reset() must be called before observation()')
     return copy.deepcopy(self._observation)
 
   def sticky_actions_state(self, left_team, player_id):
@@ -332,11 +336,15 @@ class FootballEnvCore(object):
 
   def get_state(self, to_pickle):
     assert (self._env.state == GameState.game_running or
-            self._env.state == GameState.game_done), self._env.state
+            self._env.state == GameState.game_done), (
+                'reset() must be called before get_state()')
     pickle = six.moves.cPickle.dumps(to_pickle)
     return self._env.get_state(pickle)
 
   def set_state(self, state):
+    assert (self._env.state == GameState.game_running or
+            self._env.state == GameState.game_done), (
+                'reset() must be called before set_state()')
     res = self._env.set_state(state)
     assert self._retrieve_observation()
     return six.moves.cPickle.loads(res)

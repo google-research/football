@@ -43,7 +43,6 @@ try:
 except ImportError:
   import cv2
 
-HIGH_RES=False  # change to true for collecting replays
 
 class DumpConfig(object):
 
@@ -145,12 +144,15 @@ def write_dump(name, trace, config):
     return False
   if config['write_video']:
     fd, temp_path = tempfile.mkstemp(suffix='.avi')
-    if HIGH_RES:
+    if config['video_quality_level'] == 2:
       frame_dim = (1280, 720)
       fcc = cv2.VideoWriter_fourcc('p', 'n', 'g', ' ')
+    elif config['video_quality_level'] == 1:
+      fcc = cv2.VideoWriter_fourcc(*'MJPG')
+      frame_dim = (1280, 720)
     else:
       fcc = cv2.VideoWriter_fourcc(*'XVID')
-      frame_dim = (800, 600)
+      frame_dim = (800, 450)
     video = cv2.VideoWriter(
         temp_path, fcc,
         constants.PHYSICS_STEPS_PER_SECOND / config['physics_steps_per_frame'],
@@ -162,7 +164,7 @@ def write_dump(name, trace, config):
       frame = get_frame(o)
       frame = frame[..., ::-1]
       frame = cv2.resize(frame, frame_dim, interpolation=cv2.INTER_AREA)
-      writer = TextWriter(frame, 950 if HIGH_RES else 500)
+      writer = TextWriter(frame, frame_dim[0] - 300)
       if config['custom_display_stats']:
         for line in config['custom_display_stats']:
           writer.write(line)
@@ -223,13 +225,14 @@ def write_dump(name, trace, config):
       temp_frames.append(o._trace['observation']['frame'])
       del o._trace['observation']['frame']
     to_pickle.append(o._trace)
+  assert len(temp_frames) == 0 or len(temp_frames) == len(trace)
   # Add config to the first frame for our replay tools to use.
   to_pickle[0]['debug']['config'] = config.get_dictionary()
   if WRITE_FILES:
     with open(name + '.dump', 'wb') as f:
       six.moves.cPickle.dump(to_pickle, f)
-  for o in trace:
-    if 'frame' in o._trace['observation']:
+  if len(temp_frames):
+    for o in trace:
       o._trace['observation']['frame'] = temp_frames.pop(0)
   logging.info('Dump written to %s.dump', name)
   return True
@@ -294,10 +297,9 @@ class ObservationProcessor(object):
         min_frequency=600,
         snapshot_delay=10)
     self._dump_config['episode_done'] = DumpConfig(
-        max_length=(200 if HIGH_RES else 10000),
+        max_length=10000,
         max_count=(100000 if config['dump_full_episodes'] else 0))
-    self._dump_config['shutdown'] = DumpConfig(
-        max_length=(200 if HIGH_RES else 10000))
+    self._dump_config['shutdown'] = DumpConfig(max_length=10000)
     self._dump_directory = None
     self._config = config
     self.clear_state()

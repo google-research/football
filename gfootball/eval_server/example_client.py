@@ -43,8 +43,12 @@ flags.DEFINE_string('inference_model', '',
 NUM_ACTIONS = len(football_action_set.action_set_dict['default'])
 
 
-def random_actions(_):
-  return random.randint(0, NUM_ACTIONS - 1)
+def random_actions(obs):
+  num_players = 1 if len(obs.shape) == 3 else obs.shape[0]
+  a = []
+  for _ in range(num_players):
+    a.append(random.randint(0, NUM_ACTIONS - 1))
+  return a
 
 
 def seed_rl_preprocessing(observation):
@@ -55,11 +59,23 @@ def seed_rl_preprocessing(observation):
   return data.view(np.uint16)
 
 
+def generate_actions(obs, model):
+  a = []
+  # Single agent case
+  if len(obs.shape) == 3:
+    a.append(model(seed_rl_preprocessing(obs))[0][0].numpy())
+  else:
+    # Multiagent -> first dimension is a number of agents you control.
+    for x in range(obs.shape[0]):
+      a.append(model(seed_rl_preprocessing(obs[x]))[0][0].numpy())
+  return a
+
+
 def get_inference_model(inference_model):
   if not inference_model or FLAGS.username == 'random':
     return random_actions
   model = tf.saved_model.load(inference_model)
-  return lambda x: model(seed_rl_preprocessing(x))[0][0].numpy()
+  return lambda obs: generate_actions(obs, model)
 
 
 def main(unused_argv):
@@ -76,7 +92,7 @@ def main(unused_argv):
       try:
         action = model(ob)
         ob, rew, done, _ = env.step(action)
-        logging.info('Playing the game, step %d, action %d, rew %f, done %d',
+        logging.info('Playing the game, step %d, action %s, rew %s, done %d',
                      cnt, action, rew, done)
         cnt += 1
       except grpc.RpcError as e:

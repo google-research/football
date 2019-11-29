@@ -59,6 +59,7 @@ flags.DEFINE_float('lr', 0.00008, 'Learning rate')
 flags.DEFINE_float('ent_coef', 0.01, 'Entropy coeficient')
 flags.DEFINE_float('gamma', 0.993, 'Discount factor')
 flags.DEFINE_float('cliprange', 0.27, 'Clip range')
+flags.DEFINE_float('max_grad_norm', 0.5, 'Max gradient norm (clipping)')
 flags.DEFINE_bool('render', False, 'If True, environment rendering is enabled.')
 flags.DEFINE_bool('dump_full_episodes', False,
                   'If True, trace is dumped after every episode.')
@@ -67,18 +68,18 @@ flags.DEFINE_bool('dump_scores', False,
 flags.DEFINE_string('load_path', None, 'Path to load initial checkpoint from.')
 
 
-def create_single_football_env(seed):
+def create_single_football_env(iprocess):
   """Creates gfootball environment."""
   env = football_env.create_environment(
       env_name=FLAGS.level, stacked=('stacked' in FLAGS.state),
       rewards=FLAGS.reward_experiment,
       logdir=logger.get_dir(),
-      write_goal_dumps=FLAGS.dump_scores and (seed == 0),
-      write_full_episode_dumps=FLAGS.dump_full_episodes and (seed == 0),
-      render=FLAGS.render and (seed == 0),
-      dump_frequency=50 if FLAGS.render and seed == 0 else 0)
+      write_goal_dumps=FLAGS.dump_scores and (iprocess == 0),
+      write_full_episode_dumps=FLAGS.dump_full_episodes and (iprocess == 0),
+      render=FLAGS.render and (iprocess == 0),
+      dump_frequency=50 if FLAGS.render and iprocess == 0 else 0)
   env = monitor.Monitor(env, logger.get_dir() and os.path.join(logger.get_dir(),
-                                                               str(seed)))
+                                                               str(iprocess)))
   return env
 
 
@@ -103,6 +104,7 @@ def train():
              nsteps=FLAGS.nsteps,
              nminibatches=FLAGS.nminibatches,
              noptepochs=FLAGS.noptepochs,
+             max_grad_norm=FLAGS.max_grad_norm,
              gamma=FLAGS.gamma,
              ent_coef=FLAGS.ent_coef,
              lr=FLAGS.lr,

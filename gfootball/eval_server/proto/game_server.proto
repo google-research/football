@@ -22,6 +22,7 @@ message StepRequest {
   string token = 4;
   int32 action = 5;
   string model_name = 6;
+  repeated int32 action_list = 7;
 }
 
 message StepResponse {
@@ -39,6 +40,7 @@ message CreateGameRequest {
   string left_player = 2;
   string right_player = 3;
   bool include_rendering = 4;
+  string track = 5;
 }
 
 message CreateGameResponse {}

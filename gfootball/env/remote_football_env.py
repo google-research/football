@@ -37,12 +37,13 @@ class FakeConfig(object):
   """An immitation of Config with the set of fields necessary to run wrappers.
   """
 
-  def __init__(self):
+  def __init__(self, num_players):
+    self._num_players = num_players
     self._values = {
     }
 
   def number_of_players_agent_controls(self):
-    return 1
+    return self._num_players
 
   def __getitem__(self, key):
     return self._values[key]
@@ -52,7 +53,8 @@ class RemoteFootballEnv(gym.Env):
 
   def __init__(self, username, token, model_name='', track='default',
                include_rendering=False):
-    self._config = FakeConfig()
+    self._config = FakeConfig(
+        config.track_to_num_controlled_players.get(track, 1))
     self._num_actions = len(football_action_set.action_set_dict['default'])
     self._track = track
     self._include_rendering = include_rendering
@@ -88,12 +90,12 @@ class RemoteFootballEnv(gym.Env):
   def step(self, action):
     if self._game_id is None:
       raise RuntimeError('Environment should be reset!')
-    if action < 0 or action >= self._num_actions:
-      raise RuntimeError('Bad action number!')
+    if isinstance(action, int):
+      action = [action]
     request = game_server_pb2.StepRequest(
         game_version=config.game_version, game_id=self._game_id,
-        username=self._username, token=self._token, action=action,
-        model_name=self._model_name)
+        username=self._username, token=self._token, action=-1,
+        model_name=self._model_name, action_list=action)
     return self._get_env_result(request, 'Step')
 
   def reset(self):

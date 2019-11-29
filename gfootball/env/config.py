@@ -90,6 +90,7 @@ class Config(object):
         'physics_steps_per_frame': 10,
         'real_time': False,
         'tracesdir': '/tmp/dumps',
+        'video_quality_level': 0,  # 0 - low, 1 - medium, 2 - high
         'write_video': False
     }
     if values:
