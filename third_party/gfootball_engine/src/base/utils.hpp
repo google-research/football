@@ -38,7 +38,7 @@ namespace blunted {
 
     s_tree *subtree;
 
-    s_treeentry() {
+    s_treeentry() { DO_VALIDATION;
       subtree = NULL;
     }
 
@@ -48,8 +48,8 @@ namespace blunted {
   struct s_tree {
     std::vector <s_treeentry*> entries;
 
-    ~s_tree() {
-      for (int i = 0; i < (signed int)entries.size(); i++) {
+    ~s_tree() { DO_VALIDATION;
+      for (int i = 0; i < (signed int)entries.size(); i++) { DO_VALIDATION;
         delete entries[i];
       }
       entries.clear();
@@ -85,10 +85,10 @@ namespace blunted {
   template <typename T> class ValueHistory {
 
     public:
-      ValueHistory(unsigned int maxTime_ms = 10000) : maxTime_ms(maxTime_ms) {}
-      virtual ~ValueHistory() {}
+      ValueHistory(unsigned int maxTime_ms = 10000) : maxTime_ms(maxTime_ms) { DO_VALIDATION;}
+      virtual ~ValueHistory() { DO_VALIDATION;}
 
-      void Insert(const T &value) {
+      void Insert(const T &value) { DO_VALIDATION;
         values.push_back(value);
         if (values.size() > maxTime_ms / 10) values.pop_front();
       }
@@ -96,10 +96,10 @@ namespace blunted {
       T GetAverage(unsigned int time_ms) const {
         T total = 0;
         unsigned int count = 0;
-        if (!values.empty()) {
+        if (!values.empty()) { DO_VALIDATION;
           typename std::list<T>::const_iterator iter = values.end();
           iter--;
-          while (count <= time_ms / 10) {
+          while (count <= time_ms / 10) { DO_VALIDATION;
             total += (*iter);
             count++;
             if (iter == values.begin()) break; else iter--;
@@ -109,8 +109,12 @@ namespace blunted {
         return total;
       }
 
-      void Clear() {
+      void Clear() { DO_VALIDATION;
         values.clear();
+      }
+      void ProcessState(EnvState *state) { DO_VALIDATION;
+        state->process(maxTime_ms);
+        state->process(values);
       }
 
     protected:
@@ -126,15 +130,15 @@ namespace blunted {
     LARGE_INTEGER lFreq, lStart;
 
     public:
-      CPrecisionTimer() {
+      CPrecisionTimer() { DO_VALIDATION;
         QueryPerformanceFrequency(&lFreq);
       }
 
-      inline void Start() {
+      inline void Start() { DO_VALIDATION;
         QueryPerformanceCounter(&lStart);
       }
 
-      inline double Stop() {
+      inline double Stop() { DO_VALIDATION;
         // Return duration in seconds...
         LARGE_INTEGER lEnd;
         QueryPerformanceCounter(&lEnd);

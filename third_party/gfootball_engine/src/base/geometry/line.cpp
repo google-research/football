@@ -20,21 +20,21 @@
 
 namespace blunted {
 
-  Line::Line() {
-  }
+Line::Line() { DO_VALIDATION; }
 
-  Line::Line(const Vector3 vec1, const Vector3 vec2) {
-    SetVertex(0, vec1);
-    SetVertex(1, vec2);
-  }
+Line::Line(const Vector3 vec1, const Vector3 vec2) {
+  DO_VALIDATION;
+  SetVertex(0, vec1);
+  SetVertex(1, vec2);
+}
 
-  Line::~Line() {
-  }
+Line::~Line() { DO_VALIDATION; }
 
-  void Line::SetVertex(unsigned char pos, const Vector3 &vec) {
-    assert(pos < 2);
-    vertices[pos] = vec;
-  }
+void Line::SetVertex(unsigned char pos, const Vector3 &vec) {
+  DO_VALIDATION;
+  assert(pos < 2);
+  vertices[pos] = vec;
+}
 
   const Vector3 &Line::GetVertex(unsigned char pos) const {
     assert(pos < 2);
@@ -80,7 +80,7 @@ namespace blunted {
   }
 
   bool Line::WhatSide(const Vector3 &point) {
+    DO_VALIDATION;
     return ((vertices[1].coords[0] - vertices[0].coords[0]) * (point.coords[1] - vertices[0].coords[1]) - (vertices[1].coords[1] - vertices[0].coords[1]) * (point.coords[0] - vertices[0].coords[0])) > 0;
   }
-
 }

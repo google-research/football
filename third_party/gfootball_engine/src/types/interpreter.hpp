@@ -30,7 +30,7 @@ namespace blunted {
 
     public:
       virtual e_SystemType GetSystemType() const = 0;
-      virtual void OnSynchronize() {
+      virtual void OnSynchronize() { DO_VALIDATION;
         Log(e_FatalError, "Interpreter", "OnSynchronize", "OnSynchronize not written yet for this object! N00B!");
       }
 

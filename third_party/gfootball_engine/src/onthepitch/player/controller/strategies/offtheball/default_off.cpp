@@ -17,34 +17,37 @@
 
 #include "default_off.hpp"
 #include <cmath>
+#include "../strategy.hpp"
 
 #include "../../../../../main.hpp"
 
-DefaultOffenseStrategy::DefaultOffenseStrategy(ElizaController *controller) : Strategy(controller) {
-  name = "default offense";
-}
-
-DefaultOffenseStrategy::~DefaultOffenseStrategy() {
-}
-
-void DefaultOffenseStrategy::RequestInput(const MentalImage *mentalImage, Vector3 &direction, float &velocity) {
+void DefaultOffenseStrategy::RequestInput(ElizaController *controller,
+                                          const MentalImage *mentalImage,
+                                          Vector3 &direction, float &velocity) {
+  DO_VALIDATION;
 
   bool offensiveComponents = true;
   bool defensiveComponents = true;
   bool laziness = true;
 
-  Vector3 desiredPosition_static = team->GetController()->GetAdaptedFormationPosition(CastPlayer(), false);
-  Vector3 desiredPosition_dynamic = team->GetController()->GetAdaptedFormationPosition(CastPlayer(), true);
-  float actionDistance = NormalizedClamp(player->GetPosition().GetDistance(match->GetDesignatedPossessionPlayer()->GetPosition()), 15.0f, 20.0f);
+  Vector3 desiredPosition_static = controller->GetTeam()->GetController()->GetAdaptedFormationPosition(static_cast<Player*>(controller->GetPlayer()), false);
+  Vector3 desiredPosition_dynamic = controller->GetTeam()->GetController()->GetAdaptedFormationPosition(static_cast<Player*>(controller->GetPlayer()), true);
+  float actionDistance = NormalizedClamp(controller->GetPlayer()->GetPosition().GetDistance(controller->GetMatch()->GetDesignatedPossessionPlayer()->GetPosition()), 15.0f, 20.0f);
   float staticPositionBias = curve(0.8f * actionDistance, 1.0f); // lower values = swap position with other players' formation positions more easily
   Vector3 desiredPosition = desiredPosition_static * staticPositionBias + desiredPosition_dynamic * (1.0f - staticPositionBias);
 
   if (offensiveComponents) {
+    DO_VALIDATION;
     // support position
     float attackBias = NormalizedClamp((controller->GetFadingTeamPossessionAmount() - 0.5f) * 1.0f, 0.1f, 0.6f);
     bool makeRun = false;
     if (attackBias > 0.7f) {
-      if (team->GetController()->GetEndApplyAttackingRun_ms() > match->GetActualTime_ms() && team->GetController()->GetAttackingRunPlayer() == player) {
+      DO_VALIDATION;
+      if (controller->GetTeam()->GetController()->GetEndApplyAttackingRun_ms() >
+              controller->GetMatch()->GetActualTime_ms() &&
+          controller->GetTeam()->GetController()->GetAttackingRunPlayer() ==
+              controller->GetPlayer()) {
+        DO_VALIDATION;
         makeRun = true;
       }
     }
@@ -53,7 +56,8 @@ void DefaultOffenseStrategy::RequestInput(const MentalImage *mentalImage, Vector
   }
 
   if (defensiveComponents) {
-    float mindset = AI_GetMindSet(CastPlayer()->GetDynamicFormationEntry().role);
+    DO_VALIDATION;
+    float mindset = AI_GetMindSet(static_cast<Player*>(controller->GetPlayer())->GetDynamicFormationEntry().role);
     controller->AddDefensiveComponent(
         desiredPosition,
         std::pow(
@@ -62,8 +66,8 @@ void DefaultOffenseStrategy::RequestInput(const MentalImage *mentalImage, Vector
             0.7f));
   }
 
-  direction = (desiredPosition - player->GetPosition()).GetNormalized(player->GetDirectionVec());
-  float desiredVelocity = (desiredPosition - player->GetPosition()).GetLength() * distanceToVelocityMultiplier;
+  direction = (desiredPosition - controller->GetPlayer()->GetPosition()).GetNormalized(controller->GetPlayer()->GetDirectionVec());
+  float desiredVelocity = (desiredPosition - controller->GetPlayer()->GetPosition()).GetLength() * distanceToVelocityMultiplier;
 
   // laziness
   if (laziness) desiredVelocity = controller->GetLazyVelocity(desiredVelocity);

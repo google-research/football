@@ -34,15 +34,14 @@ class RefereeController : public IController {
 
     virtual void RequestCommand(PlayerCommandQueue &commandQueue);
     virtual void Process();
+    virtual void ProcessState(EnvState* state) { DO_VALIDATION;
+    }
     virtual Vector3 GetDirection();
     virtual float GetFloatVelocity();
 
     virtual int GetReactionTime_ms();
 
     virtual void Reset();
-
-  protected:
-
 };
 
 #endif

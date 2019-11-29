@@ -26,22 +26,20 @@
 
 #include "../main.hpp"
 
+constexpr float bounce = 0.62f;  // 1 = full bounce, 0 = no bounce
+constexpr float linearBounce = 0.06f;  // bigger = more brake force
+constexpr float drag = 0.015f;  // bigger = more
+constexpr float friction = 0.04f;  // bigger = more
+constexpr float linearFriction = 1.6f;  // bigger = more, arbitrary scale;
+constexpr float gravity = -9.81f;
+constexpr float grassHeight = 0.025f;
+
 Ball::Ball(Match *match) : match(match) {
-
-  bounce = 0.62f; // 1 = full bounce, 0 = no bounce
-  linearBounce = 0.06f; // bigger = more brake force
-  drag = 0.015f;//previously 0.025f; // bigger = more
-  friction = 0.04f; // bigger = more
-  linearFriction = 1.6f; // bigger = more, arbitrary scale
-  gravity = -9.81f;
-  grassHeight = 0.025f;
-
+  DO_VALIDATION;
   ballTouchesNet = false;
 
-  scene3D = GetScene3D();
-
   ObjectLoader loader;
-  ballNode = loader.LoadObject(scene3D, "media/objects/balls/generic.object");
+  ballNode = loader.LoadObject("media/objects/balls/generic.object");
   match->GetDynamicNode()->AddNode(ballNode);
 
   std::list < boost::intrusive_ptr<Geometry> > children;
@@ -52,25 +50,45 @@ Ball::Ball(Match *match) : match(match) {
 }
 
 Ball::~Ball() {
+  DO_VALIDATION;
   match->GetDynamicNode()->DeleteNode(ballNode);
 }
 
-void Ball::GetPredictionArray(Vector3 *target) {
-  memcpy(target, predictions, sizeof(Vector3) * ballPredictionSize_ms / 10);
+void Ball::Mirror() {
+  momentum.Mirror();
+  for (auto &a : predictions) {
+    a.Mirror();
+  }
+  for (auto &a : ballPosHistory) {
+    a.Mirror();
+  }
+  positionBuffer.Mirror();
+}
+
+void Ball::GetPredictionArray(std::vector<Vector3> &target) {
+  DO_VALIDATION;
+  target.resize(ballPredictionSize_ms / 10);
+  for (int x = 0; x < ballPredictionSize_ms / 10; x++) {
+    DO_VALIDATION;
+    target[x] = predictions[x];
+  }
 }
 
 Vector3 Ball::GetMovement() {
+  DO_VALIDATION;
   // meters / sec
   return momentum;
 }
 
 Vector3 Ball::GetRotation() {
-  radian x, y, z;
+  DO_VALIDATION;
+  real x, y, z;
   rotation_ms.GetAngles(x, y, z);
   return Vector3(x, y, z);
 }
 
 void Ball::Touch(const Vector3 &target) {
+  DO_VALIDATION;
   valid_predictions = 0;
   if (positionBuffer.coords[2] < 0.11f) positionBuffer.coords[2] = 0.11f;
 
@@ -80,26 +98,27 @@ void Ball::Touch(const Vector3 &target) {
   CalculatePrediction();
   match->UpdateLatestMentalImageBallPredictions();
 
-  match->GetTeam(0)->UpdatePossessionStats();
-  match->GetTeam(1)->UpdatePossessionStats();
+  match->GetTeam(match->FirstTeam())->UpdatePossessionStats();
+  match->GetTeam(match->SecondTeam())->UpdatePossessionStats();
 }
 
 void Ball::SetPosition(const Vector3 &target) {
+  DO_VALIDATION;
   valid_predictions = 0;
   positionBuffer.Set(target);
   momentum.Set(0);
   SetRotation(0, 0, 0, 1.0);
   ballPosHistory.clear();
-  previousMomentum = momentum;
-  previousPosition = positionBuffer;
 }
 
 void Ball::SetMomentum(const Vector3 &target) {
+  DO_VALIDATION;
   momentum.Set(target);
   CalculatePrediction();
 }
 
-void Ball::SetRotation(radian x, radian y, radian z, float bias) { // radians per second for each axis
+void Ball::SetRotation(real x, real y, real z, float bias) {
+  DO_VALIDATION;  // radians per second for each axis
   Quaternion rotX;
   rotX.SetAngleAxis(clamp(x * 0.001f, -pi * 0.49f, pi * 0.49f), Vector3(-1, 0, 0));
   Quaternion rotY;
@@ -114,6 +133,7 @@ void Ball::SetRotation(radian x, radian y, radian z, float bias) { // radians pe
 }
 
 BallSpatialInfo Ball::CalculatePrediction() {
+  DO_VALIDATION;
 
   Vector3 newMomentum;
   Quaternion newRotation_ms;
@@ -128,25 +148,29 @@ BallSpatialInfo Ball::CalculatePrediction() {
 
   predictions[0] = nextPos;
 
-  bool drag_enabled = true;
-  bool groundFriction_enabled = true;
-  bool woodwork_enabled = true;
-  bool netting_enabled = true;
-  bool groundRotationEffects_enabled = true;
-  bool swerve_enabled = true;
+  constexpr bool drag_enabled = true;
+  constexpr bool groundFriction_enabled = true;
+  constexpr bool woodwork_enabled = true;
+  constexpr bool netting_enabled = true;
+  constexpr bool groundRotationEffects_enabled = true;
+  constexpr bool swerve_enabled = true;
 
-  const float timeStep = 0.01f;//0.001f; // seconds
+  constexpr float timeStep = 0.01f;//0.001f; // seconds
 
   bool firstTime = true;
   bool use_cache = false;
 
   ballTouchesNet = false;
 
-  for (unsigned int predictTime_ms = int(timeStep * 1000.0f); predictTime_ms < ballPredictionSize_ms + cachedPredictions * 10; predictTime_ms += int(timeStep * 1000.0f)) {
+  for (unsigned int predictTime_ms = int(timeStep * 1000.0f);
+       predictTime_ms < ballPredictionSize_ms + cachedPredictions * 10;
+       predictTime_ms += int(timeStep * 1000.0f)) {
+    DO_VALIDATION;
     // Originally game was recomputing ball's prediction for 300 steps into the
     // future, which was expensive. Now we cache 100 additional steps and if
     // the ball was not touched etc. we just shift predictions by one.
     if (use_cache) {
+      DO_VALIDATION;
       predictions[predictTime_ms / 10] = predictions[predictTime_ms / 10 + 1];
       continue;
     }
@@ -179,7 +203,9 @@ BallSpatialInfo Ball::CalculatePrediction() {
     // bounce
 
     if (nextPos.coords[2] < 0.11f) {
+      DO_VALIDATION;
       if (momentumPredict.coords[2] < 0.0f) {
+        DO_VALIDATION;
         frictionFactor = NormalizedClamp(-momentumPredict.coords[2] - 0.5f, 0.0f, 12.0f); // when the ball is slammed into the ground, there's gonna be more friction. only set it here so it is only done once (on impact)
         momentumPredict.coords[2] = -momentumPredict.coords[2] * bounce;
         momentumPredict.coords[2] = std::max(momentumPredict.coords[2] - linearBounce, 0.0f); // linear bounce
@@ -188,10 +214,10 @@ BallSpatialInfo Ball::CalculatePrediction() {
       nextPos.coords[2] = 0.11f;
     }
 
-
     // ground friction
 
     if (nextPos.coords[2] < 0.11f + grassHeight && groundFriction_enabled) {
+      DO_VALIDATION;
       float adaptedFriction = (friction * grassInfluenceBias);
 
       // v(t) = v(0) * (k ^ t)
@@ -222,18 +248,25 @@ BallSpatialInfo Ball::CalculatePrediction() {
     // woodwork
 
     if (firstTime && woodwork_enabled) {
+      DO_VALIDATION;
 
       bool woodwork = false;
 
 
       // posts
 
-      if (nextPos.coords[2] < goalHeight + ballRadius + postRadius && (nextPos.Get2D().GetAbsolute() - Vector3(pitchHalfW, goalHalfWidth, 0)).GetLength() < ballRadius + postRadius) {
+      if (nextPos.coords[2] < goalHeight + ballRadius + postRadius &&
+          (nextPos.Get2D().GetAbsolute() -
+           Vector3(pitchHalfW, goalHalfWidth, 0))
+                  .GetLength() < ballRadius + postRadius) {
+        DO_VALIDATION;
         Vector3 normal;
 
         if (nextPos.coords[0] < 0) {
+          DO_VALIDATION;
           // left side of pitch
           if (nextPos.coords[1] < 0) {
+            DO_VALIDATION;
             // 'lower' side of pitch
             normal = (nextPos.Get2D() - Vector3(-pitchHalfW, -goalHalfWidth, 0)).GetNormalized(Vector3(1, 0, 0));
             float nextPosZ = nextPos.coords[2];
@@ -248,11 +281,11 @@ BallSpatialInfo Ball::CalculatePrediction() {
             nextPos = Vector3(-pitchHalfW, goalHalfWidth, 0) + normal * (postRadius + ballRadius);
             nextPos.coords[2] = nextPosZ;
             woodwork = true;
-
           }
         } else {
           // right side of pitch
           if (nextPos.coords[1] < 0) {
+            DO_VALIDATION;
             // 'lower' side of pitch
             normal = (nextPos.Get2D() - Vector3(pitchHalfW, -goalHalfWidth, 0)).GetNormalized(Vector3(-1, 0, 0));
             float nextPosZ = nextPos.coords[2];
@@ -268,22 +301,23 @@ BallSpatialInfo Ball::CalculatePrediction() {
             nextPos = Vector3(pitchHalfW, goalHalfWidth, 0) + normal * (postRadius + ballRadius);
             nextPos.coords[2] = nextPosZ;
             woodwork = true;
-
           }
         }
 
         momentumPredict = (momentumPredict.Get2D().GetNormalized(normal) + (normal * 1.1f)).GetNormalized() * momentumPredict.Get2D().GetLength() * postAbsorbInv + (Vector3(0, 0, 1) * momentumPredict.coords[2]);
       }
 
-
       // crossbar
 
       Vector3 nextPosXZ = nextPos * Vector3(1, 0, 1);
-      if ((nextPosXZ.GetAbsolute() - Vector3(pitchHalfW, 0, goalHeight)).GetLength() < ballRadius + postRadius &&
+      if ((nextPosXZ.GetAbsolute() - Vector3(pitchHalfW, 0, goalHeight))
+                  .GetLength() < ballRadius + postRadius &&
           fabs(nextPos.coords[1]) < goalHalfWidth + ballRadius + postRadius) {
+        DO_VALIDATION;
         Vector3 normal;
 
         if (nextPos.coords[0] < 0) {
+          DO_VALIDATION;
           // left side of pitch
           normal = (nextPosXZ - Vector3(-pitchHalfW, 0, goalHeight)).GetNormalized(Vector3(0, 0, 1));
           float nextPosY = nextPos.coords[1];
@@ -298,7 +332,6 @@ BallSpatialInfo Ball::CalculatePrediction() {
           nextPos = Vector3(pitchHalfW, 0, goalHeight) + normal * (postRadius + ballRadius);
           nextPos.coords[1] = nextPosY;
           woodwork = true;
-
         }
 
         Vector3 momentumPredictXZ = momentumPredict * Vector3(1, 0, 1);
@@ -306,10 +339,10 @@ BallSpatialInfo Ball::CalculatePrediction() {
       }
     }
 
-
     // netting
 
     if (predictTime_ms <= 10 && netting_enabled) {
+      DO_VALIDATION;
 
       bool ballIsInGoal = match->IsBallInGoal();
       signed int inGoal = ballIsInGoal ? 1 : -1;
@@ -325,7 +358,8 @@ BallSpatialInfo Ball::CalculatePrediction() {
 
       // side netting
 
-      if (( ballIsInGoal && !betweenGoalWidth && behindBackline)) {
+      if ((ballIsInGoal && !betweenGoalWidth && behindBackline)) {
+        DO_VALIDATION;
 
         float netDist = 0.0f;
         netDist = fabs(fabs(nextPos.coords[1]) - goalHalfWidth);
@@ -342,14 +376,17 @@ BallSpatialInfo Ball::CalculatePrediction() {
         if (predictTime_ms == 10) ballTouchesNet = true;
       }
 
-
       // rear netting
 
-//      if ((fabs(nextPos.coords[0]) > (pitchHalfW + 2.5) - 0.11 && ballIsInGoal)/* ||
-//          (fabs(nextPos.coords[0]) < (pitchHalfW + 2.5) + 0.11 && !ballIsInGoal) todo disabled: too hard to code :p */) {
+      //      if ((fabs(nextPos.coords[0]) > (pitchHalfW + 2.5) - 0.11 &&
+      //      ballIsInGoal)/* ||
+      //          (fabs(nextPos.coords[0]) < (pitchHalfW + 2.5) + 0.11 &&
+      //          !ballIsInGoal) todo disabled: too hard to code :p */) {
+      //          DO_VALIDATION;
 
       if (( ballIsInGoal && !beforeGoalBack && behindBackline)/* ||
           (!ballIsInGoal && !asideGoalWidth && behindBackline && !behindGoalBack && belowGoalHeight ** todo disabled: too hard to code :p */) {
+        DO_VALIDATION;
 
         float netDist = 0.0f;
         netDist = fabs(fabs(nextPos.coords[0]) - (pitchHalfW + goalDepth));
@@ -361,14 +398,15 @@ BallSpatialInfo Ball::CalculatePrediction() {
         if (predictTime_ms == 10) ballTouchesNet = true;
       }
 
-
       // top netting
 
-//      if (((nextPos.coords[2] > 2.5 - 0.11 && ballIsInGoal)/*( ||
-//           (nextPos.coords[2] < 2.5 + 0.11 && !ballIsInGoal) todo disabled: too hard to code :p */) &&
-//          fabs(nextPos.coords[0]) > pitchHalfW) {
+      //      if (((nextPos.coords[2] > 2.5 - 0.11 && ballIsInGoal)/*( ||
+      //           (nextPos.coords[2] < 2.5 + 0.11 && !ballIsInGoal) todo
+      //           disabled: too hard to code :p */) &&
+      //          fabs(nextPos.coords[0]) > pitchHalfW) { DO_VALIDATION;
 
-      if (( ballIsInGoal && !belowGoalHeight && behindBackline )) {
+      if ((ballIsInGoal && !belowGoalHeight && behindBackline)) {
+        DO_VALIDATION;
 
         float netDist = 0.0f;
         netDist = fabs(fabs(nextPos.coords[2]) - goalHeight);
@@ -384,13 +422,13 @@ BallSpatialInfo Ball::CalculatePrediction() {
         if (predictTime_ms == 10) ballTouchesNet = true;
       }
 
-    } // </goal collisions>
-
+    }  // </goal collisions>
 
     // calculate rotation
 
-    if (nextPos.coords[2] < 0.11f + grassHeight && groundRotationEffects_enabled) {
-
+    if (nextPos.coords[2] < 0.11f + grassHeight &&
+        groundRotationEffects_enabled) {
+      DO_VALIDATION;
 
       // rewrite idea: find out difference in ball velo / roll velo and then change both ball velo and rot (instead of having these 2 seperate sections)
 
@@ -398,7 +436,7 @@ BallSpatialInfo Ball::CalculatePrediction() {
       radian xR, yR;
 
       // x movement causes roll over y axis.. so this is correct ;)
-      float radius = 0.11f;
+      constexpr float radius = 0.11f;
       xR = momentumPredict.coords[1] / radius;
       yR = momentumPredict.coords[0] / radius;
 
@@ -417,13 +455,16 @@ BallSpatialInfo Ball::CalculatePrediction() {
       // ball slams into ground; see origin of frictionFactor variable for more clarity. this happens only once per bounce
       // this works here because the 'if' statement is always true when frictionFactor > 0, because when then happens, nextPos.coords[2] has been set to ballRadius anyway
       if (frictionFactor > 0.0f) {
+        DO_VALIDATION;
         maxRotationChangePerSecond += 4.0f * pi;
       }
-      volatile radian factor = 1.0f;
+      radian factor = 1.0f;
       if (rotationChangePerSecond > maxRotationChangePerSecond) {
+        DO_VALIDATION;
         factor = maxRotationChangePerSecond / rotationChangePerSecond;
       }
       if (factor < 1.0f) {
+        DO_VALIDATION;
         oldToNewRotation = oldToNewRotation.GetRotationMultipliedBy(factor);
       }
 
@@ -432,7 +473,7 @@ BallSpatialInfo Ball::CalculatePrediction() {
 
       // rotation induced ground friction
 
-      radian x, y, z;
+      real x, y, z;
       rotationPredict_ms.GetAngles(x, y, z);
       x = -x;
 
@@ -448,6 +489,7 @@ BallSpatialInfo Ball::CalculatePrediction() {
       // ball slams into ground; see origin of frictionFactor variable for more clarity. this happens only once per bounce
       // this works here because the 'if' statement is always true when frictionFactor > 0, because when then happens, nextPos.coords[2] has been set to ballRadius anyway
       if (frictionFactor > 0.0f) {
+        DO_VALIDATION;
         rotBias += 0.5f * frictionFactor;
       }
       rotBias = clamp(rotBias, 0.0f, 1.0f);
@@ -459,10 +501,10 @@ BallSpatialInfo Ball::CalculatePrediction() {
       rotationPredict_ms = newRotationPredict_ms;
     }
 
-
     // magnus effect (swerve)
 
     if (swerve_enabled) {
+      DO_VALIDATION;
       Vector3 rotVec;
       rotationPredict_ms.GetAngles(rotVec.coords[0], rotVec.coords[1], rotVec.coords[2]);
       rotVec *= 10.0f;
@@ -479,7 +521,6 @@ BallSpatialInfo Ball::CalculatePrediction() {
       momentumPredict += swerve * timeStep;
     }
 
-
     // predict next ms
 
     nextPos += momentumPredict * timeStep;
@@ -493,10 +534,12 @@ BallSpatialInfo Ball::CalculatePrediction() {
     nextOrientation = rotationPredictTimeStepped * nextOrientation;
 
     if (predictTime_ms == 10) {
+      DO_VALIDATION;
       newMomentum = momentumPredict;
       newRotation_ms = rotationPredict_ms;
       orientPrediction = nextOrientation;
       if (valid_predictions > 0 && predictions[2] == nextPos) {
+        DO_VALIDATION;
         valid_predictions--;
         use_cache = true;
       } else {
@@ -516,6 +559,7 @@ Vector3 Ball::GetAveragePosition(unsigned int duration_ms) const {
   unsigned int total = 0;
   Vector3 averageVec;
   while (iter != ballPosHistory.rend()) {
+    DO_VALIDATION;
     averageVec += *iter;
     total++;
     if (total * 10 > duration_ms) break;
@@ -526,6 +570,7 @@ Vector3 Ball::GetAveragePosition(unsigned int duration_ms) const {
 }
 
 void Ball::Process() {
+  DO_VALIDATION;
   BallSpatialInfo spatialInfo = CalculatePrediction();
   momentum = spatialInfo.momentum;
   rotation_ms = spatialInfo.rotation_ms;
@@ -534,41 +579,46 @@ void Ball::Process() {
   orientationBuffer = orientPrediction;
 
   ballPosHistory.push_back(positionBuffer);
-  if (ballPosHistory.size() > ballHistorySize_ms) ballPosHistory.pop_front();
-
-  Vector3 changedMomentum = momentum - previousMomentum;
-
-  previousMomentum = momentum;
-  previousPosition = positionBuffer;
-}
-
-void Ball::PreparePutBuffers(unsigned long snapshotTime_ms) {
-  buf_positionBuffer.SetValue(positionBuffer, snapshotTime_ms);//Predict(0);//positionBuffer;
-  buf_orientationBuffer.SetValue(orientationBuffer, snapshotTime_ms);
-}
-
-void Ball::FetchPutBuffers(unsigned long putTime_ms) {
-  fetchedbuf_positionBuffer = buf_positionBuffer.GetValue(putTime_ms);
-  fetchedbuf_orientationBuffer = buf_orientationBuffer.GetValue(putTime_ms);
+  if (ballPosHistory.size() > ballHistorySize) ballPosHistory.pop_front();
 }
 
 void Ball::Put() {
-  ball->SetPosition(fetchedbuf_positionBuffer, false);
-  ball->SetRotation(fetchedbuf_orientationBuffer, false);
+  DO_VALIDATION;
+  ball->SetPosition(positionBuffer, false);
+  ball->SetRotation(orientationBuffer, false);
 }
 
 void Ball::ResetSituation(const Vector3 &focusPos) {
+  DO_VALIDATION;
   momentum = Vector3(0);
   rotation_ms = QUATERNION_IDENTITY;
   for (unsigned int i = 0; i < ballPredictionSize_ms / 10; i++) {
+    DO_VALIDATION;
     predictions[i] = Vector3(focusPos + Vector3(0, 0, 0.11));
   }
   orientPrediction = QUATERNION_IDENTITY;
   ballPosHistory.clear();
-  previousMomentum = Vector3(0);
-  previousPosition = Vector3(focusPos + Vector3(0, 0, 0.11));
   positionBuffer = Vector3(focusPos + Vector3(0, 0, 0.11));
   valid_predictions = 0;
   orientationBuffer = QUATERNION_IDENTITY;
   ballTouchesNet = false;
+}
+
+void Ball::ProcessState(EnvState *state) {
+  DO_VALIDATION;
+  state->process(momentum);
+  state->process(rotation_ms);
+  state->process(predictions, sizeof(predictions));
+  state->process(valid_predictions);
+  state->process(orientPrediction);
+  int size = ballPosHistory.size();
+  state->process(size);
+  ballPosHistory.resize(size);
+  for (auto &i : ballPosHistory) {
+    DO_VALIDATION;
+    state->process(i);
+  }
+  state->process(positionBuffer);
+  state->process(orientationBuffer);
+  state->process(ballTouchesNet);
 }

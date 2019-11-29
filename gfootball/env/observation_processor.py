@@ -21,7 +21,7 @@ from __future__ import print_function
 
 import collections
 import datetime
-import logging
+from absl import logging
 import os
 import shutil
 import tempfile
@@ -35,8 +35,6 @@ import numpy as np
 from six.moves import range
 from six.moves import zip
 import six.moves.cPickle
-
-REMOVED_FRAME = 'removed'
 
 WRITE_FILES = True
 
@@ -87,9 +85,7 @@ class TextWriter(object):
 
 def get_frame(trace):
   if 'frame' in trace._trace['observation']:
-    frame = trace._trace['observation']['frame']
-    if frame != REMOVED_FRAME:
-      return frame
+    return trace._trace['observation']['frame']
   frame = np.uint8(np.zeros((600, 800, 3)))
   corner1 = (0, 0)
   corner2 = (799, 0)
@@ -143,8 +139,10 @@ def softmax(x):
   return np.exp(x) / np.sum(np.exp(x), axis=0)
 
 
-@cfg.log
 def write_dump(name, trace, config):
+  if len(trace) == 0:
+    logging.warning('No data to write to the dump.')
+    return False
   if config['write_video']:
     fd, temp_path = tempfile.mkstemp(suffix='.avi')
     if HIGH_RES:
@@ -158,15 +156,17 @@ def write_dump(name, trace, config):
         constants.PHYSICS_STEPS_PER_SECOND / config['physics_steps_per_frame'],
         frame_dim)
     frame_cnt = 0
-    if len(trace) > 0:
-      time = trace[0]._time
+    time = trace[0]._time
     for o in trace:
       frame_cnt += 1
       frame = get_frame(o)
       frame = frame[..., ::-1]
       frame = cv2.resize(frame, frame_dim, interpolation=cv2.INTER_AREA)
+      writer = TextWriter(frame, 950 if HIGH_RES else 500)
+      if config['custom_display_stats']:
+        for line in config['custom_display_stats']:
+          writer.write(line)
       if config['display_game_stats']:
-        writer = TextWriter(frame, 950 if HIGH_RES else 500)
         writer.write('SCORE: %d - %d' % (o['score'][0], o['score'][1]))
         writer.write('BALL OWNED TEAM: %d' % (o['ball_owned_team']))
         writer.write('BALL OWNED PLAYER: %d' % (o['ball_owned_player']))
@@ -215,13 +215,13 @@ def write_dump(name, trace, config):
       logging.info('Video written to %s.avi', name)
       os.remove(temp_path)
     except:
-      logging.info(traceback.format_exc())
+      logging.error(traceback.format_exc())
   to_pickle = []
   temp_frames = []
   for o in trace:
     if 'frame' in o._trace['observation']:
       temp_frames.append(o._trace['observation']['frame'])
-      o._trace['observation']['frame'] = REMOVED_FRAME
+      del o._trace['observation']['frame']
     to_pickle.append(o._trace)
   # Add config to the first frame for our replay tools to use.
   to_pickle[0]['debug']['config'] = config.get_dictionary()
@@ -298,7 +298,6 @@ class ObservationProcessor(object):
         max_count=(100000 if config['dump_full_episodes'] else 0))
     self._dump_config['shutdown'] = DumpConfig(
         max_length=(200 if HIGH_RES else 10000))
-    self._thread_pool = None
     self._dump_directory = None
     self._config = config
     self.clear_state()
@@ -310,8 +309,6 @@ class ObservationProcessor(object):
 
   def __del__(self):
     self.process_pending_dumps(True)
-    if self._thread_pool:
-      self._thread_pool.close()
 
   def reset(self):
     self.process_pending_dumps(True)
@@ -327,7 +324,6 @@ class ObservationProcessor(object):
     if len(self._trace) > 0 and self._config['write_video']:
       self._trace[-1].add_frame(frame)
 
-  @cfg.log
   def update(self, trace):
     self._frame += 1
     if not self._config['write_video'] and 'frame' in trace['observation']:
@@ -343,19 +339,23 @@ class ObservationProcessor(object):
     self.process_pending_dumps(False)
     return self._state
 
-  @cfg.log
+  def get_last_frame(self):
+    if not self._state:
+      return []
+    return get_frame(self._state)
+
   def write_dump(self, name):
     if not name in self._dump_config:
       self._dump_config[name] = DumpConfig()
     config = self._dump_config[name]
     if config._file_name:
-      logging.info('Dump "%s": already pending', name)
+      logging.debug('Dump "%s": already pending', name)
       return
     if config._max_count <= 0:
-      logging.info('Dump "%s": count limit reached / disabled', name)
+      logging.debug('Dump "%s": count limit reached / disabled', name)
       return
     if config._last_dump >= timeit.default_timer() - config._min_frequency:
-      logging.info('Dump "%s": too frequent', name)
+      logging.debug('Dump "%s": too frequent', name)
       return
     config._max_count -= 1
     config._last_dump = timeit.default_timer()
@@ -372,13 +372,12 @@ class ObservationProcessor(object):
     self.process_pending_dumps(True)
     return config._file_name
 
-  @cfg.log
   def process_pending_dumps(self, finish):
     for name in self._dump_config:
       config = self._dump_config[name]
       if config._file_name:
         if finish or config._trigger_step <= self._frame:
-          logging.info('Start dump %s', name)
+          logging.debug('Start dump %s', name)
           trace = list(self._trace)[-config._max_length:]
           write_dump(config._file_name, trace, self._config)
           config._file_name = None

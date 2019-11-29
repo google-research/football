@@ -23,9 +23,11 @@
 #include "../playerbase.hpp"
 
 void IController::SetPlayer(PlayerBase *player) {
+  DO_VALIDATION;
   this->player = player;
 }
 
 int IController::GetReactionTime_ms() {
+  DO_VALIDATION;
   return int(std::round(80.0f - player->GetStat(physical_reaction) * 40.0f));
 }

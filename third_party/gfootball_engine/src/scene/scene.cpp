@@ -19,34 +19,29 @@
 
 namespace blunted {
 
-  Scene::Scene(std::string name, e_SceneType sceneType) : name(name), sceneType(sceneType) {
-  }
+Scene::Scene() { DO_VALIDATION; }
 
-  Scene::~Scene() {
-  }
+Scene::~Scene() { DO_VALIDATION; }
 
-  void Scene::Exit() {
-    DetachAll();
-  }
+void Scene::Exit() {
+  DO_VALIDATION;
+  DetachAll();
+}
 
-  void Scene::CreateSystemObjects(boost::intrusive_ptr<Object> object) {
-    int observersSize = observers.size();
-    for (int i = 0; i < observersSize; i++) {
-      ISceneInterpreter *sceneInterpreter = static_cast<ISceneInterpreter*>(observers[i].get());
-      sceneInterpreter->CreateSystemObject(object);
-    }
+void Scene::CreateSystemObjects(boost::intrusive_ptr<Object> object) {
+  DO_VALIDATION;
+  int observersSize = observers.size();
+  for (int i = 0; i < observersSize; i++) {
+    DO_VALIDATION;
+    ISceneInterpreter *sceneInterpreter =
+        static_cast<ISceneInterpreter *>(observers[i].get());
+    sceneInterpreter->CreateSystemObject(object.get());
   }
-
-  const std::string Scene::GetName() const {
-    return name;
-  }
-
-  e_SceneType Scene::GetSceneType() const {
-    return sceneType;
-  }
+}
 
   bool Scene::SupportedObjectType(e_ObjectType objectType) const {
     for (int i = 0; i < (signed int)supportedObjectTypes.size(); i++) {
+      DO_VALIDATION;
       if (objectType == supportedObjectTypes[i]) return true;
     }
     return false;

@@ -22,8 +22,6 @@
 #include "../../../types/command.hpp"
 #include "../../../types/messagequeue.hpp"
 
-#include "../../../managers/environmentmanager.hpp"
-
 namespace blunted {
 
   // 'camera' view

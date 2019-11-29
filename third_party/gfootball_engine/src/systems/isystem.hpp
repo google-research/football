@@ -22,8 +22,6 @@
 
 #include "../base/properties.hpp"
 
-#include "isystemtask.hpp"
-
 namespace blunted {
 
   enum e_SystemType {
@@ -33,33 +31,6 @@ namespace blunted {
     e_SystemType_Audio = 3,
     e_SystemType_UserStart = 4
   };
-
-  class ISystemScene;
-  class IScene;
-  class ISystemObject;
-  class Object;
-
-  class ISystem {
-
-    public:
-      virtual ~ISystem() {};
-
-      virtual void Initialize(const Properties &config) = 0;
-      virtual void Exit() = 0;
-
-      virtual e_SystemType GetSystemType() const = 0;
-
-      virtual ISystemScene *CreateSystemScene(boost::shared_ptr<IScene> scene) = 0;
-
-      /// returns the systemtask belonging to this system
-      virtual ISystemTask *GetTask() = 0;
-
-      virtual std::string GetName() const = 0;
-
-    protected:
-
-  };
-
 }
 
 #endif

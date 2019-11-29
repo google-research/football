@@ -19,32 +19,16 @@
 #define _HPP_GUI2_GUI2TASK
 
 #include "wrap_SDL_ttf.h"
-
-#include "../../types/iusertask.hpp"
-
 #include "windowmanager.hpp"
 
 namespace blunted {
 
-  class Gui2Task : public IUserTask {
+  class Gui2Task {
 
     public:
       Gui2Task(boost::shared_ptr<Scene2D> scene2D, float aspectRatio, float margin);
-      virtual ~Gui2Task();
-
-      virtual void GetPhase();
-      virtual void ProcessPhase();
-      virtual void PutPhase();
-
-      virtual void ProcessEvents();
-
-      Gui2WindowManager *GetWindowManager() { return this->windowManager; }
-
-      void EnableKeyboard() {}
-      void SetActiveJoystickID(int joyID) {}
-
-      virtual std::string GetName() const { return "gui2"; }
-
+      ~Gui2Task();
+      Gui2WindowManager *GetWindowManager() { DO_VALIDATION; return this->windowManager; }
     protected:
       Gui2WindowManager *windowManager;
   };

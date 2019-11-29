@@ -30,7 +30,7 @@ class Team;
 class Humanoid : public HumanoidBase {
 
   public:
-    Humanoid(Player *player, boost::intrusive_ptr<Node> humanoidSourceNode, boost::intrusive_ptr<Node> fullbodySourceNode, std::map<Vector3, Vector3> &colorCoords, boost::shared_ptr<AnimCollection> animCollection, boost::intrusive_ptr<Node> fullbodyTargetNode, boost::intrusive_ptr < Resource<Surface> > kit, int bodyUpdatePhaseOffset);
+    Humanoid(Player *player, boost::intrusive_ptr<Node> humanoidSourceNode, boost::intrusive_ptr<Node> fullbodySourceNode, std::map<Vector3, Vector3> &colorCoords, boost::shared_ptr<AnimCollection> animCollection, boost::intrusive_ptr<Node> fullbodyTargetNode, boost::intrusive_ptr < Resource<Surface> > kit);
     virtual ~Humanoid();
 
     Player *CastPlayer() const;
@@ -39,11 +39,11 @@ class Humanoid : public HumanoidBase {
 
     virtual void CalculateGeomOffsets();
 
-    bool TouchPending() { return (currentAnim->frameNum < currentAnim->touchFrame) ? true : false; }
-    bool TouchAnim() { return (currentAnim->touchFrame != -1) ? true : false; }
-    Vector3 GetTouchPos() { return currentAnim->touchPos; }
-    int GetTouchFrame() { return currentAnim->touchFrame; }
-    int GetCurrentFrame() { return currentAnim->frameNum; }
+    bool TouchPending() { DO_VALIDATION; return (currentAnim.frameNum < currentAnim.touchFrame) ? true : false; }
+    bool TouchAnim() { DO_VALIDATION; return (currentAnim.touchFrame != -1) ? true : false; }
+    Vector3 GetTouchPos() { DO_VALIDATION; return currentAnim.touchPos; }
+    int GetTouchFrame() { DO_VALIDATION; return currentAnim.touchFrame; }
+    int GetCurrentFrame() { DO_VALIDATION; return currentAnim.frameNum; }
 
     void SelectRetainAnim();
 
@@ -67,10 +67,6 @@ class Humanoid : public HumanoidBase {
     Vector3 GetBestPossibleTouch(const Vector3 &desiredTouch, e_FunctionType functionType);
 
     Team *team;
-
-    mutable int stat_GetBodyBallDistanceAdvantage_RadiusDeny = 0;
-    mutable int stat_GetBodyBallDistanceAdvantage_DistanceDeny = 0;
-
 };
 
 #endif

@@ -42,7 +42,7 @@ namespace blunted {
 
       void SetCaption(const std::string &newCaption);
 
-      float GetTextWidthPercent() { return textWidth_percent; }
+      float GetTextWidthPercent() { DO_VALIDATION; return textWidth_percent; }
 
      protected:
       boost::intrusive_ptr<Image2D> image;

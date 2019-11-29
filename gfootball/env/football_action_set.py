@@ -29,13 +29,14 @@ from six.moves import range
 
 class CoreAction(object):
 
-  def __init__(self, backend_action, name, sticky=False, directional=False,
-               release=False):
+  def __init__(self, backend_action, name, sticky=False, directional=False):
     self._backend_action = backend_action
     self._name = name
     self._sticky = sticky
     self._directional = directional
-    self._release = release
+
+  def is_in_actionset(self, config):
+    return self in get_action_set(config)
 
   def __eq__(self, other):
     assert set(other.__dict__) == set(self.__dict__)
@@ -100,31 +101,28 @@ action_sprint = CoreAction(e_BackendAction.sprint, "sprint", sticky=True)
 action_dribble = CoreAction(
     e_BackendAction.dribble, "dribble", sticky=True)
 action_release_direction = CoreAction(
-    e_BackendAction.release_direction, "release_direction", directional=True,
-    release=True)
+    e_BackendAction.release_direction, "release_direction", directional=True)
 action_release_long_pass = CoreAction(e_BackendAction.release_long_pass,
-                                           "release_long_pass", release=True)
+                                      "release_long_pass")
 action_release_high_pass = CoreAction(e_BackendAction.release_high_pass,
-                                           "release_high_pass", release=True)
+                                      "release_high_pass")
 action_release_short_pass = CoreAction(e_BackendAction.release_short_pass,
-                                            "release_short_pass", release=True)
-action_release_shot = CoreAction(e_BackendAction.release_shot,
-                                      "release_shot", release=True)
-action_release_keeper_rush = CoreAction(
-    e_BackendAction.release_keeper_rush, "release_keeper_rush", release=True)
+                                       "release_short_pass")
+action_release_shot = CoreAction(e_BackendAction.release_shot, "release_shot")
+action_release_keeper_rush = CoreAction(e_BackendAction.release_keeper_rush,
+                                        "release_keeper_rush")
 action_release_sliding = CoreAction(e_BackendAction.release_sliding,
-                                         "release_sliding", release=True)
+                                    "release_sliding")
 action_release_pressure = CoreAction(e_BackendAction.release_pressure,
-                                          "release_pressure", release=True)
-action_release_team_pressure = CoreAction(
-    e_BackendAction.release_team_pressure, "release_team_pressure",
-    release=True)
+                                     "release_pressure")
+action_release_team_pressure = CoreAction(e_BackendAction.release_team_pressure,
+                                          "release_team_pressure")
 action_release_switch = CoreAction(e_BackendAction.release_switch,
-                                        "release_switch", release=True)
+                                   "release_switch")
 action_release_sprint = CoreAction(e_BackendAction.release_sprint,
-                                        "release_sprint", release=True)
+                                   "release_sprint")
 action_release_dribble = CoreAction(e_BackendAction.release_dribble,
-                                         "release_dribble", release=True)
+                                    "release_dribble")
 
 # ***** Define some action sets *****
 
@@ -167,8 +165,6 @@ action_set_dict = {
         action_sprint,
         action_release_direction,
         action_release_sprint,
-        action_keeper_rush,
-        action_release_keeper_rush,
         action_sliding,
         action_dribble,
         action_release_dribble,
@@ -236,56 +232,3 @@ def disable_action(action):
   if action._directional:
     return action_release_direction
   return reverse_action_mapping[action]
-
-
-class StickyWrapper(object):
-
-  def __init__(self, config, controller):
-    self._to_execute = None
-    self._controller = controller
-    self._sticky_actions = get_sticky_actions(config)
-    self._active_sticky_actions = {}
-    for a in full_action_set:
-      if a._sticky:
-        self._active_sticky_actions[a] = False
-
-  def post_initialize(self):
-    self._controller.post_initialize()
-
-  def active_sticky_actions(self):
-    result = []
-    for a in self._sticky_actions:
-      result.append(self._active_sticky_actions[a])
-    return numpy.uint8(result)
-
-  def perform_action(self, action):
-    """Performs a given CoreAction and updates sticky action states.
-
-    Disables sticky actions which are disjoint with the action being performed.
-
-    Args:
-      action: a CoreAction
-    """
-    assert set(action.__dict__) == set(action_left.__dict__)
-    if self._to_execute:
-      self._controller.perform_action(self._to_execute._backend_action)
-      self._to_execute = None
-
-    if action == action_idle:
-      return
-
-    if action._directional:
-      # Direction action disables all other direction actions.
-      for a in full_action_set:
-        if a._directional and a._sticky:
-          self._active_sticky_actions[a] = False
-    else:
-      reverse = reverse_action_mapping[action]
-      if reverse._sticky:
-        self._active_sticky_actions[reverse] = False
-
-    self._controller.perform_action(action._backend_action)
-    if action._sticky:
-      self._active_sticky_actions[action] = True
-    elif not action._directional and not action._release:
-      self._to_execute = reverse_action_mapping[action]

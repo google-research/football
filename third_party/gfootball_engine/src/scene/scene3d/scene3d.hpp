@@ -34,7 +34,7 @@ namespace blunted {
   class Scene3D : public Scene {
 
     public:
-      Scene3D(std::string name);
+      Scene3D();
       virtual ~Scene3D();
 
       virtual void Init();
@@ -42,7 +42,6 @@ namespace blunted {
 
       void AddNode(boost::intrusive_ptr<Node> node);
       void DeleteNode(boost::intrusive_ptr<Node> node);
-      void AddObject(boost::intrusive_ptr<Object> object);
 
       void GetObjects(std::deque < boost::intrusive_ptr<Object> > &gatherObjects, const vector_Planes &bounding) const {
         hierarchyRoot->GetObjects(gatherObjects, bounding, true, 0);
@@ -50,7 +49,7 @@ namespace blunted {
 
       template <class T>
       void GetObjects(e_ObjectType targetObjectType, std::list < boost::intrusive_ptr<T> > &gatherObjects) const {
-        if (!SupportedObjectType(targetObjectType)) {
+        if (!SupportedObjectType(targetObjectType)) { DO_VALIDATION;
           Log(e_Error, "Scene3D", "GetObjects", "targetObjectType " + int_to_str(targetObjectType) + " is not supported by this scene");
           return;
         }
@@ -60,7 +59,7 @@ namespace blunted {
 
       template <class T>
       void GetObjects(e_ObjectType targetObjectType, std::deque < boost::intrusive_ptr<T> > &gatherObjects, const vector_Planes &bounding) const {
-        if (!SupportedObjectType(targetObjectType)) {
+        if (!SupportedObjectType(targetObjectType)) { DO_VALIDATION;
           Log(e_Error, "Scene3D", "GetObjects", "targetObjectType " + int_to_str(targetObjectType) + " is not supported by this scene");
           return;
         }

@@ -43,6 +43,7 @@
 #include <boost/signals2/slot.hpp>
 #include <boost/bind.hpp>
 #include "backtrace.h"
+#include "base/log.hpp"
 
 #define CHECK(a) assert(a);
 #define CHECK_EQ(a, b) assert((a) == (b));
@@ -55,6 +56,120 @@ constexpr float EPSILON = 0.000001;
 #define MAX_PLAYERS 11
 
 typedef std::string screenshoot;
+
+namespace blunted {
+  class Animation;
+  using namespace boost;
+}
+
+class Player;
+class Team;
+class HumanController;
+class IHIDevice;
+class ScenarioConfig;
+class GameContext;
+class GameEnv;
+
+
+#include "base/math/vector3.hpp"
+
+class EnvState {
+ public:
+  EnvState(GameEnv* game_env, const std::string& state, const std::string reference = "");
+  const ScenarioConfig* getConfig() { return scenario_config; }
+  const GameContext* getContext() { return context; }
+  void process(unsigned long &value);
+  void process(unsigned int &value);
+  void process(bool &value);
+  void process(blunted::Vector3 &value);
+  void process(blunted::radian &value);
+  void process(blunted::Quaternion &value);
+  void process(int &value);
+  void process(std::string &value);
+  void process(float &value);
+  void process(blunted::Animation* &value);
+  template<typename T> void process(T& collection) {
+    int size = collection.size();
+    process(&size, sizeof(int));
+    collection.resize(size);
+    for (auto& el : collection) {
+      process(&el, sizeof(el));
+    }
+  }
+  void process(Player*& value);
+  void process(HumanController*& value);
+  void process(IHIDevice*& value);
+  void process(Team*& value);
+  bool isFailure() {
+    return failure;
+  }
+  bool enabled() {
+    return this->disable_cnt == 0;
+  }
+  void setValidate(bool validate) {
+    this->disable_cnt += validate ? -1 : 1;
+  }
+  void setCrash(bool crash) {
+    this->crash = crash;
+  }
+  bool Load() { return load; }
+  void process(void* ptr, int size);
+  int getpos() {
+    return pos;
+  }
+  bool eos();
+  template<typename T> void process(T* ptr, int size) {
+    if (load) {
+      if (pos + size > state.size()) {
+        Log(blunted::e_FatalError, "EnvState", "state", "state is invalid");
+      }
+      memcpy(ptr, &state[pos], size);
+      pos += size;
+    } else {
+      state.resize(pos + size);
+      memcpy(&state[pos], ptr, size);
+      if (disable_cnt == 0 && !reference.empty() && (*(T*) &state[pos]) != (*(T*) &reference[pos])) {
+        failure = true;
+        if (crash) {
+          T ref_value;
+          memcpy(&ref_value, &reference[pos], size);
+          std::cout << "Position:  " << pos << std::endl;
+          std::cout << "Value:     " << *ptr << std::endl;
+          std::cout << "Reference: " << ref_value << std::endl;
+          Log(blunted::e_FatalError, "EnvState", "state", "Reference mismatch");
+        }
+      }
+      pos += size;
+      if (pos > 10000000) {
+        Log(blunted::e_FatalError, "EnvState", "state", "state is too big");
+      }
+    }
+  }
+  void SetPlayers(const std::vector<Player*>& players);
+  void SetHumanControllers(const std::vector<HumanController*>& controllers);
+  void SetControllers(const std::vector<IHIDevice*>& controllers);
+  void SetAnimations(const std::vector<blunted::Animation*>& animations);
+  void SetTeams(Team* team0, Team* team1);
+  const std::string& GetState();
+ protected:
+  bool stack = true;
+  bool load = false;
+  char disable_cnt = 0;
+  bool failure = false;
+  bool crash = true;
+  std::vector<Player*> players;
+  std::vector<blunted::Animation*> animations;
+  std::vector<Team*> teams;
+  std::vector<HumanController*> human_controllers;
+  std::vector<IHIDevice*> controllers;
+  std::string state;
+  std::string reference;
+  int pos = 0;
+  ScenarioConfig* scenario_config;
+  GameContext* context;
+ private:
+  void process(void** collection, int size, void*& element);
+};
 
 // 3-d position of object (available from python).
 struct Position {
@@ -123,7 +238,7 @@ enum e_Team {
 
 // Information about the player (available from python).
 struct PlayerInfo {
-  PlayerInfo() {}
+  PlayerInfo() { }
   PlayerInfo(const PlayerInfo& f) {
     player_position = f.player_position;
     player_direction = f.player_direction;
@@ -149,8 +264,8 @@ struct PlayerInfo {
 };
 
 struct ControllerInfo {
-  ControllerInfo() {}
-  ControllerInfo(int controlled_player) : controlled_player(controlled_player) {}
+  ControllerInfo() { }
+  ControllerInfo(int controlled_player) : controlled_player(controlled_player) { }
   bool operator == (const ControllerInfo& f) const {
     return controlled_player == f.controlled_player;
   }
@@ -171,14 +286,7 @@ struct SharedInfo {
   bool is_in_play = false;
   int ball_owned_team = 0;
   int ball_owned_player = 0;
-  bool done = false;
+  int step = 0;
 };
-
-namespace blunted {
-
-  using namespace boost;
-  typedef float real;
-
-}
 
 #endif

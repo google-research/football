@@ -27,70 +27,79 @@
 
 namespace blunted {
 
-  Image2D::Image2D(std::string name) : Object(name, e_ObjectType_Image2D) {
-    //printf("CREATING IMAGE\n");
+Image2D::Image2D(std::string name) : Object(name, e_ObjectType_Image2D) {
+  DO_VALIDATION;
+  // printf("CREATING IMAGE\n");
+}
+
+Image2D::~Image2D() {
+  DO_VALIDATION;
+  // printf("DELETING IMAGE\n");
+}
+
+void Image2D::Exit() {
+  DO_VALIDATION;  // ATOMIC
+  // printf("EXITING IMAGE\n");
+
+  int observersSize = observers.size();
+  for (int i = 0; i < observersSize; i++) {
+    DO_VALIDATION;
+    IImage2DInterpreter *image2DInterpreter =
+        static_cast<IImage2DInterpreter *>(observers[i].get());
+    image2DInterpreter->OnUnload();
   }
 
-  Image2D::~Image2D() {
-    //printf("DELETING IMAGE\n");
+  Object::Exit();
+
+  if (image) image.reset();
+}
+
+
+void Image2D::SetImage(boost::intrusive_ptr<Resource<Surface> > image) {
+  DO_VALIDATION;
+
+  this->image = image;
+
+  position[0] = 0;
+  position[1] = 0;
+  size[0] = image->GetResource()->GetData()->w;
+  size[1] = image->GetResource()->GetData()->h;
+
+  int observersSize = observers.size();
+  for (int i = 0; i < observersSize; i++) {
+    DO_VALIDATION;
+    IImage2DInterpreter *image2DInterpreter =
+        static_cast<IImage2DInterpreter *>(observers[i].get());
+    image2DInterpreter->OnLoad(image);
   }
+}
 
-  void Image2D::Exit() { // ATOMIC
-    //printf("EXITING IMAGE\n");
+boost::intrusive_ptr<Resource<Surface> > Image2D::GetImage() {
+  DO_VALIDATION;
 
+  return image;
+}
 
-    int observersSize = observers.size();
-    for (int i = 0; i < observersSize; i++) {
-      IImage2DInterpreter *image2DInterpreter = static_cast<IImage2DInterpreter*>(observers[i].get());
-      image2DInterpreter->OnUnload();
-    }
+void Image2D::SetPosition(int x, int y) {
+  DO_VALIDATION;
 
-    Object::Exit();
+  position[0] = x;
+  position[1] = y;
 
-    if (image) image.reset();
-
+  int observersSize = observers.size();
+  for (int i = 0; i < observersSize; i++) {
+    DO_VALIDATION;
+    IImage2DInterpreter *image2DInterpreter =
+        static_cast<IImage2DInterpreter *>(observers[i].get());
+    image2DInterpreter->OnMove(x, y);
   }
+}
 
-
-  void Image2D::SetImage(boost::intrusive_ptr < Resource<Surface> > image) {
-
-    this->image = image;
-
-    position[0] = 0;
-    position[1] = 0;
-    size[0] = image->GetResource()->GetData()->w;
-    size[1] = image->GetResource()->GetData()->h;
-
-    int observersSize = observers.size();
-    for (int i = 0; i < observersSize; i++) {
-      IImage2DInterpreter *image2DInterpreter = static_cast<IImage2DInterpreter*>(observers[i].get());
-      image2DInterpreter->OnLoad(image);
-    }
-
-  }
-
-  boost::intrusive_ptr < Resource<Surface> > Image2D::GetImage() {
-
-    return image;
-  }
-
-  void Image2D::SetPosition(int x, int y) {
-
-    position[0] = x;
-    position[1] = y;
-
-    int observersSize = observers.size();
-    for (int i = 0; i < observersSize; i++) {
-      IImage2DInterpreter *image2DInterpreter = static_cast<IImage2DInterpreter*>(observers[i].get());
-      image2DInterpreter->OnMove(x, y);
-    }
-
-  }
-
-  void Image2D::SetPosition(const Vector3 &newPosition, bool updateSpatialData) {
-    SetPosition(int(std::floor(newPosition.coords[0])),
-                int(std::floor(newPosition.coords[1])));
-  }
+void Image2D::SetPosition(const Vector3 &newPosition, bool updateSpatialData) {
+  DO_VALIDATION;
+  SetPosition(int(std::floor(newPosition.coords[0])),
+              int(std::floor(newPosition.coords[1])));
+}
 
   Vector3 Image2D::GetPosition() const {
     Vector3 tmp(position[0], position[1], 0);
@@ -104,7 +113,9 @@ namespace blunted {
     return tmp;
   }
 
-  void Image2D::DrawRectangle(int x, int y, int w, int h, const Vector3 &color, int alpha) {
+  void Image2D::DrawRectangle(int x, int y, int w, int h, const Vector3 &color,
+                              int alpha) {
+    DO_VALIDATION;
     SDL_Surface *surface = image->GetResource()->GetData();
     //SDL_LockSurface(surface);
 
@@ -122,31 +133,32 @@ namespace blunted {
   }
 
   void Image2D::Resize(int w, int h) {
+    DO_VALIDATION;
     image->GetResource()->Resize(w, h);
     size[0] = w;
     size[1] = h;
-
   }
 
   void Image2D::Poke(e_SystemType targetSystemType) {
+    DO_VALIDATION;
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
+      DO_VALIDATION;
       IImage2DInterpreter *image2DInterpreter = static_cast<IImage2DInterpreter*>(observers[i].get());
       if (image2DInterpreter->GetSystemType() == targetSystemType) image2DInterpreter->OnPoke();
     }
-
   }
-
 
   // events
 
   void Image2D::OnChange() {
+    DO_VALIDATION;
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
+      DO_VALIDATION;
       IImage2DInterpreter *image2DInterpreter = static_cast<IImage2DInterpreter*>(observers[i].get());
       image2DInterpreter->OnChange(image);
     }
   }
-
 }

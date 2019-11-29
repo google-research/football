@@ -1,0 +1,56 @@
+
+syntax = "proto3";
+
+package gfootball.eval_server;
+
+message GetEnvResultRequest {
+  string game_version = 1;  // string to check if client and server have matching versions
+  string game_id = 2;
+  string username = 3;
+  string token = 4;
+  string model_name = 5;
+}
+
+message GetEnvResultResponse {
+  bytes env_result = 1;  // pickled state 4-tuple (observation, reward, done, info)
+}
+
+message StepRequest {
+  string game_version = 1;  // string to check if client and server have matching versions
+  string game_id = 2;
+  string username = 3;
+  string token = 4;
+  int32 action = 5;
+  string model_name = 6;
+}
+
+message StepResponse {
+  bytes env_result = 1;  // pickled state 4-tuple (observation, reward, done, info)
+}
+
+message GetCapacityRequest {}
+
+message GetCapacityResponse {
+  int32 capacity_for_games = 1;  // number indicating how many more games can be scheduled
+}
+
+message CreateGameRequest {
+  string game_id = 1;
+  string left_player = 2;
+  string right_player = 3;
+  bool include_rendering = 4;
+}
+
+message CreateGameResponse {}
+
+service GameServer {
+  // Rpc for obtaining the current state.
+  rpc GetEnvResult(GetEnvResultRequest) returns (GetEnvResultResponse) {}
+  // Rpc for doing a step in the environment and obtaining a state after that.
+  rpc Step(StepRequest) returns (StepResponse) {}
+  // Rpc for informing Master how many games can still be scheduled on this GS.
+  rpc GetCapacity(GetCapacityRequest) returns (GetCapacityResponse) {}
+  // Rpc to create a new game instance, only called by Master.
+  rpc CreateGame(CreateGameRequest) returns (CreateGameResponse) {}
+}
+

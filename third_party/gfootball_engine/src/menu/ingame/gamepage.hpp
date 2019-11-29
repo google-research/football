@@ -29,21 +29,8 @@ using namespace blunted;
 class GamePage : public Gui2Page {
 
   public:
-    GamePage(Gui2WindowManager *windowManager, const Gui2PageData &pageData);
+    GamePage(Gui2WindowManager *windowManager_, const Gui2PageData &pageData_);
     virtual ~GamePage();
-
-    virtual void Process();
-
-    virtual void ProcessWindowingEvent(WindowingEvent *event);
-    virtual void ProcessKeyboardEvent(KeyboardEvent *event);
-
-    void GoExtendedReplayPage();
-    void GoMatchPhasePage();
-    void GoGameOverPage();
-
-   protected:
-    Match *match;
-
 };
 
 #endif

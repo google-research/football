@@ -25,34 +25,43 @@
 
 namespace blunted {
 
-  GraphicsGeometry::GraphicsGeometry(GraphicsScene *graphicsScene) : GraphicsObject(graphicsScene) {
-  }
+GraphicsGeometry::GraphicsGeometry(GraphicsScene *graphicsScene)
+    : GraphicsObject(graphicsScene) {
+  DO_VALIDATION;
+}
 
-  GraphicsGeometry::~GraphicsGeometry() {
-  }
+GraphicsGeometry::~GraphicsGeometry() { DO_VALIDATION; }
 
-  boost::intrusive_ptr<Interpreter> GraphicsGeometry::GetInterpreter(e_ObjectType objectType) {
-    if (objectType == e_ObjectType_Geometry) {
-      boost::intrusive_ptr<GraphicsGeometry_GeometryInterpreter> geometryInterpreter(new GraphicsGeometry_GeometryInterpreter(this));
-      return geometryInterpreter;
-    }
-    else if (objectType == e_ObjectType_Skybox) {
-      boost::intrusive_ptr<GraphicsGeometry_SkyboxInterpreter> skyboxInterpreter(new GraphicsGeometry_SkyboxInterpreter(this));
-      return skyboxInterpreter;
-    }
-    Log(e_FatalError, "GraphicsGeometry", "GetInterpreter", "No appropriate interpreter found for this ObjectType");
-    return boost::intrusive_ptr<GraphicsGeometry_GeometryInterpreter>();
+boost::intrusive_ptr<Interpreter> GraphicsGeometry::GetInterpreter(
+    e_ObjectType objectType) {
+  DO_VALIDATION;
+  if (objectType == e_ObjectType_Geometry) {
+    DO_VALIDATION;
+    boost::intrusive_ptr<GraphicsGeometry_GeometryInterpreter>
+        geometryInterpreter(new GraphicsGeometry_GeometryInterpreter(this));
+    return geometryInterpreter;
+  } else if (objectType == e_ObjectType_Skybox) {
+    DO_VALIDATION;
+    boost::intrusive_ptr<GraphicsGeometry_SkyboxInterpreter> skyboxInterpreter(
+        new GraphicsGeometry_SkyboxInterpreter(this));
+    return skyboxInterpreter;
   }
+  Log(e_FatalError, "GraphicsGeometry", "GetInterpreter",
+      "No appropriate interpreter found for this ObjectType");
+  return boost::intrusive_ptr<GraphicsGeometry_GeometryInterpreter>();
+}
 
-  void GraphicsGeometry::SetPosition(const Vector3 &newPosition) {
-    position = newPosition;
-  }
+void GraphicsGeometry::SetPosition(const Vector3 &newPosition) {
+  DO_VALIDATION;
+  position = newPosition;
+}
 
   Vector3 GraphicsGeometry::GetPosition() const {
     return position;
   }
 
   void GraphicsGeometry::SetRotation(const Quaternion &newRotation) {
+    DO_VALIDATION;
     rotation = newRotation;
   }
 
@@ -60,18 +69,21 @@ namespace blunted {
     return rotation;
   }
 
-
-
-
-  GraphicsGeometry_GeometryInterpreter::GraphicsGeometry_GeometryInterpreter(GraphicsGeometry *caller) : caller(caller), usesIndices(false) {
+  GraphicsGeometry_GeometryInterpreter::GraphicsGeometry_GeometryInterpreter(
+      GraphicsGeometry *caller)
+      : caller(caller), usesIndices(false) {
+    DO_VALIDATION;
   }
 
-  void LoadMaterials(Renderer3D *renderer3D, const Material *material, Renderer3DMaterial &r3dMaterial) {
+  void LoadMaterials(Renderer3D *renderer3D, const Material *material,
+                     Renderer3DMaterial &r3dMaterial) {
+    DO_VALIDATION;
     boost::intrusive_ptr < Resource<Texture> > diffuseTexture;
     boost::intrusive_ptr < Resource<Texture> > normalTexture;
     boost::intrusive_ptr < Resource<Texture> > specularTexture;
     boost::intrusive_ptr < Resource<Texture> > illuminationTexture;
     if (material->diffuseTexture) {
+      DO_VALIDATION;
       boost::intrusive_ptr < Resource<Surface> > surface = material->diffuseTexture;
 
       bool texAlreadyThere = false;
@@ -80,6 +92,7 @@ namespace blunted {
           true);  // false == don't try to use loader
 
       if (!texAlreadyThere) {
+        DO_VALIDATION;
         //printf("%s\n", surface->GetIdentString().c_str());
         SDL_Surface *image = surface->GetResource()->GetData();
         diffuseTexture->GetResource()->SetRenderer3D(renderer3D);
@@ -93,6 +106,7 @@ namespace blunted {
     }
 
     if (material->normalTexture) {
+      DO_VALIDATION;
       boost::intrusive_ptr < Resource<Surface> > surface = material->normalTexture;
 
       bool texAlreadyThere = false;
@@ -101,6 +115,7 @@ namespace blunted {
           true);  // false == don't try to use loader
 
       if (!texAlreadyThere) {
+        DO_VALIDATION;
         SDL_Surface *image = surface->GetResource()->GetData();
         normalTexture->GetResource()->SetRenderer3D(renderer3D);
         normalTexture->GetResource()->CreateTexture(e_InternalPixelFormat_RGB8, e_PixelFormat_RGB, image->w, image->h, false, true, true, true);
@@ -109,6 +124,7 @@ namespace blunted {
     }
 
     if (material->specularTexture) {
+      DO_VALIDATION;
       boost::intrusive_ptr < Resource<Surface> > surface = material->specularTexture;
 
       bool texAlreadyThere = false;
@@ -117,6 +133,7 @@ namespace blunted {
           true);  // false == don't try to use loader
 
       if (!texAlreadyThere) {
+        DO_VALIDATION;
         SDL_Surface *image = surface->GetResource()->GetData();
         specularTexture->GetResource()->SetRenderer3D(renderer3D);
         specularTexture->GetResource()->CreateTexture(e_InternalPixelFormat_RGB8, e_PixelFormat_RGB, image->w, image->h, false, true, true, true);
@@ -125,6 +142,7 @@ namespace blunted {
     }
 
     if (material->illuminationTexture) {
+      DO_VALIDATION;
       boost::intrusive_ptr < Resource<Surface> > surface = material->illuminationTexture;
 
       bool texAlreadyThere = false;
@@ -133,6 +151,7 @@ namespace blunted {
           true);  // false == don't try to use loader
 
       if (!texAlreadyThere) {
+        DO_VALIDATION;
         SDL_Surface *image = surface->GetResource()->GetData();
         illuminationTexture->GetResource()->SetRenderer3D(renderer3D);
         illuminationTexture->GetResource()->CreateTexture(e_InternalPixelFormat_RGB8, e_PixelFormat_RGB, image->w, image->h, false, true, true, true);
@@ -149,7 +168,9 @@ namespace blunted {
     r3dMaterial.self_illumination = material->self_illumination;
   }
 
-  void GraphicsGeometry_GeometryInterpreter::OnLoad(boost::intrusive_ptr<Geometry> geometry) {
+  void GraphicsGeometry_GeometryInterpreter::OnLoad(
+      boost::intrusive_ptr<Geometry> geometry) {
+    DO_VALIDATION;
 
 
 
@@ -177,7 +198,9 @@ namespace blunted {
     std::vector<unsigned int> indicesTest;
     int indicesSize = 0;
     if (!alreadyThere) {
+      DO_VALIDATION;
       for (unsigned int i = 0; i < triangleMeshes.size(); i++) {
+        DO_VALIDATION;
         verticesDataSize += triangleMeshes[i].verticesDataSize;
         indicesSize += triangleMeshes[i].indices.size();
       }
@@ -189,6 +212,7 @@ namespace blunted {
     int currentSize = 0;
 
     for (unsigned int i = 0; i < triangleMeshes.size(); i++) {
+      DO_VALIDATION;
 
       // material
 
@@ -203,13 +227,19 @@ namespace blunted {
       currentSize = 0;
 
       if (!alreadyThere) {
+        DO_VALIDATION;
         /*
-        for (int e = 0; e < GetTriangleMeshElementCount(); e++) {
-          memcpy(&triangleMesh[e * (tmeshsize / GetTriangleMeshElementCount()) + startIndex * 3 * 3], &triangleMeshes[i].triangleMesh[e * (triangleMeshes[i].triangleMeshSize / GetTriangleMeshElementCount())], triangleMeshes[i].triangleMeshSize / GetTriangleMeshElementCount() * sizeof(float));
+        for (int e = 0; e < GetTriangleMeshElementCount(); e++) { DO_VALIDATION;
+          memcpy(&triangleMesh[e * (tmeshsize / GetTriangleMeshElementCount()) +
+        startIndex * 3 * 3], &triangleMeshes[i].triangleMesh[e *
+        (triangleMeshes[i].triangleMeshSize / GetTriangleMeshElementCount())],
+        triangleMeshes[i].triangleMeshSize / GetTriangleMeshElementCount() *
+        sizeof(float));
         }
         */
 
         for (int e = 0; e < GetTriangleMeshElementCount(); e++) {
+          DO_VALIDATION;
           //printf("%s: e: %i, verticesDataSize: %i, startIndex: %i, triangleMeshes[i].verticesDataSize: %i\n", geometry->GetName().c_str(), e, verticesDataSize, startIndex, triangleMeshes[i].verticesDataSize);
           memcpy(&vertices[e * (verticesDataSize / GetTriangleMeshElementCount()) + startIndex],
                  &triangleMeshes[i].vertices[e * (triangleMeshes[i].verticesDataSize / GetTriangleMeshElementCount())],
@@ -217,16 +247,18 @@ namespace blunted {
         }
 
         //indices.insert(indices.end(), triangleMeshes[i].indices.begin(), triangleMeshes[i].indices.end());
-        for (unsigned int index = 0; index < triangleMeshes[i].indices.size(); index++) {
+        for (unsigned int index = 0; index < triangleMeshes[i].indices.size();
+             index++) {
+          DO_VALIDATION;
           indices.push_back(startIndex / 3 + triangleMeshes[i].indices.at(index));
         }
-
       }
 
       currentSize = triangleMeshes[i].verticesDataSize / GetTriangleMeshElementCount();
 
       VertexBufferIndex vbIndex;
       if (indices.size() > 0) {
+        DO_VALIDATION;
         vbIndex.startIndex = (indices.size() - triangleMeshes[i].indices.size()); // start index id
         vbIndex.size = triangleMeshes[i].indices.size(); // number of indices
       } else {
@@ -241,13 +273,15 @@ namespace blunted {
     if (indices.size() > 0) usesIndices = true; else usesIndices = false;
 
     if (!alreadyThere) {
+      DO_VALIDATION;
       caller->vertexBuffer->GetResource()->SetTriangleMesh(vertices, verticesDataSize, indices);
       caller->vertexBuffer->GetResource()->CreateOrUpdateVertexBuffer(renderer3D, dynamicBuffer);
     }
-
   }
 
-  void GraphicsGeometry_GeometryInterpreter::OnUpdateGeometry(boost::intrusive_ptr<Geometry> geometry, bool updateMaterials) {
+  void GraphicsGeometry_GeometryInterpreter::OnUpdateGeometry(
+      boost::intrusive_ptr<Geometry> geometry, bool updateMaterials) {
+    DO_VALIDATION;
 
 
 
@@ -265,6 +299,7 @@ namespace blunted {
     int verticesDataSize = 0;
     int indicesSize = 0;
     for (unsigned int i = 0; i < triangleMeshes.size(); i++) {
+      DO_VALIDATION;
       verticesDataSize += triangleMeshes[i].verticesDataSize;
       indicesSize += triangleMeshes[i].indices.size();
     }
@@ -272,6 +307,7 @@ namespace blunted {
     bool newFloatData = false;
     bool updateIndices = false;
     if (verticesDataSize == currentVerticesDataSize) {
+      DO_VALIDATION;
       vertices = caller->vertexBuffer->GetResource()->GetTriangleMesh();
       newFloatData = false;
       updateIndices = updateMaterials;
@@ -289,7 +325,7 @@ namespace blunted {
     if (updateIndices) caller->vertexBufferIndices.clear();
 
     for (unsigned int i = 0; i < triangleMeshes.size(); i++) {
-
+      DO_VALIDATION;
 
       // mesh
 
@@ -297,14 +333,19 @@ namespace blunted {
       currentSize = 0;
 
       for (int e = 0; e < GetTriangleMeshElementCount(); e++) {
+        DO_VALIDATION;
         //printf("%s: e: %i, verticesDataSize: %i, startIndex: %i, triangleMeshes[i].verticesDataSize: %i\n", geometry->GetName().c_str(), e, verticesDataSize, startIndex, triangleMeshes[i].verticesDataSize);
         memcpy(&vertices[e * (verticesDataSize / GetTriangleMeshElementCount()) + startIndex],
                &triangleMeshes[i].vertices[e * (triangleMeshes[i].verticesDataSize / GetTriangleMeshElementCount())],
                triangleMeshes[i].verticesDataSize / GetTriangleMeshElementCount() * sizeof(float));
       }
 
-      if (!usesIndices) { // can only set indices once (todo: make OnUpdateIndices function, or something like that)
-        for (unsigned int index = 0; index < triangleMeshes[i].indices.size(); index++) {
+      if (!usesIndices) {
+        DO_VALIDATION;  // can only set indices once (todo: make OnUpdateIndices
+                        // function, or something like that)
+        for (unsigned int index = 0; index < triangleMeshes[i].indices.size();
+             index++) {
+          DO_VALIDATION;
           indices.push_back(startIndex / 3 + triangleMeshes[i].indices.at(index));
           //printf("vertex index: %i + %i = %i\n", startIndex * 3, triangleMeshes[i].indices.at(index), startIndex * 3 + triangleMeshes[i].indices.at(index));
         }
@@ -313,7 +354,7 @@ namespace blunted {
       currentSize = triangleMeshes[i].verticesDataSize / GetTriangleMeshElementCount();
 
       if (updateIndices) {
-
+        DO_VALIDATION;
 
         // material
 
@@ -329,7 +370,8 @@ namespace blunted {
         // this code makes this version only work on meshes that are the same size/materialorder as their previous version
         vbIndex.material = r3dMaterial;
 
-        if ((!usesIndices && indices.size() > 0) || usesIndices) { // include the first time using indices
+        if ((!usesIndices && indices.size() > 0) || usesIndices) {
+          DO_VALIDATION;  // include the first time using indices
           vbIndex.startIndex = startIndicesIndex;
           vbIndex.size = triangleMeshes[i].indices.size(); // number of indices
         } else {
@@ -343,14 +385,13 @@ namespace blunted {
         //printf("si %i VS %i\n", triangleMeshes[i].indices.size(), currentSize / 3);
 
         caller->vertexBufferIndices.push_back(vbIndex);
-
       }
-
     }
 
     if (indices.size() > 0) usesIndices = true;
 
     if (newFloatData) {
+      DO_VALIDATION;
       caller->vertexBuffer->GetResource()->SetTriangleMesh(vertex_array, verticesDataSize, indices);
     } else {
       caller->vertexBuffer->GetResource()->TriangleMeshWasUpdatedExternally(verticesDataSize, indices);
@@ -359,6 +400,7 @@ namespace blunted {
   }
 
   void GraphicsGeometry_GeometryInterpreter::OnUnload() {
+    DO_VALIDATION;
     //printf("resetting link to vertexbuffer.. ");
     caller->vertexBuffer.reset();
     caller->vertexBufferIndices.clear();
@@ -368,14 +410,19 @@ namespace blunted {
   }
 
   void GraphicsGeometry_GeometryInterpreter::OnMove(const Vector3 &position) {
+    DO_VALIDATION;
     caller->SetPosition(position);
   }
 
-  void GraphicsGeometry_GeometryInterpreter::OnRotate(const Quaternion &rotation) {
+  void GraphicsGeometry_GeometryInterpreter::OnRotate(
+      const Quaternion &rotation) {
+    DO_VALIDATION;
     caller->SetRotation(rotation);
   }
 
-  void GraphicsGeometry_GeometryInterpreter::GetVertexBufferQueue(std::deque<VertexBufferQueueEntry> &queue) {
+  void GraphicsGeometry_GeometryInterpreter::GetVertexBufferQueue(
+      std::deque<VertexBufferQueueEntry> &queue) {
+    DO_VALIDATION;
     //printf("size: %i\n", size);
     VertexBufferQueueEntry queueEntry;
 
@@ -388,23 +435,21 @@ namespace blunted {
   }
 
   void GraphicsGeometry_GeometryInterpreter::OnSynchronize() {
+    DO_VALIDATION;
     OnLoad(static_cast<Geometry*>(subjectPtr));
     //OnUpdateGeometry(static_cast<Geometry*>(subjectPtr));
 
   }
 
-  void GraphicsGeometry_GeometryInterpreter::OnPoke() {
-  }
-
-
-
+  void GraphicsGeometry_GeometryInterpreter::OnPoke() { DO_VALIDATION; }
 
   // SKYBOX INTERPRETER
 
-  GraphicsGeometry_SkyboxInterpreter::GraphicsGeometry_SkyboxInterpreter(GraphicsGeometry *caller) : GraphicsGeometry_GeometryInterpreter(caller) {
+  GraphicsGeometry_SkyboxInterpreter::GraphicsGeometry_SkyboxInterpreter(
+      GraphicsGeometry *caller)
+      : GraphicsGeometry_GeometryInterpreter(caller) {
+    DO_VALIDATION;
   }
 
-  void GraphicsGeometry_SkyboxInterpreter::OnPoke() {
-  }
-
+  void GraphicsGeometry_SkyboxInterpreter::OnPoke() { DO_VALIDATION; }
 }

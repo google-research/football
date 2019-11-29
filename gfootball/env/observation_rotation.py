@@ -71,7 +71,7 @@ def rotate_sticky_actions(sticky_actions_state, config):
     who would play from the opposite side.
   """
   sticky_actions = football_action_set.get_sticky_actions(config)
-  assert len(sticky_actions) == len(sticky_actions_state)
+  assert len(sticky_actions) == len(sticky_actions_state), len(sticky_actions)
   action_to_state = {}
   for i in range(len(sticky_actions)):
     action_to_state[sticky_actions[i]] = sticky_actions_state[i]
@@ -82,46 +82,51 @@ def rotate_sticky_actions(sticky_actions_state, config):
   return rotated_sticky_actions
 
 
+def flip_team_observation(observation, result, config, from_team, to_team):
+  """Rotates team-specific observations."""
+  result['{}_team'.format(to_team)] = rotate_points(
+      observation['{}_team'.format(from_team)])
+  result['{}_team_direction'.format(to_team)] = rotate_points(
+      observation['{}_team_direction'.format(from_team)])
+  result['{}_team_tired_factor'.format(to_team)] = observation[
+      '{}_team_tired_factor'.format(from_team)]
+  result['{}_team_active'.format(to_team)] = observation[
+      '{}_team_active'.format(from_team)]
+  result['{}_team_yellow_card'.format(to_team)] = observation[
+      '{}_team_yellow_card'.format(from_team)]
+  result['{}_team_roles'.format(to_team)] = observation['{}_team_roles'.format(
+      from_team)]
+  result['{}_team_active'.format(to_team)] = observation[
+      '{}_team_active'.format(from_team)]
+  if '{}_agent_controlled_player'.format(from_team) in observation:
+    result['{}_agent_controlled_player'.format(to_team)] = observation[
+        '{}_agent_controlled_player'.format(from_team)]
+  if '{}_agent_sticky_actions'.format(from_team) in observation:
+    result['{}_agent_sticky_actions'.format(to_team)] = [
+        rotate_sticky_actions(sticky, config)
+        for sticky in observation['{}_agent_sticky_actions'.format(from_team)]
+    ]
+
+
 def flip_observation(observation, config):
   """Observation corresponding to the field rotated by 180 degrees."""
   flipped_observation = {}
   flipped_observation['ball'] = rotate_3d_point(observation['ball'])
   flipped_observation['ball_direction'] = rotate_3d_point(
       observation['ball_direction'])
-  flipped_observation['ball_rotation'] = rotate_3d_point(
-      observation['ball_rotation'])
+  flipped_observation['ball_rotation'] = observation['ball_rotation']
   flipped_observation['ball_owned_team'] = 1 - observation[
       'ball_owned_team'] if observation['ball_owned_team'] > -1 else -1
   flipped_observation['ball_owned_player'] = observation['ball_owned_player']
-  flipped_observation['left_team'] = rotate_points(observation['right_team'])
-  flipped_observation['left_team_direction'] = rotate_points(
-      observation['right_team_direction'])
-  flipped_observation['left_team_tired_factor'] = observation[
-      'right_team_tired_factor']
-  flipped_observation['left_team_active'] = observation[
-      'right_team_active']
-  flipped_observation['left_team_yellow_card'] = observation[
-      'right_team_yellow_card']
-  flipped_observation['left_team_roles'] = observation['right_team_roles']
-  flipped_observation['right_team'] = rotate_points(observation['left_team'])
-  flipped_observation['right_team_direction'] = rotate_points(
-      observation['left_team_direction'])
-  flipped_observation['right_team_tired_factor'] = observation[
-      'left_team_tired_factor']
-  flipped_observation['right_team_active'] = observation[
-      'left_team_active']
-  flipped_observation['right_team_yellow_card'] = observation[
-      'left_team_yellow_card']
-  flipped_observation['right_team_roles'] = observation['left_team_roles']
   flipped_observation['score'] = [
       observation['score'][1], observation['score'][0]
   ]
   flipped_observation['game_mode'] = observation['game_mode']
   flipped_observation['steps_left'] = observation['steps_left']
-  flipped_observation['active'] = observation['opponent_active']
-  flipped_observation['sticky_actions'] = [
-      rotate_sticky_actions(sticky, config)
-      for sticky in observation['opponent_sticky_actions']]
+  flip_team_observation(observation, flipped_observation, config, 'left',
+                        'right')
+  flip_team_observation(observation, flipped_observation, config, 'right',
+                        'left')
   return flipped_observation
 
 

@@ -22,13 +22,11 @@
 
 #include "../../scene/objects/image2d.hpp"
 
-#include "events.hpp"
-
 namespace blunted {
 
   class Gui2WindowManager;
 
-  class Gui2View : public boost::signals2::trackable {
+  class Gui2View {
 
     public:
       Gui2View(Gui2WindowManager *windowManager, const std::string &name, float x_percent, float y_percent, float width_percent, float height_percent);
@@ -42,46 +40,34 @@ namespace blunted {
       virtual void RemoveView(Gui2View *view);
       virtual void SetParent(Gui2View *view);
       virtual Gui2View *GetParent();
-      virtual void SetSize(float new_width_percent, float new_height_percent) { width_percent = new_width_percent; height_percent = new_height_percent; }
       virtual void SetPosition(float x_percent, float y_percent);
       virtual void GetSize(float &width_percent, float &height_percent) const;
       virtual void GetPosition(float &x_percent, float &y_percent) const;
       virtual void GetDerivedPosition(float &x_percent, float &y_percent) const;
-      virtual void SnuglyFitSize(float margin = 0.5f);
       virtual void CenterPosition();
       virtual void GetImages(std::vector < boost::intrusive_ptr<Image2D> > &target);
 
-      virtual void Process();
-      virtual void Redraw() {}
-
-      virtual bool ProcessEvent(Gui2Event *event);
-
-      virtual void ProcessWindowingEvent(WindowingEvent *event);
-      virtual void ProcessKeyboardEvent(KeyboardEvent *event);
+      virtual void Redraw() { DO_VALIDATION;}
 
       bool IsFocussed();
       void SetFocus();
-      virtual void OnGainFocus() { if (!children.empty()) children.at(0)->SetFocus(); }
-      virtual void OnLoseFocus() {}
-      virtual void SetInFocusPath(bool onOff) {
+      virtual void OnGainFocus() { DO_VALIDATION; if (!children.empty()) children.at(0)->SetFocus(); }
+      virtual void OnLoseFocus() { DO_VALIDATION;}
+      virtual void SetInFocusPath(bool onOff) { DO_VALIDATION;
         isInFocusPath = onOff;
         if (parent) parent->SetInFocusPath(onOff);
       }
 
-      virtual bool IsVisible() { if (isVisible) { if (parent) return parent->IsVisible(); else return true; } else return false; }
-      virtual bool IsSelectable() { return isSelectable; }
-      virtual bool IsOverlay() { return isOverlay; }
+      virtual bool IsVisible() { DO_VALIDATION; if (isVisible) { DO_VALIDATION; if (parent) return parent->IsVisible(); else return true; } else return false; }
+      virtual bool IsSelectable() { DO_VALIDATION; return isSelectable; }
+      virtual bool IsOverlay() { DO_VALIDATION; return isOverlay; }
 
       virtual void Show();
       virtual void ShowAllChildren();
       virtual void Hide();
-      virtual void HideAllChildren();
 
       void SetRecursiveZPriority(int prio);
       virtual void SetZPriority(int prio);
-      virtual int GetZPriority() const { return zPriority; }
-
-      boost::signals2::signal<void()> sig_OnClose;
 
     protected:
       Gui2WindowManager *windowManager;
@@ -100,9 +86,6 @@ namespace blunted {
       bool isSelectable = false;
       bool isInFocusPath = false;
       bool isOverlay = false;
-
-      int zPriority = 0;
-
   };
 
 }

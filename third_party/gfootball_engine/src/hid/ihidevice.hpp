@@ -19,19 +19,11 @@
 #define _HPP_HIDEVICE
 
 #include "../base/math/vector3.hpp"
+#include "../defines.hpp"
 
 using namespace blunted;
 
-enum e_HIDeviceType {
-  e_HIDeviceType_Keyboard,
-  e_HIDeviceType_Gamepad
-};
-
 enum e_ButtonFunction {
-  e_ButtonFunction_Up,
-  e_ButtonFunction_Right,
-  e_ButtonFunction_Down,
-  e_ButtonFunction_Left,
   e_ButtonFunction_LongPass,
   e_ButtonFunction_HighPass,
   e_ButtonFunction_ShortPass,
@@ -41,35 +33,24 @@ enum e_ButtonFunction {
   e_ButtonFunction_Pressure,
   e_ButtonFunction_TeamPressure,
   e_ButtonFunction_Switch,
-  e_ButtonFunction_Special,
   e_ButtonFunction_Sprint,
   e_ButtonFunction_Dribble,
-  e_ButtonFunction_Select,
-  e_ButtonFunction_Start,
   e_ButtonFunction_Size
 };
 
 class IHIDevice {
 
   public:
-    virtual ~IHIDevice() {}
+    virtual ~IHIDevice() { DO_VALIDATION;}
 
-    virtual void LoadConfig() = 0;
-    virtual void SaveConfig() = 0;
-    virtual void Reset() {};
-
-    virtual void Process() = 0;
-
+    virtual void Reset() { DO_VALIDATION;};
+    virtual void ResetNotSticky() = 0;
     virtual bool GetButton(e_ButtonFunction buttonFunction) = 0;
-    virtual void SetButton(e_ButtonFunction buttonFunction, bool state) = 0;
     virtual bool GetPreviousButtonState(e_ButtonFunction buttonFunction) = 0;
     virtual Vector3 GetDirection() = 0;
-
-    e_HIDeviceType GetDeviceType() const { return deviceType; }
-
-   protected:
-    e_HIDeviceType deviceType;
-    std::string identifier;
+    virtual Vector3 GetOriginalDirection() = 0;
+    virtual void ProcessState(EnvState* state) = 0;
+    virtual void Mirror(float mirror) = 0;
 };
 
 #endif

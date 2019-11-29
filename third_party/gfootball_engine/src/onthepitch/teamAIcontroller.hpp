@@ -28,6 +28,10 @@ class Team;
 struct TacticalOpponentInfo {
   Player *player;
   float dangerFactor = 0.0f;
+  void ProcessState(EnvState* state) { DO_VALIDATION;
+    state->process(player);
+    state->process(dangerFactor);
+  }
 };
 
 class TeamAIController {
@@ -46,8 +50,8 @@ class TeamAIController {
     float GetOffsideTrapX() const { return offsideTrapX; }
     void PrepareSetPiece(e_GameMode setPiece, Team* other_team,
                          int kickoffTakerTeamId, int takerTeamID);
-    Player *GetPieceTaker() { return taker; }
-    e_GameMode GetSetPieceType() { return setPieceType; }
+    Player *GetPieceTaker() { DO_VALIDATION; return taker; }
+    e_GameMode GetSetPieceType() { DO_VALIDATION; return setPieceType; }
     void ApplyAttackingRun(Player *manualPlayer = 0);
     void ApplyTeamPressure();
     void ApplyKeeperRush();
@@ -55,19 +59,20 @@ class TeamAIController {
 
     void UpdateTactics();
 
-    unsigned long GetEndApplyAttackingRun_ms() { return endApplyAttackingRun_ms; }
-    Player *GetAttackingRunPlayer() { return attackingRunPlayer; }
+    unsigned long GetEndApplyAttackingRun_ms() { DO_VALIDATION; return endApplyAttackingRun_ms; }
+    Player *GetAttackingRunPlayer() { DO_VALIDATION; return attackingRunPlayer; }
 
-    unsigned long GetEndApplyTeamPressure_ms() { return endApplyTeamPressure_ms; }
-    Player *GetTeamPressurePlayer() { return teamPressurePlayer; }
+    unsigned long GetEndApplyTeamPressure_ms() { DO_VALIDATION; return endApplyTeamPressure_ms; }
+    Player *GetTeamPressurePlayer() { DO_VALIDATION; return teamPressurePlayer; }
 
-    Player *GetForwardSupportPlayer() { return forwardSupportPlayer; }
+    Player *GetForwardSupportPlayer() { DO_VALIDATION; return forwardSupportPlayer; }
 
-    unsigned long GetEndApplyKeeperRush_ms() { return endApplyKeeperRush_ms; }
+    unsigned long GetEndApplyKeeperRush_ms() { DO_VALIDATION; return endApplyKeeperRush_ms; }
 
-    const std::vector<TacticalOpponentInfo> &GetTacticalOpponentInfo() { return tacticalOpponentInfo; }
+    const std::vector<TacticalOpponentInfo> &GetTacticalOpponentInfo() { DO_VALIDATION; return tacticalOpponentInfo; }
 
     void Reset();
+    void ProcessState(EnvState* state);
 
   protected:
 

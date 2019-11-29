@@ -24,32 +24,35 @@
 
 namespace blunted {
 
-  Light::Light(std::string name) : Object(name, e_ObjectType_Light) {
-    radius = 512;
-    color.Set(1, 1, 1);
-    lightType = e_LightType_Point;
-    shadow = false;
+Light::Light(std::string name) : Object(name, e_ObjectType_Light) {
+  DO_VALIDATION;
+  radius = 512;
+  color.Set(1, 1, 1);
+  lightType = e_LightType_Point;
+  shadow = false;
+}
+
+Light::~Light() { DO_VALIDATION; }
+
+void Light::Exit() {
+  DO_VALIDATION;  // ATOMIC
+
+  int observersSize = observers.size();
+  for (int i = 0; i < observersSize; i++) {
+    DO_VALIDATION;
+    ILightInterpreter *LightInterpreter =
+        static_cast<ILightInterpreter *>(observers[i].get());
+    LightInterpreter->OnUnload();
   }
 
-  Light::~Light() {
-  }
+  Object::Exit();
+}
 
-  void Light::Exit() { // ATOMIC
-
-    int observersSize = observers.size();
-    for (int i = 0; i < observersSize; i++) {
-      ILightInterpreter *LightInterpreter = static_cast<ILightInterpreter*>(observers[i].get());
-      LightInterpreter->OnUnload();
-    }
-
-    Object::Exit();
-
-  }
-
-  void Light::SetColor(const Vector3 &color) {
-    this->color = color;
-    UpdateValues();
-  }
+void Light::SetColor(const Vector3 &color) {
+  DO_VALIDATION;
+  this->color = color;
+  UpdateValues();
+}
 
   Vector3 Light::GetColor() const {
     Vector3 retColor = color;
@@ -58,6 +61,7 @@ namespace blunted {
   }
 
   void Light::SetRadius(float radius) {
+    DO_VALIDATION;
     this->radius = radius;
     UpdateValues();
 
@@ -70,15 +74,16 @@ namespace blunted {
   }
 
   void Light::SetType(e_LightType lightType) {
+    DO_VALIDATION;
 
     this->lightType = lightType;
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
+      DO_VALIDATION;
       ILightInterpreter *LightInterpreter = static_cast<ILightInterpreter*>(observers[i].get());
       LightInterpreter->SetType(lightType);
     }
-
   }
 
   e_LightType Light::GetType() const {
@@ -87,15 +92,16 @@ namespace blunted {
   }
 
   void Light::SetShadow(bool shadow) {
+    DO_VALIDATION;
 
     this->shadow = shadow;
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
+      DO_VALIDATION;
       ILightInterpreter *LightInterpreter = static_cast<ILightInterpreter*>(observers[i].get());
       LightInterpreter->SetShadow(shadow);
     }
-
   }
 
   bool Light::GetShadow() const {
@@ -103,53 +109,62 @@ namespace blunted {
   }
 
   void Light::UpdateValues() {
+    DO_VALIDATION;
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
+      DO_VALIDATION;
       ILightInterpreter *LightInterpreter = static_cast<ILightInterpreter*>(observers[i].get());
       LightInterpreter->SetValues(color, radius);
     }
-
   }
 
-  void Light::EnqueueShadowMap(boost::intrusive_ptr<Camera> camera, std::deque < boost::intrusive_ptr<Geometry> > visibleGeometry) {
+  void Light::EnqueueShadowMap(
+      boost::intrusive_ptr<Camera> camera,
+      std::deque<boost::intrusive_ptr<Geometry> > visibleGeometry) {
+    DO_VALIDATION;
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
+      DO_VALIDATION;
       ILightInterpreter *LightInterpreter = static_cast<ILightInterpreter*>(observers[i].get());
       LightInterpreter->EnqueueShadowMap(camera, visibleGeometry);
     }
-
   }
 
   void Light::Poke(e_SystemType targetSystemType) {
+    DO_VALIDATION;
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
+      DO_VALIDATION;
       ILightInterpreter *LightInterpreter = static_cast<ILightInterpreter*>(observers[i].get());
       if (LightInterpreter->GetSystemType() == targetSystemType) LightInterpreter->OnPoke();
     }
-
   }
 
-  void Light::RecursiveUpdateSpatialData(e_SpatialDataType spatialDataType, e_SystemType excludeSystem) {
+  void Light::RecursiveUpdateSpatialData(e_SpatialDataType spatialDataType,
+                                         e_SystemType excludeSystem) {
+    DO_VALIDATION;
     InvalidateSpatialData();
     InvalidateBoundingVolume();
 
 
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
+      DO_VALIDATION;
       if (observers[i]->GetSystemType() != excludeSystem) {
+        DO_VALIDATION;
         ILightInterpreter *lightInterpreter = static_cast<ILightInterpreter*>(observers[i].get());
         lightInterpreter->OnSpatialChange(GetDerivedPosition(), GetDerivedRotation());
       }
     }
-
   }
 
   AABB Light::GetAABB() const {
     //aabb.Lock();
     if (aabb.dirty == true) {
+      DO_VALIDATION;
       Vector3 pos = GetDerivedPosition();
       aabb.aabb.minxyz = pos - radius;
       aabb.aabb.maxxyz = pos + radius;

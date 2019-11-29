@@ -27,35 +27,28 @@
 using namespace blunted;
 
 class Match;
+class PlayerBase;
 
 class MentalImage {
+ public:
+  MentalImage() { DO_VALIDATION;}
+  MentalImage(Match *match);
+  void Mirror(bool team_0, bool team_1, bool ball);
+  PlayerImage GetPlayerImage(PlayerBase* player) const;
+  std::vector<PlayerImagePosition> GetTeamPlayerImages(int teamID) const;
+  void UpdateBallPredictions();
+  Vector3 GetBallPrediction(unsigned int time_ms) const;
+  int GetTimeStampNeg_ms() const;
+  void ProcessState(EnvState* state, Match* match);
 
-  public:
-    MentalImage(Match *match);
-    virtual ~MentalImage();
-
-    void TakeSnapshot();
-
-    PlayerImage GetPlayerImage(int playerID) const;
-    std::vector<PlayerImagePosition> GetTeamPlayerImages(int teamID) const;
-
-    void UpdateBallPredictions();
-    Vector3 GetBallPrediction(unsigned int time_ms) const;
-
-    void SetTimeStampNeg_ms(unsigned int history_ms) { timeStampNeg_ms = history_ms; }
-    int GetTimeStampNeg_ms() const { return timeStampNeg_ms; }
-
-  protected:
-    Match *match;
-
-    std::vector<PlayerImage> players;
-    Vector3 ballPredictions[ballPredictionSize_ms / 10];
-
-    unsigned int timeStampNeg_ms = 0;
-
-    float maxDistanceDeviation = 0.0f;
-    float maxMovementDeviation = 0.0f;
-
+  std::vector<PlayerImage> players;
+  std::vector<Vector3> ballPredictions;
+  unsigned int timeStamp_ms = 0;
+  float maxDistanceDeviation = 2.5f;
+  float maxMovementDeviation = walkVelocity;
+  bool ballPredictions_mirrored = false;
+ private:
+  Match *match = nullptr;
 };
 
 #endif

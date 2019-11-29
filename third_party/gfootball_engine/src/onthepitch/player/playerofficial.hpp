@@ -38,14 +38,13 @@ class PlayerOfficial : public PlayerBase {
     HumanoidBase *CastHumanoid();
     RefereeController *CastController();
 
-    e_OfficialType GetOfficialType() { return officialType; }
+    e_OfficialType GetOfficialType() { DO_VALIDATION; return officialType; }
 
     virtual void Activate(boost::intrusive_ptr<Node> humanoidSourceNode, boost::intrusive_ptr<Node> fullbodySourceNode, std::map<Vector3, Vector3> &colorCoords, boost::intrusive_ptr < Resource<Surface> > kit, boost::shared_ptr<AnimCollection> animCollection, bool lazyPlayer);
     virtual void Deactivate();
 
     virtual void Process();
-    virtual void PreparePutBuffers(unsigned long snapshotTime_ms);
-    virtual void FetchPutBuffers(unsigned long putTime_ms);
+    virtual void FetchPutBuffers();
 
   protected:
     e_OfficialType officialType;

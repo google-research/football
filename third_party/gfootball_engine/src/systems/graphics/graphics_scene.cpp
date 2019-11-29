@@ -19,8 +19,6 @@
 #include "graphics_system.hpp"
 #include "graphics_object.hpp"
 
-#include "../../managers/systemmanager.hpp"
-
 #include "objects/graphics_camera.hpp"
 #include "objects/graphics_overlay2d.hpp"
 #include "objects/graphics_geometry.hpp"
@@ -30,102 +28,127 @@
 
 namespace blunted {
 
-  GraphicsScene::GraphicsScene(GraphicsSystem *graphicsSystem) : graphicsSystem(graphicsSystem) {
-    //printf("CREATING GFX SCENE\n");
+GraphicsScene::GraphicsScene(GraphicsSystem *graphicsSystem)
+    : graphicsSystem(graphicsSystem) {
+  DO_VALIDATION;
+  // printf("CREATING GFX SCENE\n");
+}
+
+GraphicsScene::~GraphicsScene() {
+  DO_VALIDATION;
+  // printf("DELETING GFX SCENE\n");
+}
+
+GraphicsSystem *GraphicsScene::GetGraphicsSystem() {
+  DO_VALIDATION;
+  return graphicsSystem;
+}
+
+// void GraphicsScene::Exit() { DO_VALIDATION;
+// printf("EXITING GFX SCENE\n");
+//}
+
+boost::intrusive_ptr<ISceneInterpreter> GraphicsScene::GetInterpreter(
+    e_SceneType sceneType) {
+  DO_VALIDATION;
+  if (sceneType == e_SceneType_Scene2D) {
+    DO_VALIDATION;
+    boost::intrusive_ptr<GraphicsScene_Scene2DInterpreter> scene2DInterpreter(
+        new GraphicsScene_Scene2DInterpreter(this));
+    return scene2DInterpreter;
+  }
+  if (sceneType == e_SceneType_Scene3D) {
+    DO_VALIDATION;
+    boost::intrusive_ptr<GraphicsScene_Scene3DInterpreter> scene3DInterpreter(
+        new GraphicsScene_Scene3DInterpreter(this));
+    return scene3DInterpreter;
+  }
+  Log(e_FatalError, "GraphicsScene", "GetInterpreter",
+      "No appropriate interpreter found for this SceneType");
+  return boost::intrusive_ptr<GraphicsScene_Scene3DInterpreter>();
+}
+
+ISystemObject *GraphicsScene::CreateSystemObject(Object *object) {
+  DO_VALIDATION;
+  assert(object);
+
+
+  if (object->GetObjectType() == e_ObjectType_Camera) {
+    DO_VALIDATION;
+    GraphicsCamera *graphicsObject = new GraphicsCamera(this);
+    object->Attach(graphicsObject->GetInterpreter(e_ObjectType_Camera));
+    return graphicsObject;
+  }
+  if (object->GetObjectType() == e_ObjectType_Image2D) {
+    DO_VALIDATION;
+    GraphicsOverlay2D *graphicsObject = new GraphicsOverlay2D(this);
+    object->Attach(graphicsObject->GetInterpreter(e_ObjectType_Image2D));
+    return graphicsObject;
+  }
+  if (object->GetObjectType() == e_ObjectType_Geometry) {
+    DO_VALIDATION;
+    GraphicsGeometry *graphicsObject = new GraphicsGeometry(this);
+    object->Attach(graphicsObject->GetInterpreter(e_ObjectType_Geometry),
+                   object);
+    return graphicsObject;
+  }
+  if (object->GetObjectType() == e_ObjectType_Skybox) {
+    DO_VALIDATION;
+    GraphicsGeometry *graphicsObject = new GraphicsGeometry(this);
+    object->Attach(graphicsObject->GetInterpreter(e_ObjectType_Skybox));
+    return graphicsObject;
+  }
+  if (object->GetObjectType() == e_ObjectType_Light) {
+    DO_VALIDATION;
+    GraphicsLight *graphicsLight = new GraphicsLight(this);
+    object->Attach(graphicsLight->GetInterpreter(e_ObjectType_Light));
+    return graphicsLight;
   }
 
-  GraphicsScene::~GraphicsScene() {
-    //printf("DELETING GFX SCENE\n");
-  }
-
-  GraphicsSystem *GraphicsScene::GetGraphicsSystem() {
-    return graphicsSystem;
-  }
-
-  //void GraphicsScene::Exit() {
-    //printf("EXITING GFX SCENE\n");
-  //}
-
-  boost::intrusive_ptr<ISceneInterpreter> GraphicsScene::GetInterpreter(e_SceneType sceneType) {
-    if (sceneType == e_SceneType_Scene2D) {
-      boost::intrusive_ptr<GraphicsScene_Scene2DInterpreter> scene2DInterpreter(new GraphicsScene_Scene2DInterpreter(this));
-      return scene2DInterpreter;
-    }
-    if (sceneType == e_SceneType_Scene3D) {
-      boost::intrusive_ptr<GraphicsScene_Scene3DInterpreter> scene3DInterpreter(new GraphicsScene_Scene3DInterpreter(this));
-      return scene3DInterpreter;
-    }
-    Log(e_FatalError, "GraphicsScene", "GetInterpreter", "No appropriate interpreter found for this SceneType");
-    return boost::intrusive_ptr<GraphicsScene_Scene3DInterpreter>();
-  }
-
-  ISystemObject *GraphicsScene::CreateSystemObject(boost::intrusive_ptr<Object> object) {
-    assert(object.get());
-
-
-    if (object->GetObjectType() == e_ObjectType_Camera) {
-      GraphicsCamera *graphicsObject = new GraphicsCamera(this);
-      object->Attach(graphicsObject->GetInterpreter(e_ObjectType_Camera));
-      return graphicsObject;
-    }
-    if (object->GetObjectType() == e_ObjectType_Image2D) {
-      GraphicsOverlay2D *graphicsObject = new GraphicsOverlay2D(this);
-      object->Attach(graphicsObject->GetInterpreter(e_ObjectType_Image2D));
-      return graphicsObject;
-    }
-    if (object->GetObjectType() == e_ObjectType_Geometry) {
-      GraphicsGeometry *graphicsObject = new GraphicsGeometry(this);
-      object->Attach(graphicsObject->GetInterpreter(e_ObjectType_Geometry), object.get());
-      return graphicsObject;
-    }
-    if (object->GetObjectType() == e_ObjectType_Skybox) {
-      GraphicsGeometry *graphicsObject = new GraphicsGeometry(this);
-      object->Attach(graphicsObject->GetInterpreter(e_ObjectType_Skybox));
-      return graphicsObject;
-    }
-    if (object->GetObjectType() == e_ObjectType_Light) {
-      GraphicsLight *graphicsLight = new GraphicsLight(this);
-      object->Attach(graphicsLight->GetInterpreter(e_ObjectType_Light));
-      return graphicsLight;
-    }
-
-    return NULL;
-  }
-
+  return NULL;
+}
 
   // Scene3D interpreter
 
-  GraphicsScene_Scene3DInterpreter::GraphicsScene_Scene3DInterpreter(GraphicsScene *caller) : caller(caller) {
-  }
+GraphicsScene_Scene3DInterpreter::GraphicsScene_Scene3DInterpreter(
+    GraphicsScene *caller)
+    : caller(caller) {
+  DO_VALIDATION;
+}
 
-  void GraphicsScene_Scene3DInterpreter::OnLoad() {
-  }
+void GraphicsScene_Scene3DInterpreter::OnLoad() { DO_VALIDATION; }
 
-  void GraphicsScene_Scene3DInterpreter::OnUnload() {
-    delete caller;
-    caller = 0;
-  }
+void GraphicsScene_Scene3DInterpreter::OnUnload() {
+  DO_VALIDATION;
+  delete caller;
+  caller = 0;
+}
 
-  ISystemObject *GraphicsScene_Scene3DInterpreter::CreateSystemObject(boost::intrusive_ptr<Object> object) {
-    return caller->CreateSystemObject(object);
-  }
-
+ISystemObject *GraphicsScene_Scene3DInterpreter::CreateSystemObject(
+    Object *object) {
+  DO_VALIDATION;
+  return caller->CreateSystemObject(object);
+}
 
   // Scene2D interpreter
 
-  GraphicsScene_Scene2DInterpreter::GraphicsScene_Scene2DInterpreter(GraphicsScene *caller) : caller(caller) {
-  }
+GraphicsScene_Scene2DInterpreter::GraphicsScene_Scene2DInterpreter(
+    GraphicsScene *caller)
+    : caller(caller) {
+  DO_VALIDATION;
+}
 
-  void GraphicsScene_Scene2DInterpreter::OnLoad() {
-  }
+void GraphicsScene_Scene2DInterpreter::OnLoad() { DO_VALIDATION; }
 
-  void GraphicsScene_Scene2DInterpreter::OnUnload() {
-    delete caller;
-    caller = 0;
-  }
+void GraphicsScene_Scene2DInterpreter::OnUnload() {
+  DO_VALIDATION;
+  delete caller;
+  caller = 0;
+}
 
-  ISystemObject *GraphicsScene_Scene2DInterpreter::CreateSystemObject(boost::intrusive_ptr<Object> object) {
-    return caller->CreateSystemObject(object);
-  }
-
+ISystemObject *GraphicsScene_Scene2DInterpreter::CreateSystemObject(
+    Object *object) {
+  DO_VALIDATION;
+  return caller->CreateSystemObject(object);
+}
 }

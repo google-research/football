@@ -43,7 +43,7 @@ class RllibGFootball(MultiAgentEnv):
     self.env = football_env.create_environment(
         env_name='test_example_multiagent', stacked=False,
         logdir='/tmp/rllib_test',
-        enable_goal_videos=False, enable_full_episode_videos=False, render=True,
+        write_goal_dumps=False, write_full_episode_dumps=False, render=True,
         dump_frequency=0,
         number_of_left_players_agent_controls=num_agents,
         channel_dimensions=(42, 42))
@@ -71,14 +71,16 @@ class RllibGFootball(MultiAgentEnv):
     o, r, d, i = self.env.step(actions)
     rewards = {}
     obs = {}
+    infos = {}
     for pos, key in enumerate(sorted(action_dict.keys())):
-      rewards[key] = r / len(action_dict)
+      infos[key] = i
       if self.num_agents > 1:
+        rewards[key] = r[pos]
         obs[key] = o[pos]
       else:
+        rewards[key] = r
         obs[key] = o
     dones = {'__all__': d}
-    infos = i
     return obs, rewards, dones, infos
 
 

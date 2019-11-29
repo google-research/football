@@ -26,15 +26,13 @@ namespace blunted {
 
     public:
       OpenGLRenderer3D();
+      virtual void SetContext();
+      virtual void DisableContext();
       virtual const screenshoot& GetScreen();
       virtual ~OpenGLRenderer3D();
 
       virtual void SwapBuffers();
 
-      //virtual void SetMatrixMode(e_MatrixMode matrixMode); // TO BE DEPRECATED
-      //virtual void IdentityMatrix(); // TO BE DEPRECATED
-      virtual void LoadMatrix(const Matrix4 &mat); // TO BE DEPRECATED
-      virtual Matrix4 GetMatrix(e_MatrixMode matrixMode) const; // TO BE DEPRECATED
       virtual void SetMatrix(const std::string &shaderUniformName, const Matrix4 &matrix);
 
       virtual void RenderOverlay2D(const std::vector<Overlay2DQueueEntry> &overlay2DQueue);
@@ -73,8 +71,6 @@ namespace blunted {
       virtual void UpdateVertexBuffer(VertexBufferID vertexBufferID, float *vertices, unsigned int verticesDataSize);
       virtual void DeleteVertexBuffer(VertexBufferID vertexBufferID);
       virtual void RenderVertexBuffer(const std::deque<VertexBufferQueueEntry> &vertexBufferQueue, e_RenderMode renderMode = e_RenderMode_Full);
-      virtual void RenderAABB(std::list<VertexBufferQueueEntry> &vertexBufferQueue);
-      virtual void RenderAABB(std::list<LightQueueEntry> &lightQueue);
 
       // lights
       virtual void SetLight(const Vector3 &position, const Vector3 &color, float radius);
@@ -98,12 +94,6 @@ namespace blunted {
       virtual bool CheckFrameBufferStatus();
       virtual void SetFramebufferGammaCorrection(bool onOff);
 
-      // render buffers
-      virtual int CreateRenderBuffer();
-      virtual void DeleteRenderBuffer(int rbID);
-      virtual void BindRenderBuffer(int rbID);
-      virtual void SetRenderBufferStorage(e_InternalPixelFormat internalPixelFormat, int width, int height);
-
       // render targets
       virtual void SetRenderTargets(std::vector<e_TargetAttachment> targetAttachments);
 
@@ -113,7 +103,6 @@ namespace blunted {
       virtual void PopAttribute();
       virtual void SetViewport(int x, int y, int width, int height);
       virtual void GetContextSize(int &width, int &height, int &bpp);
-      virtual void SetPolygonOffset(float scale, float bias);
 
       // shaders
       virtual void LoadShader(const std::string &name, const std::string &filename);
@@ -125,9 +114,6 @@ namespace blunted {
       virtual void SetUniformFloat3(const std::string &shaderName, const std::string &varName, float value1, float value2, float value3);
       virtual void SetUniformFloat3Array(const std::string &shaderName, const std::string &varName, int count, float *values);
       virtual void SetUniformMatrix4(const std::string &shaderName, const std::string &varName, const Matrix4 &mat);
-
-      virtual void HDRCaptureOverallBrightness();
-      virtual float HDRGetOverallBrightness();
 
     protected:
       SDL_GLContext context;

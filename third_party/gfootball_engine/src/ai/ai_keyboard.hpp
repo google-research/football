@@ -15,6 +15,7 @@
 #define _AI_KEYBOARD
 
 #include "../base/math/vector3.hpp"
+#include "../defines.hpp"
 #include "../hid/ihidevice.hpp"
 #include <set>
 
@@ -23,25 +24,25 @@ class AIControlledKeyboard : public IHIDevice {
 
   public:
     AIControlledKeyboard();
-    virtual ~AIControlledKeyboard() {}
-
-    virtual void LoadConfig() {}
-    virtual void SaveConfig() {}
-
-    virtual void Process();
+    virtual ~AIControlledKeyboard() { DO_VALIDATION;}
 
     virtual bool GetButton(e_ButtonFunction buttonFunction);
+    virtual void ResetNotSticky();
     virtual void SetButton(e_ButtonFunction buttonFunction, bool state);
     virtual bool GetPreviousButtonState(e_ButtonFunction buttonFunction);
     virtual Vector3 GetDirection();
+    virtual Vector3 GetOriginalDirection();
 
     // Methods for remote controlling.
     void SetDirection(const Vector3& new_direction);
     virtual void Reset();
+    virtual void ProcessState(EnvState* state);
+    virtual void Mirror(float mirror);
 
   private:
     Vector3 direction_;
-    std::set<e_ButtonFunction> buttons_pressed_;
+    float mirror = 1.0f;
+    bool buttons_pressed_[e_ButtonFunction_Size];
 };
 
 #endif

@@ -37,26 +37,26 @@ namespace blunted {
   class Resource : public RefCounted {
 
     public:
-      Resource(std::string identString) : resource(0), identString(identString) {
+      Resource(std::string identString) : resource(0), identString(identString) { DO_VALIDATION;
         resource = new T();
       }
 
-      virtual ~Resource() {
+      virtual ~Resource() { DO_VALIDATION;
         delete resource;
         resource = 0;
       }
 
-      Resource(const Resource &src, const std::string &identString) : identString(identString) {
+      Resource(const Resource &src, const std::string &identString) : identString(identString) { DO_VALIDATION;
         this->resource = new T(*src.resource);
       }
 
 
 
-      T *GetResource() {
+      T *GetResource() { DO_VALIDATION;
         return resource;
       }
 
-      std::string GetIdentString() {
+      std::string GetIdentString() { DO_VALIDATION;
         return identString;
       }
 

@@ -20,8 +20,6 @@
 
 #include "../../defines.hpp"
 
-#include "../../systems/isystemscene.hpp"
-
 #include "../../scene/scene3d/scene3d.hpp"
 #include "../../scene/scene2d/scene2d.hpp"
 
@@ -29,7 +27,7 @@ namespace blunted {
 
   class GraphicsSystem;
 
-  class GraphicsScene : public ISystemScene {
+  class GraphicsScene {
 
     public:
       GraphicsScene(GraphicsSystem *graphicsSystem);
@@ -37,13 +35,12 @@ namespace blunted {
 
       virtual GraphicsSystem *GetGraphicsSystem();
 
-      virtual ISystemObject *CreateSystemObject(boost::intrusive_ptr<Object> object);
+      virtual ISystemObject *CreateSystemObject(Object* object);
 
       virtual boost::intrusive_ptr<ISceneInterpreter> GetInterpreter(e_SceneType sceneType);
 
     protected:
       GraphicsSystem *graphicsSystem;
-
   };
 
 
@@ -56,11 +53,11 @@ namespace blunted {
       virtual void OnLoad();
       virtual void OnUnload();
 
-      virtual ISystemObject *CreateSystemObject(boost::intrusive_ptr<Object> object);
+      virtual ISystemObject *CreateSystemObject(Object* object);
 
-      virtual void SetGravity(const Vector3 &gravity) {}
-      virtual void SetErrorCorrection(float value) {}
-      virtual void SetConstraintForceMixing(float value) {}
+      virtual void SetGravity(const Vector3 &gravity) { DO_VALIDATION;}
+      virtual void SetErrorCorrection(float value) { DO_VALIDATION;}
+      virtual void SetConstraintForceMixing(float value) { DO_VALIDATION;}
 
     protected:
       GraphicsScene *caller;
@@ -76,7 +73,7 @@ namespace blunted {
       virtual void OnLoad();
       virtual void OnUnload();
 
-      virtual ISystemObject *CreateSystemObject(boost::intrusive_ptr<Object> object);
+      virtual ISystemObject *CreateSystemObject(Object* object);
 
     protected:
       GraphicsScene *caller;

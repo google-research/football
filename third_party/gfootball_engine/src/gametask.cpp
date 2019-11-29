@@ -19,121 +19,67 @@
 
 #include "main.hpp"
 
-#include "framework/scheduler.hpp"
-
 #include "blunted.hpp"
 
 GameTask::GameTask() {
-
-  match = 0;
-  menuScene = 0;
-
+  DO_VALIDATION;
   // prohibits deletion of the scene before this object is dead
   scene3D = GetScene3D();
 }
 
 GameTask::~GameTask() {
-  Exit();
+  DO_VALIDATION;
+  StopMatch();
 }
 
-void GameTask::Exit() {
-  Action(e_GameTaskMessage_StopMatch);
-  Action(e_GameTaskMessage_StopMenuScene);
-  scene3D.reset();
+void GameTask::StartMatch(bool animations) {
+  DO_VALIDATION;
+  randomize(GetScenarioConfig().game_engine_random_seed);
+  MatchData *matchData = GetMenuTask()->GetMatchData();
+  assert(matchData);
+  assert(!match);
+  match.reset(new Match(matchData, GetControllers(), animations));
 }
 
-void GameTask::Action(e_GameTaskMessage message) {
-
-  switch (message) {
-
-    case e_GameTaskMessage_StartMatch:
-      {
-
-        randomize(GetScenarioConfig().game_engine_random_seed);
-
-        MatchData *matchData = GetMenuTask()->GetMatchData();
-        assert(matchData);
-        Match *tmpMatch = new Match(matchData, GetControllers());
-        assert(!match);
-        match = tmpMatch;
-        GetScheduler()->ResetTaskSequenceTime("game");
-      }
-      break;
-
-    case e_GameTaskMessage_StopMatch:
-      if (match) {
-        match->Exit();
-        delete match;
-        match = 0;
-      }
-      break;
-
-    case e_GameTaskMessage_StartMenuScene:
-      assert(!menuScene);
-      menuScene = new MenuScene();
-      GetScheduler()->ResetTaskSequenceTime("game");
-      break;
-
-    case e_GameTaskMessage_StopMenuScene:
-      if (menuScene) {
-        delete menuScene;
-        menuScene = 0;
-      }
-      break;
-
-    default:
-      break;
-
+bool GameTask::StopMatch() {
+  DO_VALIDATION;
+  if (match) {
+    DO_VALIDATION;
+    match->Exit();
+    match.reset();
+    return true;
   }
-}
-
-void GameTask::GetPhase() {
-
-  // process messageQueue
-  if (match) match->Get();
-  if (menuScene) menuScene->Get();
+  return false;
 }
 
 void GameTask::ProcessPhase() {
-
-  for (unsigned int i = 0; i < GetControllers().size(); i++) {
-    GetControllers()[i]->Process();
-  }
-
-  if (match) {
-    match->Process();
+  DO_VALIDATION;
+  bool process = match->Process();
+  match->UpdateCamera();
+  if (process) {
     match->PreparePutBuffers();
+    match->FetchPutBuffers();
   }
-
-  if (menuScene) {
-    menuScene->Process();
-  }
-
 }
 
-void GameTask::PutPhase() {
+void GameTask::PrepareRender() {
+  match->Put();
+  std::vector<Player*> players;
+  match->GetActiveTeamPlayers(match->FirstTeam(), players);
+  match->GetActiveTeamPlayers(match->SecondTeam(), players);
+  std::vector<PlayerBase*> officials;
+  match->GetOfficialPlayers(officials);
 
-
-  if (match) {
-    match->FetchPutBuffers();
-    match->Put();
-    std::vector<Player*> players;
-    match->GetActiveTeamPlayers(0, players);
-    match->GetActiveTeamPlayers(1, players);
-    std::vector<PlayerBase*> officials;
-    match->GetOfficialPlayers(officials);
-
-    for (auto player : players) {
-      if (match->GetPause() || player->NeedsModelUpdate()) {
-        player->UpdateFullbodyModel();
-        boost::static_pointer_cast<Geometry>(player->GetFullbodyNode()->GetObject("fullbody"))->OnUpdateGeometryData();
-      }
-    }
-    for (auto official : officials) {
-      official->UpdateFullbodyModel();
-      boost::static_pointer_cast<Geometry>(official->GetFullbodyNode()->GetObject("fullbody"))->OnUpdateGeometryData();
-    }
-    match->UploadGoalNetting(); // won't this block the whole process thing too? (opengl busy == wait, while mutex locked == no process)
-  } // !match
-  if (menuScene) menuScene->Put();
+  for (auto player : players) {
+    DO_VALIDATION;
+    player->UpdateFullbodyModel();
+    boost::static_pointer_cast<Geometry>(player->GetFullbodyNode()->GetObject("fullbody"))->OnUpdateGeometryData();
+  }
+  for (auto official : officials) {
+    DO_VALIDATION;
+    official->UpdateFullbodyModel();
+    boost::static_pointer_cast<Geometry>(official->GetFullbodyNode()->GetObject("fullbody"))->OnUpdateGeometryData();
+  }
+  match->UploadGoalNetting(); // won't this block the whole process thing too? (opengl busy == wait, while mutex locked == no process)
+  DO_VALIDATION;
 }

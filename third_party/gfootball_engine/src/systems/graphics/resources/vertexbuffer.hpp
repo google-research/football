@@ -23,7 +23,7 @@ namespace blunted {
   class Renderer3D;
 
   struct VertexBufferID {
-    VertexBufferID() {
+    VertexBufferID() { DO_VALIDATION;
       bufferID = -1;
     }
     int bufferID = 0; // -1 if uninitialized
