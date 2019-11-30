@@ -125,13 +125,13 @@ def create_environment(env_name='',
         composed of 4 planes of size 'channel_dimensions'.
         Its size is then 'channel_dimensions'x4 (or 'channel_dimensions'x16 when
         stacked is True).
-        The first plane P holds the position of the 11 player of the left
-        team, P[y,x] is one if there is a player at position (x,y), otherwise,
-        its value is zero.
-        The second plane holds in the same way the position of the 11 players
-        of the right team.
-        The third plane holds the active player of the left team.
-        The last plane holds the position of the ball.
+        The first plane P holds the position of players on the left team
+        team, P[y,x] is 255 if there is a player at position (x,y), otherwise,
+        its value is 0.
+        The second plane holds in the same way the position of players
+        on the right team.
+        The third plane holds the position of the ball.
+        The last plane holds the active player.
       'simple115': the observation is a vector of size 115. It holds:
          - the ball_position and the ball_direction as (x,y,z)
          - one hot encoding of who controls the ball.
