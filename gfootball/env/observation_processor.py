@@ -123,7 +123,7 @@ def get_frame(trace):
         player_coord[0],
         player_coord[1],
         field_coords=True,
-        color=(0, 0, 255))
+        color=(255, 255, 0))
     letter = 'A'
     if 'opponent_active' in trace and player_idx in trace['opponent_active']:
       letter = 'Y'
