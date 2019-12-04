@@ -133,7 +133,7 @@ struct ScenarioConfig {
     }
     return leftDistance < rightDistance;
   }
-  void ProcessState(EnvState* state) {
+  void ProcessStateConstant(EnvState* state) {
     state->process(ball_position);
     int size = left_team.size();
     state->process(size);
@@ -151,9 +151,6 @@ struct ScenarioConfig {
     state->process(right_agents);
     state->process(use_magnet);
     state->process(offsides);
-    state->process(real_time);
-    state->process(game_engine_random_seed);
-    state->process(reverse_team_processing);
     state->process(left_team_difficulty);
     state->process(right_team_difficulty);
     state->process(deterministic);
@@ -161,8 +158,13 @@ struct ScenarioConfig {
     state->process(end_episode_on_possession_change);
     state->process(end_episode_on_out_of_play);
     state->process(game_duration);
+  }
 
- }
+  void ProcessState(EnvState* state) {
+    state->process(real_time);
+    state->process(game_engine_random_seed);
+    state->process(reverse_team_processing);
+  }
 };
 
 enum GameState {

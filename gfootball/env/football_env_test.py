@@ -125,7 +125,7 @@ class FootballEnvTest(parameterized.TestCase):
     for episode in range(1 if extensive else 2):
       hash_value = compute_hash(env, actions, extensive)
       if extensive:
-        self.assertEqual(hash_value, 4203104251)
+        self.assertEqual(hash_value, 2258127135)
       elif episode % 2 == 0:
         self.assertEqual(hash_value, 716323440)
       else:
@@ -169,7 +169,7 @@ class FootballEnvTest(parameterized.TestCase):
     for _ in range(10):
       o, _, _, _ = env.step(football_action_set.action_right)
       hash = observation_hash(o, hash)
-    self.assertEqual(hash, 307836701)
+    self.assertEqual(hash, 845594868)
     env.close()
 
   def test_dynamic_render(self):
@@ -292,17 +292,24 @@ class FootballEnvTest(parameterized.TestCase):
   @parameterized.parameters(range(1))
   def test_setstate(self, seed):
     """Checks setState functionality."""
-    cfg = config.Config({
+    cfg1 = config.Config({
         'level': 'tests.symmetric',
-        'game_engine_random_seed': seed
+        'game_engine_random_seed': seed,
+        'reverse_team_processing' : False
     })
-    env1 = football_env.FootballEnv(cfg)
-    env2 = football_env.FootballEnv(cfg)
+    cfg2 = config.Config({
+        'level': 'tests.symmetric',
+        'game_engine_random_seed': seed + 10,
+        'reverse_team_processing' : False
+    })
+    env1 = football_env.FootballEnv(cfg1)
+    env2 = football_env.FootballEnv(cfg2)
     initial_obs = env1.reset()
     env2.reset()
     initial_state = env1.get_state()
+    env2.set_state(initial_state)
     random.seed(seed)
-    actions = len(football_action_set.get_action_set(cfg))
+    actions = len(football_action_set.get_action_set(cfg1))
     first_action = random.randint(0, actions - 1)
     first_obs, _, _, _ = env1.step(first_action)
     _, _, _, _ = env2.step(first_action)

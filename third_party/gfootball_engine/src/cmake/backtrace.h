@@ -14,7 +14,7 @@
 #ifndef _CMAKE_BACKTRACE_H_
 #define _CMAKE_BACKTRACE_H_
 
-static inline void print_stacktrace() { }
+void print_stacktrace();
 
 void install_stacktrace();
 

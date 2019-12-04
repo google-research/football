@@ -653,6 +653,14 @@ void Match::UpdateIngameCamera() {
 }
 
 void Match::ProcessState(EnvState* state) {
+  if (state->getConfig()->reverse_team_processing) {
+    std::swap(first_team, second_team);
+  }
+  state->process(first_team);
+  state->process(second_team);
+  if (state->getConfig()->reverse_team_processing) {
+    std::swap(first_team, second_team);
+  }
   bool team_0_mirror = teams[0]->isMirrored();
   bool team_1_mirror = teams[1]->isMirrored();
   bool ball_mirror =

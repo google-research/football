@@ -52,15 +52,18 @@ class FootballEnvCore(object):
   def __init__(self, config):
     global _unused_engines
     self._config = config
+    self._sticky_actions = football_action_set.get_sticky_actions(config)
+    self._use_rendering_engine = False
     if _unused_engines:
       self._env = _unused_engines.pop()
     else:
       self._env = libgame.GameEnv()
     self._env.game_config.physics_steps_per_frame = config['physics_steps_per_frame']
-    self._sticky_actions = football_action_set.get_sticky_actions(config)
-    self._use_rendering_engine = False
+    # Reset is needed here to make sure render() API call before reset() API
+    # call works fine (get/setState makes sure env. config is the same).
+    self.reset(inc=0)
 
-  def _reset(self, animations):
+  def _reset(self, animations, inc):
     global _unused_engines
     global _unused_rendering_engine
     assert (self._env.state == GameState.game_created or
@@ -70,13 +73,13 @@ class FootballEnvCore(object):
     self._step = 0
     self._observation = None
     self._info = None
-    self._config.NewScenario()
+    self._config.NewScenario(inc=inc)
     if self._env.state == GameState.game_created:
       self._env.start_game()
     self._env.reset(self._config.ScenarioConfig(), animations)
     self._env.state = GameState.game_running
 
-  def reset(self):
+  def reset(self, inc=1):
     """Reset environment for a new episode using a given config."""
     self._episode_start = timeit.default_timer()
     self._action_set = football_action_set.get_action_set(self._config)
@@ -84,7 +87,7 @@ class FootballEnvCore(object):
     self._cumulative_reward = 0
     self._step_count = 0
     self._trace = trace
-    self._reset(self._env.game_config.render)
+    self._reset(self._env.game_config.render, inc=inc)
     while not self._retrieve_observation():
       self._env.step()
     return True
@@ -363,7 +366,7 @@ class FootballEnvCore(object):
     if not self._env.game_config.render:
       if not self._use_rendering_engine:
         if self._env.state != GameState.game_created:
-          state = self.get_state()
+          state = self.get_state("")
           self.close()
           if _unused_rendering_engine:
             self._env = _unused_rendering_engine
@@ -371,7 +374,7 @@ class FootballEnvCore(object):
           else:
             self._env = libgame.GameEnv()
           self._rendering_in_use()
-          self._reset(False)
+          self._reset(animations=False, inc=0)
           self.set_state(state)
           # We call render twice, as the first call has bad camera position.
           self._env.render(False)

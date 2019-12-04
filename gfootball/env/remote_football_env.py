@@ -127,8 +127,10 @@ class RemoteFootballEnv(gym.Env):
         return stub.StartGame(request, timeout=10*60)
       except grpc.RpcError as e:
         if e.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
+          time_to_sleep = 1
           continue
         logging.warning('Exception during request: %s', e)
+        logging.warning('Sleeping for %d seconds', time_to_sleep)
         time.sleep(time_to_sleep)
         if time_to_sleep < 1000:
           time_to_sleep *= 2

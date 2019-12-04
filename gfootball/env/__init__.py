@@ -125,7 +125,7 @@ def create_environment(env_name='',
         composed of 4 planes of size 'channel_dimensions'.
         Its size is then 'channel_dimensions'x4 (or 'channel_dimensions'x16 when
         stacked is True).
-        The first plane P holds the position of players on the left team
+        The first plane P holds the position of players on the left
         team, P[y,x] is 255 if there is a player at position (x,y), otherwise,
         its value is 0.
         The second plane holds in the same way the position of players

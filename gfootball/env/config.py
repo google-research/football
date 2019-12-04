@@ -144,10 +144,10 @@ class Config(object):
   def ScenarioConfig(self):
     return self._scenario_cfg
 
-  def NewScenario(self):
+  def NewScenario(self, inc = 1):
     if 'episode_number' not in self._values:
       self._values['episode_number'] = 0
-    self._values['episode_number'] += 1
+    self._values['episode_number'] += inc
     self._scenario_values = {}
     from gfootball.env import scenario_builder
     self._scenario_cfg = scenario_builder.Scenario(self).ScenarioConfig()

@@ -11,12 +11,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <signal.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <execinfo.h>
+#include <signal.h>
 #include "backtrace.h"
+#include <stdlib.h>
+#include <unistd.h>
+
+void print_stacktrace() {
+  void *array[10];
+  size_t size;
+  size = backtrace(array, 10);
+  backtrace_symbols_fd(array, size, STDERR_FILENO);
+}
+
 
 void handler(int sig) {
+  print_stacktrace();
   printf("Error: signal %d:\n", sig);
   exit(1);
 }

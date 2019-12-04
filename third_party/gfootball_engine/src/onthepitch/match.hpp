@@ -169,8 +169,8 @@ class Match {
 
     MatchData *matchData;
     Team *teams[2];
-    const int first_team = 0;
-    const int second_team = 1;
+    int first_team = 0;
+    int second_team = 1;
     bool ball_mirrored = false;
 
     Officials *officials;

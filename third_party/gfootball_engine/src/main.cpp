@@ -200,7 +200,17 @@ void Tracker::verify_snapshot(long pos, int line, const char* file,
 
 void GameContext::ProcessState(EnvState* state) {
   state->process((void*)&rng, sizeof(rng));
-//  scenario_config->ProcessState(state);
+  if (state->Load()) {
+    EnvState reader(game, "");
+    game->scenario_config.ProcessStateConstant(&reader);
+    if (reader.GetState() != state->GetState().substr(state->getpos(),
+        reader.GetState().length())) {
+      Log(e_FatalError, "football", "set_state",
+          "Current environment scenario != scenario in the state.");
+    }
+  }
+  game->scenario_config.ProcessStateConstant(state);
+  game->scenario_config.ProcessState(state);
 #ifdef FULL_VALIDATION
   anims->ProcessState(state);
 #endif

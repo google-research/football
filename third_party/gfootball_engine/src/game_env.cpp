@@ -96,6 +96,7 @@ void GameEnv::setConfig(ScenarioConfig& scenario_config) {
 
 void GameEnv::start_game() {
   assert(context == nullptr);
+  install_stacktrace();
   std::cout.precision(17);
   context = new GameContext();
   ContextHolder c(this);
@@ -348,8 +349,8 @@ void GameEnv::step() {
 void GameEnv::ProcessState(EnvState* state) {
   state->process(&this->state, sizeof(this->state));
   state->process(waiting_for_game_count);
-  context->gameTask->GetMatch()->ProcessState(state);
   context->ProcessState(state);
+  context->gameTask->GetMatch()->ProcessState(state);
 }
 
 void GameEnv::render(bool swap_buffer) {

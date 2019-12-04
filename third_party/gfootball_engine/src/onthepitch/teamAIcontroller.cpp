@@ -145,15 +145,8 @@ void TeamAIController::Process() {
   if (lineX * team->GetDynamicSide() - allowSlackDistance >
       deepestDanger * team->GetDynamicSide()) {
     DO_VALIDATION;
-    //printf("previous: %f\n", deepestDanger);
     deepestDanger = lineX - allowSlackDistance * team->GetDynamicSide();
-    //printf("now:      %f\n", deepestDanger);
   }
-
-  /*
-  if (team->GetID() == 0) SetRedDebugPilon(Vector3(deepestDanger, 0, 0));
-  if (team->GetID() == 1) SetYellowDebugPilon(Vector3(deepestDanger, 0, 0));
-  */
 
   offsideTrapX = deepestDanger;
   // disable
@@ -424,9 +417,9 @@ Vector3 TeamAIController::GetAdaptedFormationPosition(
   // maybe setting offside trap this way doesn't work too well: after all, defensive positioning stuff is done after this, thereby diminishing trap sometimes.
   // on the other hand, maybe this is a good basic trap setup, and we could apply the trap with the applyoffsidetrap function after the defensive positioning as well. (done from the def/mid strategies code)
   if (backXBound * team->GetDynamicSide() >
-      GetOffsideTrapX() * team->GetDynamicSide())
-    backXBound = GetOffsideTrapX();
-
+      GetOffsideTrapX() * team->GetDynamicSide()) {
+    backXBound = clamp(GetOffsideTrapX(), -pitchHalfW, pitchHalfW);
+  }
   float xFocus = 0.0f;
   float xFocusStrength = 0.0f;
   float yFocus = ballY * 1.0f;
@@ -1307,8 +1300,7 @@ void TeamAIController::ProcessState(EnvState *state) {
   DO_VALIDATION;
   state->process(taker);
   state->process(static_cast<void*>(&setPieceType), sizeof(setPieceType));
-  //baseTeamTactics.ProcessState(state);
-  //teamTacticsModMultipliers.ProcessState(state);
+  baseTeamTactics.ProcessState(state);
   liveTeamTactics.ProcessState(state);
   state->process(offensivenessBias);
   state->process(teamHasPossession);
