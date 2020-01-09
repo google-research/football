@@ -5,6 +5,10 @@ should not change, as modifications made to the environment are either
 new features or backward compatible bug fixes. We will maintain vX branches
 pointing at the most recent vX.Y.
 
+v2.0.4
+- Added Colab support (see readme file).
+- Some minor bug fixes (including https://github.com/google-research/football/issues/110)
+
 v2.0 - this release is not backward-compatible due to making game fully symmetric (training agents can behave differently).
 - Game is fully symmetric now (playing left to right and right to left is equivalent). All observations are modified inside of the
   environment and from agent's perspective the game is always presented as playing from left to right (no need to train from both

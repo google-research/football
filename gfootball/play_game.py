@@ -36,6 +36,7 @@ flags.DEFINE_string('level', '', 'Level to play')
 flags.DEFINE_enum('action_set', 'default', ['default', 'full'], 'Action set')
 flags.DEFINE_bool('real_time', True,
                   'If true, environment will slow down so humans can play.')
+flags.DEFINE_bool('render', True, 'Whether to do game rendering.')
 
 
 def main(_):
@@ -51,7 +52,8 @@ def main(_):
   if FLAGS.level:
     cfg['level'] = FLAGS.level
   env = football_env.FootballEnv(cfg)
-  env.render()
+  if FLAGS.render:
+    env.render()
   env.reset()
   try:
     while True:

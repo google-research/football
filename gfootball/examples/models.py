@@ -21,7 +21,7 @@ from IMPALA paper; we use 4 big blocks instead of 3 though.
 """
 from baselines.common.models import register
 import sonnet as snt
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 
 @register('gfootball_impala_cnn')

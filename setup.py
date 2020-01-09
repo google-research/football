@@ -30,18 +30,31 @@ class CustomBuild(build_ext):
   """Custom installation script to build the C++ environment."""
   def run(self):
     dest_dir = os.path.join(self.build_lib, 'gfootball_engine')
-    if (os.system('gfootball/build_game_engine.sh') or
-        os.system('cp -r third_party/fonts ' + dest_dir) or
-        os.system("cp third_party/gfootball_engine/_gameplayfootball.so " + dest_dir)):
-      print("Google Research Football compilation failed")
-      sys.exit(1)
+
+    if os.system('cp -r third_party/fonts ' + dest_dir):
+      raise OSError("Google Research Football: Could not copy "
+                    "fonts to %s." % (dest_dir))
+
+    try:
+      use_prebuilt_library = int(os.environ.get("GFOOTBALL_USE_PREBUILT_SO", "0"))
+    except ValueError:
+      raise ValueError("Could not parse GFOOTBALL_USE_PREBUILT_SO environment "
+                       "variable as int. Please set it to 0 or 1")
+
+    if use_prebuilt_library:
+      if os.system("cp third_party/gfootball_engine/lib/prebuilt_gameplayfootball.so " + dest_dir + "/_gameplayfootball.so"):
+        raise OSError("Failed to copy pre-built library to a final destination %s." % dest_dir)
+    else:
+      if (os.system('gfootball/build_game_engine.sh') or
+          os.system("cp third_party/gfootball_engine/_gameplayfootball.so " + dest_dir)):
+        raise OSError("Google Research Football compilation failed")
     super(CustomBuild, self).run()
 
 packages = find_packages() + find_packages('third_party')
 
 setup(
     name='gfootball',
-    version='2.0.3',
+    version='2.0.4',
     description=('Google Research Football - RL environment based on '
                  'open-source game Gameplay Football'),
     author='Google LLC',

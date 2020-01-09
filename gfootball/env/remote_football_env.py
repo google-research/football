@@ -134,6 +134,7 @@ class RemoteFootballEnv(gym.Env):
         time.sleep(time_to_sleep)
         if time_to_sleep < 1000:
           time_to_sleep *= 2
+        self._update_master()
       except BaseException as e:
         logging.warning('Exception during request: %s', e)
         logging.warning('Sleeping for %d seconds', time_to_sleep)

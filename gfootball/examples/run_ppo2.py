@@ -19,18 +19,17 @@ from __future__ import print_function
 
 import multiprocessing
 import os
-
+from absl import app
+from absl import flags
 from baselines import logger
 from baselines.bench import monitor
 from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
 from baselines.ppo2 import ppo2
 import gfootball.env as football_env
 from gfootball.examples import models  
-import tensorflow as tf
 
 
-flags = tf.app.flags
-FLAGS = tf.app.flags.FLAGS
+FLAGS = flags.FLAGS
 
 flags.DEFINE_string('level', 'academy_empty_goal_close',
                     'Defines type of problem being solved')
@@ -83,19 +82,23 @@ def create_single_football_env(iprocess):
   return env
 
 
-def train():
+def train(_):
   """Trains a PPO2 policy."""
+  vec_env = SubprocVecEnv([
+      (lambda _i=i: create_single_football_env(_i))
+      for i in range(FLAGS.num_envs)
+  ], context=None)
+
+  # Import tensorflow after we create environments. TF is not fork sake, and
+  # we could be using TF as part of environment if one of the players is
+  # controled by an already trained model.
+  import tensorflow.compat.v1 as tf
   ncpu = multiprocessing.cpu_count()
   config = tf.ConfigProto(allow_soft_placement=True,
                           intra_op_parallelism_threads=ncpu,
                           inter_op_parallelism_threads=ncpu)
   config.gpu_options.allow_growth = True
   tf.Session(config=config).__enter__()
-
-  vec_env = SubprocVecEnv([
-      (lambda _i=i: create_single_football_env(_i))
-      for i in range(FLAGS.num_envs)
-  ], context=None)
 
   ppo2.learn(network=FLAGS.policy,
              total_timesteps=FLAGS.num_timesteps,
@@ -115,4 +118,4 @@ def train():
 
 
 if __name__ == '__main__':
-  train()
+  app.run(train)

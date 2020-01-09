@@ -23,7 +23,7 @@ from gfootball.env import config
 from gfootball.env import football_action_set
 from gfootball.env import observation_rotation
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 
 class ObservationRotationTest(tf.test.TestCase):

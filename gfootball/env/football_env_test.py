@@ -538,6 +538,21 @@ class FootballEnvTest(parameterized.TestCase):
     self.assertAlmostEqual(reward2, 0.9, delta=0.01)
     self.assertEqual(hash1, hash2)
 
+  def test_restore_after_reset(self):
+    cfg = config.Config({
+        'level': '11_vs_11_competition',
+    })
+    env = football_env.FootballEnv(cfg)
+    obs = env.reset()
+    state = env.get_state()
+    env.reset()
+    env.set_state(state)
+    obs_ = env.observation()
+    state_ = env.get_state()
+    env.step(0)  # Test if can take step
+    self.compare_observations(obs, obs_)
+    self.assertEqual(state, state_)
+
 
 if __name__ == '__main__':
   unittest.main(failfast=True)

@@ -138,15 +138,9 @@ struct ScenarioConfig {
     int size = left_team.size();
     state->process(size);
     left_team.resize(size);
-    for (auto& p : left_team) {
-      p.ProcessState(state);
-    }
     size = right_team.size();
     state->process(size);
     right_team.resize(size);
-    for (auto& p : right_team) {
-      p.ProcessState(state);
-    }
     state->process(left_agents);
     state->process(right_agents);
     state->process(use_magnet);
@@ -164,6 +158,12 @@ struct ScenarioConfig {
     state->process(real_time);
     state->process(game_engine_random_seed);
     state->process(reverse_team_processing);
+    for (auto& p : left_team) {
+      p.ProcessState(state);
+    }
+    for (auto& p : right_team) {
+      p.ProcessState(state);
+    }
   }
 };
 

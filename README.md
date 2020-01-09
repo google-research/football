@@ -5,6 +5,7 @@ Football. <br> It was created by the Google Brain team for research purposes.
 
 Useful links:
 * __(NEW!)__ [GRF Game Server](https://research-football.dev/) - challenge other researchers!
+* __(NEW!)__ [Run in Colab](https://colab.research.google.com/github/google-research/football/blob/master/colabs/gfootball_example_from_prebuild.ipynb) - start training in less that 2 minutes.
 * [Google Research Football Paper](https://arxiv.org/abs/1907.11180)
 * [GoogleAI blog post](https://ai.googleblog.com/2019/06/introducing-google-research-football.html)
 * [Google Research Football on Cloud](https://towardsdatascience.com/reproducing-google-research-football-rl-results-ac75cf17190e)
@@ -18,6 +19,15 @@ We'd like to thank Bastiaan Konings Schuiling, who authored and open-sourced the
 
 
 ## Quick Start
+
+### In colab
+
+Open our example [Colab](https://colab.research.google.com/github/google-research/football/blob/master/colabs/gfootball_example_from_prebuild.ipynb), that will allow you to start training your model in less than 2 minutes.
+
+This method doesn't support game rendering on screen - if you want to see the game running, please use the method below.
+
+### On your computer
+
 Install required apt packages with:
 
 ```
@@ -58,8 +68,9 @@ python3 -m gfootball.play_game --action_set=full
 ### Run training
 In order to run TF training, install additional dependencies:
 
-- TensorFlow: `pip3 install "tensorflow<2.0"` or
-  `pip3 install "tensorflow-gpu<2.0"`, depending on whether you want CPU or
+- Update PIP, so that tensorflow 1.15rc2 is available: `python3 -m pip install --upgrade pip`
+- TensorFlow: `pip3 install "tensorflow==1.15rc2"` or
+  `pip3 install "tensorflow-gpu==1.15rc2"`, depending on whether you want CPU or
   GPU version;
 - Sonnet: `pip3 install dm-sonnet`;
 - OpenAI Baselines:
