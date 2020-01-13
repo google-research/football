@@ -16,8 +16,6 @@
 #include "game_env.hpp"
 
 #include <fenv.h>
-#include <sys/prctl.h>
-#include <sys/wait.h>
 
 #include <cerrno>
 #include <chrono>

@@ -12,8 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+LIB_EXTENSION="so"
+
+if [[ "$OSTYPE" == "darwin"* ]] ; then
+    LIB_EXTENSION="dylib"
+fi
+
+N_CORES=$(python -c 'import multiprocessing as mp; print(mp.cpu_count())')
+
 set -e
 # Delete pre-existing version of CMakeCache.txt to make 'pip3 install' work.
 rm -f third_party/gfootball_engine/CMakeCache.txt
-pushd third_party/gfootball_engine && cmake . && make -j `nproc` && popd
-pushd third_party/gfootball_engine && ln -sf libgame.so _gameplayfootball.so && popd
+pushd third_party/gfootball_engine && cmake . && make -j $N_CORES && popd
+pushd third_party/gfootball_engine && ln -sf libgame.$LIB_EXTENSION _gameplayfootball.so && popd
