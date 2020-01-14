@@ -19,11 +19,11 @@ project(gameplayfootball)
 set (CMAKE_CXX_STANDARD 14)
 
 if(UNIX)
-   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -g -O3 -L/usr/X11/lib -lX11 -lSDL2")
-   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -g -O3 -L/usr/X11/lib -lX11 -lSDL2")
+   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -g -O3")
+   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -g -O3")
 endif(UNIX)
-SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS} -fPIC -g -O3 -L/usr/X11/lib -lX11 -lSDL2")
-SET(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -fPIC -O3 -g -L/usr/X11/lib -lX11 -lSDL2")
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS} -fPIC -g -O3")
+SET(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -fPIC -O3 -g")
 
 # Find needed libraries
 FIND_PACKAGE(OpenGL REQUIRED)
@@ -77,13 +77,10 @@ endif()
 
 message("Using python_boost: ${BOOST_PYTHON_VERSION}")
 
-FIND_PACKAGE(Boost REQUIRED COMPONENTS system thread filesystem ${BOOST_PYTHON_VERSION})
+FIND_PACKAGE(Boost REQUIRED COMPONENTS thread system filesystem ${BOOST_PYTHON_VERSION})
 include_directories(${Boost_INCLUDE_DIR})
 
 include_directories(${PYTHON_INCLUDE_DIR})
-
-FIND_PACKAGE(SGE REQUIRED)
-include_directories(${SGE_INCLUDE_DIR})
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/src/cmake)
@@ -129,10 +126,10 @@ add_library(gamelib ${GAME_SOURCES} ${GAME_HEADERS})
 add_library(menulib ${MENU_SOURCES} ${MENU_HEADERS})
 add_library(datalib ${DATA_SOURCES} ${DATA_HEADERS})
 
-set(LIBRARIES gamelib menulib datalib blunted2 rt
-   ${Boost_LIBRARIES} ${PYTHON_LIBRARY}
+set(LIBRARIES gamelib menulib datalib blunted2
+   Boost::filesystem Boost::system Boost::thread Boost::${BOOST_PYTHON_VERSION} ${PYTHON_LIBRARY}
    ${SDL2_IMAGE_LIBRARIES} ${SDL2_TTF_LIBRARIES} ${SDL2_GFX_LIBRARIES}
-   ${SDL2_LIBRARY} ${SGE_LIBRARY} ${OPENGL_LIBRARIES})
+   ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES})
 add_library(baselib OBJECT ${BASE_SOURCES} ${BASE_HEADERS}
    ${BASE_GEOMETRY_HEADERS} ${BASE_MATH_HEADERS})
 add_library(systemscommonlib OBJECT ${SYSTEMS_COMMON_SOURCES}
@@ -153,8 +150,8 @@ add_library(gui2lib OBJECT ${UTILS_GUI2_SOURCES} ${UTILS_GUI2_HEADERS}
 
 
 # This is the binary that can be run directly.
-# add_executable(gameplayfootball WIN32 ${CORE_SOURCES} ${CORE_HEADERS} ${AI_HEADERS} ${AI_SOURCES})
-# target_link_libraries(gameplayfootball ${LIBRARIES})
+#add_executable(gameplayfootball ${CORE_SOURCES} ${CORE_HEADERS} ${AI_HEADERS} ${AI_SOURCES})
+#target_link_libraries(gameplayfootball ${LIBRARIES})
 
 # This will be the library that can be included from python.
 add_library(game SHARED ${CORE_SOURCES} ${CORE_HEADERS} ${AI_HEADERS} ${AI_SOURCES})

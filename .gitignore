@@ -1,0 +1,12 @@
+third_party/gfootball_engine/build
+build/
+gfootball.egg-info
+__pycache__
+*.a
+*.so
+*.dylib
+CmakeCache.txt
+third_party/gfootball_engine/CMakeFiles/
+third_party/gfootball_engine/Makefile
+third_party/gfootball_engine/cmake_install.cmake
+third_party/gfootball_engine/gameplayfootball
