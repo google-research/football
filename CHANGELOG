@@ -5,6 +5,9 @@ should not change, as modifications made to the environment are either
 new features or backward compatible bug fixes. We will maintain vX branches
 pointing at the most recent vX.Y.
 
+v2.0.5
+- Support compilation on OSX.
+
 v2.0.4
 - Added Colab support (see readme file).
 - Some minor bug fixes (including https://github.com/google-research/football/issues/110)

@@ -1,4 +1,3 @@
-
 cmake_minimum_required(VERSION 3.1)
 
 set(PACKAGE gameplayfootball)
@@ -148,11 +147,5 @@ add_library(utilslib OBJECT ${UTILS_SOURCES} ${UTILS_HEADERS}
 add_library(gui2lib OBJECT ${UTILS_GUI2_SOURCES} ${UTILS_GUI2_HEADERS}
    ${UTILS_GUI2_WIDGETS_HEADERS})
 
-
-# This is the binary that can be run directly.
-#add_executable(gameplayfootball ${CORE_SOURCES} ${CORE_HEADERS} ${AI_HEADERS} ${AI_SOURCES})
-#target_link_libraries(gameplayfootball ${LIBRARIES})
-
-# This will be the library that can be included from python.
 add_library(game SHARED ${CORE_SOURCES} ${CORE_HEADERS} ${AI_HEADERS} ${AI_SOURCES})
 target_link_libraries(game ${LIBRARIES})
