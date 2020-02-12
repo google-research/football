@@ -223,6 +223,10 @@ def named_action_from_action_set(action_set, action):
     action = int(action)
     assert action < len(action_set), "Action outside of action set"
     return action_set[action]
+  
+  if (isinstance(action, numpy.ndarray)):
+    # support algorithms that return logits as action
+    return action_set[numpy.argmax(action)]
 
   assert False, "Action {} not found in action set".format(action)
 
