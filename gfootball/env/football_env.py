@@ -205,9 +205,41 @@ class FootballEnv(gym.Env):
     self._env.close()
 
   def get_state(self, to_pickle={}):
-    return self._env.get_state(to_pickle)
+    trace = self._env._trace
+    cfg = trace._config
+    trace._config = None
+    trace_copy = copy.deepcopy(trace)
+    trace_copy._config = cfg
+    trace._config = cfg
+    return (
+        self._env.get_state(to_pickle),
+        copy.deepcopy(self._env._steps_time),
+        copy.deepcopy(self._env._step),
+        copy.deepcopy(self._env._step_count),
+        copy.deepcopy(self._env._cumulative_reward),
+        copy.deepcopy(self._env._observation),
+        self._env._info,
+        trace_copy,
+    )
 
   def set_state(self, state):
+    (
+        state,
+        self._env._steps_time,
+        self._env._step,
+        self._env._step_count,
+        self._env._cumulative_reward,
+        self._env._observation,
+        self._env._info,
+        trace,
+    ) = state
+    cfg = trace._config
+    trace._config = None
+    trace_copy = copy.deepcopy(trace)
+    trace_copy._config = cfg
+    trace._config = cfg
+    self._env._trace = trace_copy
+
     self._cached_observation = None
     return self._env.set_state(state)
 
