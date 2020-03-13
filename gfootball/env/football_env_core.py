@@ -47,6 +47,15 @@ except ImportError:
   import cv2
 
 
+
+class EnvState(object):
+
+  def __init__(self):
+    self.previous_score_diff = 0
+    self.previous_game_mode = -1
+    self.prev_ball_owned_team = -1
+
+
 class FootballEnvCore(object):
 
   def __init__(self, config):
@@ -69,10 +78,13 @@ class FootballEnvCore(object):
     assert (self._env.state == GameState.game_created or
             self._env.state == GameState.game_running or
             self._env.state == GameState.game_done)
+    # Variables that are part of the set_state/get_state snapshot.
+    self._state = EnvState()
+    # Variables being re-computed upon set_state call, no need to snapshot.
+    self._observation = None
+    # Not snapshoted variables.
     self._steps_time = 0
     self._step = 0
-    self._observation = None
-    self._info = None
     self._config.NewScenario(inc=inc)
     if self._env.state == GameState.game_created:
       self._env.start_game()
@@ -101,7 +113,7 @@ class FootballEnvCore(object):
       self._use_rendering_engine = True
     self._env.game_config.render = True
 
-  def close(self):
+  def _release_engine(self):
     global _unused_engines
     global _unused_rendering_engine
     global _active_rendering
@@ -113,6 +125,12 @@ class FootballEnvCore(object):
       else:
         _unused_engines.append(self._env)
       self._env = None
+
+  def close(self):
+    self._release_engine()
+    if self._trace:
+      del self._trace
+      self._trace = None
 
   def __del__(self):
     self.close()
@@ -158,12 +176,6 @@ class FootballEnvCore(object):
         self._trace.add_frame(self._observation['frame'])
     debug['frame_cnt'] = self._step
 
-    previous_score_diff = 0
-    if self._trace.len() > 0:
-      a = self._trace[-1]['observation']['score'][0]
-      b = self._trace[-1]['observation']['score'][1]
-      previous_score_diff = a - b
-
     # Finish the episode on score.
     if self._env.config.end_episode_on_score:
       if self._observation['score'][0] > 0 or self._observation['score'][1] > 0:
@@ -171,30 +183,27 @@ class FootballEnvCore(object):
 
     # Finish the episode if the game is out of play (e.g. foul, corner etc)
     if (self._env.config.end_episode_on_out_of_play and
-        self._trace.len() > 0 and self._observation['game_mode'] != int(
+        self._observation['game_mode'] != int(
             libgame.e_GameMode.e_GameMode_Normal) and
-        self._trace[-1]['observation']['game_mode'] == int(
+        self._state.previous_game_mode == int(
             libgame.e_GameMode.e_GameMode_Normal)):
       self._env.state = GameState.game_done
+    self._state.previous_game_mode = self._observation['game_mode']
 
     # End episode when team possessing the ball changes.
     if (self._env.config.end_episode_on_possession_change and
-        self._trace.len() > 0 and self._observation['ball_owned_team'] != -1):
-      # We need to find the previous step with 'ball_owned_team' != -1 and
-      # compare it to the 'ball_owned_team' from the recent but one (-2) step.
-      current_posession = self._observation['ball_owned_team']
-      prev_posession_id = self._trace.len() - 1
-      while prev_posession_id > 0 and self._trace[prev_posession_id][
-          'observation']['ball_owned_team'] == -1:
-        prev_posession_id -= 1
-      prev_posession = self._trace[prev_posession_id]['observation'][
-          'ball_owned_team']
-      if prev_posession != -1 and prev_posession != current_posession:
-        self._env.state = GameState.game_done
+        self._observation['ball_owned_team'] != -1 and
+        self._state.prev_ball_owned_team != -1 and
+        self._observation['ball_owned_team'] !=
+        self._state.prev_ball_owned_team):
+      self._env.state = GameState.game_done
+    if self._observation['ball_owned_team'] != -1:
+      self._state.prev_ball_owned_team = self._observation['ball_owned_team']
 
-    reward = (
-        self._observation['score'][0] - self._observation['score'][1] -
-        previous_score_diff)
+    # Compute reward.
+    score_diff = self._observation['score'][0] - self._observation['score'][1]
+    reward = score_diff - self._state.previous_score_diff
+    self._state.previous_score_diff = score_diff
     if reward == 1:
       self._trace.write_dump('score')
     elif reward == -1:
@@ -221,7 +230,8 @@ class FootballEnvCore(object):
     }
     self._trace.update(trace)
     if episode_done:
-      self.write_dump('episode_done')
+      del self._trace
+      self._trace = None
       fps = self._step_count / (debug['time'] - self._episode_start)
       game_fps = self._step_count / self._steps_time
       logging.info(
@@ -229,6 +239,9 @@ class FootballEnvCore(object):
           'FPS: %.1f, gameFPS: %.1f', self._cumulative_reward,
           single_observation['score'][0], single_observation['score'][1],
           self._step_count, fps, game_fps)
+    if self._step_count == 1:
+      # Start writing episode_done
+      self.write_dump('episode_done')
     return self._observation, reward, episode_done
 
 
@@ -283,7 +296,6 @@ class FootballEnvCore(object):
     result['steps_left'] = self._env.config.game_duration - info.step
     self._observation = result
     self._step = info.step
-    self._info = info
     return info.is_in_play
 
   def _convert_players_observation(self, players, name, result):
@@ -341,6 +353,7 @@ class FootballEnvCore(object):
     assert (self._env.state == GameState.game_running or
             self._env.state == GameState.game_done), (
                 'reset() must be called before get_state()')
+    to_pickle['FootballEnvCore'] = self._state
     pickle = six.moves.cPickle.dumps(to_pickle)
     return self._env.get_state(pickle)
 
@@ -350,7 +363,9 @@ class FootballEnvCore(object):
                 'reset() must be called before set_state()')
     res = self._env.set_state(state)
     assert self._retrieve_observation()
-    return six.moves.cPickle.loads(res)
+    from_picle = six.moves.cPickle.loads(res)
+    self._state = from_picle['FootballEnvCore']
+    return from_picle
 
   def tracker_setup(self, start, end):
     self._env.tracker_setup(start, end)
@@ -366,8 +381,8 @@ class FootballEnvCore(object):
     if not self._env.game_config.render:
       if not self._use_rendering_engine:
         if self._env.state != GameState.game_created:
-          state = self.get_state("")
-          self.close()
+          state = self.get_state({})
+          self._release_engine()
           if _unused_rendering_engine:
             self._env = _unused_rendering_engine
             _unused_rendering_engine = None

@@ -58,8 +58,7 @@ class ScriptHelpersTest(unittest.TestCase):
     env.close()
 
   def compute_hash(self, trace_file):
-    with open(trace_file, 'rb') as f:
-      replay = six.moves.cPickle.load(f)
+    replay = script_helpers.ScriptHelpers().load_dump(trace_file)
     hash_value = 0
     for frame in replay:
       del frame['debug']

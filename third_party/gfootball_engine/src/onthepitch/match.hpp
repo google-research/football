@@ -193,7 +193,6 @@ class Match {
     Gui2Radar *radar;
     Gui2Caption *messageCaption;
     unsigned long messageCaptionRemoveTime_ms = 0;
-    unsigned long iterations = 0;
     unsigned long matchTime_ms = 0;
     unsigned long actualTime_ms = 0;
     unsigned long goalScoredTimer = 0;

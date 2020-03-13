@@ -130,9 +130,9 @@ void MentalImage::UpdateBallPredictions() {
   match->GetBall()->GetPredictionArray(ballPredictions);
 }
 
-Vector3 MentalImage::GetBallPrediction(unsigned int time_ms) const {
+Vector3 MentalImage::GetBallPrediction(int time_ms) const {
 
-  unsigned int index = time_ms + match->GetActualTime_ms() - timeStamp_ms;
+  int index = time_ms + match->GetActualTime_ms() - timeStamp_ms;
   if (index >= ballPredictionSize_ms) index = ballPredictionSize_ms - 10;
   index = index / 10;
   if (index < 0) index = 0;

@@ -1,4 +1,7 @@
 # Running in Docker #
+In order to build Docker image you have to check out git repository and execute the commands below
+from the main project's directory (it contains `Dockerfile` file).
+
 ## CPU version
 1. Build with `docker build --build-arg DOCKER_BASE=ubuntu:18.04 --build-arg DEVICE=cpu . -t gfootball`
 1. Enter the image with `docker run -it gfootball bash`

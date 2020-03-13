@@ -66,35 +66,44 @@ class ScriptHelpers(object):
           dump_file)] * config.count_right_players(player))
     return players
 
+  def load_dump(self, dump_file):
+    dump = []
+    with open(dump_file, 'rb') as in_fd:
+      while True:
+        try:
+          step = six.moves.cPickle.load(in_fd)
+        except EOFError:
+          return dump
+        dump.append(step)
+
   def dump_to_txt(self, dump_file, output, include_debug):
-    with open(dump_file, 'rb') as f:
-      replay = six.moves.cPickle.load(f)
+    with open(output, 'w') as out_fd:
+      dump = self.load_dump(dump_file)
     if not include_debug:
-      for s in replay:
+      for s in dump:
         if 'debug' in s:
           del s['debug']
     with open(output, 'w') as f:
-      f.write(str(replay))
+      f.write(str(dump))
 
   def dump_to_video(self, dump_file):
-    with open(dump_file, 'rb') as f:
-      dump = six.moves.cPickle.load(f)
+    dump = self.load_dump(dump_file)
     cfg = config.Config(dump[0]['debug']['config'])
     cfg['dump_full_episodes'] = True
     cfg['write_video'] = True
     cfg['display_game_stats'] = True
     processor = observation_processor.ObservationProcessor(cfg)
+    processor.write_dump('episode_done')
     for frame in dump:
       processor.update(frame)
-    processor.write_dump('episode_done')
 
   def replay(self, dump, fps=10, config_update={}, directory=None, render=True):
-    with open(dump, 'rb') as f:
-      replay = six.moves.cPickle.load(f)
+    replay = self.load_dump(dump)
     trace = self.__modify_trace(replay, fps)
     fd, temp_path = tempfile.mkstemp(suffix='.dump')
     with open(temp_path, 'wb') as f:
-      six.moves.cPickle.dump(trace, f)
+      for step in trace:
+        six.moves.cPickle.dump(step, f)
     assert replay[0]['debug']['frame_cnt'] == 1, (
         'Trace does not start from the beginning of the episode, can not replay')
     cfg = config.Config(replay[0]['debug']['config'])

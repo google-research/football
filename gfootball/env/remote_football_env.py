@@ -132,14 +132,14 @@ class RemoteFootballEnv(gym.Env):
         logging.warning('Exception during request: %s', e)
         logging.warning('Sleeping for %d seconds', time_to_sleep)
         time.sleep(time_to_sleep)
-        if time_to_sleep < 1000:
+        if time_to_sleep < 30:
           time_to_sleep *= 2
         self._update_master()
       except BaseException as e:
         logging.warning('Exception during request: %s', e)
         logging.warning('Sleeping for %d seconds', time_to_sleep)
         time.sleep(time_to_sleep)
-        if time_to_sleep < 1000:
+        if time_to_sleep < 30:
           time_to_sleep *= 2
         self._update_master()
     raise RuntimeError('Connection problems!')
@@ -161,12 +161,12 @@ class RemoteFootballEnv(gym.Env):
           raise e
         logging.warning('Exception during request: %s', e)
         time.sleep(time_to_sleep)
-        if time_to_sleep < 1000:
+        if time_to_sleep < 30:
           time_to_sleep *= 2
       except BaseException as e:
         logging.warning('Exception during request: %s', e)
         time.sleep(time_to_sleep)
-        if time_to_sleep < 1000:
+        if time_to_sleep < 30:
           time_to_sleep *= 2
     if response is None:
       raise RuntimeError('Connection problems!')

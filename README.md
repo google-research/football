@@ -4,8 +4,9 @@ This repository contains an RL environment based on open-source game Gameplay
 Football. <br> It was created by the Google Brain team for research purposes.
 
 Useful links:
-* __(NEW!)__ [GRF Game Server](https://research-football.dev/) - challenge other researchers!
-* __(NEW!)__ [Run in Colab](https://colab.research.google.com/github/google-research/football/blob/master/gfootball/colabs/gfootball_example_from_prebuild.ipynb) - start training in less that 2 minutes.
+* __(NEW!)__ [GRF Tournament](https://research-football.dev/tournament) - take part in the Tournament and become the new GRF Champion! Starting April 2020.
+* [GRF Game Server](https://research-football.dev/) - challenge other researchers!
+* [Run in Colab](https://colab.research.google.com/github/google-research/football/blob/master/gfootball/colabs/gfootball_example_from_prebuild.ipynb) - start training in less that 2 minutes.
 * [Google Research Football Paper](https://arxiv.org/abs/1907.11180)
 * [GoogleAI blog post](https://ai.googleblog.com/2019/06/introducing-google-research-football.html)
 * [Google Research Football on Cloud](https://towardsdatascience.com/reproducing-google-research-football-rl-results-ac75cf17190e)
