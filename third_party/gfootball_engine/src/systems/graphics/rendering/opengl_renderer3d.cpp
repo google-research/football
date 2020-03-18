@@ -18,9 +18,9 @@
 #include "opengl_renderer3d.hpp"
 
 #ifdef __APPLE__
+#define GL_SILENCE_DEPRECATION
 #include <SDL2/SDL_opengl.h>
-#include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
+//#include <OpenGL/glu.h>
 #else
 #include <GL/glu.h>
 #endif
@@ -66,7 +66,11 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
   // SetPriorityClass(thread.native_handle(), HIGH_PRIORITY_CLASS);
 };
 
-OpenGLRenderer3D::~OpenGLRenderer3D() { DO_VALIDATION; };
+OpenGLRenderer3D::~OpenGLRenderer3D() {
+    DO_VALIDATION;
+    // Shut down all SDL subsystems
+    SDL_Quit();
+};
 
 void OpenGLRenderer3D::SwapBuffers() {
   DO_VALIDATION;
@@ -376,6 +380,9 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
   // #endif
 
   //#ifdef WIN32
+  // SDL subsystems must be initialized before setting attributes
+  SDL_Init(SDL_INIT_VIDEO);
+
   SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
@@ -386,15 +393,10 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
 
   SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);  // DISABLED?
 
-  // SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-  // SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-  // SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
-  // SDL_GL_CONTEXT_PROFILE_CORE);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
-
-  //    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-  //    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-  //    SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
   // recently disabled  SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, 1); // wait for
   // vsync?
   //  int SDLerror = SDL_GL_SetSwapInterval(-1);
@@ -433,6 +435,7 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
     //ASSERT_TRUE(glGetIntegervFunc != nullptr);
     mapping.glGetIntegerv(GL_MAJOR_VERSION, &glVersion[0]);
     mapping.glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]);
+    printf("Debug: OpenGL version: %i.%i\n", glVersion[0], glVersion[1]);
 
     if (!context) {
       DO_VALIDATION;
@@ -1920,7 +1923,7 @@ void LoadGLShader(GLuint shaderID, const std::string &filename) {
     DO_VALIDATION;
     GLchar *compiler_log = (GLchar *)malloc(blen);
 #ifdef __APPLE__
-    mapping.glGetInfoLogARB((void *)&shaderID, blen, &slen, compiler_log);
+    mapping.glGetInfoLogARB((GLhandleARB)&shaderID, blen, &slen, compiler_log);
 #else
     mapping.glGetInfoLogARB(shaderID, blen, &slen, compiler_log);
 #endif
