@@ -72,18 +72,18 @@ void main(void) {
   texCoord.x /= contextWidth;
   texCoord.y /= contextHeight;
 
-  vec4 accum = texture2D(map_accumulation, texCoord);
+  vec4 accum = texture(map_accumulation, texCoord);
   vec3 base = accum.rgb;
 
-  vec4 modifier = texture2D(map_modifier, texCoord);
+  vec4 modifier = texture(map_modifier, texCoord);
 
   // edge blur
   if (modifier.r > 0.0) {
     vec3 smoothPixel = vec3(0);
-    smoothPixel += texture2D(map_accumulation, texCoord + vec2(0, 1 / contextHeight)).xyz;
-    smoothPixel += texture2D(map_accumulation, texCoord + vec2(1 / contextWidth, 0)).xyz;
-    smoothPixel += texture2D(map_accumulation, texCoord + vec2(0, -1 / contextHeight)).xyz;
-    smoothPixel += texture2D(map_accumulation, texCoord + vec2(-1 / contextWidth, 0)).xyz;
+    smoothPixel += texture(map_accumulation, texCoord + vec2(0, 1 / contextHeight)).xyz;
+    smoothPixel += texture(map_accumulation, texCoord + vec2(1 / contextWidth, 0)).xyz;
+    smoothPixel += texture(map_accumulation, texCoord + vec2(0, -1 / contextHeight)).xyz;
+    smoothPixel += texture(map_accumulation, texCoord + vec2(-1 / contextWidth, 0)).xyz;
     smoothPixel *= 0.25;
     base = base * (1.0 - modifier.r) + smoothPixel * modifier.r;
     //base = base * (1.0 - modifier.r) + vec3(0, 0, 0) * modifier.r * 0.5 + smoothPixel * modifier.r * 0.5; // cartooney effect
@@ -95,7 +95,7 @@ void main(void) {
 
   int SSAO_blurSize = 4;
 
-  float SSAO = 0.0f; // texture2D(map_modifier, texCoord).g;
+  float SSAO = 0.0f; // texture(map_modifier, texCoord).g;
 
   vec2 texelSize = 1.0f / vec2(textureSize(map_modifier, 0));
   vec2 hlim = vec2(float(-SSAO_blurSize) * 0.5f + 0.5f);
@@ -114,7 +114,7 @@ void main(void) {
 
   // fog
 
-  float depth = texture2D(map_depth, texCoord).x;
+  float depth = texture(map_depth, texCoord).x;
 
   // convert from non-linear to linear
   float fragDepth = cameraClip.y / (depth - cameraClip.x);

@@ -75,9 +75,9 @@ float GetEdge(vec2 pos) {
   float depths[9];
   vec3 normals[9];
   for (int i = 0; i < 9; i++) {
-    float depth = texture2D(map_depth, pos + offsets[i] * 0.001).x;
+    float depth = texture(map_depth, pos + offsets[i] * 0.001).x;
     depths[i] = cameraClip.y / (depth - cameraClip.x);
-    normals[i] = texture2D(map_normal, pos + offsets[i] * 0.001).xyz;
+    normals[i] = texture(map_normal, pos + offsets[i] * 0.001).xyz;
   }
 
   vec4 deltas1;
@@ -130,11 +130,11 @@ void main(void) {
   texCoord.x /= contextWidth;
   texCoord.y /= contextHeight;
 
-  float depth = texture2D(map_depth, texCoord).x;
+  float depth = texture(map_depth, texCoord).x;
 
   vec3 worldPosition = GetWorldPosition(texCoord, depth);
 
-  vec3 base = texture2D(map_albedo, texCoord).xyz;
+  vec3 base = texture(map_albedo, texCoord).xyz;
 
   float brightness = 0.15f;//0.25f;
 
@@ -150,13 +150,13 @@ void main(void) {
   vec2 noiseScale = vec2(contextWidth / 4.0f, contextHeight / 4.0f);
   float SSAO_radius = 0.18f;//0.12f;
 
-  vec3 normal = texture2D(map_normal, texCoord).xyz;
+  vec3 normal = texture(map_normal, texCoord).xyz;
   float SSAO = 0.0;
 
   vec3 viewPosition = vec3(viewMatrix * vec4(worldPosition, 1.0f));
   vec3 viewNormal = vec3(viewMatrix * vec4(normal, 0.0f));
 
-  vec3 randomVec = -texture2D(map_noise, texCoord * noiseScale).xyz * 2.0f - 1.0f;
+  vec3 randomVec = -texture(map_noise, texCoord * noiseScale).xyz * 2.0f - 1.0f;
   vec3 tangent = normalize(randomVec - viewNormal * dot(randomVec, viewNormal));
   vec3 bitangent = cross(viewNormal, tangent);
   mat3 tbn = mat3(tangent, bitangent, viewNormal);
@@ -197,7 +197,7 @@ void main(void) {
 
   // self-illumination
 
-  vec4 aux = texture2D(map_aux, texCoord.st);
+  vec4 aux = texture(map_aux, texCoord.st);
   float self_illumination = aux.w;
 
   vec3 fragColor = vec3(clamp(base * (1.0 + self_illumination), 0.0, 1.0));

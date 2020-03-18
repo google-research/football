@@ -36,23 +36,23 @@ out vec4 stdout2;
 
 void main(void) {
 
-  vec4 base = texture2D(map_albedo, frag_texcoord.st);
+  vec4 base = texture(map_albedo, frag_texcoord.st);
   if (base.a < 0.12) discard;
   vec3 bump;
   if (materialbools.x == 1.0f) {
-    bump = normalize(texture2D(map_normal, frag_texcoord.st).xyz * 2.0 - 1.0);
+    bump = normalize(texture(map_normal, frag_texcoord.st).xyz * 2.0 - 1.0);
   } else {
     bump = vec3(0, 0, 1);
   }
   float spec;
   if (materialbools.y == 1.0f) {
-    spec = texture2D(map_specular, frag_texcoord.st).x * materialparams.y;
+    spec = texture(map_specular, frag_texcoord.st).x * materialparams.y;
   } else {
     spec = materialparams.y;
   }
   float illumination;
   if (materialbools.z == 1.0f) {
-    illumination = texture2D(map_illumination, frag_texcoord.st).x;
+    illumination = texture(map_illumination, frag_texcoord.st).x;
   } else {
     illumination = materialparams.z;
   }
