@@ -1620,6 +1620,22 @@ void OpenGLRenderer3D::ResizeTexture(int textureID, SDL_Surface *source,
   DO_VALIDATION;
 
   BindTexture(textureID);
+  int x = 0;
+  int y = 0;
+  int width = source->w;
+  int height = source->h;
+
+  SDL_LockSurface(source);
+  mapping.glTexImage2D(GL_TEXTURE_2D, 0,
+          GetGLInternalPixelFormat(internalPixelFormat), width,
+          height, 0, GetGLPixelFormat(pixelFormat),
+          GL_UNSIGNED_BYTE, source->pixels);
+  SDL_UnlockSurface(source);
+
+  if (mipmaps) {
+    DO_VALIDATION;
+    mapping.glGenerateMipmap(GL_TEXTURE_2D);
+  }
 
   bool repeat = false;
   bool filter = true;
@@ -1651,25 +1667,10 @@ void OpenGLRenderer3D::ResizeTexture(int textureID, SDL_Surface *source,
       internalPixelFormat == e_InternalPixelFormat_DepthComponent32F) {
     DO_VALIDATION;
     mapping.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-    mapping.glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_INTENSITY);
+    // Post-GLSL 1.3, DEPTH_TEXTURE_MODE is deprecated and GLSL behaves as if
+    // its always set to LUMINANCE
+    //mapping.glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_INTENSITY);
   }
-
-  if (mipmaps) {
-    DO_VALIDATION;
-    mapping.glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-  }
-
-  int x = 0;
-  int y = 0;
-  int width = source->w;
-  int height = source->h;
-
-  SDL_LockSurface(source);
-  mapping.glTexImage2D(GL_TEXTURE_2D, 0,
-                       GetGLInternalPixelFormat(internalPixelFormat), width,
-                       height, 0, GetGLPixelFormat(pixelFormat),
-                       GL_UNSIGNED_BYTE, source->pixels);
-  SDL_UnlockSurface(source);
 
   // GLclampf prior = (width * height) / 1048576.0; // 1024*1024 tex = max
   // priority printf("%f\n", (pot(source->w) * pot(source->h)) / 1048576.0);
@@ -1692,6 +1693,15 @@ void OpenGLRenderer3D::UpdateTexture(int textureID, SDL_Surface *source,
   int w = source->w;
   int h = source->h;
 
+  SDL_LockSurface(source);
+  mapping.glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, type2, GL_UNSIGNED_BYTE,
+          source->pixels);
+  SDL_UnlockSurface(source);
+
+  if (mipmaps) {
+    DO_VALIDATION;
+    mapping.glGenerateMipmap(GL_TEXTURE_2D);
+  }
   GLint filter_min, filter_mag;
 
   bool filter = true;
@@ -1711,16 +1721,6 @@ void OpenGLRenderer3D::UpdateTexture(int textureID, SDL_Surface *source,
 
   mapping.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min);
   mapping.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag);
-
-  if (mipmaps) {
-    DO_VALIDATION;
-    mapping.glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-  }
-  SDL_LockSurface(source);
-  mapping.glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, type2, GL_UNSIGNED_BYTE,
-                          source->pixels);
-
-  SDL_UnlockSurface(source);
 
   BindTexture(0);
 }
