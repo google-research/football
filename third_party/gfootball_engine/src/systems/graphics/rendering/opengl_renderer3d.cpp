@@ -23,6 +23,7 @@
 //#include <OpenGL/glu.h>
 #else
 #include <GL/glu.h>
+//#include <GL/glcorearb.h>
 #endif
 #include <cmath>
 #include "wrap_SDL.h"
@@ -1922,11 +1923,7 @@ void LoadGLShader(GLuint shaderID, const std::string &filename) {
   if (blen > 1) {
     DO_VALIDATION;
     GLchar *compiler_log = (GLchar *)malloc(blen);
-#ifdef __APPLE__
-    mapping.glGetInfoLogARB((GLhandleARB)&shaderID, blen, &slen, compiler_log);
-#else
-    mapping.glGetInfoLogARB(shaderID, blen, &slen, compiler_log);
-#endif
+    mapping.glGetShaderInfoLog(shaderID, blen, &slen, compiler_log);
     printf("shader compilation info: %s\n", compiler_log);
     Log(e_Warning, "", "LoadGLShader",
         "shader compilation info (" + filename + "):\n" +
