@@ -821,6 +821,8 @@ void OpenGLRenderer3D::SetDepthMask(bool OnOff) {
 
 void OpenGLRenderer3D::SetTextureMode(e_TextureMode textureMode) {
   DO_VALIDATION;
+  // Never called. Uses deprecated methods
+  /*
   switch (textureMode) {
     DO_VALIDATION;
 
@@ -832,6 +834,7 @@ void OpenGLRenderer3D::SetTextureMode(e_TextureMode textureMode) {
       mapping.glEnable(GL_TEXTURE_2D);
       break;
   }
+   */
 }
 
 void OpenGLRenderer3D::SetColor(const Vector3 &color, float alpha) {
@@ -1501,9 +1504,10 @@ GLenum GetGLPixelFormat(e_PixelFormat pixelFormat) {
     case e_PixelFormat_DepthComponent:
       format = GL_DEPTH_COMPONENT;
       break;
-    case e_PixelFormat_Luminance:
-      format = GL_LUMINANCE;
-      break;
+//  Deprecated:
+//    case e_PixelFormat_Luminance:
+//      format = GL_LUMINANCE;
+//      break;
   }
 
   return format;
