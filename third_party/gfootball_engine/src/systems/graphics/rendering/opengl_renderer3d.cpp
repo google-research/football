@@ -121,74 +121,43 @@ void OpenGLRenderer3D::RenderOverlay2D(
 
   assert(context);
 
-  mapping.glMatrixMode(GL_PROJECTION);
-  mapping.glPushMatrix();
-  mapping.glLoadIdentity();
-  mapping.glOrtho(0, 1280, 720, 0, 0.1, 10);
-
-  mapping.glMatrixMode(GL_MODELVIEW);
-  mapping.glPushMatrix();
-  mapping.glLoadIdentity();
-  mapping.glTranslatef(0, 0, -1);
+  if (overlay2DQueue.empty()) {
+    return;
+  }
 
   mapping.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   mapping.glEnable(GL_BLEND);
-
   mapping.glDisable(GL_DEPTH_TEST);
   SetDepthMask(false);
-  mapping.glShadeModel(GL_FLAT);
-  mapping.glDisable(GL_FOG);
   mapping.glDisable(GL_CULL_FACE);
-  mapping.glDisable(GL_LIGHTING);
 
-  mapping.glEnable(GL_TEXTURE_2D);
+  UseShader("overlay");
+
+  Matrix4 orthoMatrix = CreateOrthoMatrix(0, 1280, 720, 0, 0.1, 10);
+  SetMatrix("projection", orthoMatrix);
+
+  mapping.glBindVertexArray(overlayBuffer.vertexArrayID);
+  SetTextureUnit(0);
 
   for (unsigned int i = 0; i < overlay2DQueue.size(); i++) {
     DO_VALIDATION;
     const Overlay2DQueueEntry &queueEntry = overlay2DQueue[i];
 
-    /* fun!
-    float xf = (context->w * 1.0) / 2.0 - 128  + sin(i       + i2 * 1.2) * 200
-    + sin(i * 0.4 + i2 * 0.6) * 100; float yf = (context->h * 1.0) / 2.0 - 32 +
-    cos(i * 0.7 + i2 * 0.7) * 160  + cos(i * 0.6 + i2 * 1.3) * 80; i2 += 0.15 -
-    (i2 * 0.01);
-    */
+    Matrix4 modelMatrix(MATRIX4_IDENTITY);
+    modelMatrix.SetTranslation(Vector3(queueEntry.position[0], queueEntry.position[1], -1.0f));
+    modelMatrix.SetScale(Vector3(queueEntry.size[0], queueEntry.size[1], 1.0f));
+    SetMatrix("model", modelMatrix);
 
-    mapping.glBindTexture(GL_TEXTURE_2D,
-                          queueEntry.texture->GetResource()->GetID());
-
-    mapping.glBegin(GL_QUADS);
-
-    mapping.glTexCoord3f(0, 0, 0);
-    mapping.glVertex2f(queueEntry.position[0], queueEntry.position[1]);
-    mapping.glTexCoord3f(1, 0, 0);
-    mapping.glVertex2f(queueEntry.position[0] + queueEntry.size[0],
-                       queueEntry.position[1]);
-    mapping.glTexCoord3f(1, 1, 0);
-    mapping.glVertex2f(queueEntry.position[0] + queueEntry.size[0],
-                       queueEntry.position[1] + queueEntry.size[1]);
-    mapping.glTexCoord3f(0, 1, 0);
-    mapping.glVertex2f(queueEntry.position[0],
-                       queueEntry.position[1] + queueEntry.size[1]);
-
-    mapping.glEnd();
+    BindTexture(queueEntry.texture->GetResource()->GetID());
+    mapping.glDrawArrays(GL_TRIANGLES, 0, 6);
   }
+
+  mapping.glBindVertexArray(0);
 
   mapping.glEnable(GL_DEPTH_TEST);
   mapping.glEnable(GL_CULL_FACE);
-  mapping.glShadeModel(GL_SMOOTH);
   SetDepthMask(true);
-
   mapping.glDisable(GL_BLEND);
-
-  mapping.glPopMatrix();
-
-  mapping.glMatrixMode(GL_PROJECTION);
-  mapping.glPopMatrix();
-
-  mapping.glMatrixMode(GL_MODELVIEW);
-
-  mapping.glLoadIdentity();
 }
 
 void OpenGLRenderer3D::RenderOverlay2D() {
@@ -201,28 +170,15 @@ void OpenGLRenderer3D::RenderOverlay2D() {
   viewMatrix.SetTranslation(Vector3(0, 0, -0.5f));
   SetMatrix("orthoViewMatrix", viewMatrix);
 
-  mapping.glShadeModel(GL_FLAT);
-  mapping.glDisable(GL_LIGHTING);
-
   SetCullingMode(e_CullingMode_Off);
 
-  mapping.glEnable(GL_TEXTURE_2D);
   SetTextureUnit(4);  // noise
   BindTexture(noiseTexID);
   SetTextureUnit(0);
 
-  mapping.glBegin(GL_QUADS);
-
-  mapping.glTexCoord3f(0, 1, 0);
-  mapping.glVertex2f(-1, 1);
-  mapping.glTexCoord3f(1, 1, 0);
-  mapping.glVertex2f(1, 1);
-  mapping.glTexCoord3f(1, 0, 0);
-  mapping.glVertex2f(1, -1);
-  mapping.glTexCoord3f(0, 0, 0);
-  mapping.glVertex2f(-1, -1);
-
-  mapping.glEnd();
+  mapping.glBindVertexArray(quadBuffer.vertexArrayID);
+  mapping.glDrawArrays(GL_TRIANGLES, 0, 6);
+  mapping.glBindVertexArray(0);
 
   // unbind noise
   SetTextureUnit(4);
@@ -345,19 +301,9 @@ void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
       Matrix4 modelMatrix(MATRIX4_IDENTITY);
       SetMatrix("modelMatrix", modelMatrix);
 
-      mapping.glBegin(GL_QUADS);
-
-      mapping.glTexCoord3f(0, 1, 0);
-      mapping.glVertex2f(-1, 1);
-      mapping.glTexCoord3f(1, 1, 0);
-      mapping.glVertex2f(1, 1);
-      mapping.glTexCoord3f(1, 0, 0);
-      mapping.glVertex2f(1, -1);
-      mapping.glTexCoord3f(0, 0, 0);
-      mapping.glVertex2f(-1, -1);
-
-      mapping.glEnd();
-
+      mapping.glBindVertexArray(quadBuffer.vertexArrayID);
+      mapping.glDrawArrays(GL_TRIANGLES, 0, 6);
+      mapping.glBindVertexArray(0);
     } else {
       // SPHERE
 
