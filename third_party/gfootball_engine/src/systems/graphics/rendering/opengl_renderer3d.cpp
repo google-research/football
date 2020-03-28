@@ -189,6 +189,10 @@ void OpenGLRenderer3D::RenderOverlay2D() {
 
 void drawSphere(float r, int lats, int longs) {
   DO_VALIDATION;
+  // Never called (because light.type is always set to 0) and uses deprecated methods.
+  // Possible implementation, that uses modern OpenGl can be found here:
+  // https://gist.github.com/zwzmzd/0195733fa1210346b00d
+  /*
   int i, j;
   for (i = 0; i <= lats; i++) {
     DO_VALIDATION;
@@ -214,6 +218,7 @@ void drawSphere(float r, int lats, int longs) {
     }
     mapping.glEnd();
   }
+   */
 }
 
 void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
@@ -222,7 +227,7 @@ void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
   DO_VALIDATION;
   Vector3 cameraPos = viewMatrix.GetInverse().GetTranslation();
 
-  mapping.glDisable(GL_ALPHA_TEST);
+//  mapping.glDisable(GL_ALPHA_TEST);
 
   SetUniformFloat3(currentShader->first, "cameraPosition", cameraPos.coords[0],
                    cameraPos.coords[1], cameraPos.coords[2]);
@@ -238,7 +243,7 @@ void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
     if (light.hasShadow) {
       DO_VALIDATION;
       SetTextureUnit(7);
-      mapping.glEnable(GL_TEXTURE_2D);
+      //mapping.glEnable(GL_TEXTURE_2D);
       mapping.glBindTexture(GL_TEXTURE_2D,
                             light.shadowMapTexture->GetResource()->GetID());
 
@@ -250,7 +255,7 @@ void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
                             (*lightIter).lightViewMatrix);
 
     } else {
-      mapping.glDisable(GL_TEXTURE_2D);
+      //mapping.glDisable(GL_TEXTURE_2D);
     }
 
     SetUniformFloat3(currentShader->first, "lightColor", light.color.coords[0],
@@ -304,7 +309,7 @@ void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
       mapping.glBindVertexArray(quadBuffer.vertexArrayID);
       mapping.glDrawArrays(GL_TRIANGLES, 0, 6);
       mapping.glBindVertexArray(0);
-    } else {
+    } else {  // Never called (because light.type is always set to 0)
       // SPHERE
 
       SetCullingMode(e_CullingMode_Back);
@@ -323,7 +328,7 @@ void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
     if (light.hasShadow) {
       DO_VALIDATION;
       mapping.glBindTexture(GL_TEXTURE_2D, 0);
-      mapping.glDisable(GL_TEXTURE_2D);
+      //mapping.glDisable(GL_TEXTURE_2D);
       SetTextureUnit(0);
     }
 
@@ -494,18 +499,17 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
     mapping.glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &largest_supported_anisotropy);
     //largest_supported_anisotropy = clamp(largest_supported_anisotropy, 0, 8); // don't overdo it
 
-    mapping.glDisable(GL_LIGHTING);
+//    mapping.glDisable(GL_LIGHTING);
 
     GLfloat color[4] = { 0, 0, 0, 0 };
-    mapping.glMaterialfv(GL_FRONT, GL_SPECULAR, color);
-    mapping.glMateriali(GL_FRONT, GL_SHININESS, 80);
+//    mapping.glMaterialfv(GL_FRONT, GL_SPECULAR, color);
+//    mapping.glMateriali(GL_FRONT, GL_SHININESS, 80);
 
     // enable color tracking
-    mapping.glEnable(GL_COLOR_MATERIAL);
-    mapping.glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+//    mapping.glEnable(GL_COLOR_MATERIAL);
+//    mapping.glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 
     mapping.glDisable(GL_MULTISAMPLE);
-
     mapping.glCullFace(GL_BACK);
 
 
@@ -1181,12 +1185,13 @@ void OpenGLRenderer3D::RenderVertexBuffer(
   DO_VALIDATION;
   VertexBuffer *vertexBuffer;
 
-  if (renderMode != e_RenderMode_GeometryOnly) {
-    DO_VALIDATION;
-    mapping.glEnable(GL_TEXTURE_2D);
-  } else {
-    mapping.glDisable(GL_TEXTURE_2D);
-  }
+// Deprecated
+//  if (renderMode != e_RenderMode_GeometryOnly) {
+//    DO_VALIDATION;
+//    mapping.glEnable(GL_TEXTURE_2D);
+//  } else {
+//    mapping.glDisable(GL_TEXTURE_2D);
+//  }
 
   signed int currentDiffuseTextureID = -1;
   signed int currentNormalTextureID = -1;
@@ -1441,7 +1446,7 @@ void OpenGLRenderer3D::RenderVertexBuffer(
       }
       SetTextureUnit(0);
       mapping.glBindTexture(GL_TEXTURE_2D, 0);
-      mapping.glDisable(GL_TEXTURE_2D);
+      //mapping.glDisable(GL_TEXTURE_2D);
     }
 
     mapping.glBindVertexArray(0);
@@ -1452,7 +1457,8 @@ void OpenGLRenderer3D::RenderVertexBuffer(
 void OpenGLRenderer3D::SetLight(const Vector3 &position, const Vector3 &color,
                                 float radius) {
   DO_VALIDATION;
-
+  // Deprecated functionality, everything is implemented in the shaders
+  /*
   Vector3 pos = position;
 
   // printf("%f %f %f\n", cameraPos.coords[0], cameraPos.coords[1],
@@ -1471,6 +1477,7 @@ void OpenGLRenderer3D::SetLight(const Vector3 &position, const Vector3 &color,
   mapping.glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
 
   mapping.glEnable(GL_LIGHT0);
+   */
 }
 
   // textures
