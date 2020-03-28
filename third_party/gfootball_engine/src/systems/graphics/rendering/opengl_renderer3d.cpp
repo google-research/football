@@ -511,6 +511,7 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
     LoadShader("ambient", "media/shaders/ambient");
     LoadShader("zphase", "media/shaders/zphase");
     LoadShader("postprocess", "media/shaders/postprocess");
+    LoadShader("overlay", "media/shaders/overlay");
 
     currentShader = shaders.begin();
 
@@ -2154,6 +2155,11 @@ void OpenGLRenderer3D::LoadShader(const std::string &name,
   if (name == "postprocess") {
     DO_VALIDATION;
     mapping.glBindAttribLocation(shader.programID, 0, "position");
+    mapping.glBindFragDataLocation(shader.programID, 0, "stdout");
+  }
+  if (name == "overlay") {
+    DO_VALIDATION;
+    mapping.glBindAttribLocation(shader.programID, 0, "vertex");
     mapping.glBindFragDataLocation(shader.programID, 0, "stdout");
   }
 
