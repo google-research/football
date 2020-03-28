@@ -130,6 +130,7 @@ namespace blunted {
       float overallBrightness = 0.0f;
 
       float largest_supported_anisotropy = 0.0f;
+      void SetMaxAnisotropy();
 
       std::map<std::string, int> uniformCache;
 

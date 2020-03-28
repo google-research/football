@@ -498,7 +498,9 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
 #endif
 
     largest_supported_anisotropy = 2;
+#ifndef __APPLE__
     mapping.glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &largest_supported_anisotropy);
+#endif
     //largest_supported_anisotropy = clamp(largest_supported_anisotropy, 0, 8); // don't overdo it
 
 //    mapping.glDisable(GL_LIGHTING);
@@ -1635,8 +1637,7 @@ int OpenGLRenderer3D::CreateTexture(e_InternalPixelFormat internalPixelFormat,
 
   if (filter) {
     DO_VALIDATION;
-    mapping.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                            largest_supported_anisotropy);
+    SetMaxAnisotropy();
   }
 
   if (!multisample) {
@@ -1694,8 +1695,7 @@ void OpenGLRenderer3D::ResizeTexture(int textureID, SDL_Surface *source,
     filter_mag = GL_LINEAR;
     // glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT,
     // &largest_supported_anisotropy);
-    mapping.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                            largest_supported_anisotropy);
+    SetMaxAnisotropy();
   } else {
     filter_min = (mipmaps) ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST;
     filter_mag = GL_NEAREST;
@@ -1758,8 +1758,7 @@ void OpenGLRenderer3D::UpdateTexture(int textureID, SDL_Surface *source,
     filter_mag = GL_LINEAR;
     // glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT,
     // &largest_supported_anisotropy);
-    mapping.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                            largest_supported_anisotropy);
+    SetMaxAnisotropy();
   } else {
     filter_min = (mipmaps) ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST;
     filter_mag = GL_NEAREST;
@@ -1804,6 +1803,14 @@ void OpenGLRenderer3D::SetClientTextureUnit(int textureUnit) {
   DO_VALIDATION;
   // assert(glClientActiveTexture);
   mapping.glClientActiveTexture(GL_TEXTURE0 + (GLuint)textureUnit);
+}
+
+void OpenGLRenderer3D::SetMaxAnisotropy() {
+  DO_VALIDATION;
+#ifndef __APPLE__   // Could be also used to check for Core Profile Mode
+  mapping.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
+          largest_supported_anisotropy);
+#endif
 }
 
   // frame buffer objects
