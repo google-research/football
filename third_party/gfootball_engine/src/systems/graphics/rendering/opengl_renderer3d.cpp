@@ -93,6 +93,8 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
 
 OpenGLRenderer3D::~OpenGLRenderer3D() {
     DO_VALIDATION;
+    DeleteSimpleVertexBuffer(overlayBuffer);
+    DeleteSimpleVertexBuffer(quadBuffer);
     // Shut down all SDL subsystems
     SDL_Quit();
 };
@@ -388,6 +390,63 @@ void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
 
   // init & exit
 
+VertexBufferID OpenGLRenderer3D::CreateSimpleVertexBuffer(GLfloat *vertices, unsigned int size) {
+  GLuint VBO, VAO;
+  mapping.glGenVertexArrays(1, &VAO);
+  mapping.glGenBuffers(1, &VBO);
+
+  mapping.glBindVertexArray(VAO);
+
+  mapping.glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  mapping.glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
+
+  mapping.glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
+  mapping.glEnableVertexAttribArray(0);
+
+  mapping.glBindBuffer(GL_ARRAY_BUFFER, 0);
+  mapping.glBindVertexArray(0);
+
+  VertexBufferID vertexBufferId;
+  vertexBufferId.bufferID = VBO;
+  vertexBufferId.vertexArrayID = VAO;
+  return vertexBufferId;
+}
+
+void OpenGLRenderer3D::DeleteSimpleVertexBuffer(VertexBufferID vertexBufferID) {
+  DO_VALIDATION;
+  GLuint glVertexBufferID = vertexBufferID.bufferID;
+  mapping.glDeleteBuffers(1, &glVertexBufferID);
+
+  GLuint glVertexArrayID = vertexBufferID.vertexArrayID;
+  mapping.glDeleteVertexArrays(1, &glVertexArrayID);
+}
+
+// This method was introduced to replace OpenGL's fixed function pipeline
+// (e.g. glBegin, glEnd, etc.) that was used for overlay rendering.
+void OpenGLRenderer3D::InitializeOverlayAndQuadBuffers() {
+  GLfloat overlayVertices[] = {
+          0.0f, 1.0f, 0.0f, 1.0f,
+          1.0f, 0.0f, 0.0f, 1.0f,
+          0.0f, 0.0f, 0.0f, 1.0f,
+
+          0.0f, 1.0f, 0.0f, 1.0f,
+          1.0f, 1.0f, 0.0f, 1.0f,
+          1.0f, 0.0f, 0.0f, 1.0f
+  };
+  overlayBuffer = CreateSimpleVertexBuffer(overlayVertices, sizeof(overlayVertices));
+
+  GLfloat quadVertices[] = {
+          -1.0f,  1.0f, 0.0f, 1.0f,
+          1.0f, -1.0f, 0.0f, 1.0f,
+          -1.0f, -1.0f, 0.0f, 1.0f,
+
+          -1.0f,  1.0f, 0.0f, 1.0f,
+          1.0f,  1.0f, 0.0f, 1.0f,
+          1.0f, -1.0f, 0.0f, 1.0f
+  };
+  quadBuffer = CreateSimpleVertexBuffer(quadVertices, sizeof(quadVertices));
+}
+
 bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
                                      bool fullscreen) {
   DO_VALIDATION;
@@ -520,6 +579,9 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
     noiseTexID = CreateTexture(e_InternalPixelFormat_RGB8, e_PixelFormat_RGB, noise->w, noise->h, false, true, false, false, false);
     UpdateTexture(noiseTexID, noise, false, false);
     SDL_FreeSurface(noise);
+
+    // create buffers for overlay and simple quad rendering to use shaders instead of fixed pipeline
+    InitializeOverlayAndQuadBuffers();
 
     mapping.glClearColor(0, 0, 0, 0);
     mapping.glClearDepth(1.0);
