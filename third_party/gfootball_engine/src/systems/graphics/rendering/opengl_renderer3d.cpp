@@ -20,6 +20,7 @@
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
 #include <OpenGL/gl3.h>
+#include <OpenGL/gl3ext.h>
 #else
 #include <GL/gl.h>
 //#include <GL/glcorearb.h>
@@ -474,9 +475,9 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
 #endif
 
     largest_supported_anisotropy = 2;
-#ifndef __APPLE__
+//#ifndef __APPLE__  // Can be used to check for Core Profile Mode on Linux
     mapping.glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &largest_supported_anisotropy);
-#endif
+//#endif
     //largest_supported_anisotropy = clamp(largest_supported_anisotropy, 0, 8); // don't overdo it
 
 //    mapping.glDisable(GL_LIGHTING);
@@ -1783,10 +1784,10 @@ void OpenGLRenderer3D::SetClientTextureUnit(int textureUnit) {
 
 void OpenGLRenderer3D::SetMaxAnisotropy() {
   DO_VALIDATION;
-#ifndef __APPLE__   // Could be also used to check for Core Profile Mode
+//#ifndef __APPLE__  // Can be used to check for Core Profile Mode on Linux
   mapping.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
           largest_supported_anisotropy);
-#endif
+//#endif
 }
 
   // frame buffer objects
