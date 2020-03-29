@@ -19,10 +19,9 @@
 
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
-#include <SDL2/SDL_opengl.h>
-//#include <OpenGL/glu.h>
+#include <OpenGL/gl3.h>
 #else
-#include <GL/glu.h>
+#include <GL/gl.h>
 //#include <GL/glcorearb.h>
 #endif
 #include <cmath>
