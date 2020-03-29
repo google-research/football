@@ -164,13 +164,13 @@ void main(void) {
   for (int i = 0; i < SSAO_kernelSize; ++i) {
 
     // get sample position in viewspace coords
-    vec3 sample = tbn * SSAO_kernel[i];
-    sample = viewPosition + sample * SSAO_radius;
-    // sample.z darkens in the distance
-    //test += sample / (SSAO_kernelSize * 1.0f);
+    vec3 sample_pos= tbn * SSAO_kernel[i];
+    sample_pos= viewPosition + sample_pos* SSAO_radius;
+    // sample_pos.z darkens in the distance
+    //test += sample_pos/ (SSAO_kernelSize * 1.0f);
 
     // sample position to projection space
-    vec4 offset = projectionMatrix * vec4(sample, 1.0f);
+    vec4 offset = projectionMatrix * vec4(sample_pos, 1.0f);
     offset.xy /= offset.w;
     offset.xy = offset.xy * 0.5f + 0.5f;
 
@@ -182,7 +182,7 @@ void main(void) {
     //float rangeCheckFalloff = abs(-viewPosition.z - sampleDepth) < SSAO_radius ? 1.0f : 0.0f;
     float rangeCheckFalloff = clamp((SSAO_radius - abs(-viewPosition.z - sampleDepth) * 0.5f) / SSAO_radius, 0.0f, 1.0f); // gradual falloff version. * 0.4f == don't fall off all too gracefully; pow would be better (but slower!)
     // if actual fragment's depth is behind sample position, do not count
-    float rangeCheckInside = sampleDepth < -sample.z ? 1.0f : 0.0f;
+    float rangeCheckInside = sampleDepth < -sample_pos.z ? 1.0f : 0.0f;
 
     SSAO += rangeCheckFalloff * rangeCheckInside;
   }
