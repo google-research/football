@@ -449,7 +449,7 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
     //ASSERT_TRUE(glGetIntegervFunc != nullptr);
     mapping.glGetIntegerv(GL_MAJOR_VERSION, &glVersion[0]);
     mapping.glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]);
-    printf("Debug: OpenGL version: %i.%i\n", glVersion[0], glVersion[1]);
+    //printf("Debug: OpenGL version: %i.%i\n", glVersion[0], glVersion[1]);
 
     if (!context) {
       DO_VALIDATION;
