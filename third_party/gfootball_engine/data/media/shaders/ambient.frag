@@ -75,9 +75,9 @@ float GetEdge(vec2 pos) {
   float depths[9];
   vec3 normals[9];
   for (int i = 0; i < 9; i++) {
-    float depth = texture2D(map_depth, pos + offsets[i] * 0.001).x;
+    float depth = texture(map_depth, pos + offsets[i] * 0.001).x;
     depths[i] = cameraClip.y / (depth - cameraClip.x);
-    normals[i] = texture2D(map_normal, pos + offsets[i] * 0.001).xyz;
+    normals[i] = texture(map_normal, pos + offsets[i] * 0.001).xyz;
   }
 
   vec4 deltas1;
@@ -130,11 +130,11 @@ void main(void) {
   texCoord.x /= contextWidth;
   texCoord.y /= contextHeight;
 
-  float depth = texture2D(map_depth, texCoord).x;
+  float depth = texture(map_depth, texCoord).x;
 
   vec3 worldPosition = GetWorldPosition(texCoord, depth);
 
-  vec3 base = texture2D(map_albedo, texCoord).xyz;
+  vec3 base = texture(map_albedo, texCoord).xyz;
 
   float brightness = 0.15f;//0.25f;
 
@@ -150,13 +150,13 @@ void main(void) {
   vec2 noiseScale = vec2(contextWidth / 4.0f, contextHeight / 4.0f);
   float SSAO_radius = 0.18f;//0.12f;
 
-  vec3 normal = texture2D(map_normal, texCoord).xyz;
+  vec3 normal = texture(map_normal, texCoord).xyz;
   float SSAO = 0.0;
 
   vec3 viewPosition = vec3(viewMatrix * vec4(worldPosition, 1.0f));
   vec3 viewNormal = vec3(viewMatrix * vec4(normal, 0.0f));
 
-  vec3 randomVec = -texture2D(map_noise, texCoord * noiseScale).xyz * 2.0f - 1.0f;
+  vec3 randomVec = -texture(map_noise, texCoord * noiseScale).xyz * 2.0f - 1.0f;
   vec3 tangent = normalize(randomVec - viewNormal * dot(randomVec, viewNormal));
   vec3 bitangent = cross(viewNormal, tangent);
   mat3 tbn = mat3(tangent, bitangent, viewNormal);
@@ -164,13 +164,13 @@ void main(void) {
   for (int i = 0; i < SSAO_kernelSize; ++i) {
 
     // get sample position in viewspace coords
-    vec3 sample = tbn * SSAO_kernel[i];
-    sample = viewPosition + sample * SSAO_radius;
-    // sample.z darkens in the distance
-    //test += sample / (SSAO_kernelSize * 1.0f);
+    vec3 sample_pos= tbn * SSAO_kernel[i];
+    sample_pos= viewPosition + sample_pos* SSAO_radius;
+    // sample_pos.z darkens in the distance
+    //test += sample_pos/ (SSAO_kernelSize * 1.0f);
 
     // sample position to projection space
-    vec4 offset = projectionMatrix * vec4(sample, 1.0f);
+    vec4 offset = projectionMatrix * vec4(sample_pos, 1.0f);
     offset.xy /= offset.w;
     offset.xy = offset.xy * 0.5f + 0.5f;
 
@@ -182,7 +182,7 @@ void main(void) {
     //float rangeCheckFalloff = abs(-viewPosition.z - sampleDepth) < SSAO_radius ? 1.0f : 0.0f;
     float rangeCheckFalloff = clamp((SSAO_radius - abs(-viewPosition.z - sampleDepth) * 0.5f) / SSAO_radius, 0.0f, 1.0f); // gradual falloff version. * 0.4f == don't fall off all too gracefully; pow would be better (but slower!)
     // if actual fragment's depth is behind sample position, do not count
-    float rangeCheckInside = sampleDepth < -sample.z ? 1.0f : 0.0f;
+    float rangeCheckInside = sampleDepth < -sample_pos.z ? 1.0f : 0.0f;
 
     SSAO += rangeCheckFalloff * rangeCheckInside;
   }
@@ -197,7 +197,7 @@ void main(void) {
 
   // self-illumination
 
-  vec4 aux = texture2D(map_aux, texCoord.st);
+  vec4 aux = texture(map_aux, texCoord.st);
   float self_illumination = aux.w;
 
   vec3 fragColor = vec3(clamp(base * (1.0 + self_illumination), 0.0, 1.0));

@@ -18,11 +18,12 @@
 #include "opengl_renderer3d.hpp"
 
 #ifdef __APPLE__
-#include <SDL2/SDL_opengl.h>
-#include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
+#define GL_SILENCE_DEPRECATION
+#include <OpenGL/gl3.h>
+#include <OpenGL/gl3ext.h>
 #else
-#include <GL/glu.h>
+#include <GL/gl.h>
+//#include <GL/glcorearb.h>
 #endif
 #include <cmath>
 #include "wrap_SDL.h"
@@ -43,6 +44,7 @@
 #ifdef WIN32
 #include <wingdi.h>
 #endif
+
 
 namespace blunted {
 
@@ -66,7 +68,13 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
   // SetPriorityClass(thread.native_handle(), HIGH_PRIORITY_CLASS);
 };
 
-OpenGLRenderer3D::~OpenGLRenderer3D() { DO_VALIDATION; };
+OpenGLRenderer3D::~OpenGLRenderer3D() {
+    DO_VALIDATION;
+    DeleteSimpleVertexBuffer(overlayBuffer);
+    DeleteSimpleVertexBuffer(quadBuffer);
+    // Shut down all SDL subsystems
+    SDL_Quit();
+};
 
 void OpenGLRenderer3D::SwapBuffers() {
   DO_VALIDATION;
@@ -90,74 +98,43 @@ void OpenGLRenderer3D::RenderOverlay2D(
 
   assert(context);
 
-  mapping.glMatrixMode(GL_PROJECTION);
-  mapping.glPushMatrix();
-  mapping.glLoadIdentity();
-  mapping.glOrtho(0, 1280, 720, 0, 0.1, 10);
-
-  mapping.glMatrixMode(GL_MODELVIEW);
-  mapping.glPushMatrix();
-  mapping.glLoadIdentity();
-  mapping.glTranslatef(0, 0, -1);
+  if (overlay2DQueue.empty()) {
+    return;
+  }
 
   mapping.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   mapping.glEnable(GL_BLEND);
-
   mapping.glDisable(GL_DEPTH_TEST);
   SetDepthMask(false);
-  mapping.glShadeModel(GL_FLAT);
-  mapping.glDisable(GL_FOG);
   mapping.glDisable(GL_CULL_FACE);
-  mapping.glDisable(GL_LIGHTING);
 
-  mapping.glEnable(GL_TEXTURE_2D);
+  UseShader("overlay");
+
+  Matrix4 orthoMatrix = CreateOrthoMatrix(0, 1280, 720, 0, 0.1, 10);
+  SetMatrix("projection", orthoMatrix);
+
+  mapping.glBindVertexArray(overlayBuffer.vertexArrayID);
+  SetTextureUnit(0);
 
   for (unsigned int i = 0; i < overlay2DQueue.size(); i++) {
     DO_VALIDATION;
     const Overlay2DQueueEntry &queueEntry = overlay2DQueue[i];
 
-    /* fun!
-    float xf = (context->w * 1.0) / 2.0 - 128  + sin(i       + i2 * 1.2) * 200
-    + sin(i * 0.4 + i2 * 0.6) * 100; float yf = (context->h * 1.0) / 2.0 - 32 +
-    cos(i * 0.7 + i2 * 0.7) * 160  + cos(i * 0.6 + i2 * 1.3) * 80; i2 += 0.15 -
-    (i2 * 0.01);
-    */
+    Matrix4 modelMatrix(MATRIX4_IDENTITY);
+    modelMatrix.SetTranslation(Vector3(queueEntry.position[0], queueEntry.position[1], -1.0f));
+    modelMatrix.SetScale(Vector3(queueEntry.size[0], queueEntry.size[1], 1.0f));
+    SetMatrix("model", modelMatrix);
 
-    mapping.glBindTexture(GL_TEXTURE_2D,
-                          queueEntry.texture->GetResource()->GetID());
-
-    mapping.glBegin(GL_QUADS);
-
-    mapping.glTexCoord3f(0, 0, 0);
-    mapping.glVertex2f(queueEntry.position[0], queueEntry.position[1]);
-    mapping.glTexCoord3f(1, 0, 0);
-    mapping.glVertex2f(queueEntry.position[0] + queueEntry.size[0],
-                       queueEntry.position[1]);
-    mapping.glTexCoord3f(1, 1, 0);
-    mapping.glVertex2f(queueEntry.position[0] + queueEntry.size[0],
-                       queueEntry.position[1] + queueEntry.size[1]);
-    mapping.glTexCoord3f(0, 1, 0);
-    mapping.glVertex2f(queueEntry.position[0],
-                       queueEntry.position[1] + queueEntry.size[1]);
-
-    mapping.glEnd();
+    BindTexture(queueEntry.texture->GetResource()->GetID());
+    mapping.glDrawArrays(GL_TRIANGLES, 0, 6);
   }
+
+  mapping.glBindVertexArray(0);
 
   mapping.glEnable(GL_DEPTH_TEST);
   mapping.glEnable(GL_CULL_FACE);
-  mapping.glShadeModel(GL_SMOOTH);
   SetDepthMask(true);
-
   mapping.glDisable(GL_BLEND);
-
-  mapping.glPopMatrix();
-
-  mapping.glMatrixMode(GL_PROJECTION);
-  mapping.glPopMatrix();
-
-  mapping.glMatrixMode(GL_MODELVIEW);
-
-  mapping.glLoadIdentity();
 }
 
 void OpenGLRenderer3D::RenderOverlay2D() {
@@ -170,28 +147,15 @@ void OpenGLRenderer3D::RenderOverlay2D() {
   viewMatrix.SetTranslation(Vector3(0, 0, -0.5f));
   SetMatrix("orthoViewMatrix", viewMatrix);
 
-  mapping.glShadeModel(GL_FLAT);
-  mapping.glDisable(GL_LIGHTING);
-
   SetCullingMode(e_CullingMode_Off);
 
-  mapping.glEnable(GL_TEXTURE_2D);
   SetTextureUnit(4);  // noise
   BindTexture(noiseTexID);
   SetTextureUnit(0);
 
-  mapping.glBegin(GL_QUADS);
-
-  mapping.glTexCoord3f(0, 1, 0);
-  mapping.glVertex2f(-1, 1);
-  mapping.glTexCoord3f(1, 1, 0);
-  mapping.glVertex2f(1, 1);
-  mapping.glTexCoord3f(1, 0, 0);
-  mapping.glVertex2f(1, -1);
-  mapping.glTexCoord3f(0, 0, 0);
-  mapping.glVertex2f(-1, -1);
-
-  mapping.glEnd();
+  mapping.glBindVertexArray(quadBuffer.vertexArrayID);
+  mapping.glDrawArrays(GL_TRIANGLES, 0, 6);
+  mapping.glBindVertexArray(0);
 
   // unbind noise
   SetTextureUnit(4);
@@ -202,6 +166,10 @@ void OpenGLRenderer3D::RenderOverlay2D() {
 
 void drawSphere(float r, int lats, int longs) {
   DO_VALIDATION;
+  // Never called (because light.type is always set to 0) and uses deprecated methods.
+  // Possible implementation, that uses modern OpenGl can be found here:
+  // https://gist.github.com/zwzmzd/0195733fa1210346b00d
+  /*
   int i, j;
   for (i = 0; i <= lats; i++) {
     DO_VALIDATION;
@@ -227,6 +195,7 @@ void drawSphere(float r, int lats, int longs) {
     }
     mapping.glEnd();
   }
+   */
 }
 
 void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
@@ -235,7 +204,7 @@ void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
   DO_VALIDATION;
   Vector3 cameraPos = viewMatrix.GetInverse().GetTranslation();
 
-  mapping.glDisable(GL_ALPHA_TEST);
+//  mapping.glDisable(GL_ALPHA_TEST);
 
   SetUniformFloat3(currentShader->first, "cameraPosition", cameraPos.coords[0],
                    cameraPos.coords[1], cameraPos.coords[2]);
@@ -251,7 +220,7 @@ void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
     if (light.hasShadow) {
       DO_VALIDATION;
       SetTextureUnit(7);
-      mapping.glEnable(GL_TEXTURE_2D);
+      //mapping.glEnable(GL_TEXTURE_2D);
       mapping.glBindTexture(GL_TEXTURE_2D,
                             light.shadowMapTexture->GetResource()->GetID());
 
@@ -263,7 +232,7 @@ void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
                             (*lightIter).lightViewMatrix);
 
     } else {
-      mapping.glDisable(GL_TEXTURE_2D);
+      //mapping.glDisable(GL_TEXTURE_2D);
     }
 
     SetUniformFloat3(currentShader->first, "lightColor", light.color.coords[0],
@@ -314,20 +283,10 @@ void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
       Matrix4 modelMatrix(MATRIX4_IDENTITY);
       SetMatrix("modelMatrix", modelMatrix);
 
-      mapping.glBegin(GL_QUADS);
-
-      mapping.glTexCoord3f(0, 1, 0);
-      mapping.glVertex2f(-1, 1);
-      mapping.glTexCoord3f(1, 1, 0);
-      mapping.glVertex2f(1, 1);
-      mapping.glTexCoord3f(1, 0, 0);
-      mapping.glVertex2f(1, -1);
-      mapping.glTexCoord3f(0, 0, 0);
-      mapping.glVertex2f(-1, -1);
-
-      mapping.glEnd();
-
-    } else {
+      mapping.glBindVertexArray(quadBuffer.vertexArrayID);
+      mapping.glDrawArrays(GL_TRIANGLES, 0, 6);
+      mapping.glBindVertexArray(0);
+    } else {  // Never called (because light.type is always set to 0)
       // SPHERE
 
       SetCullingMode(e_CullingMode_Back);
@@ -346,7 +305,7 @@ void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
     if (light.hasShadow) {
       DO_VALIDATION;
       mapping.glBindTexture(GL_TEXTURE_2D, 0);
-      mapping.glDisable(GL_TEXTURE_2D);
+      //mapping.glDisable(GL_TEXTURE_2D);
       SetTextureUnit(0);
     }
 
@@ -358,6 +317,63 @@ void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
 
 
   // init & exit
+
+VertexBufferID OpenGLRenderer3D::CreateSimpleVertexBuffer(GLfloat *vertices, unsigned int size) {
+  GLuint VBO, VAO;
+  mapping.glGenVertexArrays(1, &VAO);
+  mapping.glGenBuffers(1, &VBO);
+
+  mapping.glBindVertexArray(VAO);
+
+  mapping.glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  mapping.glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
+
+  mapping.glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
+  mapping.glEnableVertexAttribArray(0);
+
+  mapping.glBindBuffer(GL_ARRAY_BUFFER, 0);
+  mapping.glBindVertexArray(0);
+
+  VertexBufferID vertexBufferId;
+  vertexBufferId.bufferID = VBO;
+  vertexBufferId.vertexArrayID = VAO;
+  return vertexBufferId;
+}
+
+void OpenGLRenderer3D::DeleteSimpleVertexBuffer(VertexBufferID vertexBufferID) {
+  DO_VALIDATION;
+  GLuint glVertexBufferID = vertexBufferID.bufferID;
+  mapping.glDeleteBuffers(1, &glVertexBufferID);
+
+  GLuint glVertexArrayID = vertexBufferID.vertexArrayID;
+  mapping.glDeleteVertexArrays(1, &glVertexArrayID);
+}
+
+// This method was introduced to replace OpenGL's fixed function pipeline
+// (e.g. glBegin, glEnd, etc.) that was used for overlay rendering.
+void OpenGLRenderer3D::InitializeOverlayAndQuadBuffers() {
+  GLfloat overlayVertices[] = {
+          0.0f, 1.0f, 0.0f, 1.0f,
+          1.0f, 0.0f, 0.0f, 1.0f,
+          0.0f, 0.0f, 0.0f, 1.0f,
+
+          0.0f, 1.0f, 0.0f, 1.0f,
+          1.0f, 1.0f, 0.0f, 1.0f,
+          1.0f, 0.0f, 0.0f, 1.0f
+  };
+  overlayBuffer = CreateSimpleVertexBuffer(overlayVertices, sizeof(overlayVertices));
+
+  GLfloat quadVertices[] = {
+          -1.0f,  1.0f, 0.0f, 1.0f,
+          1.0f, -1.0f, 0.0f, 1.0f,
+          -1.0f, -1.0f, 0.0f, 1.0f,
+
+          -1.0f,  1.0f, 0.0f, 1.0f,
+          1.0f,  1.0f, 0.0f, 1.0f,
+          1.0f, -1.0f, 0.0f, 1.0f
+  };
+  quadBuffer = CreateSimpleVertexBuffer(quadVertices, sizeof(quadVertices));
+}
 
 bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
                                      bool fullscreen) {
@@ -376,6 +392,9 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
   // #endif
 
   //#ifdef WIN32
+  // SDL subsystems must be initialized before setting attributes
+  SDL_Init(SDL_INIT_VIDEO);
+
   SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
@@ -386,15 +405,12 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
 
   SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);  // DISABLED?
 
-  // SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-  // SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-  // SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
-  // SDL_GL_CONTEXT_PROFILE_CORE);
+#ifdef __APPLE__
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+#endif
 
-
-  //    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-  //    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-  //    SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
   // recently disabled  SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, 1); // wait for
   // vsync?
   //  int SDLerror = SDL_GL_SetSwapInterval(-1);
@@ -433,6 +449,7 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
     //ASSERT_TRUE(glGetIntegervFunc != nullptr);
     mapping.glGetIntegerv(GL_MAJOR_VERSION, &glVersion[0]);
     mapping.glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]);
+    //printf("Debug: OpenGL version: %i.%i\n", glVersion[0], glVersion[1]);
 
     if (!context) {
       DO_VALIDATION;
@@ -458,21 +475,22 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
 #endif
 
     largest_supported_anisotropy = 2;
+//#ifndef __APPLE__  // Can be used to check for Core Profile Mode on Linux
     mapping.glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &largest_supported_anisotropy);
+//#endif
     //largest_supported_anisotropy = clamp(largest_supported_anisotropy, 0, 8); // don't overdo it
 
-    mapping.glDisable(GL_LIGHTING);
+//    mapping.glDisable(GL_LIGHTING);
 
     GLfloat color[4] = { 0, 0, 0, 0 };
-    mapping.glMaterialfv(GL_FRONT, GL_SPECULAR, color);
-    mapping.glMateriali(GL_FRONT, GL_SHININESS, 80);
+//    mapping.glMaterialfv(GL_FRONT, GL_SPECULAR, color);
+//    mapping.glMateriali(GL_FRONT, GL_SHININESS, 80);
 
     // enable color tracking
-    mapping.glEnable(GL_COLOR_MATERIAL);
-    mapping.glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+//    mapping.glEnable(GL_COLOR_MATERIAL);
+//    mapping.glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 
     mapping.glDisable(GL_MULTISAMPLE);
-
     mapping.glCullFace(GL_BACK);
 
 
@@ -483,6 +501,7 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
     LoadShader("ambient", "media/shaders/ambient");
     LoadShader("zphase", "media/shaders/zphase");
     LoadShader("postprocess", "media/shaders/postprocess");
+    LoadShader("overlay", "media/shaders/overlay");
 
     currentShader = shaders.begin();
 
@@ -491,6 +510,9 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
     noiseTexID = CreateTexture(e_InternalPixelFormat_RGB8, e_PixelFormat_RGB, noise->w, noise->h, false, true, false, false, false);
     UpdateTexture(noiseTexID, noise, false, false);
     SDL_FreeSurface(noise);
+
+    // create buffers for overlay and simple quad rendering to use shaders instead of fixed pipeline
+    InitializeOverlayAndQuadBuffers();
 
     mapping.glClearColor(0, 0, 0, 0);
     mapping.glClearDepth(1.0);
@@ -780,6 +802,8 @@ void OpenGLRenderer3D::SetDepthMask(bool OnOff) {
 
 void OpenGLRenderer3D::SetTextureMode(e_TextureMode textureMode) {
   DO_VALIDATION;
+  // Never called. Uses deprecated methods
+  /*
   switch (textureMode) {
     DO_VALIDATION;
 
@@ -791,6 +815,7 @@ void OpenGLRenderer3D::SetTextureMode(e_TextureMode textureMode) {
       mapping.glEnable(GL_TEXTURE_2D);
       break;
   }
+   */
 }
 
 void OpenGLRenderer3D::SetColor(const Vector3 &color, float alpha) {
@@ -1144,12 +1169,13 @@ void OpenGLRenderer3D::RenderVertexBuffer(
   DO_VALIDATION;
   VertexBuffer *vertexBuffer;
 
-  if (renderMode != e_RenderMode_GeometryOnly) {
-    DO_VALIDATION;
-    mapping.glEnable(GL_TEXTURE_2D);
-  } else {
-    mapping.glDisable(GL_TEXTURE_2D);
-  }
+// Deprecated
+//  if (renderMode != e_RenderMode_GeometryOnly) {
+//    DO_VALIDATION;
+//    mapping.glEnable(GL_TEXTURE_2D);
+//  } else {
+//    mapping.glDisable(GL_TEXTURE_2D);
+//  }
 
   signed int currentDiffuseTextureID = -1;
   signed int currentNormalTextureID = -1;
@@ -1404,7 +1430,7 @@ void OpenGLRenderer3D::RenderVertexBuffer(
       }
       SetTextureUnit(0);
       mapping.glBindTexture(GL_TEXTURE_2D, 0);
-      mapping.glDisable(GL_TEXTURE_2D);
+      //mapping.glDisable(GL_TEXTURE_2D);
     }
 
     mapping.glBindVertexArray(0);
@@ -1415,7 +1441,8 @@ void OpenGLRenderer3D::RenderVertexBuffer(
 void OpenGLRenderer3D::SetLight(const Vector3 &position, const Vector3 &color,
                                 float radius) {
   DO_VALIDATION;
-
+  // Deprecated functionality, everything is implemented in the shaders
+  /*
   Vector3 pos = position;
 
   // printf("%f %f %f\n", cameraPos.coords[0], cameraPos.coords[1],
@@ -1434,6 +1461,7 @@ void OpenGLRenderer3D::SetLight(const Vector3 &position, const Vector3 &color,
   mapping.glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
 
   mapping.glEnable(GL_LIGHT0);
+   */
 }
 
   // textures
@@ -1457,9 +1485,10 @@ GLenum GetGLPixelFormat(e_PixelFormat pixelFormat) {
     case e_PixelFormat_DepthComponent:
       format = GL_DEPTH_COMPONENT;
       break;
-    case e_PixelFormat_Luminance:
-      format = GL_LUMINANCE;
-      break;
+//  Deprecated:
+//    case e_PixelFormat_Luminance:
+//      format = GL_LUMINANCE;
+//      break;
   }
 
   return format;
@@ -1585,8 +1614,7 @@ int OpenGLRenderer3D::CreateTexture(e_InternalPixelFormat internalPixelFormat,
 
   if (filter) {
     DO_VALIDATION;
-    mapping.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                            largest_supported_anisotropy);
+    SetMaxAnisotropy();
   }
 
   if (!multisample) {
@@ -1616,6 +1644,22 @@ void OpenGLRenderer3D::ResizeTexture(int textureID, SDL_Surface *source,
   DO_VALIDATION;
 
   BindTexture(textureID);
+  int x = 0;
+  int y = 0;
+  int width = source->w;
+  int height = source->h;
+
+  SDL_LockSurface(source);
+  mapping.glTexImage2D(GL_TEXTURE_2D, 0,
+          GetGLInternalPixelFormat(internalPixelFormat), width,
+          height, 0, GetGLPixelFormat(pixelFormat),
+          GL_UNSIGNED_BYTE, source->pixels);
+  SDL_UnlockSurface(source);
+
+  if (mipmaps) {
+    DO_VALIDATION;
+    mapping.glGenerateMipmap(GL_TEXTURE_2D);
+  }
 
   bool repeat = false;
   bool filter = true;
@@ -1628,8 +1672,7 @@ void OpenGLRenderer3D::ResizeTexture(int textureID, SDL_Surface *source,
     filter_mag = GL_LINEAR;
     // glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT,
     // &largest_supported_anisotropy);
-    mapping.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                            largest_supported_anisotropy);
+    SetMaxAnisotropy();
   } else {
     filter_min = (mipmaps) ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST;
     filter_mag = GL_NEAREST;
@@ -1647,25 +1690,10 @@ void OpenGLRenderer3D::ResizeTexture(int textureID, SDL_Surface *source,
       internalPixelFormat == e_InternalPixelFormat_DepthComponent32F) {
     DO_VALIDATION;
     mapping.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-    mapping.glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_INTENSITY);
+    // Post-GLSL 1.3, DEPTH_TEXTURE_MODE is deprecated and GLSL behaves as if
+    // its always set to LUMINANCE
+    //mapping.glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_INTENSITY);
   }
-
-  if (mipmaps) {
-    DO_VALIDATION;
-    mapping.glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-  }
-
-  int x = 0;
-  int y = 0;
-  int width = source->w;
-  int height = source->h;
-
-  SDL_LockSurface(source);
-  mapping.glTexImage2D(GL_TEXTURE_2D, 0,
-                       GetGLInternalPixelFormat(internalPixelFormat), width,
-                       height, 0, GetGLPixelFormat(pixelFormat),
-                       GL_UNSIGNED_BYTE, source->pixels);
-  SDL_UnlockSurface(source);
 
   // GLclampf prior = (width * height) / 1048576.0; // 1024*1024 tex = max
   // priority printf("%f\n", (pot(source->w) * pot(source->h)) / 1048576.0);
@@ -1688,6 +1716,15 @@ void OpenGLRenderer3D::UpdateTexture(int textureID, SDL_Surface *source,
   int w = source->w;
   int h = source->h;
 
+  SDL_LockSurface(source);
+  mapping.glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, type2, GL_UNSIGNED_BYTE,
+          source->pixels);
+  SDL_UnlockSurface(source);
+
+  if (mipmaps) {
+    DO_VALIDATION;
+    mapping.glGenerateMipmap(GL_TEXTURE_2D);
+  }
   GLint filter_min, filter_mag;
 
   bool filter = true;
@@ -1698,8 +1735,7 @@ void OpenGLRenderer3D::UpdateTexture(int textureID, SDL_Surface *source,
     filter_mag = GL_LINEAR;
     // glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT,
     // &largest_supported_anisotropy);
-    mapping.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                            largest_supported_anisotropy);
+    SetMaxAnisotropy();
   } else {
     filter_min = (mipmaps) ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST;
     filter_mag = GL_NEAREST;
@@ -1707,16 +1743,6 @@ void OpenGLRenderer3D::UpdateTexture(int textureID, SDL_Surface *source,
 
   mapping.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min);
   mapping.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag);
-
-  if (mipmaps) {
-    DO_VALIDATION;
-    mapping.glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-  }
-  SDL_LockSurface(source);
-  mapping.glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, type2, GL_UNSIGNED_BYTE,
-                          source->pixels);
-
-  SDL_UnlockSurface(source);
 
   BindTexture(0);
 }
@@ -1754,6 +1780,14 @@ void OpenGLRenderer3D::SetClientTextureUnit(int textureUnit) {
   DO_VALIDATION;
   // assert(glClientActiveTexture);
   mapping.glClientActiveTexture(GL_TEXTURE0 + (GLuint)textureUnit);
+}
+
+void OpenGLRenderer3D::SetMaxAnisotropy() {
+  DO_VALIDATION;
+//#ifndef __APPLE__  // Can be used to check for Core Profile Mode on Linux
+  mapping.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
+          largest_supported_anisotropy);
+//#endif
 }
 
   // frame buffer objects
@@ -1919,11 +1953,7 @@ void LoadGLShader(GLuint shaderID, const std::string &filename) {
   if (blen > 1) {
     DO_VALIDATION;
     GLchar *compiler_log = (GLchar *)malloc(blen);
-#ifdef __APPLE__
-    mapping.glGetInfoLogARB((void *)&shaderID, blen, &slen, compiler_log);
-#else
-    mapping.glGetInfoLogARB(shaderID, blen, &slen, compiler_log);
-#endif
+    mapping.glGetShaderInfoLog(shaderID, blen, &slen, compiler_log);
     printf("shader compilation info: %s\n", compiler_log);
     Log(e_Warning, "", "LoadGLShader",
         "shader compilation info (" + filename + "):\n" +
@@ -2130,6 +2160,11 @@ void OpenGLRenderer3D::LoadShader(const std::string &name,
   if (name == "postprocess") {
     DO_VALIDATION;
     mapping.glBindAttribLocation(shader.programID, 0, "position");
+    mapping.glBindFragDataLocation(shader.programID, 0, "stdout");
+  }
+  if (name == "overlay") {
+    DO_VALIDATION;
+    mapping.glBindAttribLocation(shader.programID, 0, "vertex");
     mapping.glBindFragDataLocation(shader.programID, 0, "stdout");
   }
 

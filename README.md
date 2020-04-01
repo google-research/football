@@ -29,25 +29,46 @@ This method doesn't support game rendering on screen - if you want to see the ga
 
 ### On your computer
 
-Install required apt packages with:
+#### 1. Install required packages
 
+#### Linux
 ```
 sudo apt-get install git cmake build-essential libgl1-mesa-dev libsdl2-dev \
 libsdl2-image-dev libsdl2-ttf-dev libsdl2-gfx-dev libboost-all-dev \
 libdirectfb-dev libst-dev mesa-utils xvfb x11vnc libsdl-sge-dev python3-pip
 ```
 
-Then install the game from GitHub master:
+#### Mac OS X
+First install [brew](https://brew.sh/). It should automatically install Command Line Tools. 
+Next install required packages: 
+```
+brew install git python3 cmake sdl2 sdl2_image sdl2_ttf sdl2_gfx boost boost-python3
+```
+
+#### 2. Clone the game from GitHub master
 ```
 git clone https://github.com/google-research/football.git
 cd football
+```
+
+#### Optional: Create and activate [virtual environment](https://docs.python.org/3/tutorial/venv.html)
+```
+python3 -m venv football-env
+source football-env/bin/activate
+```
+
+#### 3. Install the game
+```
 pip3 install .
 ```
-This command can run for a couple of minutes, as it compiles the C++ environment in the background. Now, it's time to play!
+This command can run for a couple of minutes, as it compiles the C++ environment in the background. 
 
+#### 4. Time to play!
 ```
 python3 -m gfootball.play_game --action_set=full
 ```
+Make sure to check out the [keyboard mappings](#keyboard-mappings).  
+To quit the game press Ctrl+C in the terminal.
 
 # Contents #
 
