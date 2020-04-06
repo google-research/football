@@ -365,6 +365,8 @@ class FootballEnvCore(object):
     assert self._retrieve_observation()
     from_picle = six.moves.cPickle.loads(res)
     self._state = from_picle['FootballEnvCore']
+    if self._trace is None:
+      self._trace = observation_processor.ObservationProcessor(self._config)
     return from_picle
 
   def tracker_setup(self, start, end):
