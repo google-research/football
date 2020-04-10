@@ -40,6 +40,7 @@ def parse_player_definition(definition):
     A tuple (name, dict).
   """
   name = definition
+
   d = {'left_players': 0,
        'right_players': 0}
   if ':' in definition:
@@ -54,6 +55,7 @@ def parse_player_definition(definition):
 
 def count_players(definition):
   """Returns a number of players given a definition."""
+
   _, player_definition = parse_player_definition(definition)
   return (int(player_definition['left_players']) +
           int(player_definition['right_players']))
@@ -71,6 +73,8 @@ def count_right_players(definition):
 
 def get_agent_number_of_players(players):
   """Returns a total number of players controlled by an agent."""
+
+
   return sum([count_players(player) for player in players
               if player.startswith('agent')])
 
@@ -93,8 +97,10 @@ class Config(object):
         'video_quality_level': 0,  # 0 - low, 1 - medium, 2 - high
         'write_video': False
     }
+
     if values:
       self._values.update(values)
+
     self.NewScenario()
 
   def number_of_left_players(self):
@@ -150,4 +156,5 @@ class Config(object):
     self._values['episode_number'] += inc
     self._scenario_values = {}
     from gfootball.env import scenario_builder
+
     self._scenario_cfg = scenario_builder.Scenario(self).ScenarioConfig()
