@@ -285,6 +285,90 @@ class CheckpointRewardWrapper(gym.RewardWrapper):
             self._collected_checkpoints.get(rew_index, 0) + 1)
     return reward
 
+class PassingRewardWrapper(gym.RewardWrapper):
+  """A wrapper that will give dense rewards for passing.
+  This will only work for single agent environments.
+  """
+
+  #TODO: pass completion
+
+  def __init__(self, env):
+      gym.RewardWrapper.__init__(self, env)
+
+      self.short_passes_completed = 0
+      self.aux_reward_amount = 0.1
+      self.max_cumulative_award = 1.0
+      self.running_award = 0.0
+      self.target_action = 11 # short pass
+      self.reward_returned = 0.0 #The actual reward amount used
+
+      # _action_set = [idle, left, top_left, top, top_right, right,
+      #                   bottom_right, bottom, bottom_left, long_pass,
+      #                   high_pass, short_pass, shot, sprint, release_direction,
+      #                   release_sprint, sliding, dribble, release_dribble]
+      print ("Creating the passing reward wrapper")
+
+  def reset(self):
+      print ("running award was {}, resetting to 0".format(self.running_award))
+      print ("{} passes were recorded, resetting to 0".format(self.short_passes_completed))
+      print ("pass reward used was {}".format(self.reward_returned))
+      self.running_award = 0.0
+      self.short_passes_completed = 0
+      self.reward_returned = 0.0
+      return self.env.reset()
+
+  def reward(self, reward):
+      # print ("Processing passing reward")
+      if len(reward) > 1:
+          print ("Passing reward wrapper is only implemented/tested for single agent")
+          exit()
+
+
+      action_taken = self.env._get_actions()[0]
+      #action 11 is short pass
+
+      #if the action sampled is the action we are looking for:
+      if action_taken == self.target_action:
+
+          #keep track of short passes
+          self.short_passes_completed += 1
+          #keep track of awards we collect
+          self.running_award += self.aux_reward_amount
+          #don't go past some amount as we don't want to confuse the agent
+          if self.running_award <= self.max_cumulative_award:
+              short_pass_rew = self.aux_reward_amount
+              self.reward_returned += self.aux_reward_amount
+          else:
+              short_pass_rew = 0.0
+
+      else:
+          short_pass_rew = 0.0
+
+
+      #indexed at zero because we are dealing with a single agent
+      #if it were multiple agaents we w ould have to iterate through a list of
+      #multi-agent observations
+      observation = self.env.unwrapped.observation()[0]
+      if observation is None:
+          print ("Observation is none")
+          return reward
+
+
+      # '''Processing observation dict below. We can ignore for now.'''
+      # left_team_active = observation['left_team_active']
+      # right_team_active = observation['right_team_active']
+      # ball_owned_player = observation['ball_owned_player']
+      # ball_owned_team = observation['ball_owned_team']
+      # steps_left = observation['steps_left']
+      # ball = observation['ball']
+      # score = observation['score']
+      # right_team_direction = observation['right_team_direction']
+      # '''Just ignore the top for now'''
+
+
+      reward[0] += short_pass_rew
+
+      return reward
 
 class FrameStack(gym.Wrapper):
   """Stack k last observations."""
