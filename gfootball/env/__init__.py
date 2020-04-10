@@ -31,6 +31,8 @@ def _process_reward_wrappers(env, rewards):
     env = wrappers.CheckpointRewardWrapper(env)
   if 'passing' in rewards.split(','):
     env = wrappers.PassingRewardWrapper(env)
+  if 'targShot' in rewards.split(','):
+    env = wrappers.ShotRewardWrapper(env)
   return env
 
 

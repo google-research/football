@@ -26,7 +26,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m pip install --upgrade pip
-RUN pip3 install tensorflow-gpu==1.15rc2 dm-sonnet psutil
+RUN pip3 install tensorflow-gpu==1.15rc2  psutil
+RUN pip3 install "dm-sonnet<2.0.0"
 RUN pip3 install git+https://github.com/openai/baselines.git@master
 
 COPY . /gfootball
