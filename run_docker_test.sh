@@ -1,6 +1,18 @@
 #!/bin/bash
 set -e
-docker build --build-arg DOCKER_BASE=ubuntu:18.04 --build-arg DEVICE=cpu . -t gfootball_docker_test
-docker run --entrypoint bash -it gfootball_docker_test -c 'set -e; for x in `find gfootball -name *_test.py`; do UNITTEST_IN_DOCKER=1 PYTHONPATH=/ python3 $x; done'
-docker run --entrypoint python3 -it gfootball_docker_test gfootball/examples/run_ppo2.py --level=academy_empty_goal_close --num_timesteps=10000
+docker build --build-arg DEVICE=gpu . -t gfootball_docker_test
 echo "Test successful!!!"
+
+
+docker run -it --runtime=nvidia --ipc=host --net=host \
+       --privileged \
+       --env display \
+       --volume /playpen/john/docker_scripts/.vimrc:/root/.vimrc \
+       --volume /tmp/.x11-unix:/tmp/.x11-unix \
+       --volume /var/run/docker.sock:/var/run/docker.sock \
+       --env xauthority=/root/.xauthority \
+       -v /playpen/john/ML/755_proj/:/app \
+       -v /net/vision29/data/c/:/data \
+       --env nvidia_driver_capabilities=compute,utility \
+       gfootball_docker_test:latest bash
+
