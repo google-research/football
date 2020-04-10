@@ -29,23 +29,24 @@ RUN python3 -m pip install --upgrade pip
 RUN pip3 install tensorflow-gpu==1.15rc2 dm-sonnet psutil
 RUN pip3 install git+https://github.com/openai/baselines.git@master
 
-#COPY . /gfootball
-#RUN cd /gfootball && pip3 install . -t /app 
-#
-#RUN apt-get update -y && \
-# apt-get install software-properties-common -y && \
-# add-apt-repository ppa:webupd8team/atom -y && \
-# apt-get update -y && \
-# apt-get install atom -y && \
-# apm install remote-atom && \
-# curl -o /usr/local/bin/rmate https://raw.githubusercontent.com/aurora/rmate/master/rmate && \
-# sudo chmod +x /usr/local/bin/rmate && \
-# mv /usr/local/bin/rmate /usr/local/bin/ratom && \
-# apt-get install eog -y && \
-# apt-get update -y && \
-# pip install torchtext tqdm imageio configparser matplotlib tifffile pyquaternion panda3d==1.10.0 && \
-# apt-get install -y x11-apps && \
-# touch /root/.Xauthority
-#
-# CMD ["python3"]
-# WORKDIR /app
+COPY . /gfootball
+RUN cd /gfootball && pip3 install . 
+
+
+RUN apt-get update -y && \
+ apt-get install software-properties-common -y && \
+ add-apt-repository ppa:webupd8team/atom -y && \
+ apt-get update -y && \
+ apt-get install atom -y && \
+ apm install remote-atom && \
+ curl -o /usr/local/bin/rmate https://raw.githubusercontent.com/aurora/rmate/master/rmate && \
+ sudo chmod +x /usr/local/bin/rmate && \
+ mv /usr/local/bin/rmate /usr/local/bin/ratom && \
+ apt-get install eog -y && \
+ apt-get update -y && \
+ pip install torchtext tqdm imageio configparser matplotlib tifffile pyquaternion panda3d==1.10.0 && \
+ apt-get install -y x11-apps && \
+ touch /root/.Xauthority
+
+CMD ["python3"]
+WORKDIR /app

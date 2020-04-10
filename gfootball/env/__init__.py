@@ -23,6 +23,7 @@ from gfootball.env import football_env
 from gfootball.env import observation_preprocessing
 from gfootball.env import wrappers
 
+print ("WORKING IN A DEVELOPMENT VERSION FOR COMP755")
 
 def _process_reward_wrappers(env, rewards):
   assert 'scoring' in rewards.split(',')
