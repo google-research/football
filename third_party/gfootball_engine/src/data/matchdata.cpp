@@ -48,8 +48,8 @@ class PlayerDesc {
 };
 
 MatchData::MatchData()
-    : teamData{TeamData(3, GetScenarioConfig().left_team),
-               TeamData(8, GetScenarioConfig().right_team)} {
+    : teamData{TeamData(1, GetScenarioConfig().left_team),
+               TeamData(2, GetScenarioConfig().right_team)} {
   std::vector<PlayerDesc> names = {
       PlayerDesc("Ada", "Lovelace", 1),
       PlayerDesc("Alan", "Turing", 0),
