@@ -41,7 +41,7 @@ FIND_PACKAGE(SDL2_gfx REQUIRED)
 include_directories(${SDL2_GFX_DIRS})
 
 
-find_package(PythonLibs 3 REQUIRED)
+find_package(PythonLibs 3.6 EXACT REQUIRED)
 message("Using Python: ${PYTHONLIBS_VERSION_STRING}")
 string(REPLACE "." ";" VERSION_LIST ${PYTHONLIBS_VERSION_STRING})
 list(GET VERSION_LIST 0 PYTHON_MAJOR)

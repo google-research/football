@@ -18,10 +18,19 @@
 #include "playerdata.hpp"
 
 #include <cmath>
+#include <iostream>
+#include <sys/stat.h>
 
 #include "../base/utils.hpp"
 
 #include "../main.hpp"
+
+
+inline bool file_exists(const std::string& name) {
+  struct stat buffer;
+  return (stat (name.c_str(), &buffer) == 0);
+}
+
 
 PlayerStat PlayerStatFromString(const std::string& name) {
   DO_VALIDATION;
@@ -52,7 +61,7 @@ PlayerStat PlayerStatFromString(const std::string& name) {
   return player_stat_max;
 }
 
-PlayerData::PlayerData(int playerDatabaseID) : databaseID(playerDatabaseID) {
+PlayerData::PlayerData(int playerDatabaseID, int teamDatabaseID) : databaseID(playerDatabaseID) {
   DO_VALIDATION;
 
   std::string profileString;
@@ -66,7 +75,7 @@ PlayerData::PlayerData(int playerDatabaseID) : databaseID(playerDatabaseID) {
 
   switch (playerDatabaseID) {
     DO_VALIDATION;
-    case 398:
+    case 1:
       firstName = "Marc-Andr�";
       lastName = "ten Stegosaur";
       baseStat = 0.661913;
@@ -99,7 +108,7 @@ PlayerData::PlayerData(int playerDatabaseID) : databaseID(playerDatabaseID) {
       hairColor = "blonde";
       height = 1.87;
       break;
-    case 11:
+    case 2:
       firstName = "Jordi";
       lastName = "Alblabla";
       baseStat = 0.619111;
@@ -132,7 +141,7 @@ PlayerData::PlayerData(int playerDatabaseID) : databaseID(playerDatabaseID) {
       hairColor = "black";
       height = 1.7;
       break;
-    case 254:
+    case 3:
       firstName = "Javier";
       lastName = "Masqueranus";
       baseStat = 0.64269;
@@ -165,7 +174,7 @@ PlayerData::PlayerData(int playerDatabaseID) : databaseID(playerDatabaseID) {
       hairColor = "black";
       height = 1.74;
       break;
-    case 320:
+    case 4:
       firstName = "Gerard";
       lastName = "Pitoresqué";
       baseStat = 0.625396;
@@ -198,7 +207,7 @@ PlayerData::PlayerData(int playerDatabaseID) : databaseID(playerDatabaseID) {
       hairColor = "black";
       height = 1.93;
       break;
-    case 103:
+    case 5:
       firstName = "";
       lastName = "Danny Ballfs";
       baseStat = 0.60786;
@@ -231,7 +240,7 @@ PlayerData::PlayerData(int playerDatabaseID) : databaseID(playerDatabaseID) {
       hairColor = "black";
       height = 1.72;
       break;
-    case 188:
+    case 6:
       firstName = "Andr�s";
       lastName = "Ingestia";
       baseStat = 0.68319;
@@ -264,7 +273,7 @@ PlayerData::PlayerData(int playerDatabaseID) : databaseID(playerDatabaseID) {
       hairColor = "black";
       height = 1.71;
       break;
-    case 74:
+    case 7:
       firstName = "Sergio";
       lastName = "Buckets";
       baseStat = 0.645507;
@@ -297,7 +306,7 @@ PlayerData::PlayerData(int playerDatabaseID) : databaseID(playerDatabaseID) {
       hairColor = "black";
       height = 1.89;
       break;
-    case 332:
+    case 8:
       firstName = "Ivan";
       lastName = "Rattizić";
       baseStat = 0.63531;
@@ -330,7 +339,7 @@ PlayerData::PlayerData(int playerDatabaseID) : databaseID(playerDatabaseID) {
       hairColor = "blonde";
       height = 1.84;
       break;
-    case 290:
+    case 9:
       firstName = "";
       lastName = "Niemeyer";
       baseStat = 0.716847;
@@ -363,7 +372,7 @@ PlayerData::PlayerData(int playerDatabaseID) : databaseID(playerDatabaseID) {
       hairColor = "black";
       height = 1.74;
       break;
-    case 391:
+    case 10:
       firstName = "Luis";
       lastName = "Sáreusz";
       baseStat = 0.693097;
@@ -396,7 +405,7 @@ PlayerData::PlayerData(int playerDatabaseID) : databaseID(playerDatabaseID) {
       hairColor = "black";
       height = 1.81;
       break;
-    case 264:
+    case 11:
       firstName = "Lionel";
       lastName = "Messy";
       baseStat = 0.718346;
@@ -429,6 +438,17 @@ PlayerData::PlayerData(int playerDatabaseID) : databaseID(playerDatabaseID) {
       hairColor = "black";
       height = 1.69;
       break;
+  }
+
+  std::ostringstream custom_profile_location_stream;
+  custom_profile_location_stream << "custom_profiles/" << teamDatabaseID << "_" << playerDatabaseID << ".player";
+  std::string custom_profile_location = custom_profile_location_stream.str();
+  if (file_exists(custom_profile_location)) {
+    printf("Custom profile for player %d in team %d\n", playerDatabaseID, teamDatabaseID);
+    std::ifstream custom_profile(custom_profile_location);
+    std::stringstream buffer;
+    buffer << custom_profile.rdbuf();
+    profileString = buffer.str();
   }
 
   // get average stat for current age

@@ -147,7 +147,7 @@ TeamData::TeamData(int teamDatabaseID, const std::vector<FormationEntry> &f) {
       "0.740000</position_offense_width_factor>";
   switch (teamDatabaseID) {
     DO_VALIDATION;
-    case 3:
+    case 1:
       name = "Frequentists United";
       logo_url = "images_teams/primeradivision/fcbarcelona_logo.png";
       kit_url = "images_teams/primeradivision/fcbarcelona";
@@ -155,7 +155,7 @@ TeamData::TeamData(int teamDatabaseID, const std::vector<FormationEntry> &f) {
       color1 = Vector3(255, 100, 100);
       color2 = Vector3(100, 100, 255);
       break;
-    case 8:
+    case 2:
       name = "Real Bayesians";
       logo_url = "images_teams/primeradivision/realmadrid_logo.png";
       kit_url = "images_teams/primeradivision/realmadrid";
@@ -289,17 +289,9 @@ TeamData::TeamData(int teamDatabaseID, const std::vector<FormationEntry> &f) {
 
   tree = loader.Load(factoryTacticsString);
   // load players
-  playerData.push_back(new PlayerData(398));
-  playerData.push_back(new PlayerData(11));
-  playerData.push_back(new PlayerData(254));
-  playerData.push_back(new PlayerData(320));
-  playerData.push_back(new PlayerData(103));
-  playerData.push_back(new PlayerData(188));
-  playerData.push_back(new PlayerData(74));
-  playerData.push_back(new PlayerData(332));
-  playerData.push_back(new PlayerData(290));
-  playerData.push_back(new PlayerData(391));
-  playerData.push_back(new PlayerData(264));
+  for (int i = 1; i < 12; i++) {
+    playerData.push_back(new PlayerData(i, teamDatabaseID));
+  }
   playerData.resize(player_count);
 }
 

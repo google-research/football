@@ -48,7 +48,7 @@ class PlayerProperties {
 class PlayerData {
 
   public:
-    PlayerData(int playerDatabaseID);
+    PlayerData(int playerDatabaseID, int teamDatabaseID);
     PlayerData();
     virtual ~PlayerData();
 
