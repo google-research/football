@@ -19,6 +19,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import random
+
 from absl import app
 from absl import flags
 from absl import logging
@@ -54,12 +56,19 @@ def main(_):
   env = football_env.FootballEnv(cfg)
   if FLAGS.render:
     env.render()
-  env.reset()
-  try:
-    while True:
+
+  # Coin flip to choose which side starts with a ball
+  env.reset(inc=random.choice([1, 2]))
+
+  def play_half():
+    done = False
+    while not done:
       _, _, done, _ = env.step([])
-      if done:
-        env.reset()
+
+  try:
+    play_half()
+    env.reset(inc=1)
+    play_half()
   except KeyboardInterrupt:
     logging.warning('Game stopped, writing dump...')
     env.write_dump('shutdown')
