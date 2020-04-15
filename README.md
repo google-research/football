@@ -42,7 +42,11 @@ libdirectfb-dev libst-dev mesa-utils xvfb x11vnc libsdl-sge-dev python3-pip
 First install [brew](https://brew.sh/). It should automatically install Command Line Tools. 
 Next install required packages: 
 ```
-brew install git python3 cmake sdl2 sdl2_image sdl2_ttf sdl2_gfx boost boost-python3
+brew install git python3 cmake sdl2 sdl2_image sdl2_ttf sdl2_gfx boost
+```
+and boost-python3, that supports Python 3.7:  
+```
+brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/527d96f84d4632d30b281ef5b26717e0a75edcb4/Formula/boost-python3.rb
 ```
 
 #### 2. Clone the game from GitHub master
