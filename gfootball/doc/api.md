@@ -23,4 +23,4 @@ On top of the standard API, we provide a number of additional methods:
   contains a snapshot of observations for each step of the episode and can be used
   to analyze episode's trajectory offline.
 
-For example API usage have a look at [play_game.py](gfootball/play_game.py).
+For example API usage have a look at [play_game.py](../play_game.py).
