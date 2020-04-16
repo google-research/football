@@ -81,6 +81,38 @@ class TextWriter(object):
                 lineType)
     self._pos_y += int(20 * scale_factor)
 
+  def write_table(self, data, widths, scale_factor=1):
+    # data is a list of rows. Each row is a list of strings.
+    assert(len(data[0]) == len(widths))
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    fontScale = 0.5 * scale_factor
+    lineType = 1
+
+    init_x = self._pos_x
+    for row in data:
+        for col, text in enumerate(row):
+            assert(isinstance(text, str))
+            textPos = (self._pos_x, self._pos_y)
+            cv2.putText(self._frame, text, textPos, font, fontScale,
+                        self._color, lineType)
+            self._pos_x += widths[col]
+        self._pos_x = init_x
+        self._pos_y += int(20 * scale_factor)
+
+
+def get_number_of_controlled_players(trace):
+    no_controlled_players = 0
+    if 'left_team' in trace:
+        for player_idx, player_coord in enumerate(trace['left_team']):
+            if 'left_agent_controlled_player' in trace and player_idx in trace[
+                'left_agent_controlled_player']:
+                no_controlled_players += 1
+    if 'right_team' in trace:
+        for player_idx, player_coord in enumerate(trace['right_team']):
+            if 'right_agent_controlled_player' in trace and player_idx in trace[
+            'right_agent_controlled_player']:
+                no_controlled_players += 1
+    return no_controlled_players
 
 def get_frame(trace):
   if 'frame' in trace._trace['observation']:
@@ -103,6 +135,7 @@ def get_frame(trace):
       field_coords=True,
       color=(255, 0, 0))
   writer.write('B')
+  single_player = get_number_of_controlled_players(trace) == 1
   for player_idx, player_coord in enumerate(trace['left_team']):
     writer = TextWriter(
         frame,
@@ -115,7 +148,7 @@ def get_frame(trace):
       letter = 'X'
     elif 'left_agent_controlled_player' in trace and player_idx in trace[
         'left_agent_controlled_player']:
-      letter = 'X'
+      letter = 'X' if single_player else str(player_idx)
     writer.write(letter)
   for player_idx, player_coord in enumerate(trace['right_team']):
     writer = TextWriter(
@@ -129,7 +162,7 @@ def get_frame(trace):
       letter = 'Y'
     elif 'right_agent_controlled_player' in trace and player_idx in trace[
         'right_agent_controlled_player']:
-      letter = 'Y'
+      letter = 'Y' if single_player else str(player_idx)
     writer.write(letter)
   return frame
 
@@ -137,6 +170,34 @@ def get_frame(trace):
 def softmax(x):
   return np.exp(x) / np.sum(np.exp(x), axis=0)
 
+
+def pprint_players_actions(writer, players_actions):
+    table_text = [["TEAM", "PLAYER", "SPRINT", "DRIBBLE", "DIRECTION",
+                   "ACTION"]]
+    widths = [35, 50, 50, 55, 60, 50]
+
+    team_short_name = {'left': 'L',
+                       'right': 'R'}
+    direction_short_name = {'-': '-',
+                            'top': 'TT',
+                            'top_right': 'TR',
+                            'right': 'RR',
+                            'bottom_right': 'BR',
+                            'bottom': 'BB',
+                            'bottom_left': 'BL',
+                            'left': 'LL',
+                            'top_left': 'TL'}
+
+    for team in ('left', 'right'):
+        for _, player_actions in sorted(players_actions[team].items()):
+            table_text.append([
+                 team_short_name[player_actions.get("team", "-")],
+                 str(player_actions.get("player_idx", "-")),
+                 str(player_actions.get("sprint", "-")),
+                 str(player_actions.get("dribble", "-")),
+                 direction_short_name[player_actions.get("DIRECTION", "-")],
+                 player_actions.get("ACTION", "-")])
+    writer.write_table(table_text, widths, scale_factor=0.6)
 
 def write_dump(name, trace, config):
   if len(trace) == 0:
@@ -178,22 +239,44 @@ def write_dump(name, trace, config):
         writer.write('FRAME: %d' % frame_cnt)
         writer.write('TIME: %f' % (o._time - time))
         sticky_actions = football_action_set.get_sticky_actions(config)
-        sticky_actions_field = 'left_agent_sticky_actions'
-        if len(o[sticky_actions_field]) == 0:
-          sticky_actions_field = 'right_agent_sticky_actions'
-        assert len(sticky_actions) == len(o[sticky_actions_field][0])
-        active_direction = None
-        for i in range(len(sticky_actions)):
-          if sticky_actions[i]._directional:
-            if o[sticky_actions_field][0][i]:
-              active_direction = sticky_actions[i]
-          else:
-            writer.write('%s: %d' % (sticky_actions[i]._name,
-                                     o[sticky_actions_field][0][i]))
-        writer.write('DIRECTION: %s' % ('NONE' if active_direction is None
-                                        else active_direction._name))
-        if 'action' in o._trace['debug']:
-          writer.write('ACTION: %s' % (o['action'][0]._name))
+
+        players_actions = {}
+        for team in ['left', 'right']:
+          sticky_actions_field = '%s_agent_sticky_actions' % team
+          players_actions[team] = {}
+          for player in range(len(o[sticky_actions_field])):
+            assert len(sticky_actions) == len(o[sticky_actions_field][player])
+            player_idx = o['%s_agent_controlled_player' % team][player]
+            players_actions[team][player_idx] = {'team': team,
+                                                 'player_idx': str(player_idx)}
+            active_direction = None
+            for i in range(len(sticky_actions)):
+              if sticky_actions[i]._directional:
+                if o[sticky_actions_field][player][i]:
+                  active_direction = sticky_actions[i]
+              else:
+                players_actions[team][player_idx][sticky_actions[i]._name] = \
+                    o[sticky_actions_field][player][i]
+
+            # Info about direction
+            players_actions[team][player_idx]['DIRECTION'] = \
+                '-' if active_direction is None else active_direction._name
+            if 'action' in o._trace['debug']:
+              # Info about action
+              players_actions[team][player_idx]['ACTION'] = \
+                  o['action'][player]._name
+
+        no_players = len(players_actions['left']) + \
+                     len(players_actions['right'])
+        if no_players > 1:
+            pprint_players_actions(writer, players_actions)
+        else:
+            for team in ['left', 'right']:
+                for idx in players_actions[team]:
+                    for k, v in players_actions[team][idx].items():
+                        if k not in ("team", "player_idx"):
+                            writer.write("%s: %s" % (k, str(v)))
+
         if 'baseline' in o._trace['debug']:
           writer.write('BASELINE: %.5f' % o._trace['debug']['baseline'])
         if 'logits' in o._trace['debug']:
