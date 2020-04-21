@@ -92,14 +92,22 @@ class PeriodicDumpWriter(gym.Wrapper):
 class Simple115StateWrapper(gym.ObservationWrapper):
   """A wrapper that converts an observation to 115-features state."""
 
-  def __init__(self, env):
+  def __init__(self, env, fixed_positions=False):
+    """Initializes the wrapper.
+
+    Args:
+      env: an envorinment to wrap
+      fixed_positions: whether to fix observation indexes corresponding to teams
+    Note: simple115v2 enables fixed_positions option.
+    """
     gym.ObservationWrapper.__init__(self, env)
     shape = (self.env.unwrapped._config.number_of_players_agent_controls(), 115)
     self.observation_space = gym.spaces.Box(
         low=-1, high=1, shape=shape, dtype=np.float32)
+    self._fixed_positions = fixed_positions
 
   def observation(self, observation):
-    """Converts an observation into simple115 format.
+    """Converts an observation into simple115 (or simple115v2) format.
 
     Args:
       observation: observation that the environment returns
@@ -111,10 +119,19 @@ class Simple115StateWrapper(gym.ObservationWrapper):
     final_obs = []
     for obs in observation:
       o = []
-      o.extend(obs['left_team'].flatten())
-      o.extend(obs['left_team_direction'].flatten())
-      o.extend(obs['right_team'].flatten())
-      o.extend(obs['right_team_direction'].flatten())
+      if self._fixed_positions:
+        for i, name in enumerate(['left_team', 'left_team_direction',
+                                  'right_team', 'right_team_direction']):
+          o.extend(obs[name].flatten())
+          # If there were less than 11vs11 players we backfill missing values
+          # with -1.
+          if len(o) < (i + 1) * 22:
+            o.extend([-1] * ((i + 1) * 22 - len(o)))
+      else:
+        o.extend(obs['left_team'].flatten())
+        o.extend(obs['left_team_direction'].flatten())
+        o.extend(obs['right_team'].flatten())
+        o.extend(obs['right_team_direction'].flatten())
 
       # If there were less than 11vs11 players we backfill missing values with
       # -1.

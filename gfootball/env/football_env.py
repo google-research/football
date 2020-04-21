@@ -31,6 +31,7 @@ from gfootball.env import observation_rotation
 import gym
 import numpy as np
 
+
 class FootballEnv(gym.Env):
   """Allows multiple players to play in the same environment."""
 
@@ -173,14 +174,14 @@ class FootballEnv(gym.Env):
       ) == 0, 'step() received {} actions, but no agent is playing.'.format(
           len(action))
 
-    _, reward, done = self._env.step(self._get_actions())
+    _, reward, done, info = self._env.step(self._get_actions())
     score_reward = reward
     if self._agent:
       reward = ([reward] * self._agent.num_controlled_left_players() +
                 [-reward] * self._agent.num_controlled_right_players())
     self._cached_observation = None
-    return (self.observation(), np.array(reward, dtype=np.float32), done,
-            {'score_reward': score_reward})
+    info['score_reward'] = score_reward
+    return (self.observation(), np.array(reward, dtype=np.float32), done, info)
 
   def reset(self):
     self._env.reset()

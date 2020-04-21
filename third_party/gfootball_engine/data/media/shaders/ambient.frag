@@ -169,6 +169,8 @@ void main(void) {
     // sample_pos.z darkens in the distance
     //test += sample_pos/ (SSAO_kernelSize * 1.0f);
 
+
+
     // sample position to projection space
     vec4 offset = projectionMatrix * vec4(sample_pos, 1.0f);
     offset.xy /= offset.w;

@@ -43,7 +43,9 @@ message CreateGameRequest {
   string track = 5;
 }
 
-message CreateGameResponse {}
+message CreateGameResponse {
+  bool success = 1;
+}
 
 service GameServer {
   // Rpc for obtaining the current state.

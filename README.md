@@ -39,12 +39,12 @@ libdirectfb-dev libst-dev mesa-utils xvfb x11vnc libsdl-sge-dev python3-pip
 ```
 
 #### Mac OS X
-First install [brew](https://brew.sh/). It should automatically install Command Line Tools. 
-Next install required packages: 
+First install [brew](https://brew.sh/). It should automatically install Command Line Tools.
+Next install required packages:
 ```
 brew install git python3 cmake sdl2 sdl2_image sdl2_ttf sdl2_gfx boost
 ```
-and boost-python3, that supports Python 3.7:  
+and boost-python3, that supports Python 3.7:
 ```
 brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/527d96f84d4632d30b281ef5b26717e0a75edcb4/Formula/boost-python3.rb
 ```
@@ -65,13 +65,13 @@ source football-env/bin/activate
 ```
 pip3 install .
 ```
-This command can run for a couple of minutes, as it compiles the C++ environment in the background. 
+This command can run for a couple of minutes, as it compiles the C++ environment in the background.
 
 #### 4. Time to play!
 ```
 python3 -m gfootball.play_game --action_set=full
 ```
-Make sure to check out the [keyboard mappings](#keyboard-mappings).  
+Make sure to check out the [keyboard mappings](#keyboard-mappings).
 To quit the game press Ctrl+C in the terminal.
 
 # Contents #

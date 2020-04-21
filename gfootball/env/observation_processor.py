@@ -21,14 +21,13 @@ from __future__ import print_function
 
 import collections
 import datetime
-from absl import logging
 import os
 import shutil
 import tempfile
 import timeit
 import traceback
 
-from gfootball.env import config as cfg
+from absl import logging
 from gfootball.env import constants as const
 from gfootball.env import football_action_set
 import numpy as np
@@ -156,16 +155,28 @@ class ActiveDump(object):
     self._last_frame_time = 0
     self._dump_file = None
     if config['write_video']:
-      self._video_fd, self._video_tmp = tempfile.mkstemp(suffix='.avi')
+      video_format = config['video_format']
+      assert video_format in ['avi', 'webm']
+      self._video_suffix = '.%s' % video_format
+      self._video_fd, self._video_tmp = tempfile.mkstemp(
+          suffix=self._video_suffix)
       if config['video_quality_level'] == 2:
         self._frame_dim = (1280, 720)
-        fcc = cv2.VideoWriter_fourcc('p', 'n', 'g', ' ')
       elif config['video_quality_level'] == 1:
-        fcc = cv2.VideoWriter_fourcc(*'MJPG')
         self._frame_dim = (1280, 720)
       else:
-        fcc = cv2.VideoWriter_fourcc(*'XVID')
         self._frame_dim = (800, 450)
+
+      if video_format == 'avi':
+        if config['video_quality_level'] == 2:
+          fcc = cv2.VideoWriter_fourcc('p', 'n', 'g', ' ')
+        elif config['video_quality_level'] == 1:
+          fcc = cv2.VideoWriter_fourcc(*'MJPG')
+        else:
+          fcc = cv2.VideoWriter_fourcc(*'XVID')
+      else:
+        fcc = cv2.VideoWriter_fourcc(*'vp80')
+
       self._video_writer = cv2.VideoWriter(
           self._video_tmp, fcc,
           const.PHYSICS_STEPS_PER_SECOND / config['physics_steps_per_frame'],
@@ -245,6 +256,7 @@ class ActiveDump(object):
     self._step_cnt += 1
 
   def finalize(self):
+    dump_info = {}
     if self._video_writer:
       self._video_writer.release()
       self._video_writer = None
@@ -252,8 +264,9 @@ class ActiveDump(object):
       try:
         # For some reason sometimes the file is missing, so the code fails.
         if WRITE_FILES:
-          shutil.copy2(self._video_tmp, self._name + '.avi')
-        logging.info('Video written to %s.avi', self._name)
+          shutil.copy2(self._video_tmp, self._name + self._video_suffix)
+        dump_info['video'] = '%s%s' % (self._name, self._video_suffix)
+        logging.info('Video written to %s%s', self._name, self._video_suffix)
         os.remove(self._video_tmp)
       except:
         logging.error(traceback.format_exc())
@@ -262,9 +275,10 @@ class ActiveDump(object):
       self._dump_file = None
       if self._step_cnt == 0:
         logging.warning('No data to write to the dump.')
-        return False
-      logging.info('Dump written to %s.dump', self._name)
-    return True
+      else:
+        dump_info['dump'] = '%s.dump' % self._name
+        logging.info('Dump written to %s.dump', self._name)
+    return dump_info
 
 
 class ObservationState(object):
@@ -369,8 +383,6 @@ class ObservationProcessor(object):
     self._trace.append(self._state)
     for dump in self.pending_dumps():
       dump.add_step(self._state)
-    self.process_pending_dumps()
-    return self._state
 
   def get_last_frame(self):
     if not self._state:
@@ -419,10 +431,14 @@ class ObservationProcessor(object):
         dumps.append(config._active_dump)
     return dumps
 
-  def process_pending_dumps(self):
+  def process_pending_dumps(self, episode_done=False):
+    dumps = []
     for name in self._dump_config:
       config = self._dump_config[name]
-      if config._active_dump and config._active_dump._finish_step <= self._frame:
-        config._active_dump.finalize()
+      if config._active_dump and (
+          episode_done or config._active_dump._finish_step <= self._frame):
+        dump_info = config._active_dump.finalize()
+        dump_info['name'] = name
+        dumps.append(dump_info)
         config._active_dump = None
-
+    return dumps

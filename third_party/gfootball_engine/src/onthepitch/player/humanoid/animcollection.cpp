@@ -258,11 +258,11 @@ void GenerateAutoAnims(const std::vector<Animation *> &templates,
 
             std::list<int> keyFrames; // frames at which one of the two anims has a keyframe
             // first, add all keyframes, even if duplicate
-            for (auto i : animationT1.d) {
+            for (const auto &i : animationT1.d) {
               DO_VALIDATION;
               keyFrames.push_back(i.first);
             }
-            for (auto i : animationT2.d) {
+            for (const auto &i : animationT2.d) {
               DO_VALIDATION;
               keyFrames.push_back(i.first);
             }

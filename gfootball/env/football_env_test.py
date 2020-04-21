@@ -553,7 +553,7 @@ class FootballEnvTest(parameterized.TestCase):
     self.compare_observations(obs, obs_)
     self.assertEqual(state, state_)
 
-  def test_restore_after_done(self):
+def test_restore_after_done(self):
     cfg = config.Config({
         'level': 'academy_empty_goal_close',
     })
@@ -563,7 +563,7 @@ class FootballEnvTest(parameterized.TestCase):
     # Go right until reaching the goal.
     done = False
     while not done:
-        _, _, done, _ = env.step(5)
+      _, _, done, _ = env.step(5)
     env.set_state(state)
     env.step(0)  # Test if can take step
 

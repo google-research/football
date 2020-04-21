@@ -70,7 +70,10 @@ on the right team, observations are mirrored (center of your goal is at `[-1, 0]
 
 In addition, environment provides wrappers which convert `raw` observations to a different form:
 
-- `simple115` (aka Simple115StateWrapper) - simplified representation of a game state encoded with 115 floats:
+- `simple115` (aka Simple115StateWrapper) - simplified representation of a game state encoded with 115 floats.
+  Note that this observation has a bug that when someone on a left team gets a red card, positions of observations
+  corresponding to the right team will shift, which is very likely not a desirable behavior.
+  We keep this wrapper for backward compatibility reasons, but recommend to use simple115v2 instead.
     - 44 = 11 (players) * 2 (x and y) * 2 (teams) - coordinates of players
     - 44 - player directions
     - 3 (x, y and z) - ball position
@@ -78,6 +81,7 @@ In addition, environment provides wrappers which convert `raw` observations to a
     - 3 - one hot encoding of ball ownership (noone, left, right)
     - 11 - one hot encoding of which player is active
     - 7 - one hot encoding of `game_mode`
+- `simple115v2` - very similar to simple115, but with a bug fixed.
 - `extracted` (aka SMMWrapper) - simplified spacial representation of a game state.
   It consists of several 72 * 96 planes ob bytes, filled in with 0s except for:
    - 1st plane: 255s represent positions of players on the left team

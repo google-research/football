@@ -23,7 +23,6 @@
 #include <OpenGL/gl3ext.h>
 #else
 #include <GL/gl.h>
-//#include <GL/glcorearb.h>
 #endif
 #include <cmath>
 #include "wrap_SDL.h"
@@ -44,7 +43,6 @@
 #ifdef WIN32
 #include <wingdi.h>
 #endif
-
 
 namespace blunted {
 
@@ -449,7 +447,6 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
     //ASSERT_TRUE(glGetIntegervFunc != nullptr);
     mapping.glGetIntegerv(GL_MAJOR_VERSION, &glVersion[0]);
     mapping.glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]);
-    //printf("Debug: OpenGL version: %i.%i\n", glVersion[0], glVersion[1]);
 
     if (!context) {
       DO_VALIDATION;
@@ -475,9 +472,7 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
 #endif
 
     largest_supported_anisotropy = 2;
-//#ifndef __APPLE__  // Can be used to check for Core Profile Mode on Linux
     mapping.glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &largest_supported_anisotropy);
-//#endif
     //largest_supported_anisotropy = clamp(largest_supported_anisotropy, 0, 8); // don't overdo it
 
 //    mapping.glDisable(GL_LIGHTING);
@@ -1485,10 +1480,10 @@ GLenum GetGLPixelFormat(e_PixelFormat pixelFormat) {
     case e_PixelFormat_DepthComponent:
       format = GL_DEPTH_COMPONENT;
       break;
-//  Deprecated:
-//    case e_PixelFormat_Luminance:
-//      format = GL_LUMINANCE;
-//      break;
+    case e_PixelFormat_Luminance:
+      Log(e_Error, "OpenGLRenderer3D", "GetGLPixelFormat",
+          "e_PixelFormat_Luminance not supported");
+      break;
   }
 
   return format;

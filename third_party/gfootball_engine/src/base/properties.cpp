@@ -157,7 +157,7 @@ bool Properties::Exists(const std::string &name) const {
     } else {
       int size = properties.size();
       state->process(size);
-      for (auto x : properties) {
+      for (const auto &x : properties) {
         DO_VALIDATION;
         string key = x.first;
         string value = x.second;

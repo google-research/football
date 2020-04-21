@@ -47,3 +47,12 @@ for env_name in scenario_builder.all_scenarios():
           'representation': 'simple115'
       },
   )
+
+  register(
+      id='GFootball-{env_name}-simple115v2-v0'.format(env_name=env_name),
+      entry_point='gfootball.env:create_environment',
+      kwargs={
+          'env_name': env_name,
+          'representation': 'simple115v2'
+      },
+  )

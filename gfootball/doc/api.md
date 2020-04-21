@@ -16,9 +16,12 @@ On top of the standard API, we provide a number of additional methods:
 
 * `state = get_state()` - provides a current environment's state containing
   all values affecting environment's behavior (random number generator state,
-  current players' mental model, physics etc.). Can be used to restore environment
-  to the state from the past.
-* `set_state(state)` - restores environment's state to previously snapshoted state.
+  current players' mental model, physics etc.). The state returned is an opaque
+  object to be consumed by `set_state(state)` API method in order to restore
+  environment's state from the past.
+* `set_state(state)` - restores environment's state to previously snapshoted
+  state using `get_state()`. This method can be used to check outcome of executing
+  sequences of different actions starting at a fixed state.
 * `write_dump(name)` - writes a dump of the current scenario to the disk. Dump
   contains a snapshot of observations for each step of the episode and can be used
   to analyze episode's trajectory offline.

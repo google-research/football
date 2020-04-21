@@ -228,7 +228,11 @@ class FootballEnvCore(object):
         'reward': reward,
         'cumulative_reward': self._cumulative_reward
     }
+    info = {}
     self._trace.update(trace)
+    dumps = self._trace.process_pending_dumps(episode_done)
+    if dumps:
+      info['dumps'] = dumps
     if episode_done:
       del self._trace
       self._trace = None
@@ -242,7 +246,7 @@ class FootballEnvCore(object):
     if self._step_count == 1:
       # Start writing episode_done
       self.write_dump('episode_done')
-    return self._observation, reward, episode_done
+    return self._observation, reward, episode_done, info
 
 
   def _retrieve_observation(self):
