@@ -82,7 +82,7 @@ class TextWriter(object):
                 lineType)
     self._pos_y += int(20 * scale_factor)
 
-  def write_table(self, data, widths, scale_factor=1):
+  def write_table(self, data, widths, scale_factor=1, offset=0):
     # data is a list of rows. Each row is a list of strings.
     assert(len(data[0]) == len(widths))
     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -93,12 +93,13 @@ class TextWriter(object):
     for row in data:
         for col, text in enumerate(row):
             assert(isinstance(text, str))
-            textPos = (self._pos_x, self._pos_y)
+            textPos = (self._pos_x + offset, self._pos_y)
             cv2.putText(self._frame, text, textPos, font, fontScale,
                         self._color, lineType)
             self._pos_x += widths[col]
         self._pos_x = init_x
         self._pos_y += int(20 * scale_factor)
+    self._pos_x = init_x
 
 
 def get_frame(trace):
@@ -180,7 +181,7 @@ def write_players_state(writer, players_info):
              str(player_info.get("dribble", "-")),
              direction_short_name[player_info.get("DIRECTION", "-")],
              player_info.get("ACTION", "-")])
-    writer.write_table(table_text, widths, scale_factor=0.6)
+    writer.write_table(table_text, widths, scale_factor=0.6, offset=10)
 
 def write_dump(name, trace, config):
   if len(trace) == 0:
