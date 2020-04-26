@@ -72,35 +72,55 @@ class TextWriter(object):
     self._pos_x = int(x)
     self._pos_y = int(y) + 20
     self._color = color
+    self._font = cv2.FONT_HERSHEY_SIMPLEX
+    self._lineType = 1
+    self._arrow_types = ('top', 'top_right', 'right', 'bottom_right', 'bottom',
+                         'bottom_left', 'left', 'top_left')
 
   def write(self, text, scale_factor=1):
-    font = cv2.FONT_HERSHEY_SIMPLEX
     textPos = (self._pos_x, self._pos_y)
     fontScale = 0.5 * scale_factor
-    lineType = 1
-    cv2.putText(self._frame, text, textPos, font, fontScale, self._color,
-                lineType)
+    cv2.putText(self._frame, text, textPos, self._font, fontScale, self._color,
+                self._lineType)
     self._pos_y += int(20 * scale_factor)
 
   def write_table(self, data, widths, scale_factor=1, offset=0):
     # data is a list of rows. Each row is a list of strings.
-    assert(len(data[0]) == len(widths))
-    font = cv2.FONT_HERSHEY_SIMPLEX
     fontScale = 0.5 * scale_factor
-    lineType = 1
-
     init_x = self._pos_x
     for row in data:
-        for col, text in enumerate(row):
-            assert(isinstance(text, str))
-            textPos = (self._pos_x + offset, self._pos_y)
-            cv2.putText(self._frame, text, textPos, font, fontScale,
-                        self._color, lineType)
-            self._pos_x += widths[col]
-        self._pos_x = init_x
-        self._pos_y += int(20 * scale_factor)
+      assert(len(row) == len(widths))
+      self._pos_x += offset
+      for col, text in enumerate(row):
+        assert(isinstance(text, str))
+        if text in self._arrow_types:
+          self.write_arrow(text, scale_factor=scale_factor)
+        else:
+          textPos = (self._pos_x, self._pos_y)
+          cv2.putText(self._frame, text, textPos, self._font, fontScale,
+                     self._color, self._lineType)
+        self._pos_x += widths[col]
+      self._pos_x = init_x
+      self._pos_y += int(20 * scale_factor)
     self._pos_x = init_x
 
+  def write_arrow(self, arrow_type, scale_factor=1):
+    assert(arrow_type in self._arrow_types)
+    thickness = 1
+    arrow_offsets = {'top': (12, 0, 12, -16),
+                     'top_right': (16, -4, 4, -16),
+                     'right': (0, -10, 20, -10),
+                     'bottom_right': (4, -16, 16, -4),
+                     'bottom': (10, -16, 10, 0),
+                     'bottom_left': (12, -12, 0, 0),
+                     'left': (20, -10, 0, -10),
+                     'top_left': (16, -4, 4, -16)}
+    (s_x, s_y, e_x, e_y) =  tuple(int(v * scale_factor)
+                                  for v in arrow_offsets[arrow_type])
+    start_point = (self._pos_x + s_x, self._pos_y + s_y)
+    end_point = (self._pos_x + e_x, self._pos_y + e_y)
+    image = cv2.arrowedLine(self._frame, start_point, end_point,
+                            self._color, thickness)
 
 def get_frame(trace):
   if 'frame' in trace._trace['observation']:
@@ -164,24 +184,14 @@ def write_players_state(writer, players_info):
     table_text = [["PLAYER", "SPRINT", "DRIBBLE", "DIRECTION", "ACTION"]]
     widths = [50, 50, 55, 60, 50]
 
-    direction_short_name = {'-': '-',
-                            'top': 'TT',
-                            'top_right': 'TR',
-                            'right': 'RR',
-                            'bottom_right': 'BR',
-                            'bottom': 'BB',
-                            'bottom_left': 'BL',
-                            'left': 'LL',
-                            'top_left': 'TL'}
-
     for _, player_info in sorted(players_info.items()):
         table_text.append([
-             str(player_info.get("player_idx", "-")),
+             player_info.get("player_idx", "-"),
              str(player_info.get("sprint", "-")),
              str(player_info.get("dribble", "-")),
-             direction_short_name[player_info.get("DIRECTION", "-")],
+             player_info.get("DIRECTION", "O"),
              player_info.get("ACTION", "-")])
-    writer.write_table(table_text, widths, scale_factor=0.6, offset=10)
+    writer.write_table(table_text, widths, scale_factor=0.7, offset=10)
 
 def write_dump(name, trace, config):
   if len(trace) == 0:
@@ -245,7 +255,7 @@ def write_dump(name, trace, config):
 
             # Info about direction
             players_info[player_idx]['DIRECTION'] = \
-                '-' if active_direction is None else active_direction._name
+                'O' if active_direction is None else active_direction._name
             if 'action' in o._trace['debug']:
               # Info about action
               players_info[player_idx]['ACTION'] = o['action'][player]._name
