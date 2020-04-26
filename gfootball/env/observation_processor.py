@@ -171,7 +171,7 @@ def softmax(x):
   return np.exp(x) / np.sum(np.exp(x), axis=0)
 
 
-def write_players_state(writer, players_actions):
+def write_players_state(writer, players_info):
     table_text = [["TEAM", "PLAYER", "SPRINT", "DRIBBLE", "DIRECTION",
                    "ACTION"]]
     widths = [35, 50, 50, 55, 60, 50]
@@ -189,7 +189,7 @@ def write_players_state(writer, players_actions):
                             'top_left': 'TL'}
 
     for team in ('left', 'right'):
-        for _, player_actions in sorted(players_actions[team].items()):
+        for _, player_actions in sorted(players_info[team].items()):
             table_text.append([
                  team_short_name[player_actions.get("team", "-")],
                  str(player_actions.get("player_idx", "-")),
@@ -240,14 +240,14 @@ def write_dump(name, trace, config):
         writer.write('TIME: %f' % (o._time - time))
         sticky_actions = football_action_set.get_sticky_actions(config)
 
-        players_actions = {}
+        players_info = {}
         for team in ['left', 'right']:
           sticky_actions_field = '%s_agent_sticky_actions' % team
-          players_actions[team] = {}
+          players_info[team] = {}
           for player in range(len(o[sticky_actions_field])):
             assert len(sticky_actions) == len(o[sticky_actions_field][player])
             player_idx = o['%s_agent_controlled_player' % team][player]
-            players_actions[team][player_idx] = {'team': team,
+            players_info[team][player_idx] = {'team': team,
                                                  'player_idx': str(player_idx)}
             active_direction = None
             for i in range(len(sticky_actions)):
@@ -255,25 +255,25 @@ def write_dump(name, trace, config):
                 if o[sticky_actions_field][player][i]:
                   active_direction = sticky_actions[i]
               else:
-                players_actions[team][player_idx][sticky_actions[i]._name] = \
+                players_info[team][player_idx][sticky_actions[i]._name] = \
                     o[sticky_actions_field][player][i]
 
             # Info about direction
-            players_actions[team][player_idx]['DIRECTION'] = \
+            players_info[team][player_idx]['DIRECTION'] = \
                 '-' if active_direction is None else active_direction._name
             if 'action' in o._trace['debug']:
               # Info about action
-              players_actions[team][player_idx]['ACTION'] = \
+              players_info[team][player_idx]['ACTION'] = \
                   o['action'][player]._name
 
-        no_players = len(players_actions['left']) + \
-                     len(players_actions['right'])
+        no_players = len(players_info['left']) + \
+                     len(players_info['right'])
         if no_players > 1:
-            write_players_state(writer, players_actions)
+            write_players_state(writer, players_info)
         else:
             for team in ['left', 'right']:
-                for idx in players_actions[team]:
-                    for k, v in players_actions[team][idx].items():
+                for idx in players_info[team]:
+                    for k, v in players_info[team][idx].items():
                         if k not in ("team", "player_idx"):
                             writer.write("%s: %s" % (k, str(v)))
 
