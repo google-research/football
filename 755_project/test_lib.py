@@ -10,5 +10,4 @@ print (football_env.__file__)
 
 assert (football_env.__file__ == '/app/football/gfootball/env/__init__.py')
 
-
 print ("Test passed")

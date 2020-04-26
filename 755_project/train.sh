@@ -2,7 +2,7 @@
 
 python3  run_ppo2.py \
   --level 'academy_counterattack_easy' \
-  --reward_experiment 'scoring,passing' \
+  --reward_experiment 'scoring,targShot' \
   --policy impala_cnn \
   --cliprange 0.115 \
   --gamma 0.997 \
@@ -10,7 +10,7 @@ python3  run_ppo2.py \
   --num_timesteps 50000000 \
   --max_grad_norm 0.76 \
   --lr 0.00011879 \
-  --num_envs 2 \
+  --num_envs 1 \
   --noptepochs 2 \
   --nminibatches 4 \
   --nsteps 512 \

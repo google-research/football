@@ -40,7 +40,7 @@ flags.DEFINE_enum('state', 'extracted_stacked', ['extracted',
                                                  'extracted_stacked'],
                   'Observation to be used for training.')
 flags.DEFINE_enum('reward_experiment', 'scoring',
-                  ['scoring', 'scoring,checkpoints', 'scoring,passing'],
+                  ['scoring', 'scoring,checkpoints', 'scoring,passing', 'scoring,targShot'],
                   'Reward to be used for training.')
 flags.DEFINE_enum('policy', 'cnn', ['cnn', 'lstm', 'mlp', 'impala_cnn',
                                     'gfootball_impala_cnn'],
