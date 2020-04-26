@@ -173,13 +173,13 @@ def write_players_state(writer, players_info):
                             'left': 'LL',
                             'top_left': 'TL'}
 
-    for _, player_actions in sorted(players_info.items()):
+    for _, player_info in sorted(players_info.items()):
         table_text.append([
-             str(player_actions.get("player_idx", "-")),
-             str(player_actions.get("sprint", "-")),
-             str(player_actions.get("dribble", "-")),
-             direction_short_name[player_actions.get("DIRECTION", "-")],
-             player_actions.get("ACTION", "-")])
+             str(player_info.get("player_idx", "-")),
+             str(player_info.get("sprint", "-")),
+             str(player_info.get("dribble", "-")),
+             direction_short_name[player_info.get("DIRECTION", "-")],
+             player_info.get("ACTION", "-")])
     writer.write_table(table_text, widths, scale_factor=0.6)
 
 def write_dump(name, trace, config):
