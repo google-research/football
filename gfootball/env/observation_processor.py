@@ -171,7 +171,7 @@ def softmax(x):
   return np.exp(x) / np.sum(np.exp(x), axis=0)
 
 
-def pprint_players_actions(writer, players_actions):
+def write_players_state(writer, players_actions):
     table_text = [["TEAM", "PLAYER", "SPRINT", "DRIBBLE", "DIRECTION",
                    "ACTION"]]
     widths = [35, 50, 50, 55, 60, 50]
@@ -269,7 +269,7 @@ def write_dump(name, trace, config):
         no_players = len(players_actions['left']) + \
                      len(players_actions['right'])
         if no_players > 1:
-            pprint_players_actions(writer, players_actions)
+            write_players_state(writer, players_actions)
         else:
             for team in ['left', 'right']:
                 for idx in players_actions[team]:
