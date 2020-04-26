@@ -184,13 +184,15 @@ def write_players_state(writer, players_info):
     table_text = [["PLAYER", "SPRINT", "DRIBBLE", "DIRECTION", "ACTION"]]
     widths = [50, 50, 55, 60, 50]
 
-    for _, player_info in sorted(players_info.items()):
-        table_text.append([
-             player_info.get("player_idx", "-"),
-             str(player_info.get("sprint", "-")),
-             str(player_info.get("dribble", "-")),
-             player_info.get("DIRECTION", "O"),
-             player_info.get("ACTION", "-")])
+    # Sort the players according to the order they appear in observations
+    for _, player_info in sorted(players_info.items(),
+                                 key=lambda player: player[1]['idx']):
+      table_text.append([
+        player_info.get("player_idx", "-"),
+        str(player_info.get("sprint", "-")),
+        str(player_info.get("dribble", "-")),
+        player_info.get("DIRECTION", "O"),
+        player_info.get("ACTION", "-")])
     writer.write_table(table_text, widths, scale_factor=0.7, offset=10)
 
 def write_dump(name, trace, config):
@@ -243,7 +245,8 @@ def write_dump(name, trace, config):
             assert len(sticky_actions) == len(o[sticky_actions_field][player])
             idx = o['%s_agent_controlled_player' % team][player]
             player_idx = player_indexes[idx]
-            players_info[player_idx] = {'player_idx': player_idx}
+            players_info[player_idx] = {'player_idx': player_idx,
+                                        'idx': idx}
             active_direction = None
             for i in range(len(sticky_actions)):
               if sticky_actions[i]._directional:
