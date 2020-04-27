@@ -91,14 +91,21 @@ class TextWriter(object):
     for row in data:
       assert(len(row) == len(widths))
       self._pos_x += offset
-      for col, text in enumerate(row):
-        assert(isinstance(text, str))
+      for col, cell in enumerate(row):
+        color = self._color
+        if isinstance(cell, tuple):
+            assert(len(cell) == 2)
+            (text, color) = cell
+        else:
+            assert(isinstance(cell, str))
+            text = cell
+
         if text in self._arrow_types:
           self.write_arrow(text, scale_factor=scale_factor)
         else:
           textPos = (self._pos_x, self._pos_y)
           cv2.putText(self._frame, text, textPos, self._font, fontScale,
-                     self._color, self._lineType)
+                      color, self._lineType)
         self._pos_x += widths[col]
       self._pos_x = init_x
       self._pos_y += int(20 * scale_factor)
@@ -143,35 +150,33 @@ def get_frame(trace):
       field_coords=True,
       color=(255, 0, 0))
   writer.write('B')
-  for idx, player_coord in enumerate(trace['left_team']):
-    player_idx = string.ascii_lowercase[idx]
+  for player_idx, player_coord in enumerate(trace['left_team']):
     writer = TextWriter(
         frame,
         player_coord[0],
         player_coord[1],
         field_coords=True,
         color=(0, 255, 0))
-    letter = 'W'
+    letter = 'H'
     if 'active' in trace and idx in trace['active']:
       letter = 'X'
-    elif 'left_agent_controlled_player' in trace and idx in trace[
+    elif 'left_agent_controlled_player' in trace and player_idx in trace[
         'left_agent_controlled_player']:
-      letter = player_idx
+      letter = str(player_idx)
     writer.write(letter)
-  for idx, player_coord in enumerate(trace['right_team']):
-    player_idx = string.ascii_uppercase[idx]
+  for player_idx, player_coord in enumerate(trace['right_team']):
     writer = TextWriter(
         frame,
         player_coord[0],
         player_coord[1],
         field_coords=True,
         color=(255, 255, 0))
-    letter = 'Z'
+    letter = 'A'
     if 'opponent_active' in trace and idx in trace['opponent_active']:
       letter = 'Y'
-    elif 'right_agent_controlled_player' in trace and idx in trace[
+    elif 'right_agent_controlled_player' in trace and player_idx in trace[
         'right_agent_controlled_player']:
-      letter = player_idx
+      letter = str(player_idx)
     writer.write(letter)
   return frame
 
@@ -185,10 +190,10 @@ def write_players_state(writer, players_info):
     widths = [50, 50, 55, 60, 50]
 
     # Sort the players according to the order they appear in observations
-    for _, player_info in sorted(players_info.items(),
-                                 key=lambda player: player[1]['idx']):
+    for _, player_info in sorted(players_info.items()):
+      color = (0, 255, 0) if player_info['team'] == 'left' else (0, 255, 255)
       table_text.append([
-        player_info.get("player_idx", "-"),
+        (str(player_info.get("player_idx", "-")), color),
         str(player_info.get("sprint", "-")),
         str(player_info.get("dribble", "-")),
         player_info.get("DIRECTION", "O"),
@@ -239,29 +244,27 @@ def write_dump(name, trace, config):
         players_info = {}
         for team in ['left', 'right']:
           sticky_actions_field = '%s_agent_sticky_actions' % team
-          player_indexes = string.ascii_lowercase if team == "left" else \
-                           string.ascii_uppercase
           for player in range(len(o[sticky_actions_field])):
             assert len(sticky_actions) == len(o[sticky_actions_field][player])
-            idx = o['%s_agent_controlled_player' % team][player]
-            player_idx = player_indexes[idx]
-            players_info[player_idx] = {'player_idx': player_idx,
-                                        'idx': idx}
+            player_idx = o['%s_agent_controlled_player' % team][player]
+            players_info[(team, player_idx)] = {'player_idx': player_idx,
+                                                'team': team}
             active_direction = None
             for i in range(len(sticky_actions)):
               if sticky_actions[i]._directional:
                 if o[sticky_actions_field][player][i]:
                   active_direction = sticky_actions[i]
               else:
-                players_info[player_idx][sticky_actions[i]._name] = \
+                players_info[(team, player_idx)][sticky_actions[i]._name] = \
                     o[sticky_actions_field][player][i]
 
             # Info about direction
-            players_info[player_idx]['DIRECTION'] = \
+            players_info[(team, player_idx)]['DIRECTION'] = \
                 'O' if active_direction is None else active_direction._name
             if 'action' in o._trace['debug']:
               # Info about action
-              players_info[player_idx]['ACTION'] = o['action'][player]._name
+              players_info[(team, player_idx)]['ACTION'] = \
+                  o['action'][player]._name
 
         write_players_state(writer, players_info)
 
