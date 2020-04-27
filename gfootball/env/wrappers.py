@@ -375,19 +375,25 @@ class ShotRewardWrapper(gym.RewardWrapper):
     def __init__(self, env):
         gym.RewardWrapper.__init__(self, env)
         print ("Creating shot reward wrapper")
+
         self.action_key = ['idle', 'left', 'top_left', 'top', 'top_right', 'right',
                           'bottom_right', 'bottom', 'bottom_left', 'long_pass',
                           'high_pass', 'short_pass', 'shot', 'sprint', 'release_direction',
                           'release_sprint', 'sliding', 'dribble', 'release_dribble']
 
+        self.record_next_obs = False
+        self.pre_shot_obs = None
+        self.player_shot = -1
+        self.states_since_shot = 0
+        self.collected_obs = {}
+        self.post_shot_world = False
+        self.curr_goals_scored = 0
 
     def reward(self, reward):
      # print ("Processing passing reward")
      if len(reward) > 1:
          print ("Passing reward wrapper is only implemented/tested for single agent")
          exit()
-
-     action_taken = self.env._get_actions()[0]
 
      #indexed at zero because we are dealing with a single agent
      #if it were multiple agaents we w ould have to iterate through a list of
@@ -396,25 +402,78 @@ class ShotRewardWrapper(gym.RewardWrapper):
      if observation is None:
          print ("Observation is none")
          return reward
-     #check if the action is a shot. action is 12
 
      ball_owned = observation['ball_owned_team']
-     ball_owned_player = observation['ball_owned_player'] #0-11
+     action_taken = self.env._get_actions()[0]
 
 
-     print (ball_owned, ball_owned_player, self.action_key[action_taken])
 
-     # if action_taken == 12:
-     #     print (observation)
-     #     print (action_taken)
-     #     print ("Shot")
+     if self.record_next_obs == True:
+         #This is the result of a shot taken
+         '''
+          Was the shot on target? This happens when:
+          1) A goal was scored
+          2) A goalie saves it -when does a goalie save it?
+             a) The opposition goalie has the ball
+             b) It is a corner kick because the goalie put the ball out of bounds
+         '''
+         self.states_since_shot += 1
+         self.collected_obs[self.states_since_shot] = observation
 
-         #who shot?
-         #award our agent for a shot on target
-         #penalize our agent for an opposition shot on target
+     if self.post_shot_world == True:
+         assert(self.record_next_obs)
+
+         '''
+         Basically looking for stopping criteria here.
+         Shot on target:
+             1) A goal scored.
+             2) A corner kick.
+             3) A goalie saved it.
+         Not a shot on target:
+             1) Non-goalie enemy posession
+             2) Switching active players #how to distinguish from corner kicks
+             
+         '''
+         pos_player = observation['ball_owned_player']
+         active_player = observation['active']
+         pos_team = observation['ball_owned_team']
+         game_mode = observation['game_mode']
+         score = observation['score'][0]
+
+         '''These are all positive stopping criteria'''
+         if score > self.curr_goals_scored:
+             print ("Goal scored")
+             self.curr_goals_scored += 1
+             self.post_shot_world = False
+             self.record_next_obs = False
+
+         if game_mode == 3:
+             print ("Corner kick")
+             self.post_shot_world = False
+             self.record_next_obs = False
+
+         if (pos_team == 1) and (pos_player == 0):
+             print ("Goalie saved")
+             self.post_shot_world = False
+             self.record_next_obs = False
 
 
-         # exit()
+
+
+     if (action_taken == 12) and (ball_owned == 0):
+         #my team shoots
+         #who shot it?
+         self.record_next_obs = True
+         self.pre_shot_obs = observation
+         self.player_shot = observation['active']
+         self.collected_obs[0] = observation
+         self.post_shot_world = True
+         print ("the player who shot was {}".format(self.player_shot))
+
+
+
+
+
 
 
      return reward

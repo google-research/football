@@ -96,12 +96,15 @@ class Config(object):
         'tracesdir': '/tmp/dumps',
         'video_quality_level': 0,  # 0 - low, 1 - medium, 2 - high
         'write_video': False
+
     }
 
     if values:
       self._values.update(values)
 
     self.NewScenario()
+
+    
 
   def number_of_left_players(self):
     return sum([count_left_players(player)

@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-docker build --build-arg DEVICE=gpu . -t gfootball_docker_test
+#docker build --build-arg DEVICE=gpu . -t gfootball_docker_test
 echo "Test successful!!!"
 
 

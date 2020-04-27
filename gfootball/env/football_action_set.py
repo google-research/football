@@ -207,6 +207,7 @@ def get_sticky_actions(config):
   for a in get_action_set(config):
     if a._sticky:
       sticky_actions.append(a)
+
   return sticky_actions
 
 

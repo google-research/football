@@ -66,6 +66,8 @@ class Scenario(object):
     self._FakePlayersForEmptyTeam(self._scenario_cfg.right_team)
     self._BuildScenarioConfig()
 
+    
+
   def _FakePlayersForEmptyTeam(self, team):
     if len(team) == 0:
       self.AddPlayer(-1.000000, 0.420000, libgame.e_PlayerRole.e_PlayerRole_GK, True)
@@ -76,9 +78,11 @@ class Scenario(object):
     self._scenario_cfg.left_agents = self._config.number_of_left_players()
     self._scenario_cfg.right_agents = self._config.number_of_right_players()
     # This is needed to record 'game_engine_random_seed' in the dump.
+
     if 'game_engine_random_seed' not in self._config._values:
       self._config.set_scenario_value('game_engine_random_seed',
                                       random.randint(0, 2000000000))
+
     if not self._scenario_cfg.deterministic:
       self._scenario_cfg.game_engine_random_seed = (
           self._config['game_engine_random_seed'])
@@ -88,6 +92,7 @@ class Scenario(object):
     if 'reverse_team_processing' in self._config:
       self._scenario_cfg.reverse_team_processing = (
           self._config['reverse_team_processing'])
+
 
   def config(self):
     return self._scenario_cfg
