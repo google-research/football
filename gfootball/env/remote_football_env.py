@@ -92,9 +92,7 @@ class RemoteFootballEnv(gym.Env):
     if self._game_id is None:
       raise RuntimeError('Environment should be reset!')
     if np.isscalar(action):
-      action = int(action)
-    if isinstance(action, int):
-      action = [action]
+      action = [int(action)]
     request = game_server_pb2.StepRequest(
         game_version=config.game_version, game_id=self._game_id,
         username=self._username, token=self._token, action=-1,
