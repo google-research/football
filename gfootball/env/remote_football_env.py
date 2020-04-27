@@ -27,6 +27,7 @@ from gfootball.eval_server.proto import master_pb2
 from gfootball.eval_server.proto import master_pb2_grpc
 import grpc
 import gym
+import numpy as np
 
 
 CONNECTION_TRIALS = 20
@@ -90,8 +91,8 @@ class RemoteFootballEnv(gym.Env):
   def step(self, action):
     if self._game_id is None:
       raise RuntimeError('Environment should be reset!')
-    if isinstance(action, int):
-      action = [action]
+    if np.isscalar(action):
+      action = [int(action)]
     request = game_server_pb2.StepRequest(
         game_version=config.game_version, game_id=self._game_id,
         username=self._username, token=self._token, action=-1,
