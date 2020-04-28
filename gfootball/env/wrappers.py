@@ -388,6 +388,7 @@ class ShotRewardWrapper(gym.RewardWrapper):
         self.collected_obs = {}
         self.post_shot_world = False
         self.curr_goals_scored = 0
+        self.rew_amount = 0.25
 
     def reward(self, reward):
      # print ("Processing passing reward")
@@ -432,7 +433,7 @@ class ShotRewardWrapper(gym.RewardWrapper):
          Not a shot on target:
              1) Non-goalie enemy posession
              2) Switching active players #how to distinguish from corner kicks
-             
+
          '''
          pos_player = observation['ball_owned_player']
          active_player = observation['active']
@@ -446,21 +447,36 @@ class ShotRewardWrapper(gym.RewardWrapper):
              self.curr_goals_scored += 1
              self.post_shot_world = False
              self.record_next_obs = False
+             reward[0] += self.rew_amount
 
          if game_mode == 3:
              print ("Corner kick")
              self.post_shot_world = False
              self.record_next_obs = False
+             reward[0] += self.rew_amount
 
          if (pos_team == 1) and (pos_player == 0):
              print ("Goalie saved")
              self.post_shot_world = False
              self.record_next_obs = False
+             reward[0] += self.rew_amount
+
+         '''
+         Negative stopping criteria
+         '''
+         if (pos_team == 1) and (not pos_player == 0):
+             print ("We gave the ball away")
+             self.post_shot_world = False
+             self.record_next_obs = False
+
+         if (not active_player == self.player_shot) and (game_mode == 0):
+             print ("We gave the ball away to our team")
+             self.post_shot_world = False
+             self.record_next_obs = False
 
 
 
-
-     if (action_taken == 12) and (ball_owned == 0):
+     if (action_taken == 12) and (ball_owned == 0) and (not self.post_shot_world):
          #my team shoots
          #who shot it?
          self.record_next_obs = True
@@ -469,12 +485,6 @@ class ShotRewardWrapper(gym.RewardWrapper):
          self.collected_obs[0] = observation
          self.post_shot_world = True
          print ("the player who shot was {}".format(self.player_shot))
-
-
-
-
-
-
 
      return reward
 
