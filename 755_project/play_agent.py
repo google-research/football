@@ -57,14 +57,14 @@ step = 0
 while True:
     obs, rew, done, info = env.step([])
     obsDebugger.add_observation(obs, env._get_actions()[0])
-    print (obs['game_mode'], obs['left_agent_controlled_player'], obs['ball_owned_team'])
+    #print (obs['game_mode'], obs['left_agent_controlled_player'], obs['ball_owned_team'])
     if (obs['game_mode'] == 3) and (obs['ball_owned_team'] == 0):
         exit()
     if rew == 1:
         my_score += 1
 
-        #obsDebugger.process_observation(step)
-        #exit()
+        obsDebugger.process_observation(step)
+        exit()
     if rew == -1:
         opp_score += 1
         # obsDebugger.process_observation(step)
@@ -73,5 +73,5 @@ while True:
         my_score = 0
         opp_score = 0
         env.reset()
-        
+
     step += 1
