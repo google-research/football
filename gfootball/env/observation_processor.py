@@ -158,7 +158,10 @@ def get_frame(trace):
         field_coords=True,
         color=(0, 255, 0))
     letter = 'H'
-    if 'active' in trace and idx in trace['active']:
+    # Goalkeeper
+    if player_idx == 0:
+      letter = 'G'
+    if 'active' in trace and player_idx in trace['active']:
       letter = 'X'
     elif 'left_agent_controlled_player' in trace and player_idx in trace[
         'left_agent_controlled_player']:
@@ -172,7 +175,10 @@ def get_frame(trace):
         field_coords=True,
         color=(255, 255, 0))
     letter = 'A'
-    if 'opponent_active' in trace and idx in trace['opponent_active']:
+    # Goalkeeper
+    if player_idx == 0:
+      letter = 'G'
+    if 'opponent_active' in trace and player_idx in trace['opponent_active']:
       letter = 'Y'
     elif 'right_agent_controlled_player' in trace and player_idx in trace[
         'right_agent_controlled_player']:
