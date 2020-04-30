@@ -32,6 +32,7 @@ import traceback
 from gfootball.env import config as cfg
 from gfootball.env import constants
 from gfootball.env import football_action_set
+from gfootball.scenarios import e_PlayerRole_GK
 import numpy as np
 from six.moves import range
 from six.moves import zip
@@ -157,15 +158,9 @@ def get_frame(trace):
         player_coord[1],
         field_coords=True,
         color=(0, 255, 0))
-    letter = 'H'
-    # Goalkeeper
-    if player_idx == 0:
+    letter = str(player_idx)
+    if trace['left_team_roles'][player_idx] == e_PlayerRole_GK:
       letter = 'G'
-    if 'active' in trace and player_idx in trace['active']:
-      letter = 'X'
-    elif 'left_agent_controlled_player' in trace and player_idx in trace[
-        'left_agent_controlled_player']:
-      letter = str(player_idx)
     writer.write(letter)
   for player_idx, player_coord in enumerate(trace['right_team']):
     writer = TextWriter(
@@ -174,15 +169,9 @@ def get_frame(trace):
         player_coord[1],
         field_coords=True,
         color=(255, 255, 0))
-    letter = 'A'
-    # Goalkeeper
-    if player_idx == 0:
+    letter = str(player_idx)
+    if trace['right_team_roles'][player_idx] == e_PlayerRole_GK:
       letter = 'G'
-    if 'opponent_active' in trace and player_idx in trace['opponent_active']:
-      letter = 'Y'
-    elif 'right_agent_controlled_player' in trace and player_idx in trace[
-        'right_agent_controlled_player']:
-      letter = str(player_idx)
     writer.write(letter)
   return frame
 
@@ -198,8 +187,10 @@ def write_players_state(writer, players_info):
     # Sort the players according to the order they appear in observations
     for _, player_info in sorted(players_info.items()):
       color = (0, 255, 0) if player_info['team'] == 'left' else (0, 255, 255)
+      player_num = 'G' if player_info.get(is_goalkeeper, False) else \
+                   str(player_info.get("player_idx", "-"))
       table_text.append([
-        (str(player_info.get("player_idx", "-")), color),
+        (player_num, color),
         str(player_info.get("sprint", "-")),
         str(player_info.get("dribble", "-")),
         player_info.get("DIRECTION", "O"),
@@ -254,7 +245,10 @@ def write_dump(name, trace, config):
             assert len(sticky_actions) == len(o[sticky_actions_field][player])
             player_idx = o['%s_agent_controlled_player' % team][player]
             players_info[(team, player_idx)] = {'player_idx': player_idx,
-                                                'team': team}
+                                                'team': team,
+                                                'is_goalkeeper': False}
+            if o['%s_team_roles' % team][player_idx] == e_PlayerRole_GK:
+              players_info[(team, player_idx)]['is_goalkeeper'] =  True
             active_direction = None
             for i in range(len(sticky_actions)):
               if sticky_actions[i]._directional:
