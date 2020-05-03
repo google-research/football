@@ -107,6 +107,11 @@ class Simple115StateWrapper(gym.ObservationWrapper):
     self._fixed_positions = fixed_positions
 
   def observation(self, observation):
+    """Converts an observation into simple115 (or simple115v2) format."""
+    return Simple115StateWrapper.convert_observation(observation, self._fixed_positions)
+
+  @staticmethod
+  def convert_observation(observation, fixed_positions):
     """Converts an observation into simple115 (or simple115v2) format.
 
     Args:
@@ -116,22 +121,29 @@ class Simple115StateWrapper(gym.ObservationWrapper):
       (N, 115) shaped representation, where N stands for the number of players
       being controlled.
     """
+
+    def do_flatten(obj):
+      """Run flatten on either python list or numpy array."""
+      if type(obj) == list:
+        return np.array(obj).flatten()
+      return obj.flatten()
+
     final_obs = []
     for obs in observation:
       o = []
-      if self._fixed_positions:
+      if fixed_positions:
         for i, name in enumerate(['left_team', 'left_team_direction',
                                   'right_team', 'right_team_direction']):
-          o.extend(obs[name].flatten())
+          o.extend(do_flatten(obs[name]))
           # If there were less than 11vs11 players we backfill missing values
           # with -1.
           if len(o) < (i + 1) * 22:
             o.extend([-1] * ((i + 1) * 22 - len(o)))
       else:
-        o.extend(obs['left_team'].flatten())
-        o.extend(obs['left_team_direction'].flatten())
-        o.extend(obs['right_team'].flatten())
-        o.extend(obs['right_team_direction'].flatten())
+        o.extend(do_flatten(obs['left_team']))
+        o.extend(do_flatten(obs['left_team_direction']))
+        o.extend(do_flatten(obs['right_team']))
+        o.extend(do_flatten(obs['right_team_direction']))
 
       # If there were less than 11vs11 players we backfill missing values with
       # -1.
