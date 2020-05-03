@@ -27,12 +27,11 @@ print ("WORKING IN A DEVELOPMENT VERSION FOR COMP755")
 
 def _process_reward_wrappers(env, rewards):
   assert 'scoring' in rewards.split(',')
-  if 'checkpoints' in rewards.split(','):
-    env = wrappers.CheckpointRewardWrapper(env)
-  if 'passing' in rewards.split(','):
-    env = wrappers.PassingRewardWrapper(env)
   if 'targShot' in rewards.split(','):
     env = wrappers.ShotRewardWrapper(env)
+  if 'checkpoints' in rewards.split(','):
+    env = wrappers.CheckpointRewardWrapper(env)
+
   return env
 
 

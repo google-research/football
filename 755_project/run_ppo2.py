@@ -40,7 +40,7 @@ flags.DEFINE_enum('state', 'extracted_stacked', ['extracted',
                                                  'extracted_stacked'],
                   'Observation to be used for training.')
 flags.DEFINE_enum('reward_experiment', 'scoring',
-                  ['scoring', 'scoring,checkpoints', 'scoring,passing', 'scoring,targShot'],
+                  ['scoring', 'scoring,checkpoints', 'scoring,passing', 'scoring,targShot', 'scoring,checkpoints,targShot'],
                   'Reward to be used for training.')
 flags.DEFINE_enum('policy', 'cnn', ['cnn', 'lstm', 'mlp', 'impala_cnn',
                                     'gfootball_impala_cnn'],
@@ -102,7 +102,7 @@ def train(_):
                           inter_op_parallelism_threads=ncpu)
   config.gpu_options.allow_growth = True
   tf.Session(config=config).__enter__()
-  
+
   ppo2.learn(network=FLAGS.policy,
              total_timesteps=FLAGS.num_timesteps,
              env=vec_env,

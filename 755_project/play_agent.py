@@ -13,7 +13,7 @@ class ObservationDebugger:
         #only conerned with left player
         self.observations = {} #key,value -> step, observation
         self.step_ct = 0
-        pass
+
 
     def process_observation(self, step):
 
@@ -33,19 +33,42 @@ class ObservationDebugger:
         self.observations[self.step_ct] = (obs, action)
         self.step_ct += 1
 
+class Rectangle(object):
+    def __init__(self, xrange, yrange, zrange):
+        self.xrange = xrange  # (xmin, xmax)
+        self.yrange = yrange
+        self.zrange = zrange
 
-players = ["ppo2_cnn:left_players=1,policy=gfootball_impala_cnn,checkpoint={0}".format('ckpts/11_vs_11_easy_stochastic_v2')]
-extra_vals = config.Config({'game_engine_random_seed' : 12})
+    def contains_point(self, p):
+        if not all(hasattr(p, loc) for loc in 'xyz'):
+            raise TypeError("Can only check if 3D points are in the rect")
+        return all([self.xrange[0] <= p.x <= self.xrange[1],
+                    self.yrange[0] <= p.y <= self.yrange[1],
+                    self.zrange[0] <= p.z <= self.zrange[1]])
+
+class Point(object):
+    def __init__(self, x, y ,z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def __iter__(self):
+        yield from (self.x, self.y, self.z)
+
+    def __str__(self):
+        return "str {} {} {}".format(self.x, self.y, self.z)
+
+players = ["ppo2_cnn:left_players=1,policy=impala_cnn,checkpoint={0}".format('scoring_ckpts/checkpoints/00600')]
 cfg = config.Config({
   'action_set':'default',
   'dump_full_episodes': False,
   'real_time':False,
   'players' : players,
-  'level':'11_vs_11_easy_deterministic',
-  'game_engine_random_seed' : 12
+  'level':'academy_pass_and_shoot_with_keeper'
 })
 
 env = football_env.FootballEnv(cfg)
+
 env.reset()
 
 obsDebugger = ObservationDebugger()
@@ -53,25 +76,35 @@ obsDebugger = ObservationDebugger()
 my_score = 0
 opp_score = 0
 step = 0
+total_diff = 0.0
+total_eps = 0
+Opponent_GOAL = Rectangle(xrange = (.7, 1.1), yrange = (-.12,.12), zrange = (0, 2.5))
 
 while True:
     obs, rew, done, info = env.step([])
-    obsDebugger.add_observation(obs, env._get_actions()[0])
-    #print (obs['game_mode'], obs['left_agent_controlled_player'], obs['ball_owned_team'])
-    if (obs['game_mode'] == 3) and (obs['ball_owned_team'] == 0):
-        exit()
-    if rew == 1:
-        my_score += 1
 
-        obsDebugger.process_observation(step)
-        exit()
-    if rew == -1:
+    ball_pos = obs['ball']
+    # ball_point = Point(ball_pos[0], ball_pos[1], ball_pos[2])
+    # ball_on_targ = Opponent_GOAL.contains_point(ball_point)
+    # if not rew == 0:
+    #     print (rew)
+    #     print (info)
+    #     exit()
+    if rew == 1.0:
+        my_score += 1
+    if rew == -1.0:
         opp_score += 1
-        # obsDebugger.process_observation(step)
+
     if done:
-        print (my_score, opp_score)
+        diff = my_score - opp_score
+
+        total_diff += diff
         my_score = 0
         opp_score = 0
         env.reset()
 
-    step += 1
+        total_eps += 1
+        if total_eps == 100:
+            break
+print (total_diff)
+print (total_diff/total_eps)

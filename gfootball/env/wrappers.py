@@ -24,7 +24,7 @@ import cv2
 from gfootball.env import observation_preprocessing
 import gym
 import numpy as np
-
+import collections
 
 class GetStateWrapper(gym.Wrapper):
   """A wrapper that only dumps traces/videos periodically."""
@@ -370,6 +370,31 @@ class PassingRewardWrapper(gym.RewardWrapper):
 
       return reward
 
+class Rectangle(object):
+    def __init__(self, xrange, yrange, zrange):
+        self.xrange = xrange  # (xmin, xmax)
+        self.yrange = yrange
+        self.zrange = zrange
+
+    def contains_point(self, p):
+        if not all(hasattr(p, loc) for loc in 'xyz'):
+            raise TypeError("Can only check if 3D points are in the rect")
+        return all([self.xrange[0] <= p.x <= self.xrange[1],
+                    self.yrange[0] <= p.y <= self.yrange[1],
+                    self.zrange[0] <= p.z <= self.zrange[1]])
+
+class Point(object):
+    def __init__(self, x, y ,z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def __iter__(self):
+        yield from (self.x, self.y, self.z)
+
+    def __str__(self):
+        return "str {} {} {}".format(self.x, self.y, self.z)
+
 class ShotRewardWrapper(gym.RewardWrapper):
 
     def __init__(self, env):
@@ -381,112 +406,81 @@ class ShotRewardWrapper(gym.RewardWrapper):
                           'high_pass', 'short_pass', 'shot', 'sprint', 'release_direction',
                           'release_sprint', 'sliding', 'dribble', 'release_dribble']
 
-        self.record_next_obs = False
-        self.pre_shot_obs = None
-        self.player_shot = -1
-        self.states_since_shot = 0
-        self.collected_obs = {}
-        self.post_shot_world = False
-        self.curr_goals_scored = 0
-        self.rew_amount = 0.25
+        self.Opponent_GOAL = Rectangle(xrange = (.68, 1.1), yrange = (-.12,.12), zrange = (0, 2.5))
+        #apparently we are always the left team
+        self.n_frames = 4
+        #after the shot, look for 5 observations. if the ball goes into the target
+        #in one of thse 5, give myself the reward
+        self.rew = 0.1
+        self.rew_cap = 1.0
+        self.running_rew = 0
+        self.frames_checked = 0
+        self.look_at_next_obs = False
+        self.buffer = collections.deque(maxlen=self.n_frames)
+
+    def reset(self):
+
+        self.running_rew = 0
+        self.buffer.clear()
+        return self.env.reset()
 
     def reward(self, reward):
-     # print ("Processing passing reward")
-     if len(reward) > 1:
-         print ("Passing reward wrapper is only implemented/tested for single agent")
-         exit()
+        # print ("Processing passing reward")
+        if len(reward) > 1:
+            print ("Passing reward wrapper is only implemented/tested for single agent")
+            exit()
 
-     #indexed at zero because we are dealing with a single agent
-     #if it were multiple agaents we w ould have to iterate through a list of
-     #multi-agent observations
-     observation = self.env.unwrapped.observation()[0]
-     if observation is None:
-         print ("Observation is none")
-         return reward
+        #indexed at zero because we are dealing with a single agent
+        #if it were multiple agaents we w ould have to iterate through a list of
+        #multi-agent observations
+        observation = self.env.unwrapped.observation()[0]
+        if observation is None:
+            print ("Observation is none")
+            return reward
 
-     ball_owned = observation['ball_owned_team']
-     action_taken = self.env._get_actions()[0]
+        ball_pos = observation['ball']
+        ball_point = Point(ball_pos[0], ball_pos[1], ball_pos[2])
+        ball_on_targ = self.Opponent_GOAL.contains_point(ball_point)
 
+        if ball_on_targ:
+            if 1 in self.buffer:
+                #record this as shot on target
+                self.running_rew += self.rew
+                if self.running_rew > self.rew_cap:
+                    reward[0] += 0
+                else:
+                    reward[0] += self.rew
+                self.buffer.clear()
 
+        # while ( (self.frames_checked < self.n_frames)  and  (self.look_at_next_obs == True)  ):
+        #     if ball_on_targ == True and (self.running_rew < self.rew_cap):
+        #         self.running_rew += self.rew
+        #         reward[0] += self.rew
+        #         self.look_at_next_obs = False
+        #     self.frames_checked += 1
 
-     if self.record_next_obs == True:
-         #This is the result of a shot taken
-         '''
-          Was the shot on target? This happens when:
-          1) A goal was scored
-          2) A goalie saves it -when does a goalie save it?
-             a) The opposition goalie has the ball
-             b) It is a corner kick because the goalie put the ball out of bounds
-         '''
-         self.states_since_shot += 1
-         self.collected_obs[self.states_since_shot] = observation
+        #check if active player has the ball
 
-     if self.post_shot_world == True:
-         assert(self.record_next_obs)
+        # if self.look_at_next_obs:
+        #     if ball_on_targ == True and (self.running_rew < self.rew_cap):
+        #         self.running_rew += self.rew
+        #         reward[0] += self.rew
+        #         self.look_at_next_obs = False
+        #
+        #     self.frames_checked += 1
+        #     if self.frames_checked >= self.n_frames_ahead:
+        #         self.look_at_next_obs = False
 
-         '''
-         Basically looking for stopping criteria here.
-         Shot on target:
-             1) A goal scored.
-             2) A corner kick.
-             3) A goalie saved it.
-         Not a shot on target:
-             1) Non-goalie enemy posession
-             2) Switching active players #how to distinguish from corner kicks
-
-         '''
-         pos_player = observation['ball_owned_player']
-         active_player = observation['active']
-         pos_team = observation['ball_owned_team']
-         game_mode = observation['game_mode']
-         score = observation['score'][0]
-
-         '''These are all positive stopping criteria'''
-         if score > self.curr_goals_scored:
-             print ("Goal scored")
-             self.curr_goals_scored += 1
-             self.post_shot_world = False
-             self.record_next_obs = False
-             reward[0] += self.rew_amount
-
-         if game_mode == 3:
-             print ("Corner kick")
-             self.post_shot_world = False
-             self.record_next_obs = False
-             reward[0] += self.rew_amount
-
-         if (pos_team == 1) and (pos_player == 0):
-             print ("Goalie saved")
-             self.post_shot_world = False
-             self.record_next_obs = False
-             reward[0] += self.rew_amount
-
-         '''
-         Negative stopping criteria
-         '''
-         if (pos_team == 1) and (not pos_player == 0):
-             print ("We gave the ball away")
-             self.post_shot_world = False
-             self.record_next_obs = False
-
-         if (not active_player == self.player_shot) and (game_mode == 0):
-             print ("We gave the ball away to our team")
-             self.post_shot_world = False
-             self.record_next_obs = False
+        action_taken = self.env._get_actions()[0]
+        
+        is_active_player =  'ball_owned_team' not in observation or observation['ball_owned_team'] != 0 or 'ball_owned_player' not in observation or observation['ball_owned_player'] != observation['active']
+        if (action_taken == 12) and is_active_player:
+            self.buffer.append(1)
+        else:
+            self.buffer.append(0)
 
 
-
-     if (action_taken == 12) and (ball_owned == 0) and (not self.post_shot_world):
-         #my team shoots
-         #who shot it?
-         self.record_next_obs = True
-         self.pre_shot_obs = observation
-         self.player_shot = observation['active']
-         self.collected_obs[0] = observation
-         self.post_shot_world = True
-         print ("the player who shot was {}".format(self.player_shot))
-
-     return reward
+        return reward
 
 class FrameStack(gym.Wrapper):
   """Stack k last observations."""
