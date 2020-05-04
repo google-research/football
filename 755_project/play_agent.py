@@ -58,7 +58,8 @@ class Point(object):
     def __str__(self):
         return "str {} {} {}".format(self.x, self.y, self.z)
 
-players = ["ppo2_cnn:left_players=1,policy=impala_cnn,checkpoint={0}".format('scoring_ckpts/checkpoints/00600')]
+ckpt_path = 'corner_ckpt_all/00200'
+players = ["ppo2_cnn:left_players=1,policy=impala_cnn,checkpoint={0}".format(ckpt_path)]
 cfg = config.Config({
   'action_set':'default',
   'dump_full_episodes': False,
@@ -105,6 +106,8 @@ while True:
 
         total_eps += 1
         if total_eps == 100:
+
             break
 print (total_diff)
 print (total_diff/total_eps)
+print (ckpt_path)

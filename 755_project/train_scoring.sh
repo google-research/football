@@ -1,6 +1,6 @@
 #!/bin/bash
-CUDA_VISIBLE_DEVICES=1 python3  run_ppo2.py \
-  --level 'academy_pass_and_shoot_with_keeper' \
+CUDA_VISIBLE_DEVICES=0 python3  run_ppo2.py \
+  --level 'academy_corner' \
   --reward_experiment 'scoring' \
   --policy impala_cnn \
   --cliprange 0.115 \
