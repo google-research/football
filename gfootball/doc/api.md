@@ -6,7 +6,7 @@ Google Research Football environment follows GYM API design:
 * `observation = observation()` - returns current observations.
 * `render(mode=human|rgb_array)` - can be called at any time to enable rendering.
   The main difference from the GYM API is that calling `render` enables
-  continuos rendering of the episode (no need to call the method on each step).
+  continuous rendering of the episode (no need to call the method on each step).
   Calling `render` enables pixels to be available in the observation.
   Note - rendering slows down `step` method significantly.
 * `disable_render()` - disables rendering previously enabled with `render` call.
