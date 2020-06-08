@@ -177,6 +177,7 @@ void GameEnv::action(int action, bool left_team, int player) {
   GetTracker()->setDisabled(true);
   int controller_id = player + (left_team ? 0 : 11);
   auto controller = static_cast<AIControlledKeyboard*>(GetControllers()[controller_id]);
+  controller->SetDisabled(false);
   switch (Action(action)) {
     case game_idle:
       break;
@@ -274,6 +275,9 @@ void GameEnv::action(int action, bool left_team, int player) {
     case game_release_dribble:
       controller->SetButton(e_ButtonFunction_Dribble, false);
       break;
+    case game_builtin_ai:
+      controller->SetDisabled(true);
+      break;
   }
   GetTracker()->setDisabled(false);
 }
@@ -368,7 +372,7 @@ void GameEnv::reset(ScenarioConfig& game_config, bool animations) {
   setConfig(game_config);
   for (auto controller : GetControllers()) {
     DO_VALIDATION;
-    controller->Reset();
+    controller->SetDisabled(true);
   }
   context->geometry_manager.RemoveUnused();
   context->surface_manager.RemoveUnused();

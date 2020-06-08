@@ -124,18 +124,18 @@ void EnvState::process(Player*& value) {
   value = static_cast<Player*>(v);
 }
 
-void EnvState::process(HumanController*& value) {
+void EnvState::process(HumanGamer*& value) {
   DO_VALIDATION;
   void* v = value;
   process(reinterpret_cast<void**>(&human_controllers[0]), human_controllers.size(), v);
-  value = static_cast<HumanController*>(v);
+  value = static_cast<HumanGamer*>(v);
 }
 
-void EnvState::process(IHIDevice*& value) {
+void EnvState::process(AIControlledKeyboard*& value) {
   DO_VALIDATION;
   void* v = value;
   process(reinterpret_cast<void**>(&controllers[0]), controllers.size(), v);
-  value = static_cast<IHIDevice*>(v);
+  value = static_cast<AIControlledKeyboard*>(v);
 }
 
 void EnvState::process(blunted::Animation*& value) {
@@ -180,12 +180,12 @@ void EnvState::SetPlayers(const std::vector<Player*>& players) {
 }
 
 void EnvState::SetHumanControllers(
-    const std::vector<HumanController*>& controllers) {
+    const std::vector<HumanGamer*>& controllers) {
   DO_VALIDATION;
   this->human_controllers = controllers;
 }
 
-void EnvState::SetControllers(const std::vector<IHIDevice*>& controllers) {
+void EnvState::SetControllers(const std::vector<AIControlledKeyboard*>& controllers) {
   DO_VALIDATION;
   this->controllers = controllers;
 }

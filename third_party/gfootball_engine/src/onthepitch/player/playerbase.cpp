@@ -52,45 +52,54 @@ void PlayerBase::Deactivate() {
 
   if (humanoid) humanoid->Hide();
   isActive = false;
-
   externalController = nullptr;
 }
 
 IController *PlayerBase::GetController() {
   DO_VALIDATION;
-  if (externalController) return externalController;
-  else
+  if (ExternalControllerActive()) {
+    return externalController->GetHumanController();
+  } else {
     return controller.get();
+  }
 }
 
 void PlayerBase::RequestCommand(PlayerCommandQueue &commandQueue) {
   DO_VALIDATION;
-  if (externalController) externalController->RequestCommand(commandQueue);
-                     else controller->RequestCommand(commandQueue);
+  if (ExternalControllerActive()) {
+    externalController->GetHumanController()->RequestCommand(commandQueue);
+  } else {
+    controller->RequestCommand(commandQueue);
+  }
 }
 
-void PlayerBase::SetExternalController(HumanController *externalController) {
+void PlayerBase::SetExternalController(HumanGamer *externalController) {
   DO_VALIDATION;
   this->externalController = externalController;
   if (this->externalController) {
     DO_VALIDATION;
-    this->externalController->Reset();
-    this->externalController->SetPlayer(this);
+    this->externalController->GetHumanController()->Reset();
+    this->externalController->GetHumanController()->SetPlayer(this);
   } else {
     controller->Reset();
   }
 }
 
-HumanController *PlayerBase::GetExternalController() {
+HumanController *PlayerBase::ExternalController() {
   DO_VALIDATION;
-  return externalController;
+  return externalController ? externalController->GetHumanController() : nullptr;
+}
+
+bool PlayerBase::ExternalControllerActive() {
+  DO_VALIDATION;
+  return externalController && !externalController->GetHumanController()->Disabled();
 }
 
 void PlayerBase::Process() {
   DO_VALIDATION;
   if (isActive) {
     DO_VALIDATION;
-    if (externalController) externalController->Process(); else controller->Process();
+    if (ExternalControllerActive()) externalController->GetHumanController()->Process(); else controller->Process();
     humanoid->Process();
   } else {
     if (humanoid) humanoid->Hide();

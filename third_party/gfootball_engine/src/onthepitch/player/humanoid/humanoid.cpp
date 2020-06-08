@@ -435,7 +435,7 @@ void Humanoid::Process() {
         float ballPower = currentAnim.originatingCommand.touchInfo.desiredPower;
         Player *targetPlayer = currentAnim.originatingCommand.touchInfo.targetPlayer;
         Vector3 inputDirection = currentAnim.originatingCommand.touchInfo.inputDirection;
-        if (CastPlayer()->GetExternalController()) inputDirection = CastPlayer()->GetExternalController()->GetDirection();
+        if (CastPlayer()->ExternalControllerActive()) inputDirection = CastPlayer()->ExternalController()->GetDirection();
 
 
         // refine/change target, if new target is close enough to old target
@@ -471,8 +471,10 @@ void Humanoid::Process() {
 
         }  // else: just stick to original
 
-        if (targetPlayer) team->SelectPlayer(targetPlayer);
+        if (targetPlayer) {
+          team->SelectPlayer(targetPlayer);
 
+        }
         float zcurve = 0.0f;
         Vector3 touchVec = ballDirection * 36 * (ballPower + 0.3f);
 
@@ -513,7 +515,7 @@ void Humanoid::Process() {
         // alter direction, if neeeded
         Vector3 ballDirection = currentAnim.originatingCommand.touchInfo.desiredDirection;
         Vector3 inputDirection = currentAnim.originatingCommand.touchInfo.inputDirection;
-        if (CastPlayer()->GetExternalController()) inputDirection = CastPlayer()->GetExternalController()->GetDirection();
+        if (CastPlayer()->ExternalControllerActive()) inputDirection = CastPlayer()->ExternalController()->GetDirection();
         Vector3 ballDirectionAltered = AI_GetShotDirection(CastPlayer(), inputDirection, currentAnim.originatingCommand.touchInfo.autoDirectionBias);
 
         float maxDeviationAngle = 0.1f * pi;

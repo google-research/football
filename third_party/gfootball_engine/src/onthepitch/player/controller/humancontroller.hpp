@@ -27,19 +27,22 @@ class Player;
 class HumanController : public PlayerController {
 
   public:
-    HumanController(Match *match = nullptr, IHIDevice *hid = nullptr);
+    HumanController(Match *match = nullptr, AIControlledKeyboard *hid = nullptr);
     virtual ~HumanController();
 
     virtual void SetPlayer(PlayerBase *player);
+    bool Disabled() const {
+      return hid->Disabled();
+    }
 
     virtual void RequestCommand(PlayerCommandQueue &commandQueue);
     virtual void Process();
     virtual Vector3 GetDirection();
     virtual float GetFloatVelocity();
 
-    void PreProcess(Match *match, IHIDevice *hid) {
+    void PreProcess(Match *match, AIControlledKeyboard *hid) {
       this->match = match;
-      this->hid= hid;
+      this->hid = hid;
    }
 
     void ProcessState(EnvState* state) { DO_VALIDATION;
@@ -55,7 +58,7 @@ class HumanController : public PlayerController {
     }
     virtual int GetReactionTime_ms();
 
-    IHIDevice *GetHIDevice() { return hid; }
+    AIControlledKeyboard *GetHIDevice() { return hid; }
 
     int GetActionMode() { DO_VALIDATION; return actionMode; }
 
@@ -65,7 +68,7 @@ class HumanController : public PlayerController {
 
     void _GetHidInput(Vector3 &rawInputDirection, float &rawInputVelocityFloat);
 
-    IHIDevice *hid;
+    AIControlledKeyboard *hid;
 
     // set when a contextual button (example: pass/defend button) is pressed
     // once this is set and the button stays pressed, it stays the same

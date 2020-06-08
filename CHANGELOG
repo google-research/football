@@ -5,10 +5,19 @@ should not change, as modifications made to the environment are either
 new features or backward compatible bug fixes. We will maintain vX branches
 pointing at the most recent vX.Y.
 
+v2.1
+- Introduction of `builtin_ai` action, which lets agent dynamically give control
+  of the player to the native game's built-in AI. It can be useful when training
+  multiagent setup incrementally (for example start by controlling all 11 players,
+  for 10 of them generate `builtin_ai` action. Over time stop using `builtin_ai`
+  action for an increasing number of players). Introduction of `v2` action set
+  which is an extension of the `default` action set with `builtin_ai` action.
+- Improved documentation for using Docker image, support for rendering with Docker.
+- Fix to observation shape returned by wrappers.
+
 v2.0.7
 - A number of documentation updates.
 - `info` returned by step() API call returns pointers to recorded dumps.
-
 
 v2.0.6
 - Small fixes to getState/setState.

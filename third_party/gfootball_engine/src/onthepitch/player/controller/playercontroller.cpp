@@ -435,7 +435,7 @@ void PlayerController::_TrapCommand(PlayerCommandQueue &commandQueue,
 
     command.desiredVelocityFloat = inputVelocityFloat;
     if (CastPlayer()->GetFormationEntry().role == e_PlayerRole_GK &&
-        !team->IsHumanControlled(player)) {
+        !player->ExternalControllerActive()) {
       DO_VALIDATION;
       command.desiredDirection = Vector3(-team->GetDynamicSide(), 0, 0);
       command.desiredVelocityFloat = idleVelocity;
@@ -644,7 +644,7 @@ void PlayerController::_MovementCommand(PlayerCommandQueue &commandQueue,
         }
         if (!oppTeamHasPossession) {
           DO_VALIDATION;
-          if (team->IsHumanControlled(player)) {
+          if (player->ExternalController()) {
             DO_VALIDATION;
             float magnetBias = std::max(curve(sameDirFactor, 0.8f), powf(GetLastSwitchBias(), 0.5f)); // needed for when we get passed a ball while we are not the designated player. we want to at least try to get there.
             magnetBias *= 1.0f - inputDirIsOwnHalfFactor; // if we run for our own half, don't accidentally magnet somewhere
@@ -688,7 +688,7 @@ void PlayerController::_MovementCommand(PlayerCommandQueue &commandQueue,
       float actionBias = 1.0f - curve(NormalizedClamp((player->GetPosition() - focusPosition).GetLength(), 0.0f, actionRadius), 0.7f);
 
       // if we're close to the focus position, go do more defending or ballhuntin' (as opposed to manual movement)
-      if (team->IsHumanControlled(player))
+      if (player->ExternalControllerActive())
         autoBias = actionBias * 0.0f + GetLastSwitchBias() * 0.3f;
       else
         autoBias = actionBias * 0.0f; // not sure what would be a proper value here. needs more testing

@@ -64,8 +64,8 @@ namespace blunted {
 
 class Player;
 class Team;
-class HumanController;
-class IHIDevice;
+class HumanGamer;
+class AIControlledKeyboard;
 class ScenarioConfig;
 class GameContext;
 class GameEnv;
@@ -97,8 +97,8 @@ class EnvState {
     }
   }
   void process(Player*& value);
-  void process(HumanController*& value);
-  void process(IHIDevice*& value);
+  void process(HumanGamer*& value);
+  void process(AIControlledKeyboard*& value);
   void process(Team*& value);
   bool isFailure() {
     return failure;
@@ -146,8 +146,8 @@ class EnvState {
     }
   }
   void SetPlayers(const std::vector<Player*>& players);
-  void SetHumanControllers(const std::vector<HumanController*>& controllers);
-  void SetControllers(const std::vector<IHIDevice*>& controllers);
+  void SetHumanControllers(const std::vector<HumanGamer*>& controllers);
+  void SetControllers(const std::vector<AIControlledKeyboard*>& controllers);
   void SetAnimations(const std::vector<blunted::Animation*>& animations);
   void SetTeams(Team* team0, Team* team1);
   const std::string& GetState();
@@ -160,8 +160,8 @@ class EnvState {
   std::vector<Player*> players;
   std::vector<blunted::Animation*> animations;
   std::vector<Team*> teams;
-  std::vector<HumanController*> human_controllers;
-  std::vector<IHIDevice*> controllers;
+  std::vector<HumanGamer*> human_controllers;
+  std::vector<AIControlledKeyboard*> controllers;
   std::string state;
   std::string reference;
   int pos = 0;
@@ -231,6 +231,15 @@ enum e_GameMode {
   e_GameMode_Penalty,
 };
 
+enum e_PlayerColor {
+  e_PlayerColor_Blue,
+  e_PlayerColor_Green,
+  e_PlayerColor_Red,
+  e_PlayerColor_Yellow,
+  e_PlayerColor_Purple,
+  e_PlayerColor_Default
+};
+
 enum e_Team {
   e_Left,
   e_Right,
@@ -246,6 +255,7 @@ struct PlayerInfo {
     is_active = f.is_active;
     tired_factor = f.tired_factor;
     role = f.role;
+    designated_player = f.designated_player;
   }
   bool operator == (const PlayerInfo& f) const {
     return player_position == f.player_position &&
@@ -253,12 +263,14 @@ struct PlayerInfo {
         has_card == f.has_card &&
         is_active == f.is_active &&
         tired_factor == f.tired_factor &&
-        role == f.role;
+        role == f.role &&
+        designated_player == f.designated_player;
   }
   Position player_position;
   Position player_direction;
   bool has_card = false;
   bool is_active = true;
+  bool designated_player = false;
   float tired_factor = 0.0f; // In the [0..1] range.
   e_PlayerRole role = e_PlayerRole_GK;
 };

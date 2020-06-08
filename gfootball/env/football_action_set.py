@@ -69,6 +69,7 @@ class CoreAction(object):
 
 
 action_idle = CoreAction(e_BackendAction.idle, "idle")
+action_builtin_ai = CoreAction(e_BackendAction.builtin_ai, "builtin_ai")
 action_left = CoreAction(
     e_BackendAction.left, "left", sticky=True, directional=True)
 action_top_left = CoreAction(
@@ -125,6 +126,15 @@ action_release_dribble = CoreAction(e_BackendAction.release_dribble,
                                     "release_dribble")
 
 # ***** Define some action sets *****
+action_set_v1 = [
+    action_idle, action_left, action_top_left, action_top,
+    action_top_right, action_right, action_bottom_right,
+    action_bottom, action_bottom_left, action_long_pass,
+    action_high_pass, action_short_pass, action_shot,
+    action_sprint, action_release_direction, action_release_sprint,
+    action_sliding, action_dribble, action_release_dribble]
+
+action_set_v2 = action_set_v1 + [action_builtin_ai]
 
 # Special action set that includes all the core actions in the same order.
 full_action_set = [
@@ -140,35 +150,15 @@ full_action_set = [
     action_release_keeper_rush, action_release_sliding,
     action_release_pressure, action_release_team_pressure,
     action_release_switch, action_release_sprint,
-    action_release_dribble
+    action_release_dribble, action_builtin_ai
 ]
 
 action_set_dict = {
+    "default": action_set_v1,
+    "v2": action_set_v2,
     # "full" action set is needed by the play_game script.
     # Don't use it for training models.
-    "full":
-        full_action_set,
-    "default": [
-        action_idle,
-        action_left,
-        action_top_left,
-        action_top,
-        action_top_right,
-        action_right,
-        action_bottom_right,
-        action_bottom,
-        action_bottom_left,
-        action_long_pass,
-        action_high_pass,
-        action_short_pass,
-        action_shot,
-        action_sprint,
-        action_release_direction,
-        action_release_sprint,
-        action_sliding,
-        action_dribble,
-        action_release_dribble,
-    ],
+    "full": full_action_set,
 }
 
 reverse_action_mapping = {

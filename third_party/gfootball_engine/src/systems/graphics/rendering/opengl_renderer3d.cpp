@@ -373,8 +373,9 @@ void OpenGLRenderer3D::InitializeOverlayAndQuadBuffers() {
   quadBuffer = CreateSimpleVertexBuffer(quadVertices, sizeof(quadVertices));
 }
 
-bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
-                                     bool fullscreen) {
+bool OpenGLRenderer3D::CreateContextInternal(int width, int height, int bpp,
+                                             bool fullscreen,
+                                             bool exit_on_version_too_low) {
   DO_VALIDATION;
   this->context_width = width;
   this->context_height = height;
@@ -425,7 +426,6 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
   //    *reinterpret_cast<void**>(&(mapping.func)) =
   //    SDL_GL_GetProcAddress(#func); *reinterpret_cast<void**>(&(mapping.func))
   //    = (void*) func;
-
 #define SDL_PROC(ret, func, params)                                        \
   do {                                                                     \
     *reinterpret_cast<void **>(&(mapping.func)) =                          \
@@ -459,13 +459,12 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
     if (glVersion[0] < 4) {
       DO_VALIDATION;
       if (glVersion[0] == 3 && glVersion[1] >= 2) higherThan32 = true;
-    } else
+    } else {
       higherThan32 = true;
-
-    if (!higherThan32) Log(e_Warning, "OpenGLRenderer3D", "CreateContext", "OpenGL version not equal to or higher than 3.2 (or not reported as such)");
-
-    //SDL_WM_SetCaption("Gameplay Football", NULL);
-
+    }
+    if (!higherThan32 && exit_on_version_too_low) {
+      return false;
+    }
 
 #ifdef __linux__
     bool success = true;//glXSwapIntervalSGI(-1); // anti-tear blah
@@ -516,6 +515,20 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
     mapping.glDisable(GL_MULTISAMPLE);
 
     return true;
+}
+
+bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
+                                     bool fullscreen) {
+  if (!CreateContextInternal(width, height, bpp, fullscreen, true)) {
+    SDL_Quit();
+    Log(e_Warning, "OpenGLRenderer3D", "", "Failed to init OpenGL, trying with MESA.");
+    char kGLVersion[] = "MESA_GL_VERSION_OVERRIDE=3.2";
+    char kGLSLMesaVersion[] = "MESA_GLSL_VERSION_OVERRIDE=150";
+    putenv(kGLVersion);
+    putenv(kGLSLMesaVersion);
+    return CreateContextInternal(width, height, bpp, fullscreen, false);
+  }
+  return true;
 }
 
 void OpenGLRenderer3D::Exit() {

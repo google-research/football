@@ -116,7 +116,7 @@ void Player::Deactivate() {
   DO_VALIDATION;
   ResetSituation(GetPosition());
   nameCaption->Hide();
-  if (team->IsHumanControlled(this)) {
+  if (ExternalController()) {
     DO_VALIDATION;
     team->DeselectPlayer(this); // don't want any humangamer to have control of this player anymore
   }
@@ -301,7 +301,7 @@ void Player::Process() {
 
     desiredTimeToBall_ms = std::max(desiredTimeToBall_ms - 10, 0);
 
-    if (externalController) externalController->Process();
+    if (ExternalControllerActive()) externalController->GetHumanController()->Process();
     CastController()->Process();
 
     if (match->IsInPlay()) {
@@ -341,7 +341,7 @@ void Player::Process() {
 void Player::PreparePutBuffers() {
   DO_VALIDATION;
   PlayerBase::PreparePutBuffers();
-  buf_nameCaptionShowCondition = team->IsHumanControlled(this);
+  buf_nameCaptionShowCondition = ExternalControllerActive();
   if (team->GetHumanGamerCount() == 0) buf_nameCaptionShowCondition = team->GetDesignatedTeamPossessionPlayer() == this;
   e_PlayerColor playerColor = team->GetPlayerColor(this);
     switch (playerColor) {
@@ -365,13 +365,11 @@ void Player::PreparePutBuffers() {
         break;
     };
 
-  if (GetExternalController()) {
+  if (ExternalControllerActive()) {
     DO_VALIDATION;
-    if (static_cast<HumanController *>(GetExternalController())
-            ->GetActionMode() == 1) {
+    if (ExternalController()->GetActionMode() == 1) {
       DO_VALIDATION;
-    } else if (static_cast<HumanController *>(GetExternalController())
-                   ->GetActionMode() == 2) {
+    } else if (ExternalController()->GetActionMode() == 2) {
       DO_VALIDATION;
       buf_playerColor =
           buf_playerColor *

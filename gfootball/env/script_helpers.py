@@ -104,7 +104,7 @@ class ScriptHelpers(object):
     with open(temp_path, 'wb') as f:
       for step in trace:
         six.moves.cPickle.dump(step, f)
-    assert replay[0]['debug']['frame_cnt'] == 1, (
+    assert replay[0]['debug']['frame_cnt'] == 0, (
         'Trace does not start from the beginning of the episode, can not replay')
     cfg = config.Config(replay[0]['debug']['config'])
     cfg['players'] = self.__build_players(temp_path, cfg['players'])

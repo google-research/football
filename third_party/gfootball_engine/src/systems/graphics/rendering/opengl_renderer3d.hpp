@@ -146,6 +146,7 @@ namespace blunted {
       VertexBufferID CreateSimpleVertexBuffer(float *vertices, unsigned int size);
       void DeleteSimpleVertexBuffer(VertexBufferID vertexBufferID);
       void InitializeOverlayAndQuadBuffers();
+      bool CreateContextInternal(int width, int height, int bpp, bool fullscreen, bool exit_on_version_too_low);
   };
 }
 

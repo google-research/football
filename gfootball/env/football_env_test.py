@@ -18,9 +18,8 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
 from absl.testing import parameterized
-import multiprocessing
+from collections import Iterable
 from multiprocessing import pool
 from multiprocessing import Queue
 import gfootball
@@ -32,7 +31,7 @@ import zlib
 from gfootball.env import config
 from gfootball.env import football_action_set
 from gfootball.env import football_env
-from gfootball.env import observation_rotation
+from gfootball.env import wrappers
 from gfootball.env import scenario_builder
 import numpy as np
 import psutil
@@ -73,21 +72,36 @@ def compute_hash(env, actions, extensive=False):
   return hash_value
 
 
-def run_scenario(cfg, seed, queue, actions, render=False, validation=True):
+def run_scenario(cfg, queue, actions, render=False, validation=True):
   env = football_env.FootballEnv(cfg)
   if render:
     env.render()
-  env.reset()
+  obs = env.reset()
+  queue.put(obs)
   if validation:
     env.tracker_setup(0, 999999999999999)
   done = False
-  for action in actions:
-    obs, _, done, _ = env.step([action, action])
+  step = 0
+  while True:
+    if isinstance(actions, Iterable):
+      if step >= len(actions):
+        break
+      action = actions[step]
+    else:
+      action = actions.get()
+      if action is None:
+        break
+    step += 1
+    if isinstance(action, Iterable):
+      obs, _, done, _ = env.step(action)
+    else:
+      obs, _, done, _ = env.step([action, action])
     queue.put(obs)
     if done:
       break
   queue.put(None)
   env.close()
+
 
 def normalize_observation(o):
   if o['ball'][0] == -0:
@@ -98,6 +112,7 @@ def normalize_observation(o):
     o['ball_direction'][0] = 0
   if o['ball_direction'][1] == -0:
     o['ball_direction'][1] = 0
+
 
 class FootballEnvTest(parameterized.TestCase):
 
@@ -125,12 +140,89 @@ class FootballEnvTest(parameterized.TestCase):
     for episode in range(1 if extensive else 2):
       hash_value = compute_hash(env, actions, extensive)
       if extensive:
-        self.assertEqual(hash_value, 2258127135)
+        self.assertEqual(hash_value, 91907276)
       elif episode % 2 == 0:
-        self.assertEqual(hash_value, 716323440)
+        self.assertEqual(hash_value, 2488427107)
       else:
-        self.assertEqual(hash_value, 1663893701)
+        self.assertEqual(hash_value, 589821231)
     env.close()
+
+  def test___control_all_players(self):
+    """Validate MultiAgentToSingleAgent wrapper and control_all_players flag."""
+    try:
+      gfootball.env.create_environment(
+          env_name='11_vs_11_kaggle',
+          rewards='checkpoints,scoring',
+          number_of_left_players_agent_controls=2)
+    except AssertionError:
+      pass
+    else:
+      self.assertTrue(False)
+
+    env = gfootball.env.create_environment(
+        env_name='11_vs_11_kaggle',
+        rewards='checkpoints,scoring',
+        representation='simple115v2',
+        number_of_left_players_agent_controls=11,
+        number_of_right_players_agent_controls=11)
+    obs = env.reset()
+    self.assertLen(obs, 22)
+    self.assertIn(obs, env.observation_space)
+
+    env = gfootball.env.create_environment(
+        env_name='11_vs_11_kaggle',
+        rewards='checkpoints,scoring',
+        number_of_left_players_agent_controls=11,
+        number_of_right_players_agent_controls=0)
+    obs = env.reset()
+    self.assertLen(obs, 11)
+    self.assertIn(obs, env.observation_space)
+
+    env = gfootball.env.create_environment(
+        env_name='11_vs_11_kaggle',
+        rewards='checkpoints,scoring',
+        representation='simple115v2',
+        number_of_left_players_agent_controls=0,
+        number_of_right_players_agent_controls=11)
+    obs = env.reset()
+    self.assertLen(obs, 11)
+    self.assertIn(obs, env.observation_space)
+
+    env = gfootball.env.create_environment(
+        env_name='11_vs_11_kaggle',
+        rewards='checkpoints,scoring',
+        number_of_left_players_agent_controls=1,
+        number_of_right_players_agent_controls=1)
+    obs = env.reset()
+    self.assertLen(obs, 2)
+    self.assertIn(obs, env.observation_space)
+
+    env = gfootball.env.create_environment(
+        env_name='11_vs_11_kaggle',
+        rewards='checkpoints,scoring',
+        number_of_left_players_agent_controls=1)
+    obs = env.reset()
+    self.assertEqual(np.shape(obs), (72, 96, 4))
+    self.assertIn(obs, env.observation_space)
+    obs, _, _, _ = env.step([football_action_set.action_left])
+    self.assertEqual(np.shape(obs), (72, 96, 4))
+    env = gfootball.env.create_environment(
+        env_name='11_vs_11_kaggle',
+        rewards='checkpoints,scoring',
+        representation='raw',
+        number_of_left_players_agent_controls=1,
+        number_of_right_players_agent_controls=1)
+    obs = env.reset()
+    self.assertLen(obs, 2)
+    self.assertEqual(obs[0]['sticky_actions'][0], 0)
+    self.assertEqual(obs[1]['sticky_actions'][4], 0)
+    obs, _, _, _ = env.step(
+        [football_action_set.action_idle, football_action_set.action_idle])
+    obs, _, _, _ = env.step(
+        [football_action_set.action_left, football_action_set.action_right])
+    self.assertLen(obs, 2)
+    self.assertEqual(obs[0]['sticky_actions'][0], 1)
+    self.assertEqual(obs[1]['sticky_actions'][4], 1)
 
   def test_score_empty_goal(self):
     """Score on an empty goal."""
@@ -154,7 +246,7 @@ class FootballEnvTest(parameterized.TestCase):
     self.assertTrue(done)
     env.close()
 
-  def test_render(self):
+  def test___render(self):
     """Make sure rendering is not broken."""
     if 'UNITTEST_IN_DOCKER' in os.environ:
       # Rendering is not supported.
@@ -169,7 +261,7 @@ class FootballEnvTest(parameterized.TestCase):
     for _ in range(10):
       o, _, _, _ = env.step(football_action_set.action_right)
       hash = observation_hash(o, hash)
-    self.assertEqual(hash, 845594868)
+    self.assertEqual(hash, 2763980076)
     env.close()
 
   def test_dynamic_render(self):
@@ -354,11 +446,11 @@ class FootballEnvTest(parameterized.TestCase):
     actions = [random.randint(0, action_cnt - 1) for _ in range(10 if fast_run else 3000)]
     queue1 = Queue()
     thread1 = threading.Thread(
-        target=run_scenario, args=(cfg1, seed, queue1, actions))
+        target=run_scenario, args=(cfg1, queue1, actions))
     thread1.start()
     queue2 = Queue()
     thread2 = threading.Thread(
-        target=run_scenario, args=(cfg2, seed, queue2, actions))
+        target=run_scenario, args=(cfg2, queue2, actions))
     thread2.start()
     while True:
       o1 = queue1.get()
@@ -371,9 +463,54 @@ class FootballEnvTest(parameterized.TestCase):
     thread1.join()
     thread2.join()
 
+  def test_action_builtin_ai(self):
+    """Verify action_builtin_ai behaves the same as AI controlled player."""
+    seed = 123
+    cfg1 = config.Config({
+        'game_engine_random_seed': seed,
+        'players': ['agent:left_players=1'],
+    })
+    cfg2 = config.Config({
+        'game_engine_random_seed': seed,
+        'players': ['agent:left_players=11'],
+    })
+    random.seed(seed)
+    actions1 = Queue()
+    actions2 = Queue()
+    queue1 = Queue()
+    thread1 = threading.Thread(
+        target=run_scenario, args=(cfg1, queue1, actions1, False, False))
+    thread1.start()
+    queue2 = Queue()
+    thread2 = threading.Thread(
+        target=run_scenario, args=(cfg2, queue2, actions2, False, False))
+    thread2.start()
+    while True:
+      o1 = queue1.get()
+      o2 = queue2.get()
+      if not o1 or not o2:
+        self.assertEqual(o1, o2)
+        break
+
+      # Verify that players don't switch when controlling everyone.
+      ids = [player['active'] for player in o2]
+      self.assertEqual(ids, [6, 5, 7, 8, 10, 0, 9, 2, 3, 1, 4])
+
+      o2_single = wrappers.MultiAgentToSingleAgent.get_observation(o2)
+      self.assertEqual(o1[0]['active'], o1[0]['designated'])
+      self.compare_observations(o1, o2_single)
+      o2_single[0]['active'] = o2_single[0]['designated']
+      action = football_action_set.action_builtin_ai
+      actions1.put([action])
+      action = wrappers.MultiAgentToSingleAgent.get_action([action], o2)
+      actions2.put(action)
+
+    thread1.join()
+    thread2.join()
+
   @parameterized.parameters((1, 'left', True), (0, 'right', True),
                             (1, 'left', False), (0, 'right', False))
-  def offside_helper(self, episode, team2, reverse):
+  def test_offside(self, episode, team2, reverse):
     cfg = config.Config({
         'level': 'tests.offside_test',
         'players': ['agent:{}_players=1'.format(team2)],
@@ -406,7 +543,8 @@ class FootballEnvTest(parameterized.TestCase):
     o = env.reset()
     done = False
     while not done:
-      o, _, done, _ = env.step([football_action_set.action_left, football_action_set.action_left])
+      o, _, done, _ = env.step([football_action_set.action_left,
+                                football_action_set.action_left])
     self.assertAlmostEqual(o[0]['ball'][0], -0.95 * factor, delta=0.1)
     self.assertAlmostEqual(o[0]['ball'][1], 0.4 * factor, delta=0.1)
     self.assertAlmostEqual(o[0]['right_team'][0][0], 1, delta=0.1)
@@ -446,7 +584,8 @@ class FootballEnvTest(parameterized.TestCase):
     o = env.reset()
     done = False
     while not done:
-      o, _, done, _ = env.step([football_action_set.action_right, football_action_set.action_right])
+      o, _, done, _ = env.step([football_action_set.action_right,
+                                football_action_set.action_right])
     self.assertAlmostEqual(o[0]['ball'][0], -1.0 * factor, delta=0.1)
     self.assertAlmostEqual(o[0]['ball'][1], 0.0, delta=0.1)
     self.assertAlmostEqual(o[0]['right_team'][0][0], 1, delta=0.1)
@@ -480,7 +619,6 @@ class FootballEnvTest(parameterized.TestCase):
     if 'UNITTEST_IN_DOCKER' in os.environ:
       # Forge doesn't support rendering.
       return
-    processes = []
     cfg1 = config.Config({
         'level': 'tests.symmetric',
         'game_engine_random_seed': seed,
@@ -498,11 +636,11 @@ class FootballEnvTest(parameterized.TestCase):
     actions = [random.randint(0, action_cnt - 1) for _ in range(50)]
     queue1 = Queue()
     thread1 = threading.Thread(
-        target=run_scenario, args=(cfg1, seed, queue1, actions, False, False))
+        target=run_scenario, args=(cfg1, queue1, actions, False, False))
     thread1.start()
     queue2 = Queue()
     thread2 = threading.Thread(
-        target=run_scenario, args=(cfg2, seed, queue2, actions, True, False))
+        target=run_scenario, args=(cfg2, queue2, actions, True, False))
     thread2.start()
     while True:
       o1 = queue1.get()
@@ -553,7 +691,7 @@ class FootballEnvTest(parameterized.TestCase):
     self.compare_observations(obs, obs_)
     self.assertEqual(state, state_)
 
-def test_restore_after_done(self):
+  def test_restore_after_done(self):
     cfg = config.Config({
         'level': 'academy_empty_goal_close',
     })

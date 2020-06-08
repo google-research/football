@@ -157,18 +157,21 @@ int Team::GetActivePlayersCount() const {
   return count;
 }
 
-void Team::AddHumanGamer(IHIDevice *hid, e_PlayerColor color) {
+void Team::AddHumanGamers(const std::vector<AIControlledKeyboard*>& controllers) {
   DO_VALIDATION;
-  humanGamers.push_back(HumanGamer(this, hid, color));
-
-  Player *player = AI_GetClosestPlayer(
-      this, match->GetBall()->Predict(0).Get2D(), true, 0, true);
-  if (player) {
-    DO_VALIDATION;
-    humanGamers.back().SetSelectedPlayer(player);
+  for (auto controller : controllers) {
+    humanGamers.push_back(std::make_unique<HumanGamer>(this, controller));
+    switchPriority.push_back(humanGamers.size() - 1);
   }
   UpdateDesignatedTeamPossessionPlayer();
-  switchPriority.push_back(humanGamers.size() - 1);
+  std::vector<Player*> result;
+  AI_GetClosestPlayers(this, match->GetBall()->Predict(0).Get2D(), true, result, controllers.size(), true);
+  if (!result.empty()) {
+    mainSelectedPlayer = result[0];
+  }
+  for (unsigned int i = 0; i < result.size(); i++) {
+    humanGamers[i]->SetSelectedPlayer(result[i]);
+  }
 }
 
 void Team::UpdateDesignatedTeamPossessionPlayer() {
@@ -185,21 +188,10 @@ void Team::DeleteHumanGamers() {
 
 e_PlayerColor Team::GetPlayerColor(PlayerBase *player) {
   DO_VALIDATION;
-  for (unsigned int h = 0; h < humanGamers.size(); h++) {
-    DO_VALIDATION;
-    if (humanGamers[h].GetSelectedPlayer() == player)
-      return humanGamers[h].GetPlayerColor();
+  if (player->ExternalController()) {
+    return player->ExternalController()->GetHIDevice()->GetPlayerColor();
   }
   return e_PlayerColor_Default;
-}
-
-bool Team::IsHumanControlled(PlayerBase *player) {
-  DO_VALIDATION;
-  for (unsigned int h = 0; h < humanGamers.size(); h++) {
-    DO_VALIDATION;
-    if (humanGamers[h].GetSelectedPlayer() == player) return true;
-  }
-  return false;
 }
 
 int Team::HumanControlledToBallDistance() {
@@ -207,11 +199,11 @@ int Team::HumanControlledToBallDistance() {
   int timeToBall = 10000;
   for (auto& human : humanGamers) {
     DO_VALIDATION;
-    if (human.GetSelectedPlayer()) {
+    if (human->GetSelectedPlayer() && !human->GetHIDevice()->Disabled()) {
       DO_VALIDATION;
       timeToBall =
           std::min(timeToBall,
-                   human.GetSelectedPlayer()->GetTimeNeededToGetToBall_ms());
+                   human->GetSelectedPlayer()->GetTimeNeededToGetToBall_ms());
     }
   }
   return timeToBall;
@@ -293,18 +285,21 @@ void Team::ResetSituation(const Vector3 &focusPos) {
 void Team::HumanGamersSelectAnyone() {
   DO_VALIDATION;
   // make sure all human gamers have a player selected
-
   if (match->IsInPlay()) {
     DO_VALIDATION;
+    if (mainSelectedPlayer == nullptr) {
+      mainSelectedPlayer = AI_GetClosestPlayer(
+          this, match->GetBall()->Predict(0).Get2D(), true, 0, true);
+    }
     for (unsigned int i = 0; i < humanGamers.size(); i++) {
       DO_VALIDATION;
-      if (!humanGamers[i].GetSelectedPlayer()) {
+      if (!humanGamers[i]->GetSelectedPlayer()) {
         DO_VALIDATION;
         Player *player = AI_GetClosestPlayer(
             this, match->GetBall()->Predict(0).Get2D(), true, 0, true);
         if (player) {
           DO_VALIDATION;
-          humanGamers[i].SetSelectedPlayer(player);
+          humanGamers[i]->SetSelectedPlayer(player);
         }
       }
     }
@@ -313,12 +308,14 @@ void Team::HumanGamersSelectAnyone() {
 
 void Team::SelectPlayer(Player *player) {
   DO_VALIDATION;
-  if (!IsHumanControlled(player) && !humanGamers.empty() &&
-      player->GetFormationEntry().controllable) {
-    DO_VALIDATION;  // already selected
-    humanGamers.at(*switchPriority.begin()).SetSelectedPlayer(player);
-    switchPriority.push_back(*switchPriority.begin());
-    switchPriority.pop_front();
+  if (player->GetFormationEntry().controllable) {
+    mainSelectedPlayer = player;
+    if (!player->ExternalController() && !humanGamers.empty()) {
+      DO_VALIDATION;  // already selected
+      humanGamers.at(*switchPriority.begin())->SetSelectedPlayer(player);
+      switchPriority.push_back(*switchPriority.begin());
+      switchPriority.pop_front();
+    }
   }
   designatedTeamPossessionPlayer = player;
 }
@@ -327,16 +324,18 @@ void Team::DeselectPlayer(Player *player) {
   DO_VALIDATION;
   for (unsigned int i = 0; i < humanGamers.size(); i++) {
     DO_VALIDATION;
-    Player* selectedPlayer = humanGamers[i].GetSelectedPlayer();
+    Player* selectedPlayer = humanGamers[i]->GetSelectedPlayer();
     if (selectedPlayer == player) {
       DO_VALIDATION;
       Player *somePlayer =
           AI_GetClosestPlayer(this, player->GetPosition(), true, player, true);
       if (somePlayer) {
         DO_VALIDATION;
-        humanGamers[i].SetSelectedPlayer(somePlayer);
+        mainSelectedPlayer = somePlayer;
+        humanGamers[i]->SetSelectedPlayer(somePlayer);
       } else {
-        humanGamers[i].SetSelectedPlayer(0);
+        mainSelectedPlayer = nullptr;
+        humanGamers[i]->SetSelectedPlayer(0);
       }
     }
   }
@@ -410,9 +409,9 @@ void Team::Process() {
     for (unsigned int i = 0; i < humanGamers.size(); i++) {
       DO_VALIDATION;
       // switch button
-      Player *selectedPlayer = humanGamers[i].GetSelectedPlayer();
-      if (humanGamers[i].GetHIDevice()->GetButton(e_ButtonFunction_Switch) &&
-          !humanGamers[i].GetHIDevice()->GetPreviousButtonState(
+      Player *selectedPlayer = humanGamers[i]->GetSelectedPlayer();
+      if (humanGamers[i]->GetHIDevice()->GetButton(e_ButtonFunction_Switch) &&
+          !humanGamers[i]->GetHIDevice()->GetPreviousButtonState(
               e_ButtonFunction_Switch) &&
               // don't switch if we are both best AND designated possession
               // player. unless opponent team has ball.
@@ -423,39 +422,47 @@ void Team::Process() {
         DO_VALIDATION;
         Player *targetPlayer = 0;
 
-        if (!IsHumanControlled(designatedTeamPossessionPlayer) &&
+        if (!designatedTeamPossessionPlayer->ExternalController() &&
             match->GetBestPossessionTeam() == this) {
           DO_VALIDATION;
           targetPlayer = designatedTeamPossessionPlayer;
-        } else if (!IsHumanControlled(GetBestPossessionPlayer()) &&
+        } else if (!GetBestPossessionPlayer()->ExternalController() &&
             match->GetBestPossessionTeam() == this) {
           DO_VALIDATION;
           targetPlayer = GetBestPossessionPlayer();
         } else {
           targetPlayer = AI_GetBestSwitchTargetPlayer(
-              match, this, humanGamers[i].GetHIDevice()->GetDirection());
+              match, this, humanGamers[i]->GetHIDevice()->GetDirection());
           if (targetPlayer)
-            if (IsHumanControlled(targetPlayer)) targetPlayer = 0;
+            if (targetPlayer->ExternalController()) targetPlayer = 0;
         }
-        if (targetPlayer == GetGoalie())
-          targetPlayer =
-              0;  // can not be goalie in current version, at least not during
-              // play, unless being directly passed to by teammate
-
-              if (targetPlayer && targetPlayer->GetFormationEntry().controllable)
-                humanGamers[i].SetSelectedPlayer(targetPlayer);
+        if (targetPlayer == GetGoalie()) {
+          // can not be goalie in current version, at least not during
+          // play, unless being directly passed to by teammate
+          targetPlayer = 0;
+        }
+        if (targetPlayer && targetPlayer->GetFormationEntry().controllable) {
+          mainSelectedPlayer = targetPlayer;
+          humanGamers[i]->SetSelectedPlayer(targetPlayer);
+        }
       }
     }
 
   } else {
-    // make sure all human gamers don't have a player selected
-
-    for (unsigned int i = 0; i < humanGamers.size(); i++) {
-      DO_VALIDATION;
-      if (humanGamers[i].GetSelectedPlayer()) {
-        DO_VALIDATION;
-        humanGamers[i].SetSelectedPlayer(0);
+    // make sure all human gamers don't have a player selected.
+    // Don't do this for the very first step, as otherwise agent gets no player
+    // controlled in the observations returned by reset().
+    if (match->GetActualTime_ms() >= 2000) {
+      if (GetScenarioConfig().DynamicPlayerSelection()) {
+        for (unsigned int i = 0; i < humanGamers.size(); i++) {
+          DO_VALIDATION;
+          if (humanGamers[i]->GetSelectedPlayer()) {
+            DO_VALIDATION;
+            humanGamers[i]->SetSelectedPlayer(0);
+          }
+        }
       }
+      mainSelectedPlayer = nullptr;
     }
   }
 
@@ -475,15 +482,15 @@ void Team::Process() {
     if (bestPlayer->HasPossession()) timeRating *= 0.5f;
     if (designatedTeamPossessionPlayer->HasPossession()) timeRating /= 0.5f;
 
-    if (IsHumanControlled(bestPlayer)) timeRating *= 0.8f;
-    if (IsHumanControlled(designatedTeamPossessionPlayer))
+    if (bestPlayer->ExternalControllerActive()) timeRating *= 0.8f;
+    if (designatedTeamPossessionPlayer->ExternalControllerActive())
       timeRating /= 0.8f;
 
     // current player can get to the ball before the closest opponent: less
     // need to switch
     // if (GetID() == 0) printf("opptime: %i, designated time: %i\n",
     // oppTime_ms, designatedPlayerTime_ms);
-    if (IsHumanControlled(bestPlayer) == false &&
+    if (!bestPlayer->ExternalControllerActive() &&
         designatedPlayerTime_ms < oppTime_ms - 100) {
       DO_VALIDATION;
       timeRating += 0.2f;
@@ -584,7 +591,7 @@ void Team::UpdateSwitch() {
   if (match->IsInPlay() && humanGamers.size() > 1) {
     DO_VALIDATION;
     int myTurn = *switchPriority.begin();
-    if (humanGamers.at(myTurn).GetSelectedPlayer() ==
+    if (humanGamers.at(myTurn)->GetSelectedPlayer() ==
         match->GetDesignatedPossessionPlayer()) {
       DO_VALIDATION;
       switchPriority.pop_front();
@@ -594,9 +601,9 @@ void Team::UpdateSwitch() {
 
   // autoswitch on proximity
 
-  if (match->IsInPlay() && humanGamers.size() > 0) {
+  if (match->IsInPlay() && !humanGamers.empty()) {
     DO_VALIDATION;
-    if (!IsHumanControlled(designatedTeamPossessionPlayer) &&
+    if (!designatedTeamPossessionPlayer->ExternalControllerActive() &&
         3 * designatedTeamPossessionPlayer->GetTimeNeededToGetToBall_ms() <
             HumanControlledToBallDistance() &&
         designatedTeamPossessionPlayer->GetFormationEntry().role !=
@@ -608,9 +615,9 @@ void Team::UpdateSwitch() {
 
   // team player in possession is not human selected
 
-  if (match->IsInPlay() && humanGamers.size() > 0) {
+  if (match->IsInPlay() && !humanGamers.empty()) {
     DO_VALIDATION;
-    if (!IsHumanControlled(designatedTeamPossessionPlayer) &&
+    if (!designatedTeamPossessionPlayer->ExternalControllerActive() &&
         (designatedTeamPossessionPlayer->HasUniquePossession() ||
          match->IsInSetPiece())) {
       DO_VALIDATION;
@@ -650,8 +657,9 @@ void Team::ProcessState(EnvState *state) {
   humanGamers.resize(size);
   for (auto &g : humanGamers) {
     DO_VALIDATION;
-    g.ProcessState(state);
+    g->ProcessState(state);
   }
   state->process(switchPriority);
   state->process(lastTouchPlayer);
+  state->process(mainSelectedPlayer);
 }

@@ -337,7 +337,8 @@ void ElizaController::RequestCommand(PlayerCommandQueue &commandQueue) {
   // dribble, pass, etcetera
   else if (match->IsInPlay() && !match->IsInSetPiece() &&
            match->GetDesignatedPossessionPlayer() == player &&
-           team->GetHumanGamerCount() == 0 &&
+           (team->GetHumanGamerCount() == 0 ||
+           (!CastPlayer()->ExternalControllerActive() && CastPlayer()->ExternalController())) &&
            CastPlayer()->GetFormationEntry().role != e_PlayerRole_GK) {
     DO_VALIDATION;
     if (CastPlayer()->GetTimeNeededToGetToBall_ms() < 1000) {

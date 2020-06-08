@@ -178,9 +178,24 @@ def create_environment(env_name='',
     Google Research Football environment.
   """
   assert env_name
+
+  scenario_config = config.Config({'level': env_name}).ScenarioConfig()
   players = [('agent:left_players=%d,right_players=%d' % (
       number_of_left_players_agent_controls,
       number_of_right_players_agent_controls))]
+
+  # Enable MultiAgentToSingleAgent wrapper?
+  multiagent_to_singleagent = False
+  if scenario_config.control_all_players:
+    if (number_of_left_players_agent_controls in [0, 1] and
+        number_of_right_players_agent_controls in [0, 1]):
+      multiagent_to_singleagent = True
+      players = [('agent:left_players=%d,right_players=%d' %
+                  (scenario_config.controllable_left_players
+                   if number_of_left_players_agent_controls else 0,
+                   scenario_config.controllable_right_players
+                   if number_of_right_players_agent_controls else 0))]
+
   if extra_players is not None:
     players.extend(extra_players)
   config_values = {
@@ -193,9 +208,14 @@ def create_environment(env_name='',
   }
   config_values.update(other_config_options)
   c = config.Config(config_values)
+
   env = football_env.FootballEnv(c)
   if render:
     env.render()
+  if multiagent_to_singleagent:
+    env = wrappers.MultiAgentToSingleAgent(
+        env, number_of_left_players_agent_controls,
+        number_of_right_players_agent_controls)
   if dump_frequency > 1:
     env = wrappers.PeriodicDumpWriter(env, dump_frequency)
   env = _apply_output_wrappers(

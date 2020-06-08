@@ -879,7 +879,7 @@ Player *AI_GetClosestPlayer(Team *team, const Vector3 &position,
       float distance = (p->GetPosition() - position).GetLength();
       if (distance < closestDistance) {
         DO_VALIDATION;
-        if ((!onlyAIControlled || !team->IsHumanControlled(p)) &&
+        if ((!onlyAIControlled || !p->ExternalControllerActive()) &&
             (!onlySelectable || p->GetFormationEntry().controllable)) {
           DO_VALIDATION;
           closestDistance = distance;
@@ -894,7 +894,7 @@ Player *AI_GetClosestPlayer(Team *team, const Vector3 &position,
 
 void AI_GetClosestPlayers(Team *team, const Vector3 &position,
                           bool onlyAIControlled, std::vector<Player *> &result,
-                          unsigned int playerCount) {
+                          unsigned int playerCount, bool onlySelectable) {
   DO_VALIDATION;
   const std::vector<Player*> &players = team->GetAllPlayers();
   std::multimap<float, Player*> tmpResult;
@@ -909,8 +909,8 @@ void AI_GetClosestPlayers(Team *team, const Vector3 &position,
     if (players[i]->IsActive()) {
       DO_VALIDATION;
       float distance = (players[i]->GetPosition() - position).GetLength();
-      if ((!onlyAIControlled) ||
-          (onlyAIControlled && !team->IsHumanControlled(players[i]))) {
+        if ((!onlyAIControlled || !players[i]->ExternalControllerActive()) &&
+            (!onlySelectable || players[i]->GetFormationEntry().controllable)) {
         DO_VALIDATION;
         tmpResult.insert(std::pair<float, Player*>(distance, players[i]));
       }
@@ -1030,7 +1030,7 @@ void AI_GetPass(Player *player, e_FunctionType passType,
 
   bool fullAutoDirection = false;
   bool fullAutoPower = false;
-  if (player->GetExternalController()) {
+  if (player->ExternalControllerActive()) {
     DO_VALIDATION;
     fullAutoDirection = true;
     fullAutoPower = true;

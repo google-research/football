@@ -30,6 +30,7 @@ import traceback
 from absl import logging
 from gfootball.env import constants as const
 from gfootball.env import football_action_set
+from gfootball.scenarios import e_PlayerRole_GK
 import numpy as np
 from six.moves import range
 from six.moves import zip
@@ -71,15 +72,79 @@ class TextWriter(object):
     self._pos_x = int(x)
     self._pos_y = int(y) + 20
     self._color = color
+    self._font = cv2.FONT_HERSHEY_SIMPLEX
+    self._lineType = 1
+    self._arrow_types = ('top', 'top_right', 'right', 'bottom_right', 'bottom',
+                         'bottom_left', 'left', 'top_left')
 
   def write(self, text, scale_factor=1):
-    font = cv2.FONT_HERSHEY_SIMPLEX
     textPos = (self._pos_x, self._pos_y)
     fontScale = 0.5 * scale_factor
-    lineType = 1
-    cv2.putText(self._frame, text, textPos, font, fontScale, self._color,
-                lineType)
+    cv2.putText(self._frame, text, textPos, self._font, fontScale, self._color,
+                self._lineType)
     self._pos_y += int(20 * scale_factor)
+
+  def write_table(self, data, widths, scale_factor=1, offset=0):
+    # data is a list of rows. Each row is a list of strings.
+    fontScale = 0.5 * scale_factor
+    init_x = self._pos_x
+    for row in data:
+      assert (len(row) == len(widths))
+      self._pos_x += offset
+      for col, cell in enumerate(row):
+        color = self._color
+        if isinstance(cell, tuple):
+          assert (len(cell) == 2)
+          (text, color) = cell
+        else:
+          assert (isinstance(cell, str))
+          text = cell
+
+        if text in self._arrow_types:
+          self.write_arrow(text, scale_factor=scale_factor)
+        else:
+          textPos = (self._pos_x, self._pos_y)
+          cv2.putText(self._frame, text, textPos, self._font, fontScale, color,
+                      self._lineType)
+        self._pos_x += widths[col]
+      self._pos_x = init_x
+      self._pos_y += int(20 * scale_factor)
+    self._pos_x = init_x
+
+  def write_arrow(self, arrow_type, scale_factor=1):
+    assert (arrow_type in self._arrow_types)
+    thickness = 1
+    arrow_offsets = {
+        'top': (12, 0, 12, -16),
+        'top_right': (16, -4, 4, -16),
+        'right': (0, -10, 20, -10),
+        'bottom_right': (4, -16, 16, -4),
+        'bottom': (10, -16, 10, 0),
+        'bottom_left': (12, -12, 0, 0),
+        'left': (20, -10, 0, -10),
+        'top_left': (16, -4, 4, -16)
+    }
+    (s_x, s_y, e_x,
+     e_y) = tuple(int(v * scale_factor) for v in arrow_offsets[arrow_type])
+    start_point = (self._pos_x + s_x, self._pos_y + s_y)
+    end_point = (self._pos_x + e_x, self._pos_y + e_y)
+    image = cv2.arrowedLine(self._frame, start_point, end_point, self._color,
+                            thickness)
+
+
+def write_players_state(writer, players_info):
+  table_text = [["PLAYER", "SPRINT", "DRIBBLE", "DIRECTION", "ACTION"]]
+  widths = [50, 50, 55, 60, 50]
+
+  # Sort the players according to the order they appear in observations
+  for _, player_info in sorted(players_info.items()):
+    table_text.append([
+      (player_info['id'], player_info['color']),
+      str(player_info.get("sprint", "-")),
+      str(player_info.get("dribble", "-")),
+      player_info.get("DIRECTION", "O"),
+      player_info.get("ACTION", "-")])
+  writer.write_table(table_text, widths, scale_factor=0.7, offset=10)
 
 
 def get_frame(trace):
@@ -110,12 +175,9 @@ def get_frame(trace):
         player_coord[1],
         field_coords=True,
         color=(0, 255, 0))
-    letter = 'H'
-    if 'active' in trace and player_idx in trace['active']:
-      letter = 'X'
-    elif 'left_agent_controlled_player' in trace and player_idx in trace[
-        'left_agent_controlled_player']:
-      letter = 'X'
+    letter = str(player_idx)
+    if trace['left_team_roles'][player_idx] == e_PlayerRole_GK:
+      letter = 'G'
     writer.write(letter)
   for player_idx, player_coord in enumerate(trace['right_team']):
     writer = TextWriter(
@@ -124,12 +186,9 @@ def get_frame(trace):
         player_coord[1],
         field_coords=True,
         color=(255, 255, 0))
-    letter = 'A'
-    if 'opponent_active' in trace and player_idx in trace['opponent_active']:
-      letter = 'Y'
-    elif 'right_agent_controlled_player' in trace and player_idx in trace[
-        'right_agent_controlled_player']:
-      letter = 'Y'
+    letter = str(player_idx)
+    if trace['right_team_roles'][player_idx] == e_PlayerRole_GK:
+      letter = 'G'
     writer.write(letter)
   return frame
 
@@ -213,22 +272,38 @@ class ActiveDump(object):
         writer.write('FRAME: %d' % self._step_cnt)
         writer.write('TIME: %f' % (o._time - self._last_frame_time))
         sticky_actions = football_action_set.get_sticky_actions(self._config)
-        sticky_actions_field = 'left_agent_sticky_actions'
-        if len(o[sticky_actions_field]) == 0:
-          sticky_actions_field = 'right_agent_sticky_actions'
-        assert len(sticky_actions) == len(o[sticky_actions_field][0])
-        active_direction = None
-        for i in range(len(sticky_actions)):
-          if sticky_actions[i]._directional:
-            if o[sticky_actions_field][0][i]:
-              active_direction = sticky_actions[i]
-          else:
-            writer.write('%s: %d' % (sticky_actions[i]._name,
-                                     o[sticky_actions_field][0][i]))
-        writer.write('DIRECTION: %s' % ('NONE' if active_direction is None
-                                        else active_direction._name))
-        if 'action' in o._trace['debug']:
-          writer.write('ACTION: %s' % (o['action'][0]._name))
+
+        players_info = {}
+        for team in ['left', 'right']:
+          sticky_actions_field = '%s_agent_sticky_actions' % team
+          for player in range(len(o[sticky_actions_field])):
+            assert len(sticky_actions) == len(o[sticky_actions_field][player])
+            player_idx = o['%s_agent_controlled_player' % team][player]
+            players_info[(team, player_idx)] = {}
+            players_info[(team, player_idx)]['color'] = (
+                0, 255, 0) if team == 'left' else (0, 255, 255)
+            players_info[(team, player_idx)]['id'] = 'G' if o[
+                '%s_team_roles' %
+                team][player_idx] == e_PlayerRole_GK else str(player_idx)
+            active_direction = None
+            for i in range(len(sticky_actions)):
+              if sticky_actions[i]._directional:
+                if o[sticky_actions_field][player][i]:
+                  active_direction = sticky_actions[i]
+              else:
+                players_info[(team, player_idx)][sticky_actions[i]._name] = \
+                    o[sticky_actions_field][player][i]
+
+            # Info about direction
+            players_info[(team, player_idx)]['DIRECTION'] = \
+                'O' if active_direction is None else active_direction._name
+            if 'action' in o._trace['debug']:
+              # Info about action
+              players_info[(team, player_idx)]['ACTION'] = \
+                  o['action'][player]._name
+
+        write_players_state(writer, players_info)
+
         if 'baseline' in o._trace['debug']:
           writer.write('BASELINE: %.5f' % o._trace['debug']['baseline'])
         if 'logits' in o._trace['debug']:

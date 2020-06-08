@@ -88,8 +88,16 @@ class FootballEnvCore(object):
     self._config.NewScenario(inc=inc)
     if self._env.state == GameState.game_created:
       self._env.start_game()
-    self._env.reset(self._config.ScenarioConfig(), animations)
     self._env.state = GameState.game_running
+    scenario_config = self._config.ScenarioConfig()
+    assert (
+        not scenario_config.dynamic_player_selection or
+        not scenario_config.control_all_players
+    ), ('For this scenario you need to control either 0 or all players on the '
+        'team ({} for left team, {} for right team).').format(
+            scenario_config.controllable_left_players,
+            scenario_config.controllable_right_players)
+    self._env.reset(scenario_config, animations)
 
   def reset(self, inc=1):
     """Reset environment for a new episode using a given config."""
@@ -319,7 +327,8 @@ class FootballEnvCore(object):
     active = []
     yellow_cards = []
     roles = []
-    for player in players:
+    designated_player = -1
+    for id, player in enumerate(players):
       positions.append(player.position[0])
       positions.append(player.position[1])
       directions.append(player.direction[0])
@@ -328,6 +337,8 @@ class FootballEnvCore(object):
       active.append(player.is_active)
       yellow_cards.append(player.has_card)
       roles.append(player.role)
+      if player.designated_player:
+        designated_player = id
     result[name] = np.reshape(np.array(positions), [-1, 2])
     # Players' movement direction represented as [x, y] distance per step.
     result['{}_direction'.format(name)] = np.reshape(
@@ -337,6 +348,7 @@ class FootballEnvCore(object):
     result['{}_active'.format(name)] = np.array(active)
     result['{}_yellow_card'.format(name)] = np.array(yellow_cards)
     result['{}_roles'.format(name)] = np.array(roles)
+    result['{}_designated_player'.format(name)] = designated_player
 
   def observation(self):
     """Returns the current observation of the game."""
@@ -405,8 +417,8 @@ class FootballEnvCore(object):
       self._retrieve_observation()
     if mode == 'rgb_array':
       frame = self._observation['frame']
-      b,g,r = cv2.split(frame)
-      return cv2.merge((r,g,b))
+      b, g, r = cv2.split(frame)
+      return cv2.merge((r, g, b))
     elif mode == 'human':
       return True
     return False

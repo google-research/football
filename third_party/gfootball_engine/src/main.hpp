@@ -81,11 +81,69 @@ class GameConfig {
 };
 
 struct ScenarioConfig {
- private:
-  ScenarioConfig() { }
  public:
   static SHARED_PTR<ScenarioConfig> make() {
     return SHARED_PTR<ScenarioConfig>(new ScenarioConfig());
+  }
+  bool DynamicPlayerSelection() {
+    ComputeCache();
+    return cached_dynamic_player_selection;
+  }
+  int ControllableLeftPlayers() {
+    ComputeCache();
+    return cached_controllable_left_players;
+  }
+  int ControllableRightPlayers() {
+    ComputeCache();
+    return cached_controllable_right_players;
+  }
+  bool LeftTeamOwnsBall() { DO_VALIDATION;
+    float leftDistance = 1000000;
+    float rightDistance = 1000000;
+    for (auto& player : left_team) { DO_VALIDATION;
+      leftDistance =std::min(leftDistance,
+          (player.start_position - ball_position).GetLength());
+    }
+    for (auto& player : right_team) { DO_VALIDATION;
+      rightDistance = std::min(rightDistance,
+          (player.start_position - ball_position).GetLength());
+    }
+    return leftDistance < rightDistance;
+  }
+  void ProcessStateConstant(EnvState* state) {
+    cache_computed = false;
+    state->process(ball_position);
+    int size = left_team.size();
+    state->process(size);
+    left_team.resize(size);
+    size = right_team.size();
+    state->process(size);
+    right_team.resize(size);
+    state->process(left_agents);
+    state->process(right_agents);
+    state->process(use_magnet);
+    state->process(offsides);
+    state->process(left_team_difficulty);
+    state->process(right_team_difficulty);
+    state->process(deterministic);
+    state->process(end_episode_on_score);
+    state->process(end_episode_on_possession_change);
+    state->process(end_episode_on_out_of_play);
+    state->process(game_duration);
+    state->process(control_all_players);
+  }
+
+  void ProcessState(EnvState* state) {
+    cache_computed = false;
+    state->process(real_time);
+    state->process(game_engine_random_seed);
+    state->process(reverse_team_processing);
+    for (auto& p : left_team) {
+      p.ProcessState(state);
+    }
+    for (auto& p : right_team) {
+      p.ProcessState(state);
+    }
   }
   // Start ball position.
   Vector3 ball_position;
@@ -118,53 +176,36 @@ struct ScenarioConfig {
   bool end_episode_on_possession_change = false;
   bool end_episode_on_out_of_play = false;
   int game_duration = 3000;
-  friend GameEnv;
+  bool control_all_players = false;
 
-  bool LeftTeamOwnsBall() { DO_VALIDATION;
-    float leftDistance = 1000000;
-    float rightDistance = 1000000;
-    for (auto& player : left_team) { DO_VALIDATION;
-      leftDistance =std::min(leftDistance,
-          (player.start_position - ball_position).GetLength());
+ private:
+  ScenarioConfig() { }
+  void ComputeCache() {
+    if (cache_computed) {
+      return;
     }
-    for (auto& player : right_team) { DO_VALIDATION;
-      rightDistance = std::min(rightDistance,
-          (player.start_position - ball_position).GetLength());
-    }
-    return leftDistance < rightDistance;
-  }
-  void ProcessStateConstant(EnvState* state) {
-    state->process(ball_position);
-    int size = left_team.size();
-    state->process(size);
-    left_team.resize(size);
-    size = right_team.size();
-    state->process(size);
-    right_team.resize(size);
-    state->process(left_agents);
-    state->process(right_agents);
-    state->process(use_magnet);
-    state->process(offsides);
-    state->process(left_team_difficulty);
-    state->process(right_team_difficulty);
-    state->process(deterministic);
-    state->process(end_episode_on_score);
-    state->process(end_episode_on_possession_change);
-    state->process(end_episode_on_out_of_play);
-    state->process(game_duration);
-  }
-
-  void ProcessState(EnvState* state) {
-    state->process(real_time);
-    state->process(game_engine_random_seed);
-    state->process(reverse_team_processing);
+    cached_controllable_left_players = 0;
+    cached_controllable_right_players = 0;
     for (auto& p : left_team) {
-      p.ProcessState(state);
+      if (p.controllable) {
+        cached_controllable_left_players++;
+      }
     }
     for (auto& p : right_team) {
-      p.ProcessState(state);
+      if (p.controllable) {
+        cached_controllable_right_players++;
+      }
     }
+    cached_dynamic_player_selection =
+        !((cached_controllable_left_players == left_agents || left_agents == 0) &&
+        (cached_controllable_right_players == right_agents || right_agents == 0));
+    cache_computed = true;
   }
+  int cached_controllable_left_players = -1;
+  int cached_controllable_right_players = -1;
+  bool cached_dynamic_player_selection = false;
+  bool cache_computed = false;
+  friend GameEnv;
 };
 
 enum GameState {
@@ -191,7 +232,7 @@ class GameContext {
   TTF_Font *defaultFont = nullptr;
   TTF_Font *defaultOutlineFont = nullptr;
 
-  std::vector<IHIDevice*> controllers;
+  std::vector<AIControlledKeyboard*> controllers;
   ObjectFactory object_factory;
   ResourceManager<GeometryData> geometry_manager;
   ResourceManager<Surface> surface_manager;
@@ -237,7 +278,7 @@ Properties *GetConfiguration();
 ScenarioConfig& GetScenarioConfig();
 GameConfig& GetGameConfig();
 
-const std::vector<IHIDevice*> &GetControllers();
+const std::vector<AIControlledKeyboard*> &GetControllers();
 
 void run_game(Properties* input_config, bool render);
 void randomize(unsigned int seed);

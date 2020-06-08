@@ -46,7 +46,7 @@ const std::vector<Vector3> &Match::GetAnimPositionCache(Animation *anim) const {
   return GetContext().animPositionCache.find(anim)->second;
 }
 
-Match::Match(MatchData *matchData, const std::vector<IHIDevice *> &controllers, bool animations)
+Match::Match(MatchData *matchData, const std::vector<AIControlledKeyboard *> &controllers, bool animations)
     : matchData(matchData),
       first_team(GetScenarioConfig().reverse_team_processing ? 1 : 0),
       second_team(GetScenarioConfig().reverse_team_processing ? 0 : 1),
@@ -404,25 +404,18 @@ void Match::RandomizeAdboards(boost::intrusive_ptr<Node> stadiumNode) {
 
 void Match::UpdateControllerSetup() {
   DO_VALIDATION;
-
-  // remove current gamers
-  teams[first_team]->DeleteHumanGamers();
-  teams[second_team]->DeleteHumanGamers();
-
-  // add new
   const std::vector<SideSelection> controller = menuTask->GetControllerSetup();
+  std::vector<AIControlledKeyboard*> left_players;
+  std::vector<AIControlledKeyboard*> right_players;
   for (unsigned int i = 0; i < controller.size(); i++) {
-    e_PlayerColor color = e_PlayerColor(i % (e_PlayerColor_Default + 1));
     DO_VALIDATION;
     float mirror = 1.0;
     if (controller[i].side == -1) {
+      left_players.push_back(controllers.at(controller[i].controllerID));
       DO_VALIDATION;
-      teams[0]->AddHumanGamer(controllers.at(controller[i].controllerID),
-                              color);
     } else if (controller[i].side == 1) {
+      right_players.push_back(controllers.at(controller[i].controllerID));
       DO_VALIDATION;
-      teams[1]->AddHumanGamer(controllers.at(controller[i].controllerID),
-                              color);
       if (teams[1]->GetDynamicSide() == -1) {
         DO_VALIDATION;
         mirror = -1.0;
@@ -430,6 +423,8 @@ void Match::UpdateControllerSetup() {
     }
     controllers.at(controller[i].controllerID)->Mirror(mirror);
   }
+  teams[0]->AddHumanGamers(left_players);
+  teams[1]->AddHumanGamers(right_players);
 }
 
 void Match::SpamMessage(const std::string &msg, int time_ms) {
@@ -439,11 +434,6 @@ void Match::SpamMessage(const std::string &msg, int time_ms) {
   messageCaption->SetPosition(50 - w * 0.5f, 5);
   messageCaption->Show();
   messageCaptionRemoveTime_ms = actualTime_ms + time_ms;
-}
-
-void Match::GetAllTeamPlayers(int teamID, std::vector<Player *> &players) {
-  DO_VALIDATION;
-  teams[teamID]->GetAllPlayers(players);
 }
 
 void Match::GetActiveTeamPlayers(int teamID, std::vector<Player *> &players) {
@@ -667,8 +657,8 @@ void Match::ProcessState(EnvState* state) {
       ball_mirrored ^ state->getConfig()->reverse_team_processing;
   Mirror(team_0_mirror, team_1_mirror, ball_mirror);
   std::vector<Player*> players;
-  GetAllTeamPlayers(first_team, players);
-  GetAllTeamPlayers(second_team, players);
+  teams[first_team]->GetAllPlayers(players);
+  teams[second_team]->GetAllPlayers(players);
   state->SetControllers(controllers);
   state->SetPlayers(players);
   state->SetAnimations(state->getContext()->anims->GetAnimations());
@@ -682,7 +672,7 @@ void Match::ProcessState(EnvState* state) {
   }
   teams[first_team]->ProcessState(state);
   teams[second_team]->ProcessState(state);
-  std::vector<HumanController*> humanControllers;
+  std::vector<HumanGamer*> humanControllers;
   teams[first_team]->GetHumanControllers(humanControllers);
   teams[second_team]->GetHumanControllers(humanControllers);
   state->SetHumanControllers(humanControllers);
@@ -757,17 +747,18 @@ void Match::ProcessState(EnvState* state) {
 }
 
 void Match::GetTeamState(SharedInfo *state,
-                         std::map<IHIDevice *, int> &controller_mapping,
+                         std::map<AIControlledKeyboard *, int> &controller_mapping,
                          int team_id) {
   DO_VALIDATION;
   std::vector<PlayerInfo> &team =
       team_id == 0 ? state->left_team : state->right_team;
   team.clear();
   std::vector<Player *> players;
-  GetAllTeamPlayers(team_id, players);
+  teams[team_id]->GetAllPlayers(players);
+  auto main_player = teams[team_id]->MainSelectedPlayer();
   for (auto player : players) {
     DO_VALIDATION;
-    auto controller = player->GetExternalController();
+    auto controller = player->ExternalController();
     if (controller) {
       DO_VALIDATION;
       if (team_id == 0) {
@@ -800,6 +791,7 @@ void Match::GetTeamState(SharedInfo *state,
         state->ball_owned_player = team.size();
         state->ball_owned_team = GetLastTouchTeamID();
       }
+      info.designated_player = player == main_player;
       team.push_back(info);
     }
   }
@@ -816,14 +808,17 @@ void Match::GetState(SharedInfo *state) {
   state->ball_owned_team = -1;
   state->left_goals = GetScore(0);
   state->right_goals = GetScore(1);
-  state->is_in_play = IsInPlay();
+  // Report a step before game starts as in play, so that we know which players
+  // are controlled by agents and which are controlled using action_builtin_ai.
+  // 1900 = 2000 (game start) - 100 (single step time).
+  state->is_in_play = IsInPlay() || GetActualTime_ms() == 1900;
   state->game_mode = IsInSetPiece() ? referee->GetBuffer().desiredSetPiece : e_GameMode_Normal;
   state->left_controllers.clear();
   state->left_controllers.resize(GetScenarioConfig().left_team.size());
   state->right_controllers.clear();
   state->right_controllers.resize(GetScenarioConfig().right_team.size());
 
-  std::map<IHIDevice*, int> controller_mapping;
+  std::map<AIControlledKeyboard*, int> controller_mapping;
   {
     auto controllers = GetControllers();
     CHECK(controllers.size() == 2 * MAX_PLAYERS);

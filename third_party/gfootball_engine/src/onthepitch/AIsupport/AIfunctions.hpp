@@ -59,7 +59,7 @@ unsigned int AI_GetBallControlMovement(const MentalImage *mentalImage, Player *p
 bool AI_HasPossession(Ball *ball, Player *player);
 Player *AI_GetClosestPlayer(Team *team, const Vector3 &position,
                             bool onlyAIControlled, Player *except = 0, bool onlySelectable = false);
-void AI_GetClosestPlayers(Team *team, const Vector3 &position, bool onlyAIControlled, std::vector<Player*> &result, unsigned int playerCount = 3);
+void AI_GetClosestPlayers(Team *team, const Vector3 &position, bool onlyAIControlled, std::vector<Player*> &result, unsigned int playerCount = 3, bool onlySelectable = false);
 Player *AI_GetBestSwitchTargetPlayer(Match *match, Team *team, const Vector3 &desiredMovement);
 void AI_GetAutoPass(e_FunctionType passType, const Vector3 &vector, Vector3 &resultingDirection, float &resultingPower);
 void AI_GetPass(Player *player, e_FunctionType passType, const Vector3 &inputDirection, float inputPower, float autoDirectionBias, float autoPowerBias, Vector3 &resultingDirection, float &resultingPower, Player *&targetPlayer, Player *forcedTargetPlayer = 0);

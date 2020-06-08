@@ -94,7 +94,7 @@ GameConfig& GetGameConfig() {
   return game->game_config;
 }
 
-const std::vector<IHIDevice*>& GetControllers() {
+const std::vector<AIControlledKeyboard*>& GetControllers() {
   return game->context->controllers;
 }
 
@@ -125,7 +125,8 @@ void run_game(Properties* input_config, bool render) {
 
   for (int x = 0; x < 2 * MAX_PLAYERS; x++) {
     DO_VALIDATION;
-    game->context->controllers.push_back(new AIControlledKeyboard());
+    e_PlayerColor color = e_PlayerColor(x % (e_PlayerColor_Default + 1));
+    game->context->controllers.push_back(new AIControlledKeyboard(color));
   }
   // sequences
 

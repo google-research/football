@@ -112,11 +112,10 @@ class FootballEnv(gym.Env):
                      else player.num_controlled_right_players()):
         o = {}
         for v in constants.EXPOSED_OBSERVATIONS:
-          # Active and sticky_actions are added below.
-          if v != 'active' and v != 'sticky_actions':
-            o[v] = copy.deepcopy(adopted[v])
+          o[v] = copy.deepcopy(adopted[v])
         assert (len(adopted[prefix + '_agent_controlled_player']) == len(
             adopted[prefix + '_agent_sticky_actions']))
+        o['designated'] = adopted[prefix + '_team_designated_player']
         if position + x >= len(adopted[prefix + '_agent_controlled_player']):
           o['active'] = -1
           o['sticky_actions'] = []

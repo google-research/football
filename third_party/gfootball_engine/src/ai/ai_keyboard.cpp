@@ -13,7 +13,7 @@
 
 #include "ai_keyboard.hpp"
 
-AIControlledKeyboard::AIControlledKeyboard() {
+AIControlledKeyboard::AIControlledKeyboard(e_PlayerColor color) : playerColor(color) {
   DO_VALIDATION;
   Reset();
 }
@@ -44,20 +44,27 @@ bool AIControlledKeyboard::GetPreviousButtonState(
   return false;
 }
 
-Vector3 AIControlledKeyboard::GetDirection() {
+blunted::Vector3 AIControlledKeyboard::GetDirection() {
   DO_VALIDATION;
   return direction_ * mirror;
 }
 
-Vector3 AIControlledKeyboard::GetOriginalDirection() { return direction_; }
+blunted::Vector3 AIControlledKeyboard::GetOriginalDirection() { return direction_; }
 
-void AIControlledKeyboard::SetDirection(const Vector3& new_direction) {
+void AIControlledKeyboard::SetDirection(const blunted::Vector3& new_direction) {
   direction_ = new_direction;
+}
+
+void AIControlledKeyboard::SetDisabled(bool disabled) {
+  this->disabled_ = disabled;
+  if (disabled) {
+    Reset();
+  }
 }
 
 void AIControlledKeyboard::Reset() {
   DO_VALIDATION;
-  direction_ = Vector3(0, 0, 0);
+  direction_ = blunted::Vector3(0, 0, 0);
   memset(buttons_pressed_, 0, sizeof(buttons_pressed_));
 }
 
@@ -65,8 +72,10 @@ void AIControlledKeyboard::ProcessState(EnvState* state) {
   DO_VALIDATION;
   state->setValidate(false);
   state->process(mirror);
+  state->process((void*) &playerColor, sizeof(playerColor));
   state->process(direction_);
   state->setValidate(true);
+  state->process(disabled_);
   state->process((void*)buttons_pressed_, sizeof(buttons_pressed_));
 }
 

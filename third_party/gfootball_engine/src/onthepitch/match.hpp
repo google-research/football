@@ -52,7 +52,7 @@ struct PlayerBounce {
 class Match {
 
   public:
-    Match(MatchData *matchData, const std::vector<IHIDevice*> &controllers, bool init_animation);
+    Match(MatchData *matchData, const std::vector<AIControlledKeyboard*> &controllers, bool init_animation);
     virtual ~Match();
 
     void Exit();
@@ -65,7 +65,6 @@ class Match {
     int GetScore(int teamID) { DO_VALIDATION; return matchData->GetGoalCount(teamID); }
     Ball *GetBall() { DO_VALIDATION; return ball; }
     Team *GetTeam(int teamID) { DO_VALIDATION; return teams[teamID]; }
-    void GetAllTeamPlayers(int teamID, std::vector<Player*> &players);
     void GetActiveTeamPlayers(int teamID, std::vector<Player*> &players);
     void GetOfficialPlayers(std::vector<PlayerBase*> &players);
     boost::shared_ptr<AnimCollection> GetAnimCollection();
@@ -126,7 +125,7 @@ class Match {
 
 
     boost::intrusive_ptr<Camera> GetCamera() { DO_VALIDATION; return camera; }
-    void GetTeamState(SharedInfo *state, std::map<IHIDevice*, int>& controller_mapping, int team_id);
+    void GetTeamState(SharedInfo *state, std::map<AIControlledKeyboard*, int>& controller_mapping, int team_id);
     void GetState(SharedInfo* state);
     void ProcessState(EnvState* state);
     bool Process();
@@ -183,7 +182,7 @@ class Match {
 
     boost::intrusive_ptr<Node> stadiumNode;
 
-    const std::vector<IHIDevice*> &controllers;
+    const std::vector<AIControlledKeyboard*> &controllers;
 
     Ball *ball = nullptr;
 
