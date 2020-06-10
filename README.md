@@ -109,11 +109,11 @@ To quit the game press Ctrl+C in the terminal.
 ### Run training
 In order to run TF training, install additional dependencies:
 
-- Update PIP, so that tensorflow 1.15 is available: `python3 -m pip install --upgrade pip`
-- TensorFlow: `pip3 install "tensorflow==1.15"` or
-  `pip3 install "tensorflow-gpu==1.15"`, depending on whether you want CPU or
+- Update PIP, so that tensorflow 1.15 is available: `python3 -m pip install --upgrade pip setuptools`
+- TensorFlow: `pip3 install tensorflow==1.15.*` or
+  `pip3 install tensorflow-gpu==1.15.*`, depending on whether you want CPU or
   GPU version;
-- Sonnet: `pip3 install "dm-sonnet<2.0.0"`;
+- Sonnet: `pip3 install dm-sonnet==1.*`;
 - OpenAI Baselines:
   `pip3 install git+https://github.com/openai/baselines.git@master`.
 
