@@ -58,7 +58,7 @@ brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/527d96f84d
 
 #### 2a. From PyPi package
 ```
-pip install gfootball
+pip3 install gfootball
 ```
 
 #### 2b. Installing from sources using GitHub repository
