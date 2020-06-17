@@ -9,8 +9,8 @@ RUN apt-get update && apt-get install -yq git cmake build-essential \
   libdirectfb-dev libst-dev mesa-utils xvfb x11vnc \
   libsdl-sge-dev python3-pip
 
-RUN python3 -m pip install --upgrade pip
-RUN pip3 install tensorflow==1.15rc2 dm-sonnet psutil
+RUN python3 -m pip install --upgrade pip setuptools
+RUN pip3 install tensorflow==1.15.* dm-sonnet==1.* psutil
 
 RUN pip3 install git+https://github.com/openai/baselines.git@master
 COPY . /gfootball
