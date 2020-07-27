@@ -48,12 +48,12 @@ First install [brew](https://brew.sh/). It should automatically install Command 
 Next install required packages:
 
 ```
-brew install git python3 cmake sdl2 sdl2_image sdl2_ttf sdl2_gfx boost
+brew install git python3 cmake sdl2 sdl2_image sdl2_ttf sdl2_gfx boost boost-python3
 ```
-and boost-python3, that supports Python 3.7:
+To set up `pygame`, it is also required to install older versions of SDL:
 
 ```
-brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/527d96f84d4632d30b281ef5b26717e0a75edcb4/Formula/boost-python3.rb
+brew install sdl sdl_image sdl_mixer sdl_ttf portmidi
 ```
 
 #### 2a. From PyPi package
