@@ -24,6 +24,11 @@
 #else
 #include <GL/gl.h>
 #endif
+
+#ifdef WIN32
+#include <SDL2/SDL_opengl_glext.h>
+#endif
+
 #include <cmath>
 #include "wrap_SDL.h"
 
@@ -39,10 +44,6 @@
 #include "../../../base/geometry/trianglemeshutils.hpp"
 
 #include "../resources/texture.hpp"
-
-#ifdef WIN32
-#include <wingdi.h>
-#endif
 
 namespace blunted {
 
@@ -1891,12 +1892,12 @@ bool OpenGLRenderer3D::CheckFrameBufferStatus() {
 void OpenGLRenderer3D::SetRenderTargets(
     std::vector<e_TargetAttachment> targetAttachments) {
   DO_VALIDATION;
-  GLenum targets[targetAttachments.size()];
+  std::vector<GLenum> targets(targetAttachments.size());
   for (int i = 0; i < (signed int)targetAttachments.size(); i++) {
     DO_VALIDATION;
     targets[i] = GetGLTargetAttachment(targetAttachments[i]);
   }
-  mapping.glDrawBuffers(targetAttachments.size(), targets);
+  mapping.glDrawBuffers(targetAttachments.size(), &targets[0]);
 }
 
   // utility
@@ -1979,8 +1980,8 @@ void GeneratePoissonKernel(float *kernel, unsigned int kernelSize) {
     DO_VALIDATION;
     unsigned int candidateSize = 32;
 
-    Vector3 samples[kernelSize];
-    Vector3 candidates[candidateSize];
+    std::vector<Vector3> samples(kernelSize);
+    std::vector<Vector3> candidates(candidateSize);
 
     for (unsigned int i = 0; i < kernelSize; i++) {
       DO_VALIDATION;
@@ -2049,7 +2050,7 @@ void GeneratePoissonKernel(float *kernel, unsigned int kernelSize) {
 
   } else {  // PRECALCULATED SET
 
-    Vector3 samples[kernelSize];
+    std::vector<Vector3> samples(kernelSize);
 
     // these samples seem relatively close to z = 0 (much 'ground effect' on
     // flat surface)
@@ -2203,7 +2204,7 @@ void OpenGLRenderer3D::LoadShader(const std::string &name,
 
     unsigned int kernelSize = 32;
     // SetUniformInt("ambient", "SSAO_kernelSize", kernelSize);
-    float SSAO_kernel[kernelSize * 3];
+    std::vector<float> SSAO_kernel(kernelSize * 3);
     GeneratePoissonKernel(&SSAO_kernel[0], kernelSize);
     SetUniformFloat3Array("ambient", "SSAO_kernel", kernelSize,
                           &SSAO_kernel[0]);

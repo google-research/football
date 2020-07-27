@@ -101,7 +101,7 @@ struct ScenarioConfig {
     float leftDistance = 1000000;
     float rightDistance = 1000000;
     for (auto& player : left_team) { DO_VALIDATION;
-      leftDistance =std::min(leftDistance,
+      leftDistance = std::min(leftDistance,
           (player.start_position - ball_position).GetLength());
     }
     for (auto& player : right_team) { DO_VALIDATION;

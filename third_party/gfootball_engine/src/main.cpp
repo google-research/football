@@ -16,7 +16,9 @@
 // i do not offer support, so don't ask. to be used for inspiration :)
 
 #ifdef WIN32
+#define NOMINMAX
 #include <windows.h>
+#undef NOMINMAX
 #endif
 
 #include <string>

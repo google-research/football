@@ -19,7 +19,9 @@
 #define _HPP_DEFINES
 
 #ifdef WIN32
+#define NOMINMAX
 #include <windows.h>
+#undef NOMINMAX
 #endif
 
 #include <cstdio>
@@ -59,7 +61,7 @@ typedef std::string screenshoot;
 
 namespace blunted {
   class Animation;
-  using namespace boost;
+  //using namespace boost;
 }
 
 class Player;

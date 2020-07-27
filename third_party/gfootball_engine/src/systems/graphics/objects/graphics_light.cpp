@@ -211,7 +211,7 @@ void GraphicsLight::SetPosition(const Vector3 &newPosition) {
     std::deque < boost::intrusive_ptr<Geometry> >::iterator visibleGeometryIter = visibleGeometry.begin();
     while (visibleGeometryIter != visibleGeometry.end()) {
       DO_VALIDATION;
-      boost::intrusive_ptr<GraphicsGeometry_GeometryInterpreter> interpreter = static_pointer_cast<GraphicsGeometry_GeometryInterpreter>((*visibleGeometryIter)->GetInterpreter(e_SystemType_Graphics));
+      boost::intrusive_ptr<GraphicsGeometry_GeometryInterpreter> interpreter = boost::static_pointer_cast<GraphicsGeometry_GeometryInterpreter>((*visibleGeometryIter)->GetInterpreter(e_SystemType_Graphics));
 
       // add buffers to visible geometry queue
       interpreter->GetVertexBufferQueue(caller->shadowMaps.at(index).visibleGeometry);

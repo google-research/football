@@ -217,7 +217,7 @@ TeamData::TeamData(int teamDatabaseID, const std::vector<FormationEntry> &f) {
 
   while (changed && iterations < maxIterations) {
     DO_VALIDATION;
-    Vector3 offset[player_count];
+    std::vector<Vector3> offset(player_count);
 
     changed = false;
     for (int p1 = 0; p1 < player_count - 1; p1++) {

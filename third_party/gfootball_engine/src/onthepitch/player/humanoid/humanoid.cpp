@@ -1843,7 +1843,7 @@ signed int Humanoid::GetBestCheatableAnimID(const DataSet &sortedDataSet, bool u
     boost::shared_ptr<FootballAnimationExtension> footballExtension = boost::static_pointer_cast<FootballAnimationExtension>(anim->GetExtension("football"));
 
     int totalTouches = footballExtension->GetTouchCount();
-    int touchIDs[totalTouches];
+    std::vector<int> touchIDs(totalTouches);
     int count = 0;
 
     int defaultTouchFrame = atoi(anim->GetVariable("touchframe").c_str());

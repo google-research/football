@@ -330,7 +330,7 @@ void Match::SetRandomSunParams() {
 
   float defaultRadius = 1000000.0f;
   float sunRadius = defaultRadius;
-  static_pointer_cast<Light>(sunNode->GetObject("sun"))->SetRadius(sunRadius);
+  boost::static_pointer_cast<Light>(sunNode->GetObject("sun"))->SetRadius(sunRadius);
 
   Vector3 sunColorNoon(0.9, 0.8, 1.0); sunColorNoon *= 1.4f;
   Vector3 sunColorDusk(1.4, 0.9, 0.7); sunColorDusk *= 1.2f;
@@ -344,7 +344,7 @@ void Match::SetRandomSunParams() {
   randomAddition *= 1.2f;
   sunColor += randomAddition;
 
-  static_pointer_cast<Light>(sunNode->GetObject("sun"))->SetColor(sunColor * brightness);
+  boost::static_pointer_cast<Light>(sunNode->GetObject("sun"))->SetColor(sunColor * brightness);
 }
 
 void Match::RandomizeAdboards(boost::intrusive_ptr<Node> stadiumNode) {

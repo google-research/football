@@ -12,17 +12,23 @@
 // limitations under the License.
 
 #include <stdio.h>
+
+#ifdef __linux__
 #include <execinfo.h>
+#include <unistd.h>
+#endif
+
 #include <signal.h>
 #include "backtrace.h"
 #include <stdlib.h>
-#include <unistd.h>
 
 void print_stacktrace() {
   void *array[10];
   size_t size;
+  #ifdef __linux__
   size = backtrace(array, 10);
   backtrace_symbols_fd(array, size, STDERR_FILENO);
+  #endif
 }
 
 
