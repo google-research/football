@@ -102,13 +102,13 @@ void Referee::Process() {
       match->StopPlay();
       buffer.desiredSetPiece = e_GameMode_KickOff;
       buffer.stopTime = match->GetActualTime_ms();
-      buffer.prepareTime = buffer.stopTime;
-      buffer.startTime = buffer.prepareTime;
+      buffer.prepareTime = buffer.stopTime + 100;
+      buffer.startTime = buffer.prepareTime + 200;
       buffer.restartPos = GetScenarioConfig().ball_position;
       buffer.active = true;
       buffer.endPhase = true;
-      buffer.teamID = match->SecondTeam();
-      buffer.setpiece_team = match->GetTeam(match->SecondTeam());
+      buffer.teamID = GetScenarioConfig().LeftTeamOwnsBall() ? 1 : 0;
+      buffer.setpiece_team = match->GetTeam(buffer.teamID);
       buffer.taker = 0;
       foul.foulPlayer = 0;
       foul.foulType = 0;

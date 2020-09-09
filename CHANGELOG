@@ -6,6 +6,9 @@ new features or backward compatible bug fixes. We will maintain vX branches
 pointing at the most recent vX.Y.
 
 
+v2.3
+- Fix to scenario's second_half feature.
+
 v2.2
 - Minor changes to the information displayed in the video replays.
 - Changes to Kaggle competition scenario.

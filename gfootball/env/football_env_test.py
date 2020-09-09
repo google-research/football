@@ -253,6 +253,23 @@ class FootballEnvTest(parameterized.TestCase):
     self.assertTrue(done)
     env.close()
 
+  def test_second_half(self):
+    """Test second half feature."""
+    cfg = config.Config()
+    cfg['level'] = 'tests.second_half'
+    env = football_env.FootballEnv(cfg)
+    for _ in range(5):
+      o, _, done, _ = env.step(football_action_set.action_idle)
+      self.assertFalse(done)
+      self.assertAlmostEqual(o[0]['left_team'][o[0]['active']][0], 0, delta=0.1)
+    for _ in range(6):
+      self.assertFalse(done)
+      o, _, done, _ = env.step(football_action_set.action_idle)
+      self.assertAlmostEqual(
+          o[0]['left_team'][o[0]['active']][0], -0.5, delta=0.1)
+    self.assertTrue(done)
+    env.close()
+
   def test___render(self):
     """Make sure rendering is not broken."""
     if 'UNITTEST_IN_DOCKER' in os.environ:
