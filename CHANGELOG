@@ -5,6 +5,12 @@ should not change, as modifications made to the environment are either
 new features or backward compatible bug fixes. We will maintain vX branches
 pointing at the most recent vX.Y.
 
+
+v2.2
+- Minor changes to the information displayed in the video replays.
+- Changes to Kaggle competition scenario.
+- Minor code cleanups.
+
 v2.1
 - Introduction of `builtin_ai` action, which lets agent dynamically give control
   of the player to the native game's built-in AI. It can be useful when training

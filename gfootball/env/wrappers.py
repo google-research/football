@@ -63,9 +63,10 @@ class GetStateWrapper(gym.Wrapper):
 class PeriodicDumpWriter(gym.Wrapper):
   """A wrapper that only dumps traces/videos periodically."""
 
-  def __init__(self, env, dump_frequency):
+  def __init__(self, env, dump_frequency, render=False):
     gym.Wrapper.__init__(self, env)
     self._dump_frequency = dump_frequency
+    self._render = render
     self._original_dump_config = {
         'write_video': env._config['write_video'],
         'dump_full_episodes': env._config['dump_full_episodes'],
@@ -80,12 +81,14 @@ class PeriodicDumpWriter(gym.Wrapper):
     if (self._dump_frequency > 0 and
         (self._current_episode_number % self._dump_frequency == 0)):
       self.env._config.update(self._original_dump_config)
-      self.env.render()
+      if self._render:
+        self.env.render()
     else:
       self.env._config.update({'write_video': False,
                                'dump_full_episodes': False,
                                'dump_scores': False})
-      self.env.disable_render()
+      if self._render:
+        self.env.disable_render()
     self._current_episode_number += 1
     return self.env.reset()
 
@@ -206,6 +209,10 @@ class PixelsStateWrapper(gym.ObservationWrapper):
   def observation(self, obs):
     o = []
     for observation in obs:
+      assert 'frame' in observation, ("Missing 'frame' in observations. Pixel "
+                                      "representation requires rendering and is"
+                                      " supported only for players on the left "
+                                      "team.")
       frame = observation['frame']
       if self._grayscale:
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
@@ -374,7 +381,7 @@ class MultiAgentToSingleAgent(gym.Wrapper):
   agent controls only one player on the team. It can also be used
   in a standalone manner:
 
-  env = gfootball.env.create_environment(env_name='11_vs_11_kaggle',
+  env = gfootball.env.create_environment(env_name='tests/multiagent_wrapper',
       number_of_left_players_agent_controls=11)
   observations = env.reset()
   single_observation = MultiAgentToSingleAgent.get_observation(observations)

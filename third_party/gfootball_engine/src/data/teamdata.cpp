@@ -289,17 +289,17 @@ TeamData::TeamData(int teamDatabaseID, const std::vector<FormationEntry> &f) {
 
   tree = loader.Load(factoryTacticsString);
   // load players
-  playerData.push_back(new PlayerData(398));
-  playerData.push_back(new PlayerData(11));
-  playerData.push_back(new PlayerData(254));
-  playerData.push_back(new PlayerData(320));
-  playerData.push_back(new PlayerData(103));
-  playerData.push_back(new PlayerData(188));
-  playerData.push_back(new PlayerData(74));
-  playerData.push_back(new PlayerData(332));
-  playerData.push_back(new PlayerData(290));
-  playerData.push_back(new PlayerData(391));
-  playerData.push_back(new PlayerData(264));
+  playerData.push_back(new PlayerData(398, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(11, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(254, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(320, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(103, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(188, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(74, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(332, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(290, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(391, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(264, teamDatabaseID == 3));
   playerData.resize(player_count);
 }
 

@@ -57,7 +57,9 @@ class DumpConfig(object):
     self._steps_before = steps_before
     self._steps_after = steps_after
     self._max_count = max_count
-    self._last_dump_time = 0
+    # Make sure self._last_dump_time < timeit.default_timer() - min_frequency
+    # holds upon startup.
+    self._last_dump_time = timeit.default_timer() - 2 * min_frequency
     self._active_dump = None
     self._min_frequency = min_frequency
 
@@ -77,10 +79,10 @@ class TextWriter(object):
     self._arrow_types = ('top', 'top_right', 'right', 'bottom_right', 'bottom',
                          'bottom_left', 'left', 'top_left')
 
-  def write(self, text, scale_factor=1):
+  def write(self, text, scale_factor=1, color=None):
     textPos = (self._pos_x, self._pos_y)
     fontScale = 0.5 * scale_factor
-    cv2.putText(self._frame, text, textPos, self._font, fontScale, self._color,
+    cv2.putText(self._frame, text, textPos, self._font, fontScale, color or self._color,
                 self._lineType)
     self._pos_y += int(20 * scale_factor)
 
@@ -211,7 +213,6 @@ class ActiveDump(object):
     self._video_writer = None
     self._frame_dim = None
     self._step_cnt = 0
-    self._last_frame_time = 0
     self._dump_file = None
     if config['write_video']:
       video_format = config['video_format']
@@ -264,25 +265,33 @@ class ActiveDump(object):
           writer.write(line)
       if self._config['display_game_stats']:
         writer.write('SCORE: %d - %d' % (o['score'][0], o['score'][1]))
-        writer.write('BALL OWNED TEAM: %d' % (o['ball_owned_team']))
-        writer.write('BALL OWNED PLAYER: %d' % (o['ball_owned_player']))
-        writer.write('REWARD %.4f' % (o['reward']))
-        writer.write('CUM. REWARD: %.4f' % (o['cumulative_reward']))
+        if o['ball_owned_team'] == 0:
+          player = 'G' if o['left_team_roles'][
+              o['ball_owned_player']] == e_PlayerRole_GK else o[
+                  'ball_owned_player']
+          writer.write('BALL OWNED: %s' % player, color=(0, 255, 0))
+        elif o['ball_owned_team'] == 1:
+          player = 'G' if o['right_team_roles'][
+              o['ball_owned_player']] == e_PlayerRole_GK else o[
+                  'ball_owned_player']
+          writer.write('BALL OWNED: %s' % player, color=(0, 255, 255))
+        else:
+          writer.write('BALL OWNED: ---')
         writer = TextWriter(frame, 0)
-        writer.write('FRAME: %d' % self._step_cnt)
-        writer.write('TIME: %f' % (o._time - self._last_frame_time))
+        writer.write('STEP: %d' % self._step_cnt)
         sticky_actions = football_action_set.get_sticky_actions(self._config)
 
         players_info = {}
         for team in ['left', 'right']:
+          player_info = {}
           sticky_actions_field = '%s_agent_sticky_actions' % team
           for player in range(len(o[sticky_actions_field])):
             assert len(sticky_actions) == len(o[sticky_actions_field][player])
             player_idx = o['%s_agent_controlled_player' % team][player]
-            players_info[(team, player_idx)] = {}
-            players_info[(team, player_idx)]['color'] = (
+            player_info = {}
+            player_info['color'] = (
                 0, 255, 0) if team == 'left' else (0, 255, 255)
-            players_info[(team, player_idx)]['id'] = 'G' if o[
+            player_info['id'] = 'G' if o[
                 '%s_team_roles' %
                 team][player_idx] == e_PlayerRole_GK else str(player_idx)
             active_direction = None
@@ -291,16 +300,17 @@ class ActiveDump(object):
                 if o[sticky_actions_field][player][i]:
                   active_direction = sticky_actions[i]
               else:
-                players_info[(team, player_idx)][sticky_actions[i]._name] = \
+                player_info[sticky_actions[i]._name] = \
                     o[sticky_actions_field][player][i]
 
             # Info about direction
-            players_info[(team, player_idx)]['DIRECTION'] = \
+            player_info['DIRECTION'] = \
                 'O' if active_direction is None else active_direction._name
             if 'action' in o._trace['debug']:
               # Info about action
-              players_info[(team, player_idx)]['ACTION'] = \
-                  o['action'][player]._name
+              player_info['ACTION'] = \
+                  o['action'][len(players_info)]._name
+            players_info[(team, player_idx)] = player_info
 
         write_players_state(writer, players_info)
 
@@ -327,7 +337,6 @@ class ActiveDump(object):
     six.moves.cPickle.dump(o._trace, self._dump_file)
     if temp_frame is not None:
       o._trace['observation']['frame'] = temp_frame
-    self._last_frame_time = o._time
     self._step_cnt += 1
 
   def finalize(self):
@@ -363,7 +372,6 @@ class ObservationState(object):
     self._trace = trace
     self._additional_frames = []
     self._debugs = []
-    self._time = timeit.default_timer()
 
   def __getitem__(self, key):
     if key in self._trace:
@@ -474,7 +482,7 @@ class ObservationProcessor(object):
     if config._max_count <= 0:
       logging.debug('Dump "%s": count limit reached / disabled', name)
       return
-    if config._last_dump_time >= timeit.default_timer() - config._min_frequency:
+    if config._last_dump_time > timeit.default_timer() - config._min_frequency:
       logging.debug('Dump "%s": too frequent', name)
       return
     config._max_count -= 1

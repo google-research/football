@@ -121,6 +121,7 @@ enum e_TouchType {
 enum e_MatchPhase {
   e_MatchPhase_PreMatch,
   e_MatchPhase_1stHalf,
+  e_MatchPhase_2ndHalf,
 };
 
 enum e_PlayerCommandModifier {

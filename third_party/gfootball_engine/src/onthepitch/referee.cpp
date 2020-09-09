@@ -96,6 +96,28 @@ void Referee::Process() {
     DO_VALIDATION;
 
     Vector3 ballPos = match->GetBall()->Predict(0);
+    // Single step maps to 1800 units.
+    if (match->GetMatchTime_ms() >= 1800 * GetScenarioConfig().second_half &&
+        match->GetMatchPhase() == e_MatchPhase_1stHalf) {
+      match->StopPlay();
+      buffer.desiredSetPiece = e_GameMode_KickOff;
+      buffer.stopTime = match->GetActualTime_ms();
+      buffer.prepareTime = buffer.stopTime;
+      buffer.startTime = buffer.prepareTime;
+      buffer.restartPos = GetScenarioConfig().ball_position;
+      buffer.active = true;
+      buffer.endPhase = true;
+      buffer.teamID = match->SecondTeam();
+      buffer.setpiece_team = match->GetTeam(match->SecondTeam());
+      buffer.taker = 0;
+      foul.foulPlayer = 0;
+      foul.foulType = 0;
+      foul.advantage = false;
+      foul.foulTime = 0;
+      foul.hasBeenProcessed = true;
+      match->SetMatchPhase(e_MatchPhase_2ndHalf);
+    }
+
     // We process corner setup in not mirrored setup.
     if (GetScenarioConfig().reverse_team_processing) {
       ballPos.Mirror();

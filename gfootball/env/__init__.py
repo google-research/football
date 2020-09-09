@@ -210,14 +210,14 @@ def create_environment(env_name='',
   c = config.Config(config_values)
 
   env = football_env.FootballEnv(c)
-  if render:
-    env.render()
   if multiagent_to_singleagent:
     env = wrappers.MultiAgentToSingleAgent(
         env, number_of_left_players_agent_controls,
         number_of_right_players_agent_controls)
   if dump_frequency > 1:
-    env = wrappers.PeriodicDumpWriter(env, dump_frequency)
+    env = wrappers.PeriodicDumpWriter(env, dump_frequency, render)
+  elif render:
+    env.render()
   env = _apply_output_wrappers(
       env, rewards, representation, channel_dimensions,
       (number_of_left_players_agent_controls +

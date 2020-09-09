@@ -176,4 +176,4 @@ The default action set consists of 19 actions:
 
 It is an extension of the default action set:
 
-    *   `action_builtin_ai` = 19, let game's built-in AI generate an action
+*   `action_builtin_ai` = 19, let game's built-in AI generate an action

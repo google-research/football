@@ -184,6 +184,7 @@ BOOST_PYTHON_MODULE(_gameplayfootball) {
       .def_readwrite("end_episode_on_out_of_play",
                      &ScenarioConfig::end_episode_on_out_of_play)
       .def_readwrite("game_duration", &ScenarioConfig::game_duration)
+      .def_readwrite("second_half", &ScenarioConfig::second_half)
       .def_readwrite("control_all_players",
                      &ScenarioConfig::control_all_players)
       .def_readonly("dynamic_player_selection",

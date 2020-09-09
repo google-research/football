@@ -5,7 +5,7 @@ Football. <br> It was created by the Google Brain team for research purposes.
 
 Useful links:
 
-* __(NEW!)__ [GRF Tournament](https://research-football.dev/tournament) - take part in the Tournament and become the new GRF Champion! Starting April 2020.
+* __(NEW!)__ [GRF Tournament](https://research-football.dev/tournament) - take part in the Tournament and become the new GRF Champion!
 * [GRF Game Server](https://research-football.dev/) - challenge other researchers!
 * [Run in Colab](https://colab.research.google.com/github/google-research/football/blob/master/gfootball/colabs/gfootball_example_from_prebuild.ipynb) - start training in less that 2 minutes.
 * [Google Research Football Paper](https://arxiv.org/abs/1907.11180)
@@ -107,7 +107,8 @@ To quit the game press Ctrl+C in the terminal.
 ## Training agents to play GRF
 
 ### Run training
-In order to run TF training, install additional dependencies:
+In order to run TF training, install additional dependencies
+(or alternatively use provided [Docker image](gfootball/doc/docker.md)):
 
 - Update PIP, so that tensorflow 1.15 is available: `python3 -m pip install --upgrade pip setuptools`
 - TensorFlow: `pip3 install tensorflow==1.15.*` or
@@ -180,8 +181,13 @@ For example extra_players='ppo2_cnn:right_players=1,policy=gfootball_impala_cnn,
 
 ## Frequent Problems & Solutions
 
-### Rendering not working / "OpenGL version not equal to or higher than 3.2"
+### Rendering off-screen (on a display-less server / without GPU)
+It is possible to do software rendering with MESA. For that, before starting
+environment you need to create virtual display:
 
-Solution: set environment variables for MESA driver, like this:
+```
+Xvfb :1 -screen 0 1280x720x24+32 -fbdir /var/tmp &
+export DISPLAY=:1
+```
 
-`MESA_GL_VERSION_OVERRIDE=3.2 MESA_GLSL_VERSION_OVERRIDE=150 python3 -m gfootball.play_game`
+Note that software rendering significantly increases CPU usage and is slow.

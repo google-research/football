@@ -487,10 +487,8 @@ void Match::ResetSituation(const Vector3 &focusPos) {
 
 void Match::SetMatchPhase(e_MatchPhase newMatchPhase) {
   matchPhase = newMatchPhase;
-  if (matchPhase == e_MatchPhase_1stHalf) {
-    teams[first_team]->RelaxFatigue(1.0f);
-    teams[second_team]->RelaxFatigue(1.0f);
-  }
+  teams[first_team]->RelaxFatigue(1.0f);
+  teams[second_team]->RelaxFatigue(1.0f);
 }
 
 Team *Match::GetBestPossessionTeam() {

@@ -130,6 +130,7 @@ struct ScenarioConfig {
     state->process(end_episode_on_possession_change);
     state->process(end_episode_on_out_of_play);
     state->process(game_duration);
+    state->process(second_half);
     state->process(control_all_players);
   }
 
@@ -177,6 +178,7 @@ struct ScenarioConfig {
   bool end_episode_on_out_of_play = false;
   int game_duration = 3000;
   bool control_all_players = false;
+  int second_half = 999999999;
 
  private:
   ScenarioConfig() { }
