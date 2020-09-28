@@ -108,15 +108,18 @@ void randomize(unsigned int seed) {
 void run_game(Properties* input_config, bool render) {
   DO_VALIDATION;
   game->context->config = input_config;
-  Initialize(*game->context->config);
+  Initialize();
   randomize(0);
 
   // initialize systems
-  game->context->graphicsSystem.Initialize(render);
+  game->context->graphicsSystem.Initialize(render,
+      game->game_config.render_resolution_x,
+      game->game_config.render_resolution_y);
 
   // init scenes
 
-  game->context->scene2D.reset(new Scene2D(*game->context->config));
+  game->context->scene2D.reset(new Scene2D(game->game_config.render_resolution_x,
+                                           game->game_config.render_resolution_y));
   game->context->graphicsSystem.Create2DScene(game->context->scene2D);
   game->context->scene2D->Init();
   game->context->scene3D.reset(new Scene3D());

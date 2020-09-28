@@ -27,8 +27,6 @@
 #include "file.h"
 #include "gametask.hpp"
 
-#define FRAME_SIZE (1280*720*3)
-
 using std::string;
 
 void GameEnv::do_step(int count) {

@@ -76,9 +76,9 @@ OpenGLRenderer3D::~OpenGLRenderer3D() {
 
 void OpenGLRenderer3D::SwapBuffers() {
   DO_VALIDATION;
-  last_screen_.resize(1280 * 720 * 3);
+  last_screen_.resize(context_width * context_height * 3);
   SDL_GL_SwapWindow(window);
-  mapping.glReadPixels(0, 0, 1280, 720, GL_RGB, GL_UNSIGNED_BYTE,
+  mapping.glReadPixels(0, 0, context_width, context_height, GL_RGB, GL_UNSIGNED_BYTE,
                        &last_screen_[0]);
 }
 
@@ -108,7 +108,7 @@ void OpenGLRenderer3D::RenderOverlay2D(
 
   UseShader("overlay");
 
-  Matrix4 orthoMatrix = CreateOrthoMatrix(0, 1280, 720, 0, 0.1, 10);
+  Matrix4 orthoMatrix = CreateOrthoMatrix(0, context_width, context_height, 0, 0.1, 10);
   SetMatrix("projection", orthoMatrix);
 
   mapping.glBindVertexArray(overlayBuffer.vertexArrayID);

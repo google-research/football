@@ -62,12 +62,17 @@ enum e_RenderingMode {
 
 class GameConfig {
  public:
+  static SHARED_PTR<GameConfig> make() {
+    return SHARED_PTR<GameConfig>(new GameConfig());
+  }
   // Is rendering enabled.
   bool render = false;
   // Directory with textures and other resources.
   std::string data_dir;
   // How many physics animation steps are done per single environment step.
   int physics_steps_per_frame = 10;
+  int render_resolution_x = 1280;
+  int render_resolution_y = 720;
   std::string updatePath(const std::string& path) {
     if (path[0] == '/') {
       return path;
@@ -77,7 +82,12 @@ class GameConfig {
   void ProcessState(EnvState* state) {
     state->process(data_dir);
     state->process(physics_steps_per_frame);
+    state->process(render_resolution_x);
+    state->process(render_resolution_y);
   }
+ private:
+  GameConfig() { }
+  friend GameEnv;
 };
 
 struct ScenarioConfig {

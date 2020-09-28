@@ -151,10 +151,16 @@ BOOST_PYTHON_MODULE(_gameplayfootball) {
      .def("__getitem__", &Vector3::GetEnvCoord)
      .def("__setitem__", &Vector3::SetEnvCoord);
 
-  class_<GameConfig>("GameConfig")
+  class_<GameConfig, SHARED_PTR<GameConfig>, boost::noncopyable>("GameConfig", no_init)
+      .def("make", &GameConfig::make)
+      .staticmethod("make")
       .def_readwrite("render", &GameConfig::render)
       .def_readwrite("physics_steps_per_frame",
-                     &GameConfig::physics_steps_per_frame);
+                     &GameConfig::physics_steps_per_frame)
+      .def_readwrite("render_resolution_x",
+                     &GameConfig::render_resolution_x)
+      .def_readwrite("render_resolution_y",
+                     &GameConfig::render_resolution_y);
 
   class_<ScenarioConfig, SHARED_PTR<ScenarioConfig>, boost::noncopyable>(
       "ScenarioConfig", no_init)

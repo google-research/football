@@ -220,13 +220,11 @@ class ActiveDump(object):
       self._video_suffix = '.%s' % video_format
       self._video_fd, self._video_tmp = tempfile.mkstemp(
           suffix=self._video_suffix)
-      if config['video_quality_level'] == 2:
-        self._frame_dim = (1280, 720)
-      elif config['video_quality_level'] == 1:
-        self._frame_dim = (1280, 720)
-      else:
-        self._frame_dim = (800, 450)
-
+      self._frame_dim = (
+          config['render_resolution_x'], config['render_resolution_y'])
+      if config['video_quality_level'] not in [1, 2]:
+        # Reduce resolution to (800, 450).
+        self._frame_dim = min(self._frame_dim, (800, 450))
       if video_format == 'avi':
         if config['video_quality_level'] == 2:
           fcc = cv2.VideoWriter_fourcc('p', 'n', 'g', ' ')
@@ -348,10 +346,9 @@ class ActiveDump(object):
       try:
         # For some reason sometimes the file is missing, so the code fails.
         if WRITE_FILES:
-          shutil.copy2(self._video_tmp, self._name + self._video_suffix)
+          shutil.move(self._video_tmp, self._name + self._video_suffix)
         dump_info['video'] = '%s%s' % (self._name, self._video_suffix)
         logging.info('Video written to %s%s', self._name, self._video_suffix)
-        os.remove(self._video_tmp)
       except:
         logging.error(traceback.format_exc())
     if self._dump_file:

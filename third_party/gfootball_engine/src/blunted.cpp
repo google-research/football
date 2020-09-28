@@ -37,7 +37,7 @@
 
 namespace blunted {
 
-void Initialize(Properties &config) {
+void Initialize() {
   DO_VALIDATION;
   // initialize resource managers
   GetContext().geometry_manager.RegisterLoader("ase", &GetContext().aseLoader);

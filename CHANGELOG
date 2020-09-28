@@ -5,6 +5,9 @@ should not change, as modifications made to the environment are either
 new features or backward compatible bug fixes. We will maintain vX branches
 pointing at the most recent vX.Y.
 
+v2.4
+- Support for configurable rendering resolution.
+- Kaggle competition links.
 
 v2.3
 - Fix to scenario's second_half feature.

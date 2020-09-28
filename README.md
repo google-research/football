@@ -5,7 +5,7 @@ Football. <br> It was created by the Google Brain team for research purposes.
 
 Useful links:
 
-* __(NEW!)__ [GRF Tournament](https://research-football.dev/tournament) - take part in the Tournament and become the new GRF Champion!
+* __(NEW!)__ [GRF Kaggle competition](https://www.kaggle.com/c/google-football) - take part in the competition playing games against others, win prizes and become the GRF Champion!
 * [GRF Game Server](https://research-football.dev/) - challenge other researchers!
 * [Run in Colab](https://colab.research.google.com/github/google-research/football/blob/master/gfootball/colabs/gfootball_example_from_prebuild.ipynb) - start training in less that 2 minutes.
 * [Google Research Football Paper](https://arxiv.org/abs/1907.11180)
@@ -183,7 +183,7 @@ For example extra_players='ppo2_cnn:right_players=1,policy=gfootball_impala_cnn,
 
 ### Rendering off-screen (on a display-less server / without GPU)
 It is possible to do software rendering with MESA. For that, before starting
-environment you need to create virtual display:
+environment you need to create virtual display (assuming you use the default resolution):
 
 ```
 Xvfb :1 -screen 0 1280x720x24+32 -fbdir /var/tmp &

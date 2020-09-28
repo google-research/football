@@ -27,7 +27,7 @@ try:
   import gfootball_engine as libgame
   from gfootball_engine import GameState
 except ImportError:
-  print ('Cannot import gfootball_engine. Package was not installed properly.')
+  print('Cannot import gfootball_engine. Package was not installed properly.')
 from gfootball.env import config as cfg
 from gfootball.env import constants
 from gfootball.env import football_action_set
@@ -66,11 +66,18 @@ class FootballEnvCore(object):
     if _unused_engines:
       self._env = _unused_engines.pop()
     else:
-      self._env = libgame.GameEnv()
-    self._env.game_config.physics_steps_per_frame = config['physics_steps_per_frame']
+      self._env = self._get_new_env()
     # Reset is needed here to make sure render() API call before reset() API
     # call works fine (get/setState makes sure env. config is the same).
     self.reset(inc=0)
+
+  def _get_new_env(self):
+    env = libgame.GameEnv()
+    env.game_config.physics_steps_per_frame = self._config[
+        'physics_steps_per_frame']
+    env.game_config.render_resolution_x = self._config['render_resolution_x']
+    env.game_config.render_resolution_y = self._config['render_resolution_y']
+    return env
 
   def _reset(self, animations, inc):
     global _unused_engines
@@ -256,7 +263,6 @@ class FootballEnvCore(object):
       self.write_dump('episode_done')
     return self._observation, reward, episode_done, info
 
-
   def _retrieve_observation(self):
     """Constructs observations exposed by the environment.
 
@@ -268,10 +274,15 @@ class FootballEnvCore(object):
     if self._env.game_config.render:
       frame = self._env.get_frame()
       frame = np.frombuffer(frame, dtype=np.uint8)
-      frame = np.reshape(frame, [1280, 720, 3])
+      frame = np.reshape(frame, [
+          self._config['render_resolution_x'],
+          self._config['render_resolution_y'], 3
+      ])
       frame = np.reshape(
-          np.concatenate([frame[:, :, 0], frame[:, :, 1], frame[:, :, 2]]),
-          [3, 720, 1280])
+          np.concatenate([frame[:, :, 0], frame[:, :, 1], frame[:, :, 2]]), [
+              3, self._config['render_resolution_y'],
+              self._config['render_resolution_x']
+          ])
       frame = np.transpose(frame, [1, 2, 0])
       frame = np.flip(frame, 0)
       result['frame'] = frame
@@ -405,7 +416,7 @@ class FootballEnvCore(object):
             self._env = _unused_rendering_engine
             _unused_rendering_engine = None
           else:
-            self._env = libgame.GameEnv()
+            self._env = self._get_new_env()
           self._rendering_in_use()
           self._reset(animations=False, inc=0)
           self.set_state(state)

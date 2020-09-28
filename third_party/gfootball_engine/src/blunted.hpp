@@ -25,7 +25,7 @@ namespace blunted {
   class Properties;
 
   /// load managers, systems, scheduler and scene
-  void Initialize(Properties &config);
+  void Initialize();
 
   /// unload all
   void Exit();

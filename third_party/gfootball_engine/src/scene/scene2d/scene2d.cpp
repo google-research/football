@@ -21,13 +21,9 @@
 
 namespace blunted {
 
-Scene2D::Scene2D(const Properties &config) {
+Scene2D::Scene2D(int width, int height) : width(width) , height(height), bpp(32) {
   DO_VALIDATION;
   supportedObjectTypes.push_back(e_ObjectType_Image2D);
-
-  width = config.GetInt("context_x", 1280);
-  height = config.GetInt("context_y", 720);
-  bpp = config.GetInt("context_bpp", 32);
 }
 
 Scene2D::~Scene2D() { DO_VALIDATION; }
