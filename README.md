@@ -24,39 +24,40 @@ We'd like to thank Bastiaan Konings Schuiling, who authored and open-sourced the
 
 ### In colab
 
-Open our example [Colab](https://colab.research.google.com/github/google-research/football/blob/master/gfootball/colabs/gfootball_example_from_prebuild.ipynb), that will allow you to start training your model in less than 2 minutes.
+- Open our example [Colab](https://colab.research.google.com/github/google-research/football/blob/master/gfootball/colabs/gfootball_example_from_prebuild.ipynb), that will allow you to start training your model in less than 2 minutes.
 
-This method doesn't support game rendering on screen - if you want to see the game running, please use the method below.
+- This method doesn't support game rendering on screen - if you want to see the game running, please use the method below.
 
 ### Using Docker
 
-This is the recommended way to avoid incompatible package versions.
+- This is the recommended way to avoid incompatible package versions.
 Instructions are available [here](gfootball/doc/docker.md).
 
 ### On your computer
 
-#### 1. Install required packages
-#### Linux
+- #### 1. Install required packages
+- #### Linux
 ```
 sudo apt-get install git cmake build-essential libgl1-mesa-dev libsdl2-dev \
 libsdl2-image-dev libsdl2-ttf-dev libsdl2-gfx-dev libboost-all-dev \
 libdirectfb-dev libst-dev mesa-utils xvfb x11vnc libsdl-sge-dev python3-pip
 ```
 
-#### Mac OS X
-First install [brew](https://brew.sh/). It should automatically install Command Line Tools.
-Next install required packages:
+- #### Mac OS X
+
+- First install [brew](https://brew.sh/). It should automatically install Command Line Tools.
+- Next install required packages:
 
 ```
 brew install git python3 cmake sdl2 sdl2_image sdl2_ttf sdl2_gfx boost boost-python3
 ```
-To set up `pygame`, it is also required to install older versions of SDL:
+ - To set up `pygame`, it is also required to install older versions of SDL:
 
 ```
 brew install sdl sdl_image sdl_mixer sdl_ttf portmidi
 ```
 
-#### 2a. From PyPi package
+- #### 2a. From PyPi package
 ```
 pip3 install gfootball
 ```
@@ -68,19 +69,19 @@ git clone https://github.com/google-research/football.git
 cd football
 ```
 
-Optionally you can use [virtual environment](https://docs.python.org/3/tutorial/venv.html):
+- Optionally you can use [virtual environment](https://docs.python.org/3/tutorial/venv.html):
 
 ```
 python3 -m venv football-env
 source football-env/bin/activate
 ```
 
-The last step is to build the environment:
+- The last step is to build the environment:
 
 ```
 pip3 install .
 ```
-This command can run for a couple of minutes, as it compiles the C++ environment in the background.
+- This command can run for a couple of minutes, as it compiles the C++ environment in the background.
 
 #### 3. Time to play!
 ```
