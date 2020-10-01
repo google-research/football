@@ -69,22 +69,22 @@ class TextWriter(object):
   def __init__(self, frame, x, y=0, field_coords=False, color=(255, 255, 255)):
     self._frame = frame
     if field_coords:
-      x = 400 * (x + 1) - 5
+      x = 400 * (x + 1) - 10
       y = 695 * (y + 0.43)
     self._pos_x = int(x)
     self._pos_y = int(y) + 20
     self._color = color
     self._font = cv2.FONT_HERSHEY_SIMPLEX
-    self._lineType = 1
+    self._lineType = 2
     self._arrow_types = ('top', 'top_right', 'right', 'bottom_right', 'bottom',
                          'bottom_left', 'left', 'top_left')
 
   def write(self, text, scale_factor=1, color=None):
     textPos = (self._pos_x, self._pos_y)
-    fontScale = 0.5 * scale_factor
+    fontScale = 0.8 * scale_factor
     cv2.putText(self._frame, text, textPos, self._font, fontScale, color or self._color,
                 self._lineType)
-    self._pos_y += int(20 * scale_factor)
+    self._pos_y += int(25 * scale_factor)
 
   def write_table(self, data, widths, scale_factor=1, offset=0):
     # data is a list of rows. Each row is a list of strings.
@@ -136,7 +136,7 @@ class TextWriter(object):
 
 def write_players_state(writer, players_info):
   table_text = [["PLAYER", "SPRINT", "DRIBBLE", "DIRECTION", "ACTION"]]
-  widths = [50, 50, 55, 60, 50]
+  widths = [65, 65, 70, 85, 85]
 
   # Sort the players according to the order they appear in observations
   for _, player_info in sorted(players_info.items()):
@@ -146,7 +146,7 @@ def write_players_state(writer, players_info):
       str(player_info.get("dribble", "-")),
       player_info.get("DIRECTION", "O"),
       player_info.get("ACTION", "-")])
-  writer.write_table(table_text, widths, scale_factor=0.7, offset=10)
+  writer.write_table(table_text, widths, scale_factor=1.0, offset=10)
 
 
 def get_frame(trace):
@@ -168,7 +168,7 @@ def get_frame(trace):
       trace['ball'][0],
       trace['ball'][1],
       field_coords=True,
-      color=(255, 0, 0))
+      color=(248, 244, 236))
   writer.write('B')
   for player_idx, player_coord in enumerate(trace['left_team']):
     writer = TextWriter(
@@ -176,7 +176,7 @@ def get_frame(trace):
         player_coord[0],
         player_coord[1],
         field_coords=True,
-        color=(0, 255, 0))
+        color=(238, 68, 47))
     letter = str(player_idx)
     if trace['left_team_roles'][player_idx] == e_PlayerRole_GK:
       letter = 'G'
@@ -187,7 +187,7 @@ def get_frame(trace):
         player_coord[0],
         player_coord[1],
         field_coords=True,
-        color=(255, 255, 0))
+        color=(99, 172, 190))
     letter = str(player_idx)
     if trace['right_team_roles'][player_idx] == e_PlayerRole_GK:
       letter = 'G'
@@ -267,12 +267,12 @@ class ActiveDump(object):
           player = 'G' if o['left_team_roles'][
               o['ball_owned_player']] == e_PlayerRole_GK else o[
                   'ball_owned_player']
-          writer.write('BALL OWNED: %s' % player, color=(0, 255, 0))
+          writer.write('BALL OWNED: %s' % player, color=(47, 68, 238))
         elif o['ball_owned_team'] == 1:
           player = 'G' if o['right_team_roles'][
               o['ball_owned_player']] == e_PlayerRole_GK else o[
                   'ball_owned_player']
-          writer.write('BALL OWNED: %s' % player, color=(0, 255, 255))
+          writer.write('BALL OWNED: %s' % player, color=(190, 172, 99))
         else:
           writer.write('BALL OWNED: ---')
         writer = TextWriter(frame, 0)
@@ -288,7 +288,7 @@ class ActiveDump(object):
             player_idx = o['%s_agent_controlled_player' % team][player]
             player_info = {}
             player_info['color'] = (
-                0, 255, 0) if team == 'left' else (0, 255, 255)
+                47, 68, 238) if team == 'left' else (190, 172, 99)
             player_info['id'] = 'G' if o[
                 '%s_team_roles' %
                 team][player_idx] == e_PlayerRole_GK else str(player_idx)

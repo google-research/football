@@ -63,7 +63,7 @@ Environment exposes following `raw` observations:
 - Screen:
     - `frame` - three vectors of RGB pixels representing rendered
     screen. It is only exposed when rendering is enabled (`render` flag). Size
-    of each vector is weightxheight of the rendered window, 1280x720 by default.
+    of each vector is weight by height of the rendered window, 1280 by 720 by default.
 
 Where `N` is the number of players on the team.
 

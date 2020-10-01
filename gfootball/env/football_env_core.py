@@ -161,11 +161,12 @@ class FootballEnvCore(object):
     ]
     self._step_count += 1
     # If agent 'holds' the game for too long, just start it.
-    if self._env.waiting_for_game_count > 20:
-      self._env.waiting_for_game_count = 0
+    if self._env.waiting_for_game_count == 20:
       action = [football_action_set.action_short_pass] * (
           self._env.config.left_agents + self._env.config.right_agents)
-
+    elif self._env.waiting_for_game_count > 20:
+      action = [football_action_set.action_idle] * (
+          self._env.config.left_agents + self._env.config.right_agents)
     assert len(action) == (
         self._env.config.left_agents + self._env.config.right_agents)
     debug = {}
