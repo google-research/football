@@ -156,7 +156,6 @@ void Referee::Process() {
           buffer.restartPos = Vector3(0, 0, 0);
           buffer.teamID = match->FirstTeam();
           buffer.setpiece_team = match->GetLastGoalTeam()->Opponent();
-          match->SetMatchPhase(e_MatchPhase_1stHalf);
         } else if ((ballPos.coords[0] > 0 && lastSide > 0) ||
                    (ballPos.coords[0] < 0 && lastSide < 0)) {
           DO_VALIDATION;

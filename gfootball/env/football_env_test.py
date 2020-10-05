@@ -143,11 +143,11 @@ class FootballEnvTest(parameterized.TestCase):
       if extensive:
 
         if hash_value != 1174966789:
-          self.assertEqual(hash_value, 1284406182)
+          self.assertEqual(hash_value, 29082684)
       elif episode % 2 == 0:
 
         if hash_value != 2275067030:
-          self.assertEqual(hash_value, 4024823270)
+          self.assertEqual(hash_value, 2143616507)
       else:
 
         if hash_value != 2045063811:

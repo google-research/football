@@ -5,6 +5,10 @@ should not change, as modifications made to the environment are either
 new features or backward compatible bug fixes. We will maintain vX branches
 pointing at the most recent vX.Y.
 
+
+v2.6
+- Address minor issues reported by Kaggle contestants.
+
 v2.5
 - Make 2D videos more readable and color-blind friendly.
 - Do not allow agents to block the game by exploiting kick-off.
