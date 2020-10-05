@@ -91,7 +91,7 @@ To quit the game press Ctrl+C in the terminal.
 
 # Contents #
 
-* [Running experiments](#training-agents-to-play-GRF)
+* [Running training](#training-agents-to-play-GRF)
 * [Playing the game](#playing-the-game)
     * [Keyboard mappings](#keyboard-mappings)
     * [Play vs built-in AI](#play-vs-built-in-AI)
