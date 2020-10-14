@@ -160,28 +160,34 @@ class FootballEnvCore(object):
         for a in action
     ]
     self._step_count += 1
-    # If agent 'holds' the game for too long, just start it.
-    if self._env.waiting_for_game_count == 20:
-      action = [football_action_set.action_short_pass] * (
-          self._env.config.left_agents + self._env.config.right_agents)
-    elif self._env.waiting_for_game_count > 20:
-      action = [football_action_set.action_idle] * (
-          self._env.config.left_agents + self._env.config.right_agents)
     assert len(action) == (
         self._env.config.left_agents + self._env.config.right_agents)
     debug = {}
     debug['action'] = action
     action_index = 0
-    for i in range(self._env.config.left_agents):
-      player_action = action[action_index]
-      action_index += 1
-      assert isinstance(player_action, football_action_set.CoreAction)
-      self._env.perform_action(player_action._backend_action, True, i)
-    for i in range(self._env.config.right_agents):
-      player_action = action[action_index]
-      action_index += 1
-      assert isinstance(player_action, football_action_set.CoreAction)
-      self._env.perform_action(player_action._backend_action, False, i)
+    for left_team in [True, False]:
+      agents = self._env.config.left_agents if left_team else self._env.config.right_agents
+      for i in range(agents):
+        player_action = action[action_index]
+
+        # If agent 'holds' the game for too long, just start it.
+        if self._env.waiting_for_game_count == 20:
+          player_action = football_action_set.action_short_pass
+        elif self._env.waiting_for_game_count > 20:
+          player_action = football_action_set.action_idle
+          controlled_players = self._observation[
+              'left_agent_controlled_player'] if left_team else self._observation[
+                  'right_agent_controlled_player']
+          if self._observation['ball_owned_team'] != -1 and self._observation[
+              'ball_owned_team'] ^ left_team and controlled_players[
+                  i] == self._observation['ball_owned_player']:
+            if self._env.waiting_for_game_count < 30:
+              player_action = football_action_set.action_left
+            else:
+              player_action = football_action_set.action_right
+        action_index += 1
+        assert isinstance(player_action, football_action_set.CoreAction)
+        self._env.perform_action(player_action._backend_action, left_team, i)
     while True:
       enter_time = timeit.default_timer()
       self._env.step()

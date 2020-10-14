@@ -5,6 +5,9 @@ should not change, as modifications made to the environment are either
 new features or backward compatible bug fixes. We will maintain vX branches
 pointing at the most recent vX.Y.
 
+v2.7
+- Fix propagation of a single pass/shot action between players upon control switch.
+- Improve logic which prevents agents blocking the game.
 
 v2.6
 - Address minor issues reported by Kaggle contestants.

@@ -118,7 +118,7 @@ class TextWriter(object):
     thickness = 1
     arrow_offsets = {
         'top': (12, 0, 12, -16),
-        'top_right': (16, -4, 4, -16),
+        'top_right': (4, -4, 16, -16),
         'right': (0, -10, 20, -10),
         'bottom_right': (4, -16, 16, -4),
         'bottom': (10, -16, 10, 0),

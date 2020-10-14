@@ -143,15 +143,15 @@ class FootballEnvTest(parameterized.TestCase):
       if extensive:
 
         if hash_value != 1174966789:
-          self.assertEqual(hash_value, 29082684)
+          self.assertEqual(hash_value, 2674313618)
       elif episode % 2 == 0:
 
         if hash_value != 2275067030:
-          self.assertEqual(hash_value, 2143616507)
+          self.assertEqual(hash_value, 1402284732)
       else:
 
         if hash_value != 2045063811:
-          self.assertEqual(hash_value, 1264083657)
+          self.assertEqual(hash_value, 51517772)
     env.close()
 
   def test___control_all_players(self):

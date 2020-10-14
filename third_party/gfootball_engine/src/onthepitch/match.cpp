@@ -679,8 +679,20 @@ void Match::ProcessState(EnvState* state) {
   }
   matchData->ProcessState(state, first_team);
   officials->ProcessState(state);
-  for (auto& c : controllers) {
-    c->ProcessState(state);
+  {
+    std::vector<HumanGamer*> human_gamers;
+    std::set<AIControlledKeyboard*> visited;
+    teams[first_team]->GetHumanControllers(human_gamers);
+    teams[second_team]->GetHumanControllers(human_gamers);
+    for (auto& c : human_gamers) {
+      c->GetHIDevice()->ProcessState(state);
+      visited.insert(c->GetHIDevice());
+    }
+    for (auto& c : controllers) {
+      if (!visited.count(c)) {
+        c->ProcessState(state);
+      }
+    }
   }
   ball->ProcessState(state);
   state->process(matchTime_ms);
