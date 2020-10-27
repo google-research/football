@@ -273,6 +273,12 @@ void Referee::Process() {
 void Referee::PrepareSetPiece(e_GameMode setPiece) {
   DO_VALIDATION;
   // position players for set piece situation
+  if (setPiece == e_GameMode_FreeKick) {
+    buffer.restartPos.coords[0] = clamp(buffer.restartPos.coords[0],
+                                        -0.95 * pitchHalfW, 0.95 * pitchHalfW);
+    buffer.restartPos.coords[1] = clamp(buffer.restartPos.coords[1],
+                                        -0.95 * pitchHalfH, 0.95 * pitchHalfH);
+  }
   match->ResetSituation(GetScenarioConfig().reverse_team_processing
                             ? -buffer.restartPos
                             : buffer.restartPos);

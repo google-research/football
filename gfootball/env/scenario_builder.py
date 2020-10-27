@@ -16,13 +16,13 @@
 """Class responsible for generating scenarios."""
 
 import importlib
-from absl import logging
 import os
 import pkgutil
 import random
 import sys
 
 from absl import flags
+from absl import logging
 
 import gfootball_engine as libgame
 

@@ -31,6 +31,9 @@ include_directories(${OPENGL_INCLUDE_DIR})
 FIND_PACKAGE(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIR})
 
+FIND_PACKAGE(EGL REQUIRED)
+include_directories(${EGL_INCLUDE_DIR})
+
 FIND_PACKAGE(SDL2_image REQUIRED)
 include_directories(${SDL2_IMAGE_DIRS})
 
@@ -128,7 +131,7 @@ add_library(datalib ${DATA_SOURCES} ${DATA_HEADERS})
 set(LIBRARIES gamelib menulib datalib blunted2
    Boost::filesystem Boost::system Boost::thread Boost::${BOOST_PYTHON_VERSION} ${PYTHON_LIBRARY}
    ${SDL2_IMAGE_LIBRARIES} ${SDL2_TTF_LIBRARIES} ${SDL2_GFX_LIBRARIES}
-   ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES})
+   ${SDL2_LIBRARIES} ${EGL_LIBRARIES} ${OPENGL_LIBRARIES})
 add_library(baselib OBJECT ${BASE_SOURCES} ${BASE_HEADERS}
    ${BASE_GEOMETRY_HEADERS} ${BASE_MATH_HEADERS})
 add_library(systemscommonlib OBJECT ${SYSTEMS_COMMON_SOURCES}

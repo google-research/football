@@ -6,13 +6,42 @@ git clone https://github.com/google-research/football.git
 cd football
 ```
 
-## CPU version
-1. Build with `docker build --build-arg DOCKER_BASE=ubuntu:18.04 --build-arg DEVICE=cpu . -t gfootball`
-1. Enter the image with `docker run -e DISPLAY=$DISPLAY -it -v /tmp/.X11-unix:/tmp/.X11-unix:rw gfootball bash`
+## Configure Docker
+In order to see rendered game you need to allow Docker containers access X server:
 
-## GPU version
-1. Build with `docker build --build-arg DOCKER_BASE=tensorflow/tensorflow:1.15.2-gpu-py3 --build-arg DEVICE=gpu . -t gfootball`
-1. Enter the image with `nvidia-docker run -e DISPLAY=$DISPLAY -it -v /tmp/.X11-unix:/tmp/.X11-unix:rw gfootball bash` or `docker run --gpus all -e DISPLAY=$DISPLAY -it -v /tmp/.X11-unix:/tmp/.X11-unix:rw gfootball bash` for docker 19.03 or later.
+```
+xhost +"local:docker@"
+```
+
+This command has to be executed after each reboot. Alternatively you can add this
+command to `/etc/profile` to not worry about it in the future.
+
+## Build Docker image
+
+### Tensorflow without GPU-training support version
+
+```
+docker build --build-arg DOCKER_BASE=ubuntu:18.04 --build-arg DEVICE=cpu . -t gfootball
+```
+
+### Tensorflow with GPU-training support version
+
+```
+docker build --build-arg DOCKER_BASE=tensorflow/tensorflow:1.15.2-gpu-py3 --build-arg DEVICE=gpu . -t gfootball
+```
+
+## Start the Docker image
+
+```
+docker run --gpus all -e DISPLAY=$DISPLAY -it -v /tmp/.X11-unix:/tmp/.X11-unix:rw gfootball bash
+```
+
+If you get errors related to `--gpus all` flag, you can replace it with `--device /dev/dri/[X]`
+adding this flag for every file in the `/dev/dri/` directory. It makes sure that GPU is
+visibile inside the Docker image. You can also drop it altogether (environment
+will try to perform software rendering).
+
+## Run environment
 
 Inside the Docker image you can interact with the environment the same way as in case of local installation.
 For example, to play the game yourself you can run:

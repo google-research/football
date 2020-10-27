@@ -6,7 +6,7 @@ Football. <br> It was created by the Google Brain team for research purposes.
 Useful links:
 
 * __(NEW!)__ [GRF Kaggle competition](https://www.kaggle.com/c/google-football) - take part in the competition playing games against others, win prizes and become the GRF Champion!
-* [GRF Game Server](https://research-football.dev/) - challenge other researchers!
+* [GRF Game Server](https://research-football.dev/) - challenge other researchers (replaced by GRF Kaggle competition, frozen ranking available).
 * [Run in Colab](https://colab.research.google.com/github/google-research/football/blob/master/gfootball/colabs/gfootball_example_from_prebuild.ipynb) - start training in less that 2 minutes.
 * [Google Research Football Paper](https://arxiv.org/abs/1907.11180)
 * [GoogleAI blog post](https://ai.googleblog.com/2019/06/introducing-google-research-football.html)
@@ -178,16 +178,3 @@ where `$CHECKPOINT` is the path to downloaded checkpoint.
 
 In order to train against a checkpoint, you can pass 'extra_players' argument to create_environment function.
 For example extra_players='ppo2_cnn:right_players=1,policy=gfootball_impala_cnn,checkpoint=$CHECKPOINT'.
-
-## Frequent Problems & Solutions
-
-### Rendering off-screen (on a display-less server / without GPU)
-It is possible to do software rendering with MESA. For that, before starting
-environment you need to create virtual display (assuming you use the default resolution):
-
-```
-Xvfb :1 -screen 0 1280x720x24+32 -fbdir /var/tmp &
-export DISPLAY=:1
-```
-
-Note that software rendering significantly increases CPU usage and is slow.
