@@ -272,7 +272,7 @@ class SingleAgentRewardWrapper(gym.RewardWrapper):
     return reward[0]
 
 
-class CheckpointRewardWrapper(gym.RewardWrapper):
+class CheckpointRewardWrapper(gym.RewardWrapper, custom_rewards=None):
   """A wrapper that adds a dense checkpoint reward."""
 
   def __init__(self, env):
@@ -333,6 +333,34 @@ class CheckpointRewardWrapper(gym.RewardWrapper):
         reward[rew_index] += self._checkpoint_reward
         self._collected_checkpoints[rew_index] = (
             self._collected_checkpoints.get(rew_index, 0) + 1)
+
+    def _possession_reward(obs, weight):
+        if obs['ball_owned_team'] == 0:
+            return weight
+        elif obs['ball_owned_team'] == 1:
+            return -1 * weight
+        elif obs['ball_owned_team'] == -1:
+            return 0
+
+
+    def _final_score_reward(obs, weight):
+        if obs['steps_left'] == 0:
+            our_score, opp_score = obs['score']
+            score_diff = our_score - opp_score
+        if score_diff > 0:
+            return weight
+        elif score_diff == 0:
+            return -0.1 * weight
+        elif score_diff < 0:
+            return -2 * weight
+
+
+    if 'possession_reward' in custom_rewards:
+        reward[rew_index] += possession_reward(o, weight=0.1)
+    if 'final_victory_reward' in custom_rewards:
+        reward[rew_index] += final_score_reward(o, weight=100)
+
+
     return reward
 
 
