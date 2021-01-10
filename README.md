@@ -1,7 +1,7 @@
 # Google Research Football
 
 ## Neue Zeilen einfügen
-Ein Paar neue Zeilen
+Ein Paar neue Zeilen\n
 Nur zum Lernen der Git Grundlagn
 
 This repository contains an RL environment based on open-source game Gameplay
