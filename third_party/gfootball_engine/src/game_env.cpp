@@ -347,7 +347,7 @@ void GameEnv::step() {
 }
 
 void GameEnv::ProcessState(EnvState* state) {
-  state->process(&this->state, sizeof(this->state));
+  state->process(this->state);
   state->process(waiting_for_game_count);
   context->ProcessState(state);
   context->gameTask->GetMatch()->ProcessState(state);

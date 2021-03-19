@@ -15,14 +15,14 @@
 
 """Football action set tests."""
 
-import unittest
+from absl.testing import absltest
 from gfootball.env import football_action_set
 import numpy as np
 
 named_action_from_action_set = football_action_set.named_action_from_action_set
 
 
-class FootballActionSetTest(unittest.TestCase):
+class FootballActionSetTest(absltest.TestCase):
 
   def test_action_from_basic_action_set(self):
     action_set = football_action_set.get_action_set({'action_set': 'default'})
@@ -71,4 +71,4 @@ class FootballActionSetTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

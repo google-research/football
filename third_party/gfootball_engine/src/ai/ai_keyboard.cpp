@@ -72,11 +72,12 @@ void AIControlledKeyboard::ProcessState(EnvState* state) {
   DO_VALIDATION;
   state->setValidate(false);
   state->process(mirror);
-  state->process((void*) &playerColor, sizeof(playerColor));
   state->process(direction_);
   state->setValidate(true);
   state->process(disabled_);
-  state->process((void*)buttons_pressed_, sizeof(buttons_pressed_));
+  for (auto& b : buttons_pressed_) {
+    state->process(b);
+  }
 }
 
 void AIControlledKeyboard::Mirror(float mirror) {

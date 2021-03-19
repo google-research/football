@@ -1234,7 +1234,7 @@ void Animation::DirtyCache() {
     // extensions;
     // boost::shared_ptr<XMLTree> customData;
     // VariableCache variableCache;
-    state->process(&currentFoot, sizeof(currentFoot));
+    state->process(currentFoot);
     state->process(cache_translation_dirty);
     if (!cache_translation_dirty) {
       state->process(cache_translation);
@@ -1282,7 +1282,7 @@ void Animation::DirtyCache() {
     if (!cache_outgoingBodyDirection_dirty) {
       state->process(cache_outgoingBodyDirection);
     }
-    state->process(&cache_AnimType, sizeof(e_DefString));
+    state->process(cache_AnimType);
   }
 
   void Animation::AddExtension(

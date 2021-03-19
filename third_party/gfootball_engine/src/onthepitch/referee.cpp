@@ -43,7 +43,7 @@ void Foul::ProcessState(EnvState *state) {
 void RefereeBuffer::ProcessState(EnvState *state) {
   DO_VALIDATION;
   state->process(active);
-  state->process((void*) &desiredSetPiece, sizeof(desiredSetPiece));
+  state->process(desiredSetPiece);
   if (state->getConfig()->reverse_team_processing) {
     teamID = 1 - teamID;
   }

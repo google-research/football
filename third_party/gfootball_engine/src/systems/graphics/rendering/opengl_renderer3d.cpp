@@ -405,8 +405,19 @@ void OpenGLRenderer3D::CreateContextSdl() {
   if (!context) {
     DO_VALIDATION;
     std::string errorString = SDL_GetError();
-    Log(e_FatalError, "OpenGLRenderer3D", "CreateContext",
-        "Failed on SDL error: " + errorString);
+    std::cout << "Failed on SDL error: " << errorString << std::endl;
+    std::cout << "You can solve this problem by:" << std::endl;
+    std::cout << "1) If you are running inside Docker make sure container has "
+                 "access to XServer by running (outside of the container):"
+              << std::endl;
+    std::cout << "  > xhost +\"local:docker@\"" << std::endl;
+    std::cout << "2) Switch to off-screen rendering by unsetting DISPLAY "
+                 "environment variable"
+              << std::endl;
+    std::cout
+        << "3) Disable 3D rendering (which makes environment run much faster)."
+        << std::endl;
+    exit(1);
   }
 #define SDL_PROC(ret, func, params)                                        \
   do {                                                                     \
@@ -526,13 +537,6 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
   // default values
   this->cameraNear = 30.0;
   this->cameraFar = 270.0;
-
-  // In case of using MESA, make sure required versions are reported
-  // (MESA supports way higher version, but doesn't report it).
-  char kGLVersion[] = "MESA_GL_VERSION_OVERRIDE=3.2";
-  char kGLSLMesaVersion[] = "MESA_GLSL_VERSION_OVERRIDE=150";
-  putenv(kGLVersion);
-  putenv(kGLSLMesaVersion);
 
   if (!getenv("DISPLAY")) {
     std::cout << "No DISPLAY defined, doing off-screen rendering" << std::endl;

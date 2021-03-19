@@ -40,6 +40,8 @@ Instructions are available [here](gfootball/doc/docker.md).
 sudo apt-get install git cmake build-essential libgl1-mesa-dev libsdl2-dev \
 libsdl2-image-dev libsdl2-ttf-dev libsdl2-gfx-dev libboost-all-dev \
 libdirectfb-dev libst-dev mesa-utils xvfb x11vnc libsdl-sge-dev python3-pip
+
+python3 -m pip install --upgrade pip setuptools psutil
 ```
 
 #### Mac OS X
@@ -57,7 +59,7 @@ brew install sdl sdl_image sdl_mixer sdl_ttf portmidi
 
 #### 2a. From PyPi package
 ```
-pip3 install gfootball
+python3 -m pip install gfootball
 ```
 
 #### 2b. Installing from sources using GitHub repository
@@ -77,7 +79,7 @@ source football-env/bin/activate
 The last step is to build the environment:
 
 ```
-pip3 install .
+python3 -m pip install .
 ```
 This command can run for a couple of minutes, as it compiles the C++ environment in the background.
 
@@ -102,20 +104,20 @@ To quit the game press Ctrl+C in the terminal.
 * [Multi-agent support](gfootball/doc/multi_agent.md)
 * [Running in docker](gfootball/doc/docker.md)
 * [Saving replays, logs, traces](gfootball/doc/saving_replays.md)
+* [Imitation Learning](gfootball/doc/imitation.md)
 
 ## Training agents to play GRF
 
 ### Run training
-In order to run TF training, install additional dependencies
-(or alternatively use provided [Docker image](gfootball/doc/docker.md)):
+In order to run TF training, you need to install additional dependencies
 
 - Update PIP, so that tensorflow 1.15 is available: `python3 -m pip install --upgrade pip setuptools`
-- TensorFlow: `pip3 install tensorflow==1.15.*` or
-  `pip3 install tensorflow-gpu==1.15.*`, depending on whether you want CPU or
+- TensorFlow: `python3 -m pip install tensorflow==1.15.*` or
+  `python3 -m pip install tensorflow-gpu==1.15.*`, depending on whether you want CPU or
   GPU version;
-- Sonnet: `pip3 install dm-sonnet==1.*`;
+- Sonnet: `python3 -m pip install dm-sonnet==1.*`;
 - OpenAI Baselines:
-  `pip3 install git+https://github.com/openai/baselines.git@master`.
+  `python3 -m pip install git+https://github.com/openai/baselines.git@master`.
 
 Then:
 

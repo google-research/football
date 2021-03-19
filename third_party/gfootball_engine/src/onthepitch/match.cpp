@@ -698,7 +698,7 @@ void Match::ProcessState(EnvState* state) {
   state->process(matchTime_ms);
   state->process(actualTime_ms);
   state->process(goalScoredTimer);
-  state->process((void*) &matchPhase, sizeof(e_MatchPhase));
+  state->process(matchPhase);
   state->process(inPlay);
   state->process(inSetPiece);
   state->process(goalScored);

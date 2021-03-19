@@ -2306,14 +2306,14 @@ void HumanoidBase::ProcessState(EnvState *state) {
   offsets.ProcessState(state);
   currentAnim.ProcessState(state);
   state->process(previousAnim_frameNum);
-  state->process(&previousAnim_functionType, sizeof(previousAnim_functionType));
+  state->process(previousAnim_functionType);
   state->process(startPos);
   state->process(startAngle);
   state->process(nextStartPos);
   state->process(nextStartAngle);
   spatialState.ProcessState(state);
   state->process(previousPosition2D);
-  state->process((void*) &interruptAnim, sizeof(interruptAnim));
+  state->process(interruptAnim);
   state->process(reQueueDelayFrames);
   state->process(tripType);
   state->process(tripDirection);

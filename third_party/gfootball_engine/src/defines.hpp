@@ -78,22 +78,22 @@ class EnvState {
   EnvState(GameEnv* game_env, const std::string& state, const std::string reference = "");
   const ScenarioConfig* getConfig() { return scenario_config; }
   const GameContext* getContext() { return context; }
-  void process(unsigned long &value);
-  void process(unsigned int &value);
-  void process(bool &value);
-  void process(blunted::Vector3 &value);
-  void process(blunted::radian &value);
-  void process(blunted::Quaternion &value);
-  void process(int &value);
   void process(std::string &value);
-  void process(float &value);
   void process(blunted::Animation* &value);
-  template<typename T> void process(T& collection) {
+  template<typename T> void process(std::vector<T>& collection) {
     int size = collection.size();
-    process(&size, sizeof(int));
+    process(size);
     collection.resize(size);
     for (auto& el : collection) {
-      process(&el, sizeof(el));
+      process(el);
+    }
+  }
+  template<typename T> void process(std::list<T>& collection) {
+    int size = collection.size();
+    process(size);
+    collection.resize(size);
+    for (auto& el : collection) {
+      process(el);
     }
   }
   void process(Player*& value);
@@ -113,33 +113,33 @@ class EnvState {
     this->crash = crash;
   }
   bool Load() { return load; }
-  void process(void* ptr, int size);
   int getpos() {
     return pos;
   }
   bool eos();
-  template<typename T> void process(T* ptr, int size) {
+  template<typename T> void process(T& obj) {
     if (load) {
-      if (pos + size > state.size()) {
+      if (pos + sizeof(T) > state.size()) {
         Log(blunted::e_FatalError, "EnvState", "state", "state is invalid");
       }
-      memcpy(ptr, &state[pos], size);
-      pos += size;
+      memcpy(&obj, &state[pos], sizeof(T));
+      pos += sizeof(T);
     } else {
-      state.resize(pos + size);
-      memcpy(&state[pos], ptr, size);
+      state.resize(pos + sizeof(T));
+      memcpy(&state[pos], &obj, sizeof(T));
       if (disable_cnt == 0 && !reference.empty() && (*(T*) &state[pos]) != (*(T*) &reference[pos])) {
         failure = true;
         if (crash) {
           T ref_value;
-          memcpy(&ref_value, &reference[pos], size);
+          memcpy(&ref_value, &reference[pos], sizeof(T));
           std::cout << "Position:  " << pos << std::endl;
-          std::cout << "Value:     " << *ptr << std::endl;
+          std::cout << "Type:      " << typeid(obj).name() << std::endl;
+          std::cout << "Value:     " << obj << std::endl;
           std::cout << "Reference: " << ref_value << std::endl;
           Log(blunted::e_FatalError, "EnvState", "state", "Reference mismatch");
         }
       }
-      pos += size;
+      pos += sizeof(T);
       if (pos > 10000000) {
         Log(blunted::e_FatalError, "EnvState", "state", "state is too big");
       }
@@ -152,10 +152,10 @@ class EnvState {
   void SetTeams(Team* team0, Team* team1);
   const std::string& GetState();
  protected:
+  bool failure = false;
   bool stack = true;
   bool load = false;
   char disable_cnt = 0;
-  bool failure = false;
   bool crash = true;
   std::vector<Player*> players;
   std::vector<blunted::Animation*> animations;

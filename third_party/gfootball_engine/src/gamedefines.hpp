@@ -215,10 +215,10 @@ struct PlayerCommand {
 
   int            modifier;
   void ProcessState(EnvState* state) { DO_VALIDATION;
-    state->process(static_cast<void*>(&desiredFunctionType), sizeof(desiredFunctionType));
+    state->process(desiredFunctionType);
     state->process(useDesiredMovement);
     state->process(desiredDirection);
-    state->process(static_cast<void*>(&strictMovement), sizeof(strictMovement));
+    state->process(strictMovement);
     state->process(desiredVelocityFloat);
     state->process(useDesiredLookAt);
     state->process(desiredLookAt);
@@ -258,8 +258,7 @@ struct FormationEntry {
   // Constructor accepts environment coordinates.
   FormationEntry(float x, float y, e_PlayerRole role, bool lazy,
                  bool controllable)
-      : databasePosition(x, y * FORMATION_Y_SCALE, 0),
-        position(x, y * FORMATION_Y_SCALE, 0),
+      : position(x, y * FORMATION_Y_SCALE, 0),
         start_position(x, y * FORMATION_Y_SCALE, 0),
         role(role),
         lazy(lazy),
@@ -269,7 +268,6 @@ struct FormationEntry {
   bool operator == (const FormationEntry& f) const {
     return role == f.role &&
         lazy == f.lazy &&
-        databasePosition == f.databasePosition &&
         position == f.position &&
         controllable == f.controllable;
   }
@@ -279,14 +277,12 @@ struct FormationEntry {
                    position.coords[2]);
   }
   void ProcessState(EnvState* state) { DO_VALIDATION;
-    state->process(static_cast<void*>(&role), sizeof(role));
-    state->process(databasePosition);
+    state->process(role);
     state->process(position);
     state->process(start_position);
     state->process(lazy);
     state->process(controllable);
   }
-  Vector3 databasePosition;
   Vector3 position; // adapted to player role (combination of databasePosition and hardcoded role position)
   Vector3 start_position;
   e_PlayerRole role = e_PlayerRole_GK;
@@ -307,8 +303,8 @@ struct PlayerImage {
     state->process(directionVec);
     state->process(movement);
     state->process(player);
-    state->process(&velocity, sizeof(velocity));
-    state->process(&role, sizeof(role));
+    state->process(velocity);
+    state->process(role);
   }
   void Mirror() { DO_VALIDATION;
     position.Mirror();

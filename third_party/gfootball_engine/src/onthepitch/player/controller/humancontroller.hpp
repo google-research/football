@@ -49,7 +49,7 @@ class HumanController : public PlayerController {
       ProcessPlayerController(state);
       hid->ProcessState(state);
       state->process(actionMode);
-      state->process(static_cast<void*>(&actionButton), sizeof(actionButton));
+      state->process(actionButton);
       state->process(actionBufferTime_ms);
       state->process(gauge_ms);
       state->process(previousDirection);

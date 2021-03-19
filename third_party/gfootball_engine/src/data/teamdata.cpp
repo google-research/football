@@ -173,7 +173,7 @@ TeamData::TeamData(int teamDatabaseID, const std::vector<FormationEntry> &f) {
       DO_VALIDATION;
       if ((*iter).first == "p" + int_to_str(num + 1)) {
         DO_VALIDATION;
-        formation[num].databasePosition = GetVectorFromString(
+        Vector3 databasePosition = GetVectorFromString(
             (*iter).second.children.find("position")->second.value);
         formation[num].role = GetRoleFromString(
             (*iter).second.children.find("role")->second.value);
@@ -181,13 +181,8 @@ TeamData::TeamData(int teamDatabaseID, const std::vector<FormationEntry> &f) {
         // combine custom positions with hardcoded formation positions belonging
         // to certain roles. this way, more extreme user formation settings are
         // 'normalized' somewhat.
-        formation[num].position =
-            formation[num].databasePosition * 0.6f +
+        formation[num].position = databasePosition * 0.6f +
             GetDefaultRolePosition(formation[num].role) * 0.4f;
-
-        // GetVectorFromString((*iter).second.children.find("position")->second.value).Print();
-        // printf("%s\n",
-        // (*iter).second.children.find("role")->second.value.c_str());
       }
     }
 

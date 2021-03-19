@@ -21,13 +21,13 @@ command to `/etc/profile` to not worry about it in the future.
 ### Tensorflow without GPU-training support version
 
 ```
-docker build --build-arg DOCKER_BASE=ubuntu:18.04 --build-arg DEVICE=cpu . -t gfootball
+docker build --build-arg DOCKER_BASE=ubuntu:18.04 --build-arg . -t gfootball
 ```
 
 ### Tensorflow with GPU-training support version
 
 ```
-docker build --build-arg DOCKER_BASE=tensorflow/tensorflow:1.15.2-gpu-py3 --build-arg DEVICE=gpu . -t gfootball
+docker build --build-arg DOCKER_BASE=tensorflow/tensorflow:1.15.2-gpu-py3 . -t gfootball
 ```
 
 ## Start the Docker image
@@ -50,11 +50,7 @@ For example, to play the game yourself you can run:
 python3 -m gfootball.play_game --action_set=full
 ```
 
-Or you can run a sample PPO2 training with:
-
-```
-python3 -m gfootball.examples.run_ppo2
-```
+To run example PPO2 training you need to install OpenAI Baselines in addition.
 
 ## Building a docker image under MacOS
 

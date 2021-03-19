@@ -5,6 +5,10 @@ should not change, as modifications made to the environment are either
 new features or backward compatible bug fixes. We will maintain vX branches
 pointing at the most recent vX.Y.
 
+v2.9
+- Drop hard dependency on Tensorflow.
+- Make installation easier, support for Ubuntu 20.04.
+
 v2.8
 - Added support for hardware accelerated headless rendering.
 - Minor fixes for the issues reported by Kaggle contestants.

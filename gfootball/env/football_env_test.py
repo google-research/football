@@ -27,6 +27,7 @@ import os
 import random
 import threading
 import zlib
+from absl.testing import absltest
 
 from gfootball.env import config
 from gfootball.env import football_action_set
@@ -36,7 +37,6 @@ from gfootball.env import scenario_builder
 import numpy as np
 import psutil
 from six.moves import range
-import unittest
 
 fast_run = False
 
@@ -285,7 +285,7 @@ class FootballEnvTest(parameterized.TestCase):
     for _ in range(10):
       o, _, _, _ = env.step(football_action_set.action_right)
       hash_value = observation_hash(o, hash_value)
-    self.assertEqual(hash_value, 18699114)
+    self.assertEqual(hash_value, 2591249504)
     env.close()
 
   def test_dynamic_render(self):
@@ -686,4 +686,4 @@ class FootballEnvTest(parameterized.TestCase):
 
 
 if __name__ == '__main__':
-  unittest.main(failfast=True)
+  absltest.main(failfast=True)

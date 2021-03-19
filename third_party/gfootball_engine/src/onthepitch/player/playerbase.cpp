@@ -161,7 +161,7 @@ void PlayerBase::ProcessStateBase(EnvState *state) {
   }
   state->process(externalController);
   state->process(lastTouchTime_ms);
-  state->process(&lastTouchType, sizeof(e_TouchType));
+  state->process(lastTouchType);
   state->process(fatigueFactorInv);
   state->process(positionHistoryPerSecond);
 }

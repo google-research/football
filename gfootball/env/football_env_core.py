@@ -181,7 +181,7 @@ class FootballEnvCore(object):
           if self._observation['ball_owned_team'] != -1 and self._observation[
               'ball_owned_team'] ^ left_team and controlled_players[
                   i] == self._observation['ball_owned_player']:
-            if self._env.waiting_for_game_count < 30:
+            if bool(self._env.waiting_for_game_count < 30) != bool(left_team):
               player_action = football_action_set.action_left
             else:
               player_action = football_action_set.action_right

@@ -21,18 +21,18 @@ from __future__ import print_function
 
 import glob
 import os
-import unittest
 import zlib
+from absl.testing import absltest
+
 from gfootball.env import config
 from gfootball.env import football_action_set
 from gfootball.env import football_env
 from gfootball.env import script_helpers
-import six.moves.cPickle
 
 test_tmpdir = '/tmp/gfootball_test'
 
 
-class ScriptHelpersTest(unittest.TestCase):
+class ScriptHelpersTest(absltest.TestCase):
 
   def generate_replay(self):
     """Generates replay of an episode."""
@@ -101,4 +101,4 @@ class ScriptHelpersTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

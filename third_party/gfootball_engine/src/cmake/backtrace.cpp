@@ -19,9 +19,9 @@
 #include <unistd.h>
 
 void print_stacktrace() {
-  void *array[10];
+  void *array[20];
   size_t size;
-  size = backtrace(array, 10);
+  size = backtrace(array, 20);
   backtrace_symbols_fd(array, size, STDERR_FILENO);
 }
 
