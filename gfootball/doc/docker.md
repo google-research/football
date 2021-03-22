@@ -21,7 +21,7 @@ command to `/etc/profile` to not worry about it in the future.
 ### Tensorflow without GPU-training support version
 
 ```
-docker build --build-arg DOCKER_BASE=ubuntu:18.04 --build-arg . -t gfootball
+docker build --build-arg DOCKER_BASE=ubuntu:20.04 . -t gfootball
 ```
 
 ### Tensorflow with GPU-training support version
