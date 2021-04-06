@@ -175,7 +175,9 @@ We provide trained PPO checkpoints for the following scenarios:
 
 In order to see the checkpoints playing, run
 `python3 -m gfootball.play_game --players "ppo2_cnn:left_players=1,policy=gfootball_impala_cnn,checkpoint=$CHECKPOINT" --level=$LEVEL`,
-where `$CHECKPOINT` is the path to downloaded checkpoint.
+where `$CHECKPOINT` is the path to downloaded checkpoint. Please note that the checkpoints were trained with Tensorflow 1.15 version. Using 
+different Tensorflow version may result in errors. The easiest way to run these checkpoints is through provided `Dockerfile_examples` image.
+See [running in docker](gfootball/doc/docker.md) for details (just override the default Docker definition with `-f Dockerfile_examples` parameter).
 
 In order to train against a checkpoint, you can pass 'extra_players' argument to create_environment function.
 For example extra_players='ppo2_cnn:right_players=1,policy=gfootball_impala_cnn,checkpoint=$CHECKPOINT'.
