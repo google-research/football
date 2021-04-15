@@ -150,6 +150,10 @@ class FootballEnvCore(object):
   def __del__(self):
     self.close()
 
+  def compute_reward(self):
+    score_diff = self._observation['score'][0] - self._observation['score'][1]
+    return score_diff - self._state.previous_score_diff
+
   def step(self, action, extra_data={}):
     assert self._env.state != GameState.game_done, (
         'Cant call step() once episode finished (call reset() instead)')
@@ -224,12 +228,13 @@ class FootballEnvCore(object):
 
     # Compute reward.
     score_diff = self._observation['score'][0] - self._observation['score'][1]
-    reward = score_diff - self._state.previous_score_diff
+    goal_diff = score_diff - self._state.previous_score_diff
     self._state.previous_score_diff = score_diff
-    if reward == 1:
+    if goal_diff == 1:
       self._trace.write_dump('score')
-    elif reward == -1:
+    elif goal_diff == -1:
       self._trace.write_dump('lost_score')
+    reward = self.compute_reward()
     debug['reward'] = reward
     if self._observation['game_mode'] != int(
         libgame.e_GameMode.e_GameMode_Normal):

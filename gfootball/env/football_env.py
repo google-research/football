@@ -45,9 +45,21 @@ class FootballEnv(gym.Env):
     self._agent_left_position = -1
     self._agent_right_position = -1
     self._players = self._construct_players(config['players'], player_config)
-    self._env = football_env_core.FootballEnvCore(self._config)
+    self._env = _get_environment_core(config['environment_core_type'])
     self._num_actions = len(football_action_set.get_action_set(self._config))
     self._cached_observation = None
+
+  _environment_cores = {
+      'base': football_env_core.FootballEnvCore,
+      'party': football_env_core.PartyEnvCore,
+  }
+
+  def _get_environment_core(core_type):
+    if core_type not in _environment_cores:
+      raise Exception(f'Invalid environment_core_type: {core_type} . ' +
+          'Expected one of: [{}]'.format(', '.join(_environment_cores.keys())))
+
+    return _environment_cores[core_type]
 
   @property
   def action_space(self):
