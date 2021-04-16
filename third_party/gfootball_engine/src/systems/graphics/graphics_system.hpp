@@ -44,7 +44,7 @@ namespace blunted {
       GraphicsSystem();
       virtual ~GraphicsSystem();
 
-      virtual void Initialize(bool render);
+      virtual void Initialize(bool render, int width_, int height_);
       virtual void Exit();
       void SetContext();
       void DisableContext();

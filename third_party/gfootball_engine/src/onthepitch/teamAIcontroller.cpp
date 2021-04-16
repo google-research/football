@@ -1299,7 +1299,7 @@ void TeamAIController::Reset() {
 void TeamAIController::ProcessState(EnvState *state) {
   DO_VALIDATION;
   state->process(taker);
-  state->process(static_cast<void*>(&setPieceType), sizeof(setPieceType));
+  state->process(setPieceType);
   baseTeamTactics.ProcessState(state);
   liveTeamTactics.ProcessState(state);
   state->process(offensivenessBias);

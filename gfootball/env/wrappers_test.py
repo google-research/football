@@ -22,10 +22,10 @@ from __future__ import print_function
 import os
 import gym
 import numpy as np
-import unittest
+from absl.testing import absltest
 
 
-class SingleAgentWrapperTest(unittest.TestCase):
+class SingleAgentWrapperTest(absltest.TestCase):
 
   def test_consistent_observation_and_action(self):
     env = gym.make(
@@ -145,4 +145,4 @@ class SingleAgentWrapperTest(unittest.TestCase):
     env.close()
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

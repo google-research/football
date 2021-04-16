@@ -169,6 +169,11 @@ void Team::AddHumanGamers(const std::vector<AIControlledKeyboard*>& controllers)
   if (!result.empty()) {
     mainSelectedPlayer = result[0];
   }
+  // Sort players by the ID to provide identity mapping of controller-player
+  // when controlling all players on the team.
+  std::sort(result.begin(), result.end(), [](Player* a, Player* b) {
+        return a->GetStableID() < b->GetStableID();
+    });
   for (unsigned int i = 0; i < result.size(); i++) {
     humanGamers[i]->SetSelectedPlayer(result[i]);
   }

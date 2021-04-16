@@ -591,6 +591,7 @@ void HumanController::Reset() {
   previousDirection = Vector3(0, -1, 0);
 
   fadingTeamPossessionAmount = 1.0;
+  hid->ResetNotSticky();
 }
 
 void HumanController::_GetHidInput(Vector3 &rawInputDirection,

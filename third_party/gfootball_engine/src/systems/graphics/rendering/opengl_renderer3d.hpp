@@ -17,6 +17,7 @@
 
 #ifndef _HPP_GRAPHICS3D_OPENGL
 #define _HPP_GRAPHICS3D_OPENGL
+#include <EGL/egl.h>
 
 #include "interface_renderer3d.hpp"
 
@@ -116,8 +117,11 @@ namespace blunted {
       virtual void SetUniformMatrix4(const std::string &shaderName, const std::string &varName, const Matrix4 &mat);
 
     protected:
-      SDL_GLContext context;
-      SDL_Window* window;
+      SDL_GLContext context = 0;
+      SDL_Window* window = nullptr;
+      EGLDisplay egl_display = nullptr;
+      EGLSurface egl_surface;
+      EGLContext egl_context;
       int context_width, context_height, context_bpp;
 
       float cameraNear = 0.0f;
@@ -146,7 +150,8 @@ namespace blunted {
       VertexBufferID CreateSimpleVertexBuffer(float *vertices, unsigned int size);
       void DeleteSimpleVertexBuffer(VertexBufferID vertexBufferID);
       void InitializeOverlayAndQuadBuffers();
-      bool CreateContextInternal(int width, int height, int bpp, bool fullscreen, bool exit_on_version_too_low);
+      void CreateContextEgl();
+      void CreateContextSdl();
   };
 }
 

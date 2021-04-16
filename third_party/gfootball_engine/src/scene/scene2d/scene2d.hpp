@@ -29,7 +29,7 @@ namespace blunted {
   class Scene2D : public Scene {
 
     public:
-      Scene2D(const Properties &config);
+      Scene2D(int width, int height);
       virtual ~Scene2D();
 
       virtual void Init();
@@ -46,7 +46,7 @@ namespace blunted {
      protected:
       vector_Objects objects;
 
-      int width, height, bpp;
+      const int width, height, bpp;
 
   };
 

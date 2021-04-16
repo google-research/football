@@ -899,9 +899,6 @@ void AI_GetClosestPlayers(Team *team, const Vector3 &position,
   const std::vector<Player*> &players = team->GetAllPlayers();
   std::multimap<float, Player*> tmpResult;
 
-  float closestDistance = 10000;
-  Player *closestPlayer = players.at(0);
-
   //printf("total players: %i\n", players.size());
 
   for (unsigned int i = 0; i < players.size(); i++) {

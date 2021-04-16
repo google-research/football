@@ -102,8 +102,10 @@ void Officials::GetPlayers(std::vector<PlayerBase *> &players) {
 void Officials::Process() {
   DO_VALIDATION;
   referee->Process();
+  GetContext().tracker_disabled++;
   linesmen[0]->Process();
   linesmen[1]->Process();
+  GetContext().tracker_disabled--;
 }
 
 void Officials::FetchPutBuffers() {

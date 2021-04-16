@@ -219,7 +219,6 @@ e_FunctionType StringToFunctionType(e_DefString fun);
       for (auto& el : elements) { DO_VALIDATION;
         el.ProcessState(state);
       }
-      state->process((void*) elements, sizeof(elements));
     }
   private:
     BiasedOffset elements[body_part_max];
@@ -236,7 +235,7 @@ e_FunctionType StringToFunctionType(e_DefString fun);
       state->process(position);
       state->process(orientation);
       state->process(timeDiff_ms);
-      state->process(&nodeName, sizeof(nodeName));
+      state->process(nodeName);
     }
   };
 

@@ -39,16 +39,16 @@ Environment exposes following `raw` observations:
     - `active` - {0..N-1} integer denoting index of the controlled players.
     - `designated` - {0..N-1} integer denoting index of the designated player - the player leading the game, for example the one owning the ball. In non-multiagent mode it is always equal to `active`.
     - `sticky_actions` - 10-elements vectors of 0s or 1s denoting whether corresponding action is active:
-        - `0` - `game_left`
-        - `1` - `game_top_left`
-        - `2` - `game_top`
-        - `3` - `game_top_right`
-        - `4` - `game_right`
-        - `5` - `game_bottom_right`
-        - `6` - `game_bottom`
-        - `7` - `game_bottom_left`
-        - `8` - `game_sprint`
-        - `9` - `game_dribble`
+        - `0` - `action_left`
+        - `1` - `action_top_left`
+        - `2` - `action_top`
+        - `3` - `action_top_right`
+        - `4` - `action_right`
+        - `5` - `action_bottom_right`
+        - `6` - `action_bottom`
+        - `7` - `action_bottom_left`
+        - `8` - `action_sprint`
+        - `9` - `action_dribble`
 - Match state:
     - `score` - pair of integers denoting number of goals for left and right teams, respectively.
     - `steps_left` - how many steps are left till the end of the match.
@@ -61,13 +61,18 @@ Environment exposes following `raw` observations:
         - `5` = `e_GameMode_ThrowIn`
         - `6` = `e_GameMode_Penalty`
 - Screen:
-    - `frame` - three 1280x720 vectors of RGB pixels representing rendered
-    screen. It is only exposed when rendering is enabled (`render` flag).
+    - `frame` - three vectors of RGB pixels representing rendered
+    screen. It is only exposed when rendering is enabled (`render` flag). Size
+    of each vector is weight by height of the rendered window, 1280 by 720 by default.
 
 Where `N` is the number of players on the team.
 
-*   X coordinates are in the range `[-1, 1]`.
-*   Y coordinates are in the range `[-0.42, 0.42]`.
+*   Bottom left/right corner of the field is located at `[-1, 0.42]`
+    and `[1, 0.42]`, respectively.
+*   Top left/right corner of the field is located at `[-1, -0.42]`
+    and `[1, -0.42]`, respectively.
+*   Left/right goal is located at -1 and 1 X coordinate, respectively. They
+    span between `-0.044` and `0.044` in Y coordinates.
 *   Speed vectors represent a change in the position of the object within a
     single step.
 
@@ -143,37 +148,37 @@ The default action set consists of 19 actions:
 
 *   Idle actions
 
-    *   `action_idle` = 0, do nothing, stickly actions are not affected
+    *   `action_idle` = 0, a no-op action, stickly actions are not affected (player maintains his directional movement etc.).
 
 *   Movement actions
 
-    *   `action_left` = 1, run to the left, sticky action
-    *   `action_top_left` = 2, run to the top-left, sticky action
-    *   `action_top` = 3, run to the top, sticky action
-    *   `action_top_right` = 4, run to the top-right, sticky action
-    *   `action_right` = 5, run to the right, sticky action
-    *   `action_bottom_right` = 6, run to the bottom-right, sticky action
-    *   `action_bottom` = 7, run to the bottom, sticky action
-    *   `action_bottom_left` = 8, run to the bottom-left, sticky action
+    *   `action_left` = 1, run to the left, sticky action.
+    *   `action_top_left` = 2, run to the top-left, sticky action.
+    *   `action_top` = 3, run to the top, sticky action.
+    *   `action_top_right` = 4, run to the top-right, sticky action.
+    *   `action_right` = 5, run to the right, sticky action.
+    *   `action_bottom_right` = 6, run to the bottom-right, sticky action.
+    *   `action_bottom` = 7, run to the bottom, sticky action.
+    *   `action_bottom_left` = 8, run to the bottom-left, sticky action.
 
 *   Passing / Shooting
 
-    *   `action_long_pass` = 9, perform a long pass
-    *   `action_high_pass` = 10, perform a high pass
-    *   `action_short_pass` = 11, perform a short pass
-    *   `action_shot` = 12, perform a shot
+    *   `action_long_pass` = 9, perform a long pass to the player on your team. Player to pass the ball to is auto-determined based on the movement direction.
+    *   `action_high_pass` = 10, perform a high pass, similar to `action_long_pass`.
+    *   `action_short_pass` = 11, perform a short pass, similar to `action_long_pass`.
+    *   `action_shot` = 12, perform a shot, always in the direction of the opponent's goal.
 
 *   Other actions
 
-    *   `action_sprint` = 13, start sprinting, sticky action
-    *   `action_release_direction` = 14, resets current movement direction
-    *   `action_release_sprint` = 15, stops sprinting
-    *   `action_sliding` = 16, perform a slide
-    *   `action_dribble` = 17, start dribbling (effective when having a ball), sticky action
-    *   `action_release_dribble` = 18, stop dribbling
+    *   `action_sprint` = 13, start sprinting, sticky action. Player moves faster, but has worse ball handling.
+    *   `action_release_direction` = 14, reset current movement direction.
+    *   `action_release_sprint` = 15, stop sprinting.
+    *   `action_sliding` = 16, perform a slide (effective when not having a ball).
+    *   `action_dribble` = 17, start dribbling (effective when having a ball), sticky action. Player moves slower, but it is harder to take over the ball from him.
+    *   `action_release_dribble` = 18, stop dribbling.
 
 ### V2 action set
 
 It is an extension of the default action set:
 
-    *   `action_builtin_ai` = 19, let game's built-in AI generate an action
+*   `action_builtin_ai` = 19, let game's built-in AI generate an action

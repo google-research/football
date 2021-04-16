@@ -27,7 +27,7 @@ try:
   import gfootball_engine as libgame
   from gfootball_engine import GameState
 except ImportError:
-  print ('Cannot import gfootball_engine. Package was not installed properly.')
+  print('Cannot import gfootball_engine. Package was not installed properly.')
 from gfootball.env import config as cfg
 from gfootball.env import constants
 from gfootball.env import football_action_set
@@ -66,11 +66,18 @@ class FootballEnvCore(object):
     if _unused_engines:
       self._env = _unused_engines.pop()
     else:
-      self._env = libgame.GameEnv()
-    self._env.game_config.physics_steps_per_frame = config['physics_steps_per_frame']
+      self._env = self._get_new_env()
     # Reset is needed here to make sure render() API call before reset() API
     # call works fine (get/setState makes sure env. config is the same).
     self.reset(inc=0)
+
+  def _get_new_env(self):
+    env = libgame.GameEnv()
+    env.game_config.physics_steps_per_frame = self._config[
+        'physics_steps_per_frame']
+    env.game_config.render_resolution_x = self._config['render_resolution_x']
+    env.game_config.render_resolution_y = self._config['render_resolution_y']
+    return env
 
   def _reset(self, animations, inc):
     global _unused_engines
@@ -153,27 +160,34 @@ class FootballEnvCore(object):
         for a in action
     ]
     self._step_count += 1
-    # If agent 'holds' the game for too long, just start it.
-    if self._env.waiting_for_game_count > 20:
-      self._env.waiting_for_game_count = 0
-      action = [football_action_set.action_short_pass] * (
-          self._env.config.left_agents + self._env.config.right_agents)
-
     assert len(action) == (
         self._env.config.left_agents + self._env.config.right_agents)
     debug = {}
     debug['action'] = action
     action_index = 0
-    for i in range(self._env.config.left_agents):
-      player_action = action[action_index]
-      action_index += 1
-      assert isinstance(player_action, football_action_set.CoreAction)
-      self._env.perform_action(player_action._backend_action, True, i)
-    for i in range(self._env.config.right_agents):
-      player_action = action[action_index]
-      action_index += 1
-      assert isinstance(player_action, football_action_set.CoreAction)
-      self._env.perform_action(player_action._backend_action, False, i)
+    for left_team in [True, False]:
+      agents = self._env.config.left_agents if left_team else self._env.config.right_agents
+      for i in range(agents):
+        player_action = action[action_index]
+
+        # If agent 'holds' the game for too long, just start it.
+        if self._env.waiting_for_game_count == 20:
+          player_action = football_action_set.action_short_pass
+        elif self._env.waiting_for_game_count > 20:
+          player_action = football_action_set.action_idle
+          controlled_players = self._observation[
+              'left_agent_controlled_player'] if left_team else self._observation[
+                  'right_agent_controlled_player']
+          if self._observation['ball_owned_team'] != -1 and self._observation[
+              'ball_owned_team'] ^ left_team and controlled_players[
+                  i] == self._observation['ball_owned_player']:
+            if bool(self._env.waiting_for_game_count < 30) != bool(left_team):
+              player_action = football_action_set.action_left
+            else:
+              player_action = football_action_set.action_right
+        action_index += 1
+        assert isinstance(player_action, football_action_set.CoreAction)
+        self._env.perform_action(player_action._backend_action, left_team, i)
     while True:
       enter_time = timeit.default_timer()
       self._env.step()
@@ -256,7 +270,6 @@ class FootballEnvCore(object):
       self.write_dump('episode_done')
     return self._observation, reward, episode_done, info
 
-
   def _retrieve_observation(self):
     """Constructs observations exposed by the environment.
 
@@ -268,10 +281,15 @@ class FootballEnvCore(object):
     if self._env.game_config.render:
       frame = self._env.get_frame()
       frame = np.frombuffer(frame, dtype=np.uint8)
-      frame = np.reshape(frame, [1280, 720, 3])
+      frame = np.reshape(frame, [
+          self._config['render_resolution_x'],
+          self._config['render_resolution_y'], 3
+      ])
       frame = np.reshape(
-          np.concatenate([frame[:, :, 0], frame[:, :, 1], frame[:, :, 2]]),
-          [3, 720, 1280])
+          np.concatenate([frame[:, :, 0], frame[:, :, 1], frame[:, :, 2]]), [
+              3, self._config['render_resolution_y'],
+              self._config['render_resolution_x']
+          ])
       frame = np.transpose(frame, [1, 2, 0])
       frame = np.flip(frame, 0)
       result['frame'] = frame
@@ -405,7 +423,7 @@ class FootballEnvCore(object):
             self._env = _unused_rendering_engine
             _unused_rendering_engine = None
           else:
-            self._env = libgame.GameEnv()
+            self._env = self._get_new_env()
           self._rendering_in_use()
           self._reset(animations=False, inc=0)
           self.set_state(state)

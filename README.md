@@ -5,8 +5,7 @@ Football. <br> It was created by the Google Brain team for research purposes.
 
 Useful links:
 
-* __(NEW!)__ [GRF Tournament](https://research-football.dev/tournament) - take part in the Tournament and become the new GRF Champion! Starting April 2020.
-* [GRF Game Server](https://research-football.dev/) - challenge other researchers!
+* __(NEW!)__ [GRF Kaggle competition](https://www.kaggle.com/c/google-football) - take part in the competition playing games against others, win prizes and become the GRF Champion!
 * [Run in Colab](https://colab.research.google.com/github/google-research/football/blob/master/gfootball/colabs/gfootball_example_from_prebuild.ipynb) - start training in less that 2 minutes.
 * [Google Research Football Paper](https://arxiv.org/abs/1907.11180)
 * [GoogleAI blog post](https://ai.googleblog.com/2019/06/introducing-google-research-football.html)
@@ -41,6 +40,8 @@ Instructions are available [here](gfootball/doc/docker.md).
 sudo apt-get install git cmake build-essential libgl1-mesa-dev libsdl2-dev \
 libsdl2-image-dev libsdl2-ttf-dev libsdl2-gfx-dev libboost-all-dev \
 libdirectfb-dev libst-dev mesa-utils xvfb x11vnc libsdl-sge-dev python3-pip
+
+python3 -m pip install --upgrade pip setuptools psutil
 ```
 
 #### Mac OS X
@@ -48,17 +49,17 @@ First install [brew](https://brew.sh/). It should automatically install Command 
 Next install required packages:
 
 ```
-brew install git python3 cmake sdl2 sdl2_image sdl2_ttf sdl2_gfx boost
+brew install git python3 cmake sdl2 sdl2_image sdl2_ttf sdl2_gfx boost boost-python3
 ```
-and boost-python3, that supports Python 3.7:
+To set up `pygame`, it is also required to install older versions of SDL:
 
 ```
-brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/527d96f84d4632d30b281ef5b26717e0a75edcb4/Formula/boost-python3.rb
+brew install sdl sdl_image sdl_mixer sdl_ttf portmidi
 ```
 
 #### 2a. From PyPi package
 ```
-pip3 install gfootball
+python3 -m pip install gfootball
 ```
 
 #### 2b. Installing from sources using GitHub repository
@@ -78,7 +79,7 @@ source football-env/bin/activate
 The last step is to build the environment:
 
 ```
-pip3 install .
+python3 -m pip install .
 ```
 This command can run for a couple of minutes, as it compiles the C++ environment in the background.
 
@@ -91,7 +92,7 @@ To quit the game press Ctrl+C in the terminal.
 
 # Contents #
 
-* [Running experiments](#training-agents-to-play-GRF)
+* [Running training](#training-agents-to-play-GRF)
 * [Playing the game](#playing-the-game)
     * [Keyboard mappings](#keyboard-mappings)
     * [Play vs built-in AI](#play-vs-built-in-AI)
@@ -103,19 +104,20 @@ To quit the game press Ctrl+C in the terminal.
 * [Multi-agent support](gfootball/doc/multi_agent.md)
 * [Running in docker](gfootball/doc/docker.md)
 * [Saving replays, logs, traces](gfootball/doc/saving_replays.md)
+* [Imitation Learning](gfootball/doc/imitation.md)
 
 ## Training agents to play GRF
 
 ### Run training
-In order to run TF training, install additional dependencies:
+In order to run TF training, you need to install additional dependencies
 
 - Update PIP, so that tensorflow 1.15 is available: `python3 -m pip install --upgrade pip setuptools`
-- TensorFlow: `pip3 install tensorflow==1.15.*` or
-  `pip3 install tensorflow-gpu==1.15.*`, depending on whether you want CPU or
+- TensorFlow: `python3 -m pip install tensorflow==1.15.*` or
+  `python3 -m pip install tensorflow-gpu==1.15.*`, depending on whether you want CPU or
   GPU version;
-- Sonnet: `pip3 install dm-sonnet==1.*`;
+- Sonnet: `python3 -m pip install dm-sonnet==1.*`;
 - OpenAI Baselines:
-  `pip3 install git+https://github.com/openai/baselines.git@master`.
+  `python3 -m pip install git+https://github.com/openai/baselines.git@master`.
 
 Then:
 
@@ -168,20 +170,14 @@ action set):
 ### Trained checkpoints
 We provide trained PPO checkpoints for the following scenarios:
 
-  - [11_vs_11_easy_stochastic](https://storage.googleapis.com/grf_public/trained_models/11_vs_11_easy_stochastic_v2),
-  - [academy_run_to_score_with_keeper](https://storage.googleapis.com/grf_public/trained_models/academy_run_to_score_with_keeper_v2).
+  - [11_vs_11_easy_stochastic](https://storage.googleapis.com/gfootball/11_vs_11_easy_stochastic_v2),
+  - [academy_run_to_score_with_keeper](https://storage.googleapis.com/gfootball/academy_run_to_score_with_keeper_v2).
 
 In order to see the checkpoints playing, run
 `python3 -m gfootball.play_game --players "ppo2_cnn:left_players=1,policy=gfootball_impala_cnn,checkpoint=$CHECKPOINT" --level=$LEVEL`,
-where `$CHECKPOINT` is the path to downloaded checkpoint.
+where `$CHECKPOINT` is the path to downloaded checkpoint. Please note that the checkpoints were trained with Tensorflow 1.15 version. Using 
+different Tensorflow version may result in errors. The easiest way to run these checkpoints is through provided `Dockerfile_examples` image.
+See [running in docker](gfootball/doc/docker.md) for details (just override the default Docker definition with `-f Dockerfile_examples` parameter).
 
 In order to train against a checkpoint, you can pass 'extra_players' argument to create_environment function.
 For example extra_players='ppo2_cnn:right_players=1,policy=gfootball_impala_cnn,checkpoint=$CHECKPOINT'.
-
-## Frequent Problems & Solutions
-
-### Rendering not working / "OpenGL version not equal to or higher than 3.2"
-
-Solution: set environment variables for MESA driver, like this:
-
-`MESA_GL_VERSION_OVERRIDE=3.2 MESA_GLSL_VERSION_OVERRIDE=150 python3 -m gfootball.play_game`

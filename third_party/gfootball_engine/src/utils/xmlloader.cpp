@@ -49,7 +49,7 @@ void XMLLoader::BuildTree(XMLTree &tree, const std::string &source) {
   DO_VALIDATION;
 
   size_t index_end = 0;
-  size_t index = source.find("<", 0);
+  size_t index = source.find('<', 0);
 
   if (index == std::string::npos) {
     DO_VALIDATION;
@@ -65,7 +65,7 @@ void XMLLoader::BuildTree(XMLTree &tree, const std::string &source) {
 
   while (index != std::string::npos) {
     DO_VALIDATION;
-    index_end = source.find(">", index);
+    index_end = source.find('>', index);
     std::string tag = source.substr(index + 1, index_end - index - 1);
     // printf("tag: '%s'\n", tag.c_str());
     index = index_end;
@@ -105,10 +105,10 @@ void XMLLoader::BuildTree(XMLTree &tree, const std::string &source) {
     tree.children.insert(std::make_pair(tag, child));
 
     // close
-    index = source.find(">", index_end);
+    index = source.find('>', index_end);
 
     // find next tag
-    index = source.find("<", index);
+    index = source.find('<', index);
   }
 }
 }

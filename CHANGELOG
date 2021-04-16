@@ -5,6 +5,37 @@ should not change, as modifications made to the environment are either
 new features or backward compatible bug fixes. We will maintain vX branches
 pointing at the most recent vX.Y.
 
+v2.9
+- Drop hard dependency on Tensorflow.
+- Make installation easier, support for Ubuntu 20.04.
+
+v2.8
+- Added support for hardware accelerated headless rendering.
+- Minor fixes for the issues reported by Kaggle contestants.
+
+v2.7
+- Fix propagation of a single pass/shot action between players upon control switch.
+- Improve logic which prevents agents blocking the game.
+
+v2.6
+- Address minor issues reported by Kaggle contestants.
+
+v2.5
+- Make 2D videos more readable and color-blind friendly.
+- Do not allow agents to block the game by exploiting kick-off.
+
+v2.4
+- Support for configurable rendering resolution.
+- Kaggle competition links.
+
+v2.3
+- Fix to scenario's second_half feature.
+
+v2.2
+- Minor changes to the information displayed in the video replays.
+- Changes to Kaggle competition scenario.
+- Minor code cleanups.
+
 v2.1
 - Introduction of `builtin_ai` action, which lets agent dynamically give control
   of the player to the native game's built-in AI. It can be useful when training

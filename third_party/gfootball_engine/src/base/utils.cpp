@@ -198,14 +198,14 @@ void file_to_vector(std::string filename,
 std::string get_file_name(const std::string &filename) {
   DO_VALIDATION;
   std::string chompedFilename =
-      filename.substr(filename.find_last_of("\\") + 1);
-  chompedFilename = chompedFilename.substr(filename.find_last_of("/") + 1);
+      filename.substr(filename.find_last_of('\\') + 1);
+  chompedFilename = chompedFilename.substr(filename.find_last_of('/') + 1);
   return chompedFilename;
 }
 
 std::string get_file_extension(const std::string &filename) {
   DO_VALIDATION;
-  return filename.substr(filename.find_last_of(".") + 1);
+  return filename.substr(filename.find_last_of('.') + 1);
 }
 
 std::string int_to_str(int i) {

@@ -38,6 +38,10 @@ namespace blunted {
    public:
     radian() { DO_VALIDATION;}
     radian(float r) : _angle(r) { DO_VALIDATION;}
+    std::ostream& operator<<(std::ostream& os) {
+      os << _angle << " " << _rotated;
+      return os;
+    }
     radian &operator+=(radian r) { DO_VALIDATION;
       _angle += r._angle;
       _rotated ^= r._rotated;

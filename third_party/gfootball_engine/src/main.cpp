@@ -110,15 +110,18 @@ void randomize(unsigned int seed) {
 void run_game(Properties* input_config, bool render) {
   DO_VALIDATION;
   game->context->config = input_config;
-  Initialize(*game->context->config);
+  Initialize();
   randomize(0);
 
   // initialize systems
-  game->context->graphicsSystem.Initialize(render);
+  game->context->graphicsSystem.Initialize(render,
+      game->game_config.render_resolution_x,
+      game->game_config.render_resolution_y);
 
   // init scenes
 
-  game->context->scene2D.reset(new Scene2D(*game->context->config));
+  game->context->scene2D.reset(new Scene2D(game->game_config.render_resolution_x,
+                                           game->game_config.render_resolution_y));
   game->context->graphicsSystem.Create2DScene(game->context->scene2D);
   game->context->scene2D->Init();
   game->context->scene3D.reset(new Scene3D());
@@ -185,7 +188,16 @@ void Tracker::verify_snapshot(long pos, int line, const char* file,
       strcmp(file, waiting_file)) {
     failure = true;
   }
+  if (!failure) {
+    if (!game->context->gameTask->GetMatch()) return;
+    EnvState reader1(game, "");
+    game->ProcessState(&reader1);
+    EnvState reader2(waiting_game, "", reader1.GetState());
+    waiting_game->ProcessState(&reader2);
+    failure = reader2.isFailure();
+  }
   if (failure) {
+    std::cout << "Validation range: " << start << " - " << end << std::endl;
     std::cout << "Position: " << pos << " vs " << waiting_pos << std::endl;
     std::cout << "Line: " << line << " vs " << waiting_line << std::endl;
     std::cout << "File: " << file << " vs " << waiting_file << std::endl;
@@ -194,15 +206,12 @@ void Tracker::verify_snapshot(long pos, int line, const char* file,
     std::cout << "Game ptr: " << game << " vs " << waiting_game << std::endl;
     Log(blunted::e_FatalError, "State comparison failure", "", "");
   }
-  if (!game->context->gameTask->GetMatch()) return;
-  EnvState reader1(game, "");
-  game->ProcessState(&reader1);
-  EnvState reader2(waiting_game, "", reader1.GetState());
-  waiting_game->ProcessState(&reader2);
 }
 
 void GameContext::ProcessState(EnvState* state) {
-  state->process((void*)&rng, sizeof(rng));
+  for (int x = 0; x < sizeof(rng); x++) {
+    state->process(((char*) &rng)[x]);
+  }
   if (state->Load()) {
     EnvState reader(game, "");
     game->scenario_config.ProcessStateConstant(&reader);

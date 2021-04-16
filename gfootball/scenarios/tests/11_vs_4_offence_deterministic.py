@@ -19,6 +19,7 @@
 
 from . import *
 
+
 def build_scenario(builder):
   builder.config().game_duration = 400
   builder.config().deterministic = True

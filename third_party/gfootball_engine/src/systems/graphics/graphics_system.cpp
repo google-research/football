@@ -30,7 +30,7 @@ GraphicsSystem::GraphicsSystem() { DO_VALIDATION; }
 
 GraphicsSystem::~GraphicsSystem() { DO_VALIDATION; }
 
-void GraphicsSystem::Initialize(bool render) {
+void GraphicsSystem::Initialize(bool render, int width_, int height_) {
   DO_VALIDATION;
 
   if (render) {
@@ -38,8 +38,8 @@ void GraphicsSystem::Initialize(bool render) {
   } else {
     renderer3DTask = new MockRenderer3D();
   }
-  width = 1280;
-  height = 720;
+  width = width_;
+  height = height_;
   bpp = 32;
   if (!static_cast<Renderer3D *>(renderer3DTask)
            ->CreateContext(width, height, bpp, false)) {

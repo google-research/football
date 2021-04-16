@@ -75,7 +75,6 @@ def get_agent_number_of_players(players):
 class Config(object):
 
   def __init__(self, values=None):
-    self._game_config = libgame.GameConfig()
     self._values = {
         'action_set': 'default',
         'custom_display_stats': None,
@@ -85,12 +84,15 @@ class Config(object):
         'players': ['agent:left_players=1'],
         'level': '11_vs_11_stochastic',
         'physics_steps_per_frame': 10,
+        'render_resolution_x': 1280,
         'real_time': False,
         'tracesdir': '/tmp/dumps',
         'video_format': 'avi',
         'video_quality_level': 0,  # 0 - low, 1 - medium, 2 - high
         'write_video': False
     }
+    self._values['render_resolution_y'] = int(
+        0.5625 * self._values['render_resolution_x'])
     if values:
       self._values.update(values)
     self.NewScenario()

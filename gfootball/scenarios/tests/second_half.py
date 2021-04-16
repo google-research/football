@@ -21,17 +21,11 @@ from . import *
 
 
 def build_scenario(builder):
-  builder.config().game_duration = 50
-  builder.config().deterministic = True
-  if builder.EpisodeNumber() % 2 == 0:
-    first_team = Team.e_Right
-    second_team = Team.e_Left
-  else:
-    first_team = Team.e_Left
-    second_team = Team.e_Right
-  builder.SetTeam(first_team)
-  builder.AddPlayer(-0.050000, 0.000000, e_PlayerRole_GK)
-  builder.AddPlayer(0.8000000, 0.000000, e_PlayerRole_RM)
-  builder.SetTeam(second_team)
-  builder.AddPlayer(0.000000, 0.400000, e_PlayerRole_GK, True)
-  builder.AddPlayer(0.000000, -0.400000, e_PlayerRole_RM, True)
+  builder.config().game_duration = 10
+  builder.config().second_half = 5
+  builder.SetTeam(Team.e_Left)
+  builder.AddPlayer(-1.000000, 0.000000, e_PlayerRole_GK, lazy=True)
+  builder.AddPlayer(0.000000, 0.020000, e_PlayerRole_RM, lazy=True)
+  builder.SetTeam(Team.e_Right)
+  builder.AddPlayer(-1.000000, 0.000000, e_PlayerRole_GK, lazy=True)
+  builder.AddPlayer(-0.500000, 0.000000, e_PlayerRole_RM, lazy=True)

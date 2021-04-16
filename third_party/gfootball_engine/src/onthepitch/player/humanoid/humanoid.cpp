@@ -1067,7 +1067,9 @@ void Humanoid::SelectRetainAnim() {
 
   assert(dataSet.size() != 0);
 
+  GetContext().tracker_disabled++;
   std::stable_sort(dataSet.begin(), dataSet.end(), boost::bind(&Humanoid::CompareMovementSimilarity, this, _1, _2));
+  GetContext().tracker_disabled--;
 
   startAngle = FixAngle((Vector3(0) - startPos).GetAngle2D());//0.5 * pi; (facing right)
 
@@ -1456,6 +1458,7 @@ bool Humanoid::SelectAnim(const PlayerCommand &command,
     }
   }
 
+  GetContext().tracker_disabled++;
   std::stable_sort(dataSet.begin(), dataSet.end(), boost::bind(&Humanoid::ComparePriorityVariable, this, _1, _2));
 
   int desiredIdleLevel = 0;
@@ -1496,6 +1499,7 @@ bool Humanoid::SelectAnim(const PlayerCommand &command,
     DO_VALIDATION;
     std::stable_sort(dataSet.begin(), dataSet.end(), boost::bind(&Humanoid::CompareCatchOrDeflect, this, _1, _2));
   }
+  GetContext().tracker_disabled--;
 
   int selectedAnimID = -1;
   std::vector<Vector3> positions_tmp;

@@ -487,10 +487,8 @@ void Match::ResetSituation(const Vector3 &focusPos) {
 
 void Match::SetMatchPhase(e_MatchPhase newMatchPhase) {
   matchPhase = newMatchPhase;
-  if (matchPhase == e_MatchPhase_1stHalf) {
-    teams[first_team]->RelaxFatigue(1.0f);
-    teams[second_team]->RelaxFatigue(1.0f);
-  }
+  teams[first_team]->RelaxFatigue(1.0f);
+  teams[second_team]->RelaxFatigue(1.0f);
 }
 
 Team *Match::GetBestPossessionTeam() {
@@ -681,14 +679,26 @@ void Match::ProcessState(EnvState* state) {
   }
   matchData->ProcessState(state, first_team);
   officials->ProcessState(state);
-  for (auto& c : controllers) {
-    c->ProcessState(state);
+  {
+    std::vector<HumanGamer*> human_gamers;
+    std::set<AIControlledKeyboard*> visited;
+    teams[first_team]->GetHumanControllers(human_gamers);
+    teams[second_team]->GetHumanControllers(human_gamers);
+    for (auto& c : human_gamers) {
+      c->GetHIDevice()->ProcessState(state);
+      visited.insert(c->GetHIDevice());
+    }
+    for (auto& c : controllers) {
+      if (!visited.count(c)) {
+        c->ProcessState(state);
+      }
+    }
   }
   ball->ProcessState(state);
   state->process(matchTime_ms);
   state->process(actualTime_ms);
   state->process(goalScoredTimer);
-  state->process((void*) &matchPhase, sizeof(e_MatchPhase));
+  state->process(matchPhase);
   state->process(inPlay);
   state->process(inSetPiece);
   state->process(goalScored);

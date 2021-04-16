@@ -608,7 +608,9 @@ void Ball::ProcessState(EnvState *state) {
   DO_VALIDATION;
   state->process(momentum);
   state->process(rotation_ms);
-  state->process(predictions, sizeof(predictions));
+  for (int x = 0; x < sizeof(predictions) / sizeof(predictions[0]); x++) {
+    state->process(predictions[x]);
+  }
   state->process(valid_predictions);
   state->process(orientPrediction);
   int size = ballPosHistory.size();
