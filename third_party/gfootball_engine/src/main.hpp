@@ -295,7 +295,9 @@ const std::vector<AIControlledKeyboard*> &GetControllers();
 void run_game(Properties* input_config, bool render);
 void randomize(unsigned int seed);
 void quit_game();
+#ifndef WIN32
 int main(int argc, char** argv);
+#endif
 
 class Tracker {
  public:

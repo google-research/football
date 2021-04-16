@@ -22,6 +22,7 @@
 #include "../main.hpp"
 #include "../windowmanager.hpp"
 #include "file.h"
+#include <SDL2/SDL_image.h>
 
 namespace blunted {
 
@@ -29,9 +30,10 @@ SDL_Surface *IMG_LoadBmp(const std::string &file) {
   DO_VALIDATION;
   std::string name = GetGameConfig().updatePath(file);
   name = name.substr(0, name.length() - 4) + ".bmp";
-  std::string file_data = GetFile(name);
-  SDL_RWops *rw = SDL_RWFromConstMem(file_data.data(), file_data.size());
-  auto image = SDL_LoadBMP_RW(rw, 1);
+  //std::string file_data = GetFile(name);
+  //SDL_RWops *rw = SDL_RWFromConstMem(file_data.data(), file_data.size());
+  //auto image = SDL_LoadBMP_RW(rw, 1);
+  auto image = IMG_Load(name.c_str());
 
   if (image->format->format == SDL_PIXELFORMAT_ARGB8888) {
     DO_VALIDATION;
