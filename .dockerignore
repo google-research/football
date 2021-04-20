@@ -1,3 +1,5 @@
 third_party/gfootball_engine/build
 build/
 gfootball.egg-info
+docker/
+.git/
