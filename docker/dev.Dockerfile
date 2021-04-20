@@ -2,7 +2,7 @@ FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-COPY gfootball /tmp/gfootball
+COPY . /tmp/gfootball
 
 RUN apt-get update && \
       apt-get --no-install-recommends install -yq \
