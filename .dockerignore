@@ -3,3 +3,4 @@ build/
 gfootball.egg-info
 docker/
 .git/
+partyball/
