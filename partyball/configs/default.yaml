@@ -21,6 +21,9 @@ game:
   physicsStepsPerFrame: 10
   realTime: false
 
+env:
+  core: party
+
 video:
   format: avi
   quality: 0    # 0 - low, 1 - medium, 2 - high

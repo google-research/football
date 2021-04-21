@@ -1,7 +1,7 @@
 from gfootball.env.football_env_core import FootballEnvCore
 
 
-class PartyEnvironmentCore(FootballEnvCore):
+class PartyEnvCore(FootballEnvCore):
 
   def __init__(self, config):
     super().__init__(config)
