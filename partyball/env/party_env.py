@@ -16,8 +16,9 @@ class PartyEnv(FootballEnvBase):
   }
 
   def _get_environment_core(core_type):
-    if core_type not in _environment_cores:
+    if core_type not in PartyEnv._environment_cores:
       raise Exception(f'Invalid environment_core: {core_type} . ' +
-          'Expected one of: [{}]'.format(', '.join(_environment_cores.keys())))
+          'Expected one of: [{}]'.format(
+              ', '.join(PartyEnv._environment_cores.keys())))
 
-    return _environment_cores[core_type]
+    return PartyEnv._environment_cores[core_type]

@@ -5,13 +5,13 @@ from party_env_core import PartyEnvCore
 from party_config import PartyConfig
 
 
-def test_party_env():
+def test_party_env_core():
     config = PartyConfig.from_yaml('../configs/default.yaml')
     env = PartyEnv(config)
     assert isinstance(env._env, PartyEnvCore)
 
 
-def test_default_env():
+def test_gfootball_env_core():
     config = PartyConfig.from_yaml('../configs/default.yaml')
     config['environment_core'] = 'gfootball'
     env = PartyEnv(config)
