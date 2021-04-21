@@ -8,10 +8,12 @@ dump:
   scores: false
 
 players:
-  - agent:
-      leftPlayers: 1
-    keyboard:
-      rightPlayers: 1
+  - kind: agent
+    side: left
+    count: 1
+  - kind: keyboard
+    side: right
+    count: 1
 
 game:
   actionSet: default

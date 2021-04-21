@@ -31,12 +31,6 @@ from gfootball.env import observation_rotation
 import gym
 import numpy as np
 
-class FootballEnv(FootballEnvBase):
-
-  def __init__(self, config):
-    super().__init__(config)
-    self._env = football_env_core.FootballEnvCore(self._config)
-
 
 class FootballEnvBase(gym.Env):
   """Allows multiple players to play in the same environment."""
@@ -227,3 +221,10 @@ class FootballEnvBase(gym.Env):
   def disable_render(self):
     self._cached_observation = None
     return self._env.disable_render()
+
+
+class FootballEnv(FootballEnvBase):
+
+  def __init__(self, config):
+    super().__init__(config)
+    self._env = football_env_core.FootballEnvCore(self._config)
