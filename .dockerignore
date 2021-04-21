@@ -2,5 +2,11 @@ third_party/gfootball_engine/build
 build/
 gfootball.egg-info
 docker/
-.git/
+
 partyball/
+!partyball/requirements.txt
+
+.git*
+
+**/.dockerignore
+**/.*.sw[po]

@@ -19,12 +19,12 @@ class PartyConfig(config.Config):
         'custom_display_stats': config['display']['gameStats'],
         'dump_full_episodes': config['dump']['fullEpisodes'],
         'dump_scores': config['dump']['scores'],
-        'players': _convert_players(config['players']),
+        'players': PartyConfig._convert_players(config['players']),
         'level': config['game']['level'],
         'physics_steps_per_frame': config['game']['physicsStepsPerFrame'],
         'render_resolution_x': config['display']['renderResolution'],
         'real_time': config['game']['realTime'],
-        'tracesdir': config['tracesdir'],
+        'tracesdir': config['tracesDir'],
         'video_format': config['video']['format'],
         'video_quality_level': config['video']['quality'],
         'write_video': config['video']['write'],
@@ -34,7 +34,7 @@ class PartyConfig(config.Config):
     with open(file_path, 'r') as stream:
       yaml_data = yaml.safe_load(stream)
 
-    config = _convert_yaml_dict(yaml_data)
+    config = PartyConfig._convert_yaml_dict(yaml_data)
 
     return PartyConfig(config)
 
