@@ -7,7 +7,7 @@ class PartyEnv(FootballEnvBase):
 
   def __init__(self, config):
     super().__init__(config)
-    self._env = _get_environment_core(
+    self._env = PartyEnv._get_environment_core(
             self._config['environment_core'])(self._config)
 
   _environment_cores = {
