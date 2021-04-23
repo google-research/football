@@ -32,7 +32,7 @@ import gym
 import numpy as np
 
 
-class FootballEnv(gym.Env):
+class FootballEnvBase(gym.Env):
   """Allows multiple players to play in the same environment."""
 
   def __init__(self, config):
@@ -45,7 +45,6 @@ class FootballEnv(gym.Env):
     self._agent_left_position = -1
     self._agent_right_position = -1
     self._players = self._construct_players(config['players'], player_config)
-    self._env = football_env_core.FootballEnvCore(self._config)
     self._num_actions = len(football_action_set.get_action_set(self._config))
     self._cached_observation = None
 
@@ -221,3 +220,10 @@ class FootballEnv(gym.Env):
   def disable_render(self):
     self._cached_observation = None
     return self._env.disable_render()
+
+
+class FootballEnv(FootballEnvBase):
+
+  def __init__(self, config):
+    super().__init__(config)
+    self._env = football_env_core.FootballEnvCore(self._config)

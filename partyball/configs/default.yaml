@@ -1,0 +1,32 @@
+display:
+  customStats: null
+  gameStats: true
+  renderResolution: 1280
+
+dump:
+  fullEpisodes: false
+  scores: false
+
+players:
+  - kind: agent
+    side: left
+    count: 1
+  - kind: keyboard
+    side: right
+    count: 1
+
+game:
+  actionSet: default
+  level: 11_vs_11_stochastic
+  physicsStepsPerFrame: 10
+  realTime: false
+
+env:
+  core: party
+
+video:
+  format: avi
+  quality: 0    # 0 - low, 1 - medium, 2 - high
+  write: false
+
+tracesDir: /tmp/dumps

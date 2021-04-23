@@ -13,4 +13,5 @@ RUN apt-get update && \
       libsdl-sge-dev python3-pip && \
       pip3 install --upgrade pip setuptools psutil && \
       pip3 install /tmp/gfootball && \
+      pip3 install -r /tmp/gfootball/partyball/requirements.txt && \
       rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
