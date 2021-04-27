@@ -51,11 +51,6 @@ Next install required packages:
 ```
 brew install git python3 cmake sdl2 sdl2_image sdl2_ttf sdl2_gfx boost boost-python3
 ```
-To set up `pygame`, it is also required to install older versions of SDL:
-
-```
-brew install sdl sdl_image sdl_mixer sdl_ttf portmidi
-```
 
 #### 2a. From PyPi package
 ```
