@@ -27,8 +27,10 @@ include_directories(${OPENGL_INCLUDE_DIR})
 FIND_PACKAGE(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIR})
 
+if(UNIX AND NOT APPLE)
 FIND_PACKAGE(EGL REQUIRED)
 include_directories(${EGL_INCLUDE_DIR})
+endif()
 
 FIND_PACKAGE(SDL2_image REQUIRED)
 include_directories(${SDL2_IMAGE_DIRS})
