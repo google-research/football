@@ -51,7 +51,8 @@ void GetFilesRec(boost::filesystem::path path, const std::string &extension,
 
       if (thePath.extension() == "." + extension) {
         DO_VALIDATION;
-        files.push_back(path.string() + "/" + thePath.filename().string());
+        // TODO:vk why not to use thePath.string()? Test if it works correctly on all platforms
+        files.push_back(thePath.string()); //path.string() + "/" + thePath.filename().string());
       }
     }
 

@@ -17,6 +17,9 @@
 #include <Python.h>
 
 #include <boost/python.hpp>
+#ifdef WIN32
+#define BOOST_USE_WINDOWS_H
+#endif
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>

@@ -1,4 +1,4 @@
-third_party/gfootball_engine/build
+third_party/gfootball_engine/build*
 build/
 gfootball.egg-info
 __pycache__
@@ -14,6 +14,6 @@ footballenv/
 football-env*/
 cmake-build-debug/
 .idea
-.vs
-Debug*/
-third_party/gfootball_engine/Release
+.vs*/
+Debug/
+Release/

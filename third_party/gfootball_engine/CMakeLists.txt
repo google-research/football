@@ -1,5 +1,16 @@
 cmake_minimum_required(VERSION 3.1)
 
+if(TRUE) #(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+   # TODO: read from environment, e.g. "$ENV{VCPKG_ROOT}/..."
+   set(VCPKG_ROOT "c:/repo/vcpkg_latest")
+   set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
+   set(CMAKE_GENERATOR_PLATFORM x64)
+   set(TRIPLET x64-windows)
+   set(PY_VER_MAJ 3)
+   set(PY_VER_MIN 9)
+   set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+endif()
+
 set(PACKAGE gameplayfootball)
 
 set(VERSION_MAJOR 0)
@@ -40,13 +51,16 @@ include_directories(${SDL2_TTF_DIRS})
 FIND_PACKAGE(SDL2-gfx REQUIRED)
 include_directories(${SDL2_GFX_DIRS})
 
-find_package(PythonLibs 3 REQUIRED)
-message("Using Python: ${PYTHONLIBS_VERSION_STRING}")
+#find_package(PythonLibs 3 REQUIRED)
+#message("Using Python: ${PYTHONLIBS_VERSION_STRING}")
+#find_package (Python COMPONENTS Development) # Interpreter Development)
+set(Python_LIBRARIES "${VCPKG_ROOT}/installed/${TRIPLET}/lib/python${PY_VER_MAJ}${PY_VER_MIN}.lib")
+set(Python_INCLUDE_DIR "${VCPKG_ROOT}/installed/${TRIPLET}/include/python${PY_VER_MAJ}.${PY_VER_MIN}" )
 
-FIND_PACKAGE(Boost REQUIRED COMPONENTS thread system filesystem python38)
+FIND_PACKAGE(Boost REQUIRED COMPONENTS thread system filesystem python${PY_VER_MAJ}${PY_VER_MIN})
 include_directories(${Boost_INCLUDE_DIR})
 
-include_directories(${PYTHON_INCLUDE_DIR})
+include_directories(${Python_INCLUDE_DIR})
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/src/cmake)
@@ -112,10 +126,10 @@ add_library(menulib ${MENU_SOURCES} ${MENU_HEADERS})
 add_library(datalib ${DATA_SOURCES} ${DATA_HEADERS})
 
 set(LIBRARIES gamelib menulib datalib blunted2
-   Boost::filesystem Boost::system Boost::thread Boost::python38 ${PYTHON_LIBRARY}
+   Boost::filesystem Boost::system Boost::thread Boost::python${PY_VER_MAJ}${PY_VER_MIN} ${Python_LIBRARIES}
    SDL2::SDL2 SDL2::SDL2_image SDL2::SDL2_ttf SDL2::SDL2_gfx SDL2::SDL2main
    ${OPENGL_LIBRARY})
 
 
-add_library(game SHARED ${CORE_SOURCES} ${CORE_HEADERS} ${AI_HEADERS} ${AI_SOURCES})
-target_link_libraries(game ${LIBRARIES})
+add_library(_gameplayfootball SHARED ${CORE_SOURCES} ${CORE_HEADERS} ${AI_HEADERS} ${AI_SOURCES})
+target_link_libraries(_gameplayfootball ${LIBRARIES})

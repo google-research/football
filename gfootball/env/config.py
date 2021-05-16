@@ -18,6 +18,8 @@
 from __future__ import print_function
 
 import copy
+import tempfile
+import os
 
 from absl import flags
 
@@ -86,7 +88,7 @@ class Config(object):
         'physics_steps_per_frame': 10,
         'render_resolution_x': 1280,
         'real_time': False,
-        'tracesdir': '/tmp/dumps',
+        'tracesdir': os.path.join(tempfile.gettempdir(), 'dumps'),
         'video_format': 'avi',
         'video_quality_level': 0,  # 0 - low, 1 - medium, 2 - high
         'write_video': False
