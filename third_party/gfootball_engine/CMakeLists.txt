@@ -132,4 +132,5 @@ set(LIBRARIES gamelib menulib datalib blunted2
 
 
 add_library(_gameplayfootball SHARED ${CORE_SOURCES} ${CORE_HEADERS} ${AI_HEADERS} ${AI_SOURCES})
+set_target_properties(_gameplayfootball PROPERTIES SUFFIX ".pyd")
 target_link_libraries(_gameplayfootball ${LIBRARIES})
