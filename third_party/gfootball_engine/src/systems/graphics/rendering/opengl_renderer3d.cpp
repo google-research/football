@@ -27,21 +27,18 @@
 #else
 #include <GL/gl.h>
 #endif
+
 #ifdef __linux__
 #include <GL/glext.h>
-#endif
-
-#ifdef WIN32
+#define EGL_EGLEXT_PROTOTYPES
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#elif defined(WIN32)
 #include <SDL2/SDL_opengl_glext.h>
 #endif
 
 #include <cmath>
 #include "wrap_SDL.h"
-#ifdef __linux__
-#define EGL_EGLEXT_PROTOTYPES
-#include <EGL/egl.h>
-#include <EGL/eglext.h>
-#endif
 
 #include "../../../base/geometry/aabb.hpp"
 #include "../../../base/geometry/trianglemeshutils.hpp"
