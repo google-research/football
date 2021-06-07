@@ -145,18 +145,17 @@ void run_game(Properties* input_config, bool render) {
   // TODO:vk Find out why it doesn't work on Windows. Looks like GetFile(fontfilename) can't open it correctly.
   game->context->font = GetFile(fontfilename);
   game->context->defaultFont =
-    TTF_OpenFontIndexRW(SDL_RWFromConstMem(game->context->font.data(),
-      game->context->font.size()),
-      0, 32, 0);
+      TTF_OpenFontIndexRW(SDL_RWFromConstMem(game->context->font.data(),
+                                             game->context->font.size()),
+                          0, 32, 0);
   game->context->defaultOutlineFont =
-    TTF_OpenFontIndexRW(SDL_RWFromConstMem(game->context->font.data(),
-      game->context->font.size()),
-      0, 32, 0);
+      TTF_OpenFontIndexRW(SDL_RWFromConstMem(game->context->font.data(),
+                                             game->context->font.size()),
+                          0, 32, 0);
 #endif
   if (!game->context->defaultFont)
     Log(e_FatalError, "football", "main",
         "Could not load font " + fontfilename);
-
   TTF_SetFontOutline(game->context->defaultOutlineFont, 2);
   game->context->menuTask = boost::shared_ptr<MenuTask>(
       new MenuTask(5.0f / 4.0f, 0, game->context->defaultFont,

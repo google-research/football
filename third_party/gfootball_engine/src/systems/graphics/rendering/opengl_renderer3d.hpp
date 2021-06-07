@@ -154,7 +154,6 @@ namespace blunted {
       VertexBufferID CreateSimpleVertexBuffer(float *vertices, unsigned int size);
       void DeleteSimpleVertexBuffer(VertexBufferID vertexBufferID);
       void InitializeOverlayAndQuadBuffers();
-
       void CreateContextSdl();
 #ifdef __linux__
       void CreateContextEgl();

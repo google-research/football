@@ -12,12 +12,10 @@
 // limitations under the License.
 
 #include <stdio.h>
-
-#ifdef __linux__
+#ifndef WIN32
 #include <execinfo.h>
 #include <unistd.h>
 #endif
-
 #include <signal.h>
 #include "backtrace.h"
 #include <stdlib.h>
@@ -25,11 +23,11 @@
 void print_stacktrace() {
   void *array[20];
   size_t size;
-  #ifdef __linux__
+#ifndef WIN32
   size = backtrace(array, 20);
   backtrace_symbols_fd(array, size, STDERR_FILENO);
-  #endif
-  // TODO:vk On Windows (and Mac?) use boost::stacktrace https://www.boost.org/doc/libs/1_76_0/doc/html/stacktrace/getting_started.html 
+#endif
+  // TODO:vk On Windows use boost::stacktrace https://www.boost.org/doc/libs/1_76_0/doc/html/stacktrace/getting_started.html
 }
 
 
