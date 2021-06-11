@@ -36,50 +36,66 @@ Instructions are available [here](gfootball/doc/docker.md).
 
 #### 1. Install required packages
 #### Linux
-```
+```shell
 sudo apt-get install git cmake build-essential libgl1-mesa-dev libsdl2-dev \
 libsdl2-image-dev libsdl2-ttf-dev libsdl2-gfx-dev libboost-all-dev \
-libdirectfb-dev libst-dev mesa-utils xvfb x11vnc libsdl-sge-dev python3-pip
+libdirectfb-dev libst-dev mesa-utils xvfb x11vnc python3-pip
 
-python3 -m pip install --upgrade pip setuptools psutil
+python3 -m pip install --upgrade pip setuptools psutil wheel
 ```
 
-#### Mac OS X
+#### macOS
 First install [brew](https://brew.sh/). It should automatically install Command Line Tools.
 Next install required packages:
 
-```
+```shell
 brew install git python3 cmake sdl2 sdl2_image sdl2_ttf sdl2_gfx boost boost-python3
+
+python3 -m pip install --upgrade pip setuptools psutil wheel
 ```
 
-#### 2a. From PyPi package
+If you use a different version of Python (e.g., `conda`) or your machine has Apple Silicon,
+check out [Compiling Engine](gfootball/doc/compile_engine.md#macos) for detailed instructions.
+
+#### Windows
+Install [Git](https://git-scm.com/download/win) and [Python 3](https://www.python.org/downloads/).
+Update pip in the Command Line (here and for the **next steps** type `python` instead of `python3`)
+```commandline
+python -m pip install --upgrade pip setuptools psutil wheel
 ```
+
+#### 2. Install GFootball
+#### 2a. From PyPi package
+```shell
 python3 -m pip install gfootball
 ```
 
 #### 2b. Installing from sources using GitHub repository
 
-```
+```shell
 git clone https://github.com/google-research/football.git
 cd football
 ```
 
 Optionally you can use [virtual environment](https://docs.python.org/3/tutorial/venv.html):
 
-```
+```shell
 python3 -m venv football-env
 source football-env/bin/activate
 ```
 
-The last step is to build the environment:
+Next, build the game environment:
 
-```
+```shell
 python3 -m pip install .
 ```
 This command can run for a couple of minutes, as it compiles the C++ environment in the background.
 
+To compile the engine on Windows you have to install additional tools and set environment variables. See 
+[Compiling Engine](gfootball/doc/compile_engine.md#windows) for detailed instructions.
+
 #### 3. Time to play!
-```
+```shell
 python3 -m gfootball.play_game --action_set=full
 ```
 Make sure to check out the [keyboard mappings](#keyboard-mappings).
@@ -106,7 +122,7 @@ To quit the game press Ctrl+C in the terminal.
 ### Run training
 In order to run TF training, you need to install additional dependencies
 
-- Update PIP, so that tensorflow 1.15 is available: `python3 -m pip install --upgrade pip setuptools`
+- Update PIP, so that tensorflow 1.15 is available: `python3 -m pip install --upgrade pip setuptools psutil wheel`
 - TensorFlow: `python3 -m pip install tensorflow==1.15.*` or
   `python3 -m pip install tensorflow-gpu==1.15.*`, depending on whether you want CPU or
   GPU version;
@@ -131,7 +147,8 @@ In order to reproduce PPO results from the paper, please refer to:
 
 ## Playing the game
 
-Please note that playing the game is implemented through an environment, so human-controlled players use the same interface as the agents. One important implication is that there is a single action per 100 ms reported to the environment, which might cause a lag effect when playing.
+Please note that playing the game is implemented through an environment, so human-controlled players use the same interface as the agents.
+One important implication is that there is a single action per 100 ms reported to the environment, which might cause a lag effect when playing.
 
 
 ### Keyboard mappings
@@ -143,8 +160,8 @@ The game defines following keyboard mapping (for the `keyboard` player type):
 * `ARROW RIGHT` - run to the right.
 * `S` - short pass in the attack mode, pressure in the defense mode.
 * `A` - high pass in the attack mode, sliding in the defense mode.
-* `D` - shot in the the attack mode, team pressure in the defense mode.
-* `W` - long pass in the the attack mode, goalkeeper pressure in the defense mode.
+* `D` - shot in the attack mode, team pressure in the defense mode.
+* `W` - long pass in the attack mode, goalkeeper pressure in the defense mode.
 * `Q` - switch the active player in the defense mode.
 * `C` - dribble in the attack mode.
 * `E` - sprint.

@@ -68,7 +68,7 @@ class Player;
 class Team;
 class HumanGamer;
 class AIControlledKeyboard;
-struct ScenarioConfig;
+class ScenarioConfig;
 class GameContext;
 class GameEnv;
 

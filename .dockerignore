@@ -1,3 +1,6 @@
-third_party/gfootball_engine/build
+third_party/gfootball_engine/build*/
 build/
 gfootball.egg-info
+football-env*
+.vs
+.idea

@@ -6,7 +6,7 @@ if(WIN32)
     message(FATAL_ERROR "CMAKE_GENERATOR_PLATFORM is not defined. Add -Ax64 or -AWin32 to cmake command")
   elseif(NOT DEFINED ENV{VCPKG_ROOT})
     message(FATAL_ERROR "VCPKG_ROOT is not defined. Set the location of vcpkg")
-  elseif(NOT DEFINED ENV{PY_VERSION})  # TODO: Check if PY_VERSION has correct format
+  elseif(NOT DEFINED ENV{PY_VERSION})  # PY_VERSION has to be X.Y, e.g. 3.9
     message(FATAL_ERROR "PY_VERSION is not defined. Define Python version that is available in vcpkg, e.g. 3.9")
   endif()
 
@@ -73,43 +73,34 @@ list(GET VERSION_LIST 0 PYTHON_MAJOR)
 list(GET VERSION_LIST 1 PYTHON_MINOR)
 
 if(WIN32)
-  # TODO: Find better fix.
   # find_package (Python COMPONENTS Development)
   # FindPython package searches for system-wide python installations first.
-  # It was improved only recently (December 2020), so we can't use it for earlier py versions TODO: add GitHub issue link
+  # It was improved only recently (Jan 2021), so we can't use it for earlier py versions:
+  # (see https://github.com/microsoft/vcpkg/pull/15221 )
   # To avoid version mismatch we point to vcpkg's libs directly
   set(PYTHON_LIBRARIES "$ENV{VCPKG_ROOT}/installed/${TRIPLET}/lib/python${PYTHON_MAJOR}${PYTHON_MINOR}.lib")
   set(PYTHON_INCLUDE_DIR "$ENV{VCPKG_ROOT}/installed/${TRIPLET}/include/python${PYTHON_MAJOR}.${PYTHON_MINOR}")
 endif()
 
-# Include the python boost.
-# Unfortunately different linux distributions are using different naming.
-
+# Include Boost Python.
 if(WIN32 OR APPLE)
   set(BOOST_PYTHON_VERSION python${PYTHON_MAJOR}${PYTHON_MINOR})
 else()
-  # TODO: write a function to find boost-python in the list of possible names for linux
-  # Ubuntu
-  FIND_PACKAGE(Boost COMPONENTS python3-py${PYTHON_MAJOR}${PYTHON_MINOR})
-  if (Boost_PYTHON3-PY${PYTHON_MAJOR}${PYTHON_MINOR}_FOUND)
-    set(BOOST_PYTHON_VERSION python3-py${PYTHON_MAJOR}${PYTHON_MINOR})
-  else()
-    message("python3-py${PYTHON_MAJOR}${PYTHON_MINOR} not found. Trying other names.")
-    # Debian
-    FIND_PACKAGE(Boost COMPONENTS python-py${PYTHON_MAJOR}${PYTHON_MINOR})
-    if (Boost_PYTHON-PY${PYTHON_MAJOR}${PYTHON_MINOR}_FOUND)
-      set(BOOST_PYTHON_VERSION python-py${PYTHON_MAJOR}${PYTHON_MINOR})
-    else()
-      message("python-py${PYTHON_MAJOR}${PYTHON_MINOR} not found. Trying other names.")
-
-      # Some other distributions.
-      FIND_PACKAGE(Boost COMPONENTS python${PYTHON_MAJOR}${PYTHON_MINOR})
-      if (Boost_PYTHON${PYTHON_MAJOR}${PYTHON_MINOR}_FOUND)
-        set(BOOST_PYTHON_VERSION python${PYTHON_MAJOR}${PYTHON_MINOR})
-      else()
-        message(FATAL_ERROR "Python boost not found")
-      endif()
+  # Unfortunately different linux distributions are using different naming for boost-python
+  # list of prefixes: Ubuntu, Debian, Some other distributions
+  set(BOOST_PYTHON_PREFIXES python3-py python-py python)
+  foreach(BP_PREFIX ${BOOST_PYTHON_PREFIXES})
+    set(BOOST_PYTHON_NAME ${BP_PREFIX}${PYTHON_MAJOR}${PYTHON_MINOR})
+    string(TOUPPER ${BOOST_PYTHON_NAME} BOOST_PYTHON_NAME_UPPER)
+    FIND_PACKAGE(Boost COMPONENTS ${BOOST_PYTHON_NAME})
+    if(Boost_${BOOST_PYTHON_NAME_UPPER}_FOUND)
+      set(BOOST_PYTHON_VERSION ${BOOST_PYTHON_NAME})
+      break()
     endif()
+    message("${BOOST_PYTHON_NAME} not found. Trying other names.")
+  endforeach()
+  if(NOT DEFINED BOOST_PYTHON_VERSION)
+    message(FATAL_ERROR "Boost Python not found")
   endif()
 endif()
 message("Using python_boost: ${BOOST_PYTHON_VERSION}")
@@ -141,13 +132,11 @@ add_library(gui2lib OBJECT ${UTILS_GUI2_SOURCES} ${UTILS_GUI2_HEADERS}
    ${UTILS_GUI2_WIDGETS_HEADERS})
 
 # Join all created static libraries into a single static or shared one.
-# vk: it is cleaner to set OWN_LIBRARIES after defining target_objects
 set(OWN_LIBRARIES $<TARGET_OBJECTS:baselib> # $<TARGET_OBJECTS:systemscommonlib>
    $<TARGET_OBJECTS:systemsgraphicslib> $<TARGET_OBJECTS:loaderslib>
    $<TARGET_OBJECTS:typeslib> $<TARGET_OBJECTS:scenelib>
    $<TARGET_OBJECTS:utilslib> $<TARGET_OBJECTS:gui2lib>)
 
-# TODO: Check if it is required to have multiple libs, or it is enough to combine them into OWN_LIBRARIES
 # Compile it as multiple static libraries
 add_library(blunted2 ${BLUNTED_CORE_SOURCES} ${BLUNTED_CORE_HEADERS} ${OWN_LIBRARIES})
 add_library(gamelib ${GAME_SOURCES} ${GAME_HEADERS})

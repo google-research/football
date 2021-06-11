@@ -75,7 +75,6 @@ class GameConfig {
   int render_resolution_y = 720;
   std::string updatePath(const std::string& path) {
 #ifdef WIN32
-    // TODO:vk Measure, if there's any performance drop when using boost
     boost::filesystem::path boost_path(path);
     if (boost_path.is_absolute()) {
       return path;

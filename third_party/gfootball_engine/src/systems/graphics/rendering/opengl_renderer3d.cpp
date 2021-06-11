@@ -77,8 +77,6 @@ OpenGLRenderer3D::~OpenGLRenderer3D() {
     DO_VALIDATION;
     DeleteSimpleVertexBuffer(overlayBuffer);
     DeleteSimpleVertexBuffer(quadBuffer);
-    // Shut down all SDL subsystems
-    SDL_Quit();
 };
 
 void OpenGLRenderer3D::SwapBuffers() {

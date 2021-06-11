@@ -1,0 +1,11 @@
+include gfootball/build_game_engine.*
+recursive-include gfootball/doc *
+recursive-include gfootball/eval_server/proto *
+
+recursive-include third_party/gfootball_engine *
+recursive-exclude third_party/gfootball_engine *.a libgame.so cmake_install.cmake Makefile
+prune third_party/gfootball_engine/CMakeFiles
+prune third_party/gfootball_engine/cmake-build-debug
+prune third_party/gfootball_engine/build*
+prune third_party/gfootball_engine/.vs
+prune third_party/gfootball_engine/.idea

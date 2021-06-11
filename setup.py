@@ -24,17 +24,15 @@ from setuptools import setup, Extension
 from setuptools.command.install import install
 from setuptools.command.build_ext import build_ext
 
-VERSION = '2.10b2'
+VERSION = '2.10b3'
 
 class CMakeExtension(Extension):
 
   def __init__(self, name):
     # don't invoke the original build_ext for this special extension
-    if platform.system() == 'Windows':
-      # TODO: Check if it works the same on Unix. Find better solution?
-      super().__init__(name, sources=[''], optional=True)
-    else:
-      super().__init__(name, sources=[])
+    # setuptools is having troubles to build empty list of sources on Windows
+    sources = ['third_party/gfootball_engine/src/misc/empty.cpp'] if platform.system() == 'Windows' else []
+    super().__init__(name, sources=sources, optional=True)
 
 
 class CustomBuild(build_ext):
@@ -57,11 +55,14 @@ class CustomBuild(build_ext):
     if os.path.exists(self.build_lib):
       dest_dir = os.path.join(self.build_lib, 'gfootball_engine')
     else:
+      # Development install (pip install -e .)
       dest_dir = "gfootball_engine"
-      # TODO: Is it still required?
       if os.system('cp -r third_party/gfootball_engine/ ' + dest_dir):
         raise OSError("Google Research Football: Could not copy "
-                      "engine to %s." % (dest_dir))
+                      "engine to %s." % dest_dir)
+    if os.system('cp -r third_party/fonts ' + dest_dir):
+      raise OSError('Google Research Football: Could not copy '
+                    'fonts to %s.' % dest_dir)
 
     try:
       use_prebuilt_library = int(
@@ -85,7 +86,7 @@ class CustomBuild(build_ext):
 
   def run_windows(self):
     try:
-      compile_engine = int(os.environ.get('COMPILE_ENGINE', '0'))
+      download_engine = int(os.environ.get('DOWNLOAD_ENGINE', '0'))
     except ValueError:
       raise ValueError('Could not parse COMPILE_ENGINE environment '
                        'variable as int. Please set it to 0 or 1')
@@ -93,9 +94,23 @@ class CustomBuild(build_ext):
       dest_dir = os.path.join(self.build_lib, 'gfootball_engine')
     else:
       dest_dir = "gfootball_engine"
+      if not os.path.exists(dest_dir):
+        os.mkdir(dest_dir)
+      # For development mode (pip install -e .) gfootball_engine module has to be located
+      # in the project root directory. So we copy only __init__.py and `data` directory
+      shutil.copy2('third_party/gfootball_engine/__init__.py', dest_dir)
+      data_dir = os.path.join(dest_dir, 'data')
+      if not os.path.exists(data_dir):
+        shutil.copytree('third_party/gfootball_engine/data', data_dir)
+
+    # Copy fonts
+    dst_fonts = os.path.join(dest_dir, "fonts")
+    if not os.path.exists(dst_fonts):
+      shutil.copytree("third_party/fonts", dst_fonts)
+
     py_major, py_minor, _ = platform.python_version_tuple()
 
-    if not compile_engine:
+    if download_engine:
       # TODO: Automate wheels creation for Windows, until then download from GitHub releases and unzip dlls
       if py_major != '3' or py_minor not in ('7', '8', '9'):
         raise OSError("Unsupported Python version. Try compiling engine instead. " 
@@ -112,16 +127,20 @@ class CustomBuild(build_ext):
         with urllib.request.urlopen(download_link) as response, \
             zipfile.ZipFile(io.BytesIO(response.read())) as bin_zip:
           bin_zip.extractall(dest_dir)
-      except urllib.error.HTTPError:  # TODO: Handle all possible exceptions
+      except urllib.error.HTTPError:
+        raise Exception("There's a problem with downloading precompiled gfootball engine")
+      except:
         raise Exception("Unable to download precompiled gfootball engine")
     else:  # compile the engine
-      # TODO: Check if it finds VCPKG_ROOT variable correctly
+      # help message
+      guide_message = 'Please follow the guide on how to install prerequisites: ' \
+                      'https://github.com/vi3itor/football/blob/windows/gfootball/doc/compile_engine.md#windows'
       if not os.environ.get('VCPKG_ROOT'):
-        raise OSError('VCPKG_ROOT environment variable is not defined')
+        raise OSError('VCPKG_ROOT environment variable is not defined.\n' + guide_message)
       os.environ['GENERATOR_PLATFORM'] = 'x64' if sys.maxsize > 2 ** 32 else 'Win32'
       os.environ['PY_VERSION'] = f'{py_major}.{py_minor}'
       if os.system('gfootball\\build_game_engine.bat'):
-        raise OSError('Google Research Football compilation failed')
+        raise OSError('Google Research Football compilation failed.\n' + guide_message)
       # Copy compiled library and its dependencies
       lib_path = 'third_party/gfootball_engine/build_win/Release/'
       libs = glob.glob(f'{lib_path}*.pyd') + glob.glob(f'{lib_path}*.dll')
@@ -129,21 +148,14 @@ class CustomBuild(build_ext):
         shutil.copy2(file, dest_dir)
 
 
+# To support development (a.k.a. editable) install (`pip install -e .` or `python3 setup.py develop`),
+# we remove `build` directory created by a regular setup
+if 'develop' in sys.argv and os.path.exists('build'):
+  shutil.rmtree('build')
+
 packages = find_packages() + find_packages('third_party')
 
-dir_prefix = "third_party/gfootball_engine/"
-data_files = glob.glob(f"{dir_prefix}data/**", recursive=True)
-# strip prefix, because setuptools will look inside gfootball_engine directory
-data_files = [path[len(dir_prefix):] for path in data_files]
-# TODO: Include source files (*.cpp, *.hpp, *.c, *.h, CMakeLists.txt, sources.cmake), LICENSE, and README?
-
-# Copy font files to gfootball_engine directory, so they're included during setup
-dst_fonts = "third_party/gfootball_engine/fonts"
-if not os.path.exists(dst_fonts):
-  shutil.copytree("third_party/fonts", dst_fonts)
-
-try:
-  setup(
+setup(
     name='gfootball',
     version=VERSION,
     description=('Google Research Football - RL environment based on '
@@ -155,22 +167,17 @@ try:
     packages=packages,
     package_dir={'gfootball_engine': 'third_party/gfootball_engine'},
     install_requires=[
-      'pygame>=1.9.6',
-      'opencv-python',
-      'psutil',
-      'scipy',
-      'gym>=0.11.0',
-      'absl-py',
-      'wheel',
+        'pygame>=1.9.6',
+        'opencv-python',
+        'psutil',
+        'scipy',
+        'gym>=0.11.0',
+        'absl-py',
+        'wheel',
     ],
-    package_data={
-      'gfootball': ['build_game_engine.sh', 'build_game_engine.bat'],
-      'gfootball_engine': ['fonts/**'] + data_files,
-    },
+    include_package_data=True,
     keywords='gfootball reinforcement-learning python machine learning',
     ext_modules=[CMakeExtension('brainball_cpp_engine')],
     cmdclass={'build_ext': CustomBuild},
-  )
-finally:
-  # Remove font files from the gfootball_engine directory
-  shutil.rmtree(dst_fonts)
+)
+
