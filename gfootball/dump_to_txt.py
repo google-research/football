@@ -16,7 +16,7 @@
 """Script converting dump file to human readable format.
 
    Example usage:
-   python dump_to_txt.py --dump=/tmp/input.dump --output=/tmp/output.txt
+   python dump_to_txt.py --trace_file=/tmp/input.dump --output=/tmp/output.txt
 
 """
 
