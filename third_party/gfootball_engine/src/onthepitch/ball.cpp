@@ -430,7 +430,7 @@ BallSpatialInfo Ball::CalculatePrediction() {
         groundRotationEffects_enabled) {
       DO_VALIDATION;
 
-      // rewrite idea: find out difference in ball velo / roll velo and then change both ball velo and rot (instead of having these 2 seperate sections)
+      // rewrite idea: find out difference in ball velo / roll velo and then change both ball velo and rot (instead of having these 2 separate sections)
 
       // ground friction induced rotation
       radian xR, yR;
