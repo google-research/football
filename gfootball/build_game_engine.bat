@@ -17,6 +17,7 @@ pushd third_party\gfootball_engine
 
 if not exist build_win mkdir build_win
 if exist build_win\CMakeCache.txt del build_win\CMakeCache.txt
+if exist build_win\%BUILD_CONFIGURATION% rmdir /s /q build_win\%BUILD_CONFIGURATION%
 
 pushd build_win
 cmake .. -A%GENERATOR_PLATFORM%

@@ -7,18 +7,19 @@ if(WIN32)
   elseif(NOT DEFINED ENV{VCPKG_ROOT})
     message(FATAL_ERROR "VCPKG_ROOT is not defined. Set the location of vcpkg")
   elseif(NOT DEFINED ENV{PY_VERSION})  # PY_VERSION has to be X.Y, e.g. 3.9
-    message(FATAL_ERROR "PY_VERSION is not defined. Define Python version that is available in vcpkg, e.g. 3.9")
+    message(FATAL_ERROR "PY_VERSION is not defined. Define Python version that will be used, e.g. 3.9")
   endif()
 
   if(${CMAKE_GENERATOR_PLATFORM} STREQUAL Win32)
-    set(TRIPLET x86-windows)
+    set(VCPKG_TARGET_TRIPLET x86-windows)
   elseif(${CMAKE_GENERATOR_PLATFORM} STREQUAL x64)
-    set(TRIPLET x64-windows)
+    set(VCPKG_TARGET_TRIPLET x64-windows)
   else()
     message(FATAL_ERROR "Unsupported Generator Platform, only Win32 or x64 are supported")
   endif()
 
   set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
+  set(VCPKG_MANIFEST_DIR "${CMAKE_SOURCE_DIR}/vcpkg_manifests/py$ENV{PY_VERSION}")
   set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 else()  # UNIX
   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules")
@@ -78,8 +79,8 @@ if(WIN32)
   # It was improved only recently (Jan 2021), so we can't use it for earlier py versions:
   # (see https://github.com/microsoft/vcpkg/pull/15221 )
   # To avoid version mismatch we point to vcpkg's libs directly
-  set(PYTHON_LIBRARIES "$ENV{VCPKG_ROOT}/installed/${TRIPLET}/lib/python${PYTHON_MAJOR}${PYTHON_MINOR}.lib")
-  set(PYTHON_INCLUDE_DIR "$ENV{VCPKG_ROOT}/installed/${TRIPLET}/include/python${PYTHON_MAJOR}.${PYTHON_MINOR}")
+  set(PYTHON_LIBRARIES "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib/python${PYTHON_MAJOR}${PYTHON_MINOR}.lib")
+  set(PYTHON_INCLUDE_DIR "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include/python${PYTHON_MAJOR}.${PYTHON_MINOR}")
 endif()
 
 # Include Boost Python.

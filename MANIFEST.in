@@ -1,7 +1,12 @@
 include gfootball/build_game_engine.*
+recursive-include gfootball/colabs *
 recursive-include gfootball/doc *
 recursive-include gfootball/eval_server/proto *
+recursive-include gfootball/examples *
 
+include Dockerfile .dockerignore CHANGELOG CONTRIBUTING.md run_docker_test.sh
+
+recursive-include third_party/fonts *
 recursive-include third_party/gfootball_engine *
 recursive-exclude third_party/gfootball_engine *.a libgame.so cmake_install.cmake Makefile
 prune third_party/gfootball_engine/CMakeFiles

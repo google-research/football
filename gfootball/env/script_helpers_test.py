@@ -22,6 +22,7 @@ from __future__ import print_function
 import glob
 import os
 import zlib
+import tempfile
 from absl.testing import absltest
 
 from gfootball.env import config
@@ -29,7 +30,7 @@ from gfootball.env import football_action_set
 from gfootball.env import football_env
 from gfootball.env import script_helpers
 
-test_tmpdir = '/tmp/gfootball_test'
+test_tmpdir = os.path.join(tempfile.gettempdir(), 'gfootball_test')
 
 
 class ScriptHelpersTest(absltest.TestCase):

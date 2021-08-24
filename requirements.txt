@@ -1,0 +1,7 @@
+pygame>=1.9.6
+opencv-python
+psutil
+scipy
+gym>=0.11.0
+absl-py
+wheel

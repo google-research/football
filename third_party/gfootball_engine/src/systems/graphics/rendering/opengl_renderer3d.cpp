@@ -75,8 +75,6 @@ OpenGLRenderer3D::OpenGLRenderer3D() {
 
 OpenGLRenderer3D::~OpenGLRenderer3D() {
     DO_VALIDATION;
-    DeleteSimpleVertexBuffer(overlayBuffer);
-    DeleteSimpleVertexBuffer(quadBuffer);
 };
 
 void OpenGLRenderer3D::SwapBuffers() {
@@ -598,6 +596,8 @@ void OpenGLRenderer3D::Exit() {
   }
 
   currentShader = shaders.end();
+  DeleteSimpleVertexBuffer(overlayBuffer);
+  DeleteSimpleVertexBuffer(quadBuffer);
 
   // assert(views.size() == 0);
 }

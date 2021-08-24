@@ -20,6 +20,7 @@ from __future__ import print_function
 import copy
 import tempfile
 import os
+import platform
 
 from absl import flags
 
@@ -42,7 +43,12 @@ def parse_player_definition(definition):
   d = {'left_players': 0,
        'right_players': 0}
   if ':' in definition:
-    (name, params) = definition.split(':')
+    # Windows requires special handling of replays, because path may contain ':'
+    if platform.system() == 'Windows' and definition.startswith('replay:') \
+        and len(definition.split(':')) > 2:
+      (name, params) = 'replay', definition.split('replay:')[-1]
+    else:
+      (name, params) = definition.split(':')
     for param in params.split(','):
       (key, value) = param.split('=')
       d[key] = value

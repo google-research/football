@@ -84,7 +84,7 @@ python3 -m venv football-env
 source football-env/bin/activate
 ```
 
-Next, build the game environment:
+Next, build the game engine and install dependencies:
 
 ```shell
 python3 -m pip install .

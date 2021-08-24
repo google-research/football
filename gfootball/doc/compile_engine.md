@@ -14,32 +14,18 @@ Prerequisites:
 :: Navigate to the created directory
 cd C:\dev
 :: Clone vckpg
-git clone https://github.com/microsoft/vcpkg
+git clone https://github.com/microsoft/vcpkg.git
 cd vckpg
-```
-
-The `HEAD` commit is recommended, but it will build the latest version of Python 3 libraries.
-If you have to run `GFootball` on different version of Python, checkout the corresponding commits:
-- For Python 3.8: `git checkout e803bf112`
-- For Python 3.7: `git checkout ca52d429b`
-
-```commandline
 :: Run installation script
 .\bootstrap-vcpkg.bat
 ```
 
-Next, install required dependencies (it might take 20-30 min for `vcpkg` to compile `boost` and other libraries):
-```commandline
-:: If you use 64-bit version of Python
-.\vcpkg.exe install --triplet x64-windows boost sdl2 sdl2-image[libjpeg-turbo] sdl2-ttf sdl2-gfx opengl
-:: If you use 32-bit version of Python
-.\vcpkg.exe install --triplet x86-windows boost:x86-windows sdl2 sdl2-image[libjpeg-turbo] sdl2-ttf sdl2-gfx opengl
-```
+If you have `vcpkg` already installed, consider updating it to the latest commit and running `.\bootstrap-vcpkg.bat`. 
+
+You don't have to install the required dependencies manually, it will be handled by [manifests](https://github.com/microsoft/vcpkg/blob/master/docs/users/manifests.md).
 
 Next, install `GFootball`:
 ```commandline
-:: Upgrade pip and additional packages
-python -m pip install --upgrade pip setuptools psutil wheel
 :: Clone the repository
 git clone https://github.com/google-research/football.git
 cd football
@@ -51,7 +37,7 @@ python -m venv football-env
 football-env\Scripts\activate.bat
 :: For PowerShell users: football-env\Scripts\activate.ps1
 
-:: Upgrade pip inside the environment
+:: Upgrade pip and install additional packages
 python -m pip install --upgrade pip setuptools psutil wheel
 
 :: Run compilation and installation
@@ -73,9 +59,9 @@ python3 -m pip install --upgrade pip setuptools psutil wheel
 ### Intel processor
 #### Installation with brew version of Python
 It is recommended to use Python shipped with `brew`, because `boost-python3` is compiled against the same version.
-To check which Python 3 is used by default on your set up execute `which python3`.
+To check which Python 3 is used by default on your setup execute `which python3`.
 For Intel-based Macs it should be `/usr/local/bin/python3`.
-If you have a different path and you don't want to change symlinks, create virtual environment with
+If you have a different path, and you don't want to change symlinks, create virtual environment with
 `/usr/local/bin/python3 -m venv football-env` or `$(brew --prefix python3)/bin/python3.9 -m venv football-env`.
 
 We highly recommend using [virtual environment](https://docs.python.org/3/tutorial/venv.html) to avoid messing up global dependencies:
@@ -107,6 +93,6 @@ TODO: Describe the process in details
 TODO
 
 
-## Common problems
+## Common problems and solutions
 TODO
 
