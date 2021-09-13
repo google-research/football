@@ -8,7 +8,8 @@ RUN apt-get update && apt-get --no-install-recommends install -yq git cmake buil
   libdirectfb-dev libst-dev mesa-utils xvfb x11vnc \
   python3-pip
 
-RUN python3 -m pip install --upgrade pip setuptools psutil wheel
+RUN python3 -m pip install --upgrade pip setuptools wheel
+RUN python3 -m pip install psutil
 
 COPY . /gfootball
 RUN cd /gfootball && python3 -m pip install .
