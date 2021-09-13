@@ -54,9 +54,6 @@ brew install git python3 cmake sdl2 sdl2_image sdl2_ttf sdl2_gfx boost boost-pyt
 python3 -m pip install --upgrade pip setuptools psutil wheel
 ```
 
-If you use a different version of Python (e.g., `conda`) or your machine has Apple Silicon,
-check out [Compiling Engine](gfootball/doc/compile_engine.md#macos) for detailed instructions.
-
 #### Windows
 Install [Git](https://git-scm.com/download/win) and [Python 3](https://www.python.org/downloads/).
 Update pip in the Command Line (here and for the **next steps** type `python` instead of `python3`)
