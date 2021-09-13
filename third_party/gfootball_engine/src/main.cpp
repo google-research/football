@@ -142,7 +142,6 @@ void run_game(Properties* input_config, bool render) {
   game->context->defaultFont = TTF_OpenFont(fontfilename.c_str(), 32);
   game->context->defaultOutlineFont = TTF_OpenFont(fontfilename.c_str(), 32);
 #else
-  // TODO:vk Find out why it doesn't work on Windows. Looks like GetFile(fontfilename) can't open it correctly.
   game->context->font = GetFile(fontfilename);
   game->context->defaultFont =
       TTF_OpenFontIndexRW(SDL_RWFromConstMem(game->context->font.data(),

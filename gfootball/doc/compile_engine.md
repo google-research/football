@@ -2,9 +2,9 @@
 
 This guide is intended to contain detailed information on building the environment 
 on different platforms and architectures. So far, it covers:
-* [Windows](#windows)
-* [macOS](#macos) (including Intel chips and Apple Silicon)
-* [Linux](#linux)
+* [Windows](#windows),
+* [macOS](#macos),
+* [Linux](#linux).
 
 Additionally, [Development mode](#development-mode) section explains how to install the game 
 in the development (aka, editable) mode. 
@@ -118,8 +118,7 @@ python3 -m pip install . --use-feature=in-tree-build
 ### Apple Silicon
 The environment can be compiled and run on Apple Silicon. Until some dependencies (`opencv-python`, `numpy`, etc.) 
 fully support new architecture, the required components should be installed manually beforehand, 
-and Google Research Football should be installed without dependencies (`--no-deps`). 
-To be continued...
+and Google Research Football should be installed without dependencies (`--no-deps`).
 
 #### Installation with conda
 Python dependencies can be installed via `conda's` fork [miniforge](https://github.com/conda-forge/miniforge). 

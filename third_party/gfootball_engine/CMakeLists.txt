@@ -62,7 +62,6 @@ include_directories(${SDL2_TTF_DIRS})
 include_directories(${SDL2_GFX_DIRS})
 
 if(UNIX)
-  # TODO: Discuss if it is better to replace deprecated FindPythonLibs with FindPython3 (released since CMake 3.12 - July 2018)
   find_package(PythonLibs 3 REQUIRED)
 else()
   set(PYTHONLIBS_VERSION_STRING $ENV{PY_VERSION})

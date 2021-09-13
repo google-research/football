@@ -147,7 +147,6 @@ class FootballEnvTest(parameterized.TestCase):
     for episode in range(1 if extensive else 2):
       hash_value = compute_hash(env, actions, extensive)
       if extensive:
-        # TODO: Are these checks are still required?
         if hash_value != 1174966789:
           # Linux
           expected_hash_value = 1374617688
@@ -157,7 +156,6 @@ class FootballEnvTest(parameterized.TestCase):
             expected_hash_value = 2070005886
           self.assertEqual(hash_value, expected_hash_value)
       elif episode % 2 == 0:
-        # TODO: And these?
         if hash_value != 2275067030:
           # Linux
           expected_hash_value = 2457763948
@@ -167,7 +165,6 @@ class FootballEnvTest(parameterized.TestCase):
             expected_hash_value = 876758366
           self.assertEqual(hash_value, expected_hash_value)
       else:
-        # TODO: And these?
         if hash_value != 2045063811:
           # Linux
           expected_hash_value = 867340920

@@ -27,7 +27,6 @@ void print_stacktrace() {
   size = backtrace(array, 20);
   backtrace_symbols_fd(array, size, STDERR_FILENO);
 #endif
-  // TODO:vk On Windows use boost::stacktrace https://www.boost.org/doc/libs/1_76_0/doc/html/stacktrace/getting_started.html
 }
 
 
