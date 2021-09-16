@@ -115,7 +115,7 @@ void PlayerController::AddDefensiveComponent(Vector3 &desiredPosition,
 
       Vector3 goalPos = Vector3(pitchHalfW * team->GetDynamicSide(), 0, 0);
 
-      // calculate how close the opponent is to the goal/shooting treshold
+      // calculate how close the opponent is to the goal/shooting threshold
       float oppToGoalDistance = (goalPos - oppPos).GetLength();
       float oppToThresholdDistance = clamp(oppToGoalDistance - shootThreshold, minDistance, pitchHalfW);
       Vector3 shootingPoint = oppPos + (goalPos - oppPos).GetNormalized(0) * oppToThresholdDistance;

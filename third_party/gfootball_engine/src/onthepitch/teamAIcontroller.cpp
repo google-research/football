@@ -548,7 +548,7 @@ void TeamAIController::CalculateDynamicRoles() {
     //fprintf(stderr, "cost-matrix:");
     //hungarian_print_costmatrix(&p);
 
-    /* solve the assignement problem */
+    /* solve the assignment problem */
     int totalCost = hungarian_solve(&p);
 
     /* some output */

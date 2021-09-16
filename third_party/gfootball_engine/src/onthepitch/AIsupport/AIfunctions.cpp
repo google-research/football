@@ -587,7 +587,7 @@ unsigned int AI_GetToBallMovement(Match *match, const MentalImage *mentalImage,
     /*
     movementWeight *= (1.0f - haste);
     timeWeight = timeWeight * (1.0f - haste) + haste;
-    //effectiveTimeWeight += 1.0f; // recenlty added, testing
+    //effectiveTimeWeight += 1.0f; // recently added, testing
     perpendicularWeight *= (1.0f - haste);
     */
   }
