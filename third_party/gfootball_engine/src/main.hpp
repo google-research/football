@@ -74,10 +74,20 @@ class GameConfig {
   int render_resolution_x = 1280;
   int render_resolution_y = 720;
   std::string updatePath(const std::string& path) {
+#ifdef WIN32
+    boost::filesystem::path boost_path(path);
+    if (boost_path.is_absolute()) {
+      return path;
+    }
+    boost::filesystem::path data_dir_boost(data_dir);
+    data_dir_boost /= boost_path;
+    return data_dir_boost.string();
+#else
     if (path[0] == '/') {
       return path;
     }
     return data_dir + '/' + path;
+#endif
   }
   void ProcessState(EnvState* state) {
     state->process(data_dir);
@@ -111,7 +121,7 @@ struct ScenarioConfig {
     float leftDistance = 1000000;
     float rightDistance = 1000000;
     for (auto& player : left_team) { DO_VALIDATION;
-      leftDistance =std::min(leftDistance,
+      leftDistance = std::min(leftDistance,
           (player.start_position - ball_position).GetLength());
     }
     for (auto& player : right_team) { DO_VALIDATION;
@@ -295,7 +305,9 @@ const std::vector<AIControlledKeyboard*> &GetControllers();
 void run_game(Properties* input_config, bool render);
 void randomize(unsigned int seed);
 void quit_game();
+#ifndef WIN32
 int main(int argc, char** argv);
+#endif
 
 class Tracker {
  public:

@@ -489,9 +489,9 @@ class ObservationProcessor(object):
       if WRITE_FILES:
         if not os.path.exists(self._dump_directory):
           os.makedirs(self._dump_directory)
-    dump_name = '{2}/{0}_{1}'.format(name,
+    dump_name = '{2}{3}{0}_{1}'.format(name,
         datetime.datetime.now().strftime('%Y%m%d-%H%M%S%f'),
-        self._dump_directory)
+        self._dump_directory, os.sep)
     config._active_dump = ActiveDump(dump_name,
         self._frame + config._steps_after, self._config)
     for step in list(self._trace)[-config._steps_before:]:

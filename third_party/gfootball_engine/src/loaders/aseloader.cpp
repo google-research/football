@@ -222,8 +222,11 @@ void ASELoader::BuildTriangleMesh(
       MESH_VERTEX 0 0.000 500.000 0.000
       ..
   */
-
+#ifdef WIN32
+  std::vector<Vector3> vertex_cache(numvertex);
+#else
   Vector3 vertex_cache[numvertex];
+#endif
 
   if (tree_mesh_vertex_list->entries.size() != (unsigned int)numvertex)
     Log(e_FatalError, "ASELoader", "BuildTriangleMesh",
@@ -395,7 +398,11 @@ void ASELoader::BuildTriangleMesh(
 
   if (numtvertex > 0) {
     DO_VALIDATION;
+#ifdef WIN32
+    std::vector<Vector3> tvertex_cache(numtvertex);
+#else
     Vector3 tvertex_cache[numtvertex];
+#endif
 
     if (tree_mesh_tvertex_list->entries.size() != (unsigned int)numtvertex)
       Log(e_FatalError, "ASELoader", "BuildTriangleMesh",

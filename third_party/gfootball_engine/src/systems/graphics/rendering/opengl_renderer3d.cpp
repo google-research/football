@@ -75,10 +75,6 @@ OpenGLRenderer3D::OpenGLRenderer3D() {
 
 OpenGLRenderer3D::~OpenGLRenderer3D() {
     DO_VALIDATION;
-    DeleteSimpleVertexBuffer(overlayBuffer);
-    DeleteSimpleVertexBuffer(quadBuffer);
-    // Shut down all SDL subsystems
-    SDL_Quit();
 };
 
 void OpenGLRenderer3D::SwapBuffers() {
@@ -600,6 +596,8 @@ void OpenGLRenderer3D::Exit() {
   }
 
   currentShader = shaders.end();
+  DeleteSimpleVertexBuffer(overlayBuffer);
+  DeleteSimpleVertexBuffer(quadBuffer);
 
   // assert(views.size() == 0);
 }
@@ -1946,12 +1944,20 @@ bool OpenGLRenderer3D::CheckFrameBufferStatus() {
 void OpenGLRenderer3D::SetRenderTargets(
     std::vector<e_TargetAttachment> targetAttachments) {
   DO_VALIDATION;
+#ifdef WIN32
+  std::vector<GLenum> targets(targetAttachments.size());
+#else
   GLenum targets[targetAttachments.size()];
+#endif
   for (int i = 0; i < (signed int)targetAttachments.size(); i++) {
     DO_VALIDATION;
     targets[i] = GetGLTargetAttachment(targetAttachments[i]);
   }
+#ifdef WIN32
+  mapping.glDrawBuffers(targetAttachments.size(), &targets[0]);
+#else
   mapping.glDrawBuffers(targetAttachments.size(), targets);
+#endif
 }
 
   // utility
@@ -2034,8 +2040,13 @@ void GeneratePoissonKernel(float *kernel, unsigned int kernelSize) {
     DO_VALIDATION;
     unsigned int candidateSize = 32;
 
+#ifdef WIN32
+    std::vector<Vector3> samples(kernelSize);
+    std::vector<Vector3> candidates(candidateSize);
+#else
     Vector3 samples[kernelSize];
     Vector3 candidates[candidateSize];
+#endif
 
     for (unsigned int i = 0; i < kernelSize; i++) {
       DO_VALIDATION;
@@ -2103,8 +2114,11 @@ void GeneratePoissonKernel(float *kernel, unsigned int kernelSize) {
     }
 
   } else {  // PRECALCULATED SET
-
+#ifdef WIN32
+    std::vector<Vector3> samples(kernelSize);
+#else
     Vector3 samples[kernelSize];
+#endif
 
     // these samples seem relatively close to z = 0 (much 'ground effect' on
     // flat surface)
@@ -2258,7 +2272,11 @@ void OpenGLRenderer3D::LoadShader(const std::string &name,
 
     unsigned int kernelSize = 32;
     // SetUniformInt("ambient", "SSAO_kernelSize", kernelSize);
+#ifdef WIN32
+    std::vector<float> SSAO_kernel(kernelSize * 3);
+#else
     float SSAO_kernel[kernelSize * 3];
+#endif
     GeneratePoissonKernel(&SSAO_kernel[0], kernelSize);
     SetUniformFloat3Array("ambient", "SSAO_kernel", kernelSize,
                           &SSAO_kernel[0]);

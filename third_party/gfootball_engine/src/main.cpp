@@ -16,7 +16,9 @@
 // i do not offer support, so don't ask. to be used for inspiration :)
 
 #ifdef WIN32
+#define NOMINMAX
 #include <windows.h>
+#undef NOMINMAX
 #endif
 
 #include <string>
@@ -136,18 +138,23 @@ void run_game(Properties* input_config, bool render) {
   game->context->gameTask = boost::shared_ptr<GameTask>(new GameTask());
   std::string fontfilename = game->context->config->Get(
       "font_filename", "media/fonts/alegreya/AlegreyaSansSC-ExtraBold.ttf");
+#ifdef WIN32
+  game->context->defaultFont = TTF_OpenFont(fontfilename.c_str(), 32);
+  game->context->defaultOutlineFont = TTF_OpenFont(fontfilename.c_str(), 32);
+#else
   game->context->font = GetFile(fontfilename);
   game->context->defaultFont =
       TTF_OpenFontIndexRW(SDL_RWFromConstMem(game->context->font.data(),
                                              game->context->font.size()),
                           0, 32, 0);
-  if (!game->context->defaultFont)
-    Log(e_FatalError, "football", "main",
-        "Could not load font " + fontfilename);
   game->context->defaultOutlineFont =
       TTF_OpenFontIndexRW(SDL_RWFromConstMem(game->context->font.data(),
                                              game->context->font.size()),
                           0, 32, 0);
+#endif
+  if (!game->context->defaultFont)
+    Log(e_FatalError, "football", "main",
+        "Could not load font " + fontfilename);
   TTF_SetFontOutline(game->context->defaultOutlineFont, 2);
   game->context->menuTask = boost::shared_ptr<MenuTask>(
       new MenuTask(5.0f / 4.0f, 0, game->context->defaultFont,

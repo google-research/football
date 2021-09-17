@@ -133,7 +133,7 @@ void GraphicsCamera::SetPosition(const Vector3 &newPosition) {
     std::deque < boost::intrusive_ptr<Geometry> >::iterator visibleGeometryIter = visibleGeometry.begin();
     while (visibleGeometryIter != visibleGeometry.end()) {
       DO_VALIDATION;
-      boost::intrusive_ptr<GraphicsGeometry_GeometryInterpreter> interpreter = static_pointer_cast<GraphicsGeometry_GeometryInterpreter>((*visibleGeometryIter)->GetInterpreter(e_SystemType_Graphics));
+      boost::intrusive_ptr<GraphicsGeometry_GeometryInterpreter> interpreter = boost::static_pointer_cast<GraphicsGeometry_GeometryInterpreter>((*visibleGeometryIter)->GetInterpreter(e_SystemType_Graphics));
 
       // add buffers to visible geometry queue
       interpreter->GetVertexBufferQueue(buffer->visibleGeometry);
@@ -151,7 +151,7 @@ void GraphicsCamera::SetPosition(const Vector3 &newPosition) {
       DO_VALIDATION;
       LightQueueEntry entry;
 
-      boost::intrusive_ptr<GraphicsLight_LightInterpreter> interpreter = static_pointer_cast<GraphicsLight_LightInterpreter>((*visibleLightIter)->GetInterpreter(e_SystemType_Graphics));
+      boost::intrusive_ptr<GraphicsLight_LightInterpreter> interpreter = boost::static_pointer_cast<GraphicsLight_LightInterpreter>((*visibleLightIter)->GetInterpreter(e_SystemType_Graphics));
 
       if (interpreter->GetShadow()) {
         DO_VALIDATION;
@@ -186,7 +186,7 @@ void GraphicsCamera::SetPosition(const Vector3 &newPosition) {
     std::deque < boost::intrusive_ptr<Skybox> >::iterator skyboxIter = skyboxes.begin();
     while (skyboxIter != skyboxes.end()) {
       DO_VALIDATION;
-      boost::intrusive_ptr<GraphicsGeometry_SkyboxInterpreter> interpreter = static_pointer_cast<GraphicsGeometry_SkyboxInterpreter>((*skyboxIter)->GetInterpreter(e_SystemType_Graphics));
+      boost::intrusive_ptr<GraphicsGeometry_SkyboxInterpreter> interpreter = boost::static_pointer_cast<GraphicsGeometry_SkyboxInterpreter>((*skyboxIter)->GetInterpreter(e_SystemType_Graphics));
       // add buffers to skybox queue
       interpreter->GetVertexBufferQueue(buffer->skyboxes);
       skyboxIter++;

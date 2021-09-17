@@ -16,6 +16,9 @@
 #include "src/game_env.hpp"
 #include <Python.h>
 
+#ifdef WIN32
+#define BOOST_USE_WINDOWS_H
+#endif
 #include <boost/python.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
