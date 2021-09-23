@@ -1,7 +1,7 @@
 {
   "name": "gfootball-engine",
   "version-string": "2.10",
-  "builtin-baseline": "025e564979cc01d0fbc5c920aa8a36635efb01bb",
+  "builtin-baseline": "47d2378c8181ece05ffc51acd2ed60d97e3c9a64",
   "dependencies": [
     "python3",
     "boost-thread",
@@ -17,6 +17,6 @@
     "opengl"
   ],
   "overrides": [
-    { "name": "python3", "version-string": "3.9.6" }
+    { "name": "python3", "version-string": "3.9.7" }
   ]
 }
