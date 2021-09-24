@@ -3,10 +3,13 @@ name: Build and Publish Python Wheels
 on:
   release:
     types: [published]
+  # Allow to trigger the workflow manually
+  workflow_dispatch:
 
 jobs:
   build-windows:
-    runs-on: windows-latest
+    # TODO: Change back to windows-latest once the SDK problem is resolved
+    runs-on: windows-2016
     strategy:
       fail-fast: false
       matrix:
@@ -39,7 +42,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: microsoft/vcpkg
-        ref: 025e564979cc01d0fbc5c920aa8a36635efb01bb
+        ref: 47d2378c8181ece05ffc51acd2ed60d97e3c9a64
         path: vcpkg
         fetch-depth: 0
 
@@ -62,7 +65,7 @@ jobs:
       working-directory: football
 
     - name: Install the package using the wheel
-      run: python -m pip install temp-gfootball --no-index --find-links=dist
+      run: python -m pip install gfootball --no-index --find-links=dist
       working-directory: football
 
     - name: Run the tests
