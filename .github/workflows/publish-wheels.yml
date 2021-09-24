@@ -3,10 +3,13 @@ name: Build and Publish Python Wheels
 on:
   release:
     types: [published]
+  # Allow to trigger the workflow manually
+  workflow_dispatch:
 
 jobs:
   build-windows:
-    runs-on: windows-latest
+    # TODO: Change back to windows-latest once the SDK problem is resolved
+    runs-on: windows-2016
     strategy:
       fail-fast: false
       matrix:
@@ -62,7 +65,7 @@ jobs:
       working-directory: football
 
     - name: Install the package using the wheel
-      run: python -m pip install temp-gfootball --no-index --find-links=dist
+      run: python -m pip install gfootball --no-index --find-links=dist
       working-directory: football
 
     - name: Run the tests

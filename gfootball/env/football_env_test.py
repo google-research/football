@@ -25,6 +25,7 @@ from multiprocessing import Queue
 import gfootball
 import os
 import platform
+import sys
 import random
 import threading
 import atexit
@@ -151,7 +152,7 @@ class FootballEnvTest(parameterized.TestCase):
           # Linux
           expected_hash_value = 1374617688
           if platform.system() == 'Windows':
-            expected_hash_value = 1828377453
+            expected_hash_value = 1340093059 if sys.maxsize > 2**32 else 1852024489
           elif platform.system() == 'Darwin':
             expected_hash_value = 2070005886
           self.assertEqual(hash_value, expected_hash_value)
@@ -160,7 +161,7 @@ class FootballEnvTest(parameterized.TestCase):
           # Linux
           expected_hash_value = 2457763948
           if platform.system() == 'Windows':
-            expected_hash_value = 2766829577
+            expected_hash_value = 3460273443 if sys.maxsize > 2**32 else 369415907
           elif platform.system() == 'Darwin':
             expected_hash_value = 876758366
           self.assertEqual(hash_value, expected_hash_value)
@@ -169,7 +170,7 @@ class FootballEnvTest(parameterized.TestCase):
           # Linux
           expected_hash_value = 867340920
           if platform.system() == 'Windows':
-            expected_hash_value = 2630021865
+            expected_hash_value = 1404099525 if sys.maxsize > 2**32 else 3687472990
           elif platform.system() == 'Darwin':
             expected_hash_value = 991389279
           self.assertEqual(hash_value, expected_hash_value)
@@ -309,7 +310,7 @@ class FootballEnvTest(parameterized.TestCase):
     # Linux
     expected_hash_value = 3642886809
     if platform.system() == 'Windows':
-      expected_hash_value = 683941870
+      expected_hash_value = 3676773624 if sys.maxsize > 2**32 else 2808421794
     elif platform.system() == 'Darwin':
       expected_hash_value = 1865563121
     self.assertEqual(hash_value, expected_hash_value)
