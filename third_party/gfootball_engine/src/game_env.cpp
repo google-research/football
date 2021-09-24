@@ -338,11 +338,13 @@ void GameEnv::step() {
   }
   if (context->gameTask->GetMatch()->IsInPlay()) {
     DO_VALIDATION;
+    GetTracker()->setDisabled(true);
     context->step++;
     for (auto controller : GetControllers()) {
       DO_VALIDATION;
       controller->ResetNotSticky();
     }
+    GetTracker()->setDisabled(false);
   }
 }
 

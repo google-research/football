@@ -129,16 +129,16 @@ class EnvState {
     } else {
       state.resize(pos + sizeof(T));
       memcpy(&state[pos], &obj, sizeof(T));
-      if (disable_cnt == 0 && !reference.empty() && (*(T*) &state[pos]) != (*(T*) &reference[pos])) {
+      if (!failure && disable_cnt == 0 && !reference.empty() && (*(T*) &state[pos]) != (*(T*) &reference[pos])) {
         failure = true;
+        std::cout << "Position:  " << pos << std::endl;
+        std::cout << "Type:      " << typeid(obj).name() << std::endl;
+        std::cout << "Value:     " << obj << std::endl;
+        std::cout << "Reference: " << (*(T*) &reference[pos]) << std::endl;
         if (crash) {
-          T ref_value;
-          memcpy(&ref_value, &reference[pos], sizeof(T));
-          std::cout << "Position:  " << pos << std::endl;
-          std::cout << "Type:      " << typeid(obj).name() << std::endl;
-          std::cout << "Value:     " << obj << std::endl;
-          std::cout << "Reference: " << ref_value << std::endl;
           Log(blunted::e_FatalError, "EnvState", "state", "Reference mismatch");
+        } else {
+          print_stacktrace();
         }
       }
       pos += sizeof(T);
@@ -158,7 +158,7 @@ class EnvState {
   bool stack = true;
   bool load = false;
   char disable_cnt = 0;
-  bool crash = true;
+  bool crash = false;
   std::vector<Player*> players;
   std::vector<blunted::Animation*> animations;
   std::vector<Team*> teams;

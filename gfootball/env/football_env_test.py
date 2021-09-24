@@ -25,7 +25,6 @@ from multiprocessing import Queue
 import gfootball
 import os
 import platform
-import sys
 import random
 import threading
 import atexit
@@ -52,13 +51,12 @@ def observation_hash(observation, hash_value = 0):
   return hash_value
 
 
-def compute_hash(env, actions, extensive=False):
+def compute_hash(env, actions):
   """Computes hash of observations returned by environment for a given scenario.
 
   Args:
     env: environment
     actions: number of actions
-    extensive: whether to run full episode
 
   Returns:
     hash
@@ -71,7 +69,7 @@ def compute_hash(env, actions, extensive=False):
     o, _, done, _ = env.step(step % actions)
     hash_value = observation_hash(o, hash_value)
     step += 1
-    if not extensive and step >= 200:
+    if step >= 200:
       break
   return hash_value
 
@@ -135,46 +133,6 @@ class FootballEnvTest(parameterized.TestCase):
       o1 = str(tuple(sorted(o1.items())))
       o2 = str(tuple(sorted(o2.items())))
       self.assertEqual(o1, o2)
-
-  def check_determinism(self, extensive=False):
-    """Check that environment is deterministic."""
-    if 'UNITTEST_IN_DOCKER' in os.environ:
-      return
-    cfg = config.Config({
-        'level': 'tests.11_vs_11_hard_deterministic'
-    })
-    env = football_env.FootballEnv(cfg)
-    actions = len(football_action_set.get_action_set(cfg))
-    for episode in range(1 if extensive else 2):
-      hash_value = compute_hash(env, actions, extensive)
-      if extensive:
-        if hash_value != 1174966789:
-          # Linux
-          expected_hash_value = 1374617688
-          if platform.system() == 'Windows':
-            expected_hash_value = 1340093059 if sys.maxsize > 2**32 else 1852024489
-          elif platform.system() == 'Darwin':
-            expected_hash_value = 2070005886
-          self.assertEqual(hash_value, expected_hash_value)
-      elif episode % 2 == 0:
-        if hash_value != 2275067030:
-          # Linux
-          expected_hash_value = 2457763948
-          if platform.system() == 'Windows':
-            expected_hash_value = 3460273443 if sys.maxsize > 2**32 else 369415907
-          elif platform.system() == 'Darwin':
-            expected_hash_value = 876758366
-          self.assertEqual(hash_value, expected_hash_value)
-      else:
-        if hash_value != 2045063811:
-          # Linux
-          expected_hash_value = 867340920
-          if platform.system() == 'Windows':
-            expected_hash_value = 1404099525 if sys.maxsize > 2**32 else 3687472990
-          elif platform.system() == 'Darwin':
-            expected_hash_value = 991389279
-          self.assertEqual(hash_value, expected_hash_value)
-    env.close()
 
   def test___control_all_players(self):
     """Validate MultiAgentToSingleAgent wrapper and control_all_players flag."""
@@ -308,9 +266,9 @@ class FootballEnvTest(parameterized.TestCase):
       o, _, _, _ = env.step(football_action_set.action_right)
       hash_value = observation_hash(o, hash_value)
     # Linux
-    expected_hash_value = 3642886809
+    expected_hash_value = 4000732293
     if platform.system() == 'Windows':
-      expected_hash_value = 3676773624 if sys.maxsize > 2**32 else 2808421794
+      expected_hash_value = 683941870
     elif platform.system() == 'Darwin':
       expected_hash_value = 1865563121
     self.assertEqual(hash_value, expected_hash_value)
@@ -349,20 +307,26 @@ class FootballEnvTest(parameterized.TestCase):
     env.step(np.array(football_action_set.action_right))
     env.close()
 
-  def test_determinism_extensive(self):
-    self.check_determinism(extensive=True)
-
-  def test_determinism(self):
-    self.check_determinism()
-
   def test_multi_instance(self):
     """Validates that two instances of the env can run in the same thread."""
+
+    def run_episode():
+      if 'UNITTEST_IN_DOCKER' in os.environ:
+        return 0
+      cfg = config.Config({
+          'level': 'tests.11_vs_11_hard_deterministic'
+      })
+      env = football_env.FootballEnv(cfg)
+      actions = len(football_action_set.get_action_set(cfg))
+      hash_value = compute_hash(env, actions)
+      env.close()
+      return hash_value
+
     tpool = pool.ThreadPool(processes=2)
     atexit.register(tpool.close)
-    run1 = tpool.apply_async(self.check_determinism)
-    run2 = tpool.apply_async(self.check_determinism)
-    run1.get()
-    run2.get()
+    run1 = tpool.apply_async(run_episode)
+    run2 = tpool.apply_async(run_episode)
+    self.assertEqual(run1.get(), run2.get())
 
   def test_multi_render(self):
     """Only one rendering instance allowed at a time."""
@@ -440,12 +404,12 @@ class FootballEnvTest(parameterized.TestCase):
     cfg1 = config.Config({
         'level': 'tests.symmetric',
         'game_engine_random_seed': seed,
-        'reverse_team_processing' : False
+        'reverse_team_processing': False
     })
     cfg2 = config.Config({
         'level': 'tests.symmetric',
         'game_engine_random_seed': seed + 10,
-        'reverse_team_processing' : False
+        'reverse_team_processing': False
     })
     env1 = football_env.FootballEnv(cfg1)
     env2 = football_env.FootballEnv(cfg2)

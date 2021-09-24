@@ -70,10 +70,12 @@ void AIControlledKeyboard::Reset() {
 
 void AIControlledKeyboard::ProcessState(EnvState* state) {
   DO_VALIDATION;
+  blunted::Vector3 direction = direction_ * mirror;
   state->setValidate(false);
   state->process(mirror);
-  state->process(direction_);
   state->setValidate(true);
+  state->process(direction);
+  direction_ = direction * mirror;
   state->process(disabled_);
   for (auto& b : buttons_pressed_) {
     state->process(b);

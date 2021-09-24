@@ -56,12 +56,10 @@ namespace blunted {
   }
 
   signed int signSide(real n) {
-    DO_VALIDATION;
     return n >= 0 ? 1 : -1;
   }
 
   bool is_odd(int n) {
-    DO_VALIDATION;
     return n & 1;
   }
 

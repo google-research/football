@@ -1,19 +1,19 @@
 # Compiling Google Research Football Engine #
 
-This guide is intended to contain detailed information on building the environment 
+This guide is intended to contain detailed information on building the environment
 on different platforms and architectures. So far, it covers:
 * [Windows](#windows),
 * [macOS](#macos),
 * [Linux](#linux).
 
-Additionally, [Development mode](#development-mode) section explains how to install the game 
-in the development (aka, editable) mode. 
+Additionally, [Development mode](#development-mode) section explains how to install the game
+in the development (aka, editable) mode.
 
 ## Windows
 Install prerequisites:
 - [Git](https://git-scm.com/download/win),
 - [CMake](https://cmake.org/download/),
-- [Visual Studio 2019 Community Edition](https://visualstudio.microsoft.com/downloads/) (make sure to 
+- [Visual Studio 2019 Community Edition](https://visualstudio.microsoft.com/downloads/) (make sure to
   select "Desktop development with C++" component),
 - [Python 3](https://www.python.org/downloads/).
 
@@ -32,7 +32,7 @@ cd vckpg
 cd ..
 ```
 
-If you have `vcpkg` already installed, consider updating it to the latest commit and running `.\bootstrap-vcpkg.bat`. 
+If you have `vcpkg` already installed, consider updating it to the latest commit and running `.\bootstrap-vcpkg.bat`.
 
 As for the C++ engine dependencies (`boost`, `SDL`, etc.), you don't have to install them manually, `vcpkg's`
 [manifest mode](https://github.com/microsoft/vcpkg/blob/master/docs/users/manifests.md) will handle it.
@@ -55,7 +55,7 @@ python -m pip install --upgrade pip setuptools wheel
 python -m pip install psutil
 
 :: Run the installation. It installs vcpkg dependencies and compiles the engine
-pip install . --use-feature=in-tree-build 
+pip install . --use-feature=in-tree-build
 ```
 
 
@@ -101,12 +101,12 @@ python3 -m pip install . --use-feature=in-tree-build
 
 #### Installation with conda
 
-If you installed the engine using `conda`, you might encounter the following error: 
-`TypeError: __init__() should return None, not 'NoneType'` when trying to run the game. 
+If you installed the engine using `conda`, you might encounter the following error:
+`TypeError: __init__() should return None, not 'NoneType'` when trying to run the game.
 It may happen because the `boost-python3` installed with `brew` is compiled against a different
-version of Python (see the [discussion](https://github.com/google-research/football/issues/156)). 
-If you successfully installed and ran Google Research Football using `conda` please update this guide. 
-For now, the easiest way is to deactivate `conda` environment and install GRF with `brew` version of Python: 
+version of Python (see the [discussion](https://github.com/google-research/football/issues/156)).
+If you successfully installed and ran Google Research Football using `conda` please update this guide.
+For now, the easiest way is to deactivate `conda` environment and install GRF with `brew` version of Python:
 ```shell
 conda deactivate
 $(brew --prefix python3)/bin/python3.9 -m venv football-env
@@ -116,13 +116,13 @@ python3 -m pip install . --use-feature=in-tree-build
 ```
 
 ### Apple Silicon
-The environment can be compiled and run on Apple Silicon. Until some dependencies (`opencv-python`, `numpy`, etc.) 
-fully support new architecture, the required components should be installed manually beforehand, 
+The environment can be compiled and run on Apple Silicon. Until some dependencies (`opencv-python`, `numpy`, etc.)
+fully support new architecture, the required components should be installed manually beforehand,
 and Google Research Football should be installed without dependencies (`--no-deps`).
 
 #### Installation with conda
-Python dependencies can be installed via `conda's` fork [miniforge](https://github.com/conda-forge/miniforge). 
-But you may encounter a `TypeError` when running the game if you use `boost-python3` from `brew`.  
+Python dependencies can be installed via `conda's` fork [miniforge](https://github.com/conda-forge/miniforge).
+But you may encounter a `TypeError` when running the game if you use `boost-python3` from `brew`.
 
 ## Linux
 Install required packages:
@@ -153,7 +153,7 @@ python3 -m pip install . --use-feature=in-tree-build
 
 ## Development mode
 
-You can install Google Research Football 
+You can install Google Research Football
 in the [development](https://packaging.python.org/guides/distributing-packages-using-setuptools/#id66)
 (aka editable) mode by running:
 
@@ -162,4 +162,4 @@ python3 -m pip install -e . --use-feature=in-tree-build
 ```
 
 In such case, Python source files in projects can be edited in-place without reinstallation,
-the changes will be reflected the next time an interpreter process is started. 
+the changes will be reflected the next time an interpreter process is started.
