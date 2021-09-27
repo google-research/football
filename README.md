@@ -53,11 +53,7 @@ brew install git python3 cmake sdl2 sdl2_image sdl2_ttf sdl2_gfx boost boost-pyt
 
 python3 -m pip install --upgrade pip setuptools psutil wheel
 ```
-To set up `pygame`, it is also required to install older versions of SDL:
 
-```
-brew install sdl sdl_image sdl_mixer sdl_ttf portmidi
-```
 
 #### Windows
 Install [Git](https://git-scm.com/download/win) and [Python 3](https://www.python.org/downloads/).
