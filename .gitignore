@@ -16,3 +16,4 @@ cmake-build-debug/
 .idea
 .vs
 vcpkg_installed/
+dist/
