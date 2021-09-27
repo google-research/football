@@ -138,6 +138,7 @@ setup(
     license='Apache 2.0',
     packages=packages,
     package_dir={'gfootball_engine': 'third_party/gfootball_engine'},
+    # If you change the requirements here please don't forget to change the requirements.txt too
     install_requires=[
         'pygame>=1.9.6',
         'opencv-python',
