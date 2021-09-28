@@ -1,6 +1,6 @@
 third_party/gfootball_engine/build*
 build/
-gfootball.egg-info
+*.egg-info
 __pycache__
 *.a
 *.so
