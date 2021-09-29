@@ -126,7 +126,7 @@ packages = find_packages() + find_packages('third_party')
 
 setup(
     name='gfootball',
-    version='2.10',
+    version='2.10.1',
     description=('Google Research Football - RL environment based on '
                  'open-source game Gameplay Football'),
     long_description=('Please see [our GitHub page](https://github.com/google-research/football) '
@@ -138,6 +138,7 @@ setup(
     license='Apache 2.0',
     packages=packages,
     package_dir={'gfootball_engine': 'third_party/gfootball_engine'},
+    # If you change the requirements here please don't forget to change the requirements.txt too
     install_requires=[
         'pygame>=1.9.6',
         'opencv-python',

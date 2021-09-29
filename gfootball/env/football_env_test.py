@@ -25,6 +25,7 @@ from multiprocessing import Queue
 import gfootball
 import os
 import platform
+import sys
 import random
 import threading
 import atexit
@@ -268,7 +269,14 @@ class FootballEnvTest(parameterized.TestCase):
     # Linux
     expected_hash_value = 4000732293
     if platform.system() == 'Windows':
-      expected_hash_value = 683941870
+      # On Windows we may have to check four possible values:
+      #  for each of architectures (32 or 64 bits)
+      #    what SDK was used (latest or from Visual Studio 2017)
+      #  We will check only two values once we start using windows-latest VM again
+      if sys.maxsize > 2 ** 32:  # x64
+        expected_hash_value = 683941870 if hash_value != 3676773624 else 3676773624
+      else:  # x86
+        expected_hash_value = 1490754124 if hash_value != 2808421794 else 2808421794
     elif platform.system() == 'Darwin':
       expected_hash_value = 1865563121
     self.assertEqual(hash_value, expected_hash_value)

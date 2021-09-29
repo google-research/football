@@ -16,7 +16,7 @@ Environment exposes following `raw` observations:
     - `left_team_direction` - N-elements vector with [x, y] movement vectors of players.
     - `left_team_tired_factor` - N-elements vector of floats in the range {0..1}. 0 means player is not tired at all.
     - `left_team_yellow_card` - N-elements vector of integers denoting number of yellow cards a given player has (0 or 1).
-    - `left_team_active` - N-elements vector of Bools denoting whether a given player is playing the game (False means player got a red card).
+    - `left_team_active` - N-elements vector of booleans denoting whether a given player is playing the game (False means player got a red card).
     - `left_team_roles` - N-elements vector denoting roles of players. The meaning is:
         - `0` = e_PlayerRole_GK - goalkeeper,
         - `1` = e_PlayerRole_CB - centre back,
@@ -63,7 +63,7 @@ Environment exposes following `raw` observations:
 - Screen:
     - `frame` - three vectors of RGB pixels representing rendered
     screen. It is only exposed when rendering is enabled (`render` flag). Size
-    of each vector is weight by height of the rendered window, 1280 by 720 by default.
+    of each vector is width by height of the rendered window, 1280 by 720 by default.
 
 Where `N` is the number of players on the team.
 
@@ -115,7 +115,7 @@ player is less than 11) are set to -1.
 
 ### `extracted` (aka SMMWrapper)
 
-Simplified spacial (minimap) representation of a game state. It consists of
+Simplified spatial (minimap) representation of a game state. It consists of
 several 72 * 96 planes of bytes, filled in with 0s except for:
 
 *   1st plane: 255s represent positions of players on the left team
@@ -148,7 +148,7 @@ The default action set consists of 19 actions:
 
 *   Idle actions
 
-    *   `action_idle` = 0, a no-op action, stickly actions are not affected (player maintains his directional movement etc.).
+    *   `action_idle` = 0, a no-op action, sticky actions are not affected (player maintains his directional movement etc.).
 
 *   Movement actions
 
@@ -181,4 +181,4 @@ The default action set consists of 19 actions:
 
 It is an extension of the default action set:
 
-*   `action_builtin_ai` = 19, let game's built-in AI generate an action
+*   `action_builtin_ai` = 19, let game's built-in AI generate an action.

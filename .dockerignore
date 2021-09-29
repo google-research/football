@@ -4,3 +4,4 @@ gfootball.egg-info
 football-env*
 .vs
 .idea
+dist/
