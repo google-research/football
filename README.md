@@ -5,16 +5,12 @@ Football. <br> It was created by the Google Brain team for research purposes.
 
 Useful links:
 
-* __(NEW!)__ [GRF Kaggle competition](https://www.kaggle.com/c/google-football) - take part in the competition playing games against others, win prizes and become the GRF Champion!
 * [Run in Colab](https://colab.research.google.com/github/google-research/football/blob/master/gfootball/colabs/gfootball_example_from_prebuild.ipynb) - start training in less that 2 minutes.
 * [Google Research Football Paper](https://arxiv.org/abs/1907.11180)
 * [GoogleAI blog post](https://ai.googleblog.com/2019/06/introducing-google-research-football.html)
 * [Google Research Football on Cloud](https://towardsdatascience.com/reproducing-google-research-football-rl-results-ac75cf17190e)
-* [Mailing List](https://groups.google.com/forum/#!forum/google-research-football) - please use it for communication with us (comments / suggestions / feature ideas)
+* [GRF Kaggle competition](https://www.kaggle.com/c/google-football) - take part in the competition playing games against others, win prizes and become the GRF Champion!
 
-
-For non-public matters that you'd like to discuss directly with the GRF team,
-please use google-research-football@google.com.
 
 We'd like to thank Bastiaan Konings Schuiling, who authored and open-sourced the original version of this game.
 
