@@ -31,7 +31,6 @@ except ImportError:
 from gfootball.env import config as cfg
 from gfootball.env import constants
 from gfootball.env import football_action_set
-from gfootball.env import observation_processor
 import numpy as np
 import six.moves.cPickle
 from six.moves import range
@@ -110,10 +109,9 @@ class FootballEnvCore(object):
     """Reset environment for a new episode using a given config."""
     self._episode_start = timeit.default_timer()
     self._action_set = football_action_set.get_action_set(self._config)
-    trace = observation_processor.ObservationProcessor(self._config)
     self._cumulative_reward = 0
     self._step_count = 0
-    self._trace = trace
+    self._trace = self._config['observation_processor'](self._config)
     self._reset(self._env.game_config.render, inc=inc)
     while not self._retrieve_observation():
       self._env.step()
@@ -400,7 +398,7 @@ class FootballEnvCore(object):
     from_picle = six.moves.cPickle.loads(res)
     self._state = from_picle['FootballEnvCore']
     if self._trace is None:
-      self._trace = observation_processor.ObservationProcessor(self._config)
+      self._trace = self._config['observation_processor'](self._config)
     return from_picle
 
   def tracker_setup(self, start, end):
