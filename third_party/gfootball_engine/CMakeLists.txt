@@ -62,13 +62,14 @@ include_directories(${SDL2_TTF_DIRS})
 include_directories(${SDL2_GFX_DIRS})
 
 if(UNIX)
-  find_package(PythonLibs 3 REQUIRED)
+  find_package(Python COMPONENTS Development REQUIRED)
 else()
   set(PYTHONLIBS_VERSION_STRING $ENV{PY_VERSION})
 endif()
 
-message("Using Python: ${PYTHONLIBS_VERSION_STRING}")
-string(REPLACE "." ";" VERSION_LIST ${PYTHONLIBS_VERSION_STRING})
+message("Using Python: ${Python_VERSION}")
+# TODO: Use Python_VERSION_MAJOR and MINOR provided by FindPython3 package
+string(REPLACE "." ";" VERSION_LIST ${Python_VERSION})
 list(GET VERSION_LIST 0 PYTHON_MAJOR)
 list(GET VERSION_LIST 1 PYTHON_MINOR)
 
@@ -78,8 +79,8 @@ if(WIN32)
   # It was improved only recently (Jan 2021), so we can't use it for earlier py versions:
   # (see https://github.com/microsoft/vcpkg/pull/15221 )
   # To avoid version mismatch we point to vcpkg's libs directly
-  set(PYTHON_LIBRARIES "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib/python${PYTHON_MAJOR}${PYTHON_MINOR}.lib")
-  set(PYTHON_INCLUDE_DIR "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include/python${PYTHON_MAJOR}.${PYTHON_MINOR}")
+  set(Python_LIBRARIES "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib/python${PYTHON_MAJOR}${PYTHON_MINOR}.lib")
+  set(Python_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include/python${PYTHON_MAJOR}.${PYTHON_MINOR}")
 endif()
 
 # Include Boost Python.
@@ -108,7 +109,8 @@ message("Using python_boost: ${BOOST_PYTHON_VERSION}")
 FIND_PACKAGE(Boost REQUIRED COMPONENTS thread system filesystem ${BOOST_PYTHON_VERSION})
 include_directories(${Boost_INCLUDE_DIR})
 
-include_directories(${PYTHON_INCLUDE_DIR})
+# TODO: Find what is correct: DIR or DIRS (see boost above)
+include_directories(${Python_INCLUDE_DIRS})
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/src/cmake)
@@ -151,7 +153,7 @@ endif()
 
 set(LIBRARIES gamelib menulib datalib blunted2
    Boost::filesystem Boost::system Boost::thread Boost::${BOOST_PYTHON_VERSION}
-   ${PYTHON_LIBRARIES} ${SDL2_LIBS_ALL} ${EGL_LIBRARIES} ${OPENGL_LIBRARY})
+   ${Python_LIBRARIES} ${SDL2_LIBS_ALL} ${EGL_LIBRARIES} ${OPENGL_LIBRARY})
 
 if(UNIX)
   set(LIB_NAME game)
