@@ -25,11 +25,8 @@ Finally, install [vcpkg](https://github.com/microsoft/vcpkg) by following a
 cd C:\dev
 :: Clone vckpg
 git clone https://github.com/microsoft/vcpkg.git
-cd vckpg
 :: Run installation script
-.\bootstrap-vcpkg.bat
-:: Return to previous directory
-cd ..
+.\vcpkg\bootstrap-vcpkg.bat
 ```
 
 If you have `vcpkg` already installed, consider updating it to the latest commit and running `.\bootstrap-vcpkg.bat`.
@@ -55,7 +52,7 @@ python -m pip install --upgrade pip setuptools wheel
 python -m pip install psutil
 
 :: Run the installation. It installs vcpkg dependencies and compiles the engine
-pip install . --use-feature=in-tree-build
+pip install .
 ```
 
 
@@ -96,7 +93,7 @@ python3 -m pip install psutil
 Finally, build the game environment:
 
 ```shell
-python3 -m pip install . --use-feature=in-tree-build
+python3 -m pip install .
 ```
 
 #### Installation with conda
@@ -112,7 +109,7 @@ conda deactivate
 $(brew --prefix python3)/bin/python3.9 -m venv football-env
 source football-env/bin/activate
 python3 -m pip install --upgrade pip setuptools psutil wheel
-python3 -m pip install . --use-feature=in-tree-build
+python3 -m pip install .
 ```
 
 ### Apple Silicon
@@ -148,7 +145,7 @@ python3 -m pip install psutil
 Finally, build the game environment:
 
 ```shell
-python3 -m pip install . --use-feature=in-tree-build
+python3 -m pip install .
 ```
 
 ## Development mode
@@ -158,7 +155,7 @@ in the [development](https://packaging.python.org/guides/distributing-packages-u
 (aka editable) mode by running:
 
 ```shell
-python3 -m pip install -e . --use-feature=in-tree-build
+python3 -m pip install -e .
 ```
 
 In such case, Python source files in projects can be edited in-place without reinstallation,

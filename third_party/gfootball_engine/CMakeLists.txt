@@ -37,14 +37,14 @@ endif(UNIX)
 
 # Find needed libraries
 FIND_PACKAGE(OpenGL REQUIRED)
-include_directories(${OPENGL_INCLUDE_DIR})
+include_directories(${OPENGL_INCLUDE_DIRS})
 
 FIND_PACKAGE(SDL2 REQUIRED)
-# TODO: Test and change to DIRS
-include_directories(${SDL2_INCLUDE_DIR})
+include_directories(${SDL2_INCLUDE_DIRS})
 
 if(UNIX AND NOT APPLE)
   FIND_PACKAGE(EGL REQUIRED)
+  # TODO: Change to DIRS according to the convention
   include_directories(${EGL_INCLUDE_DIR})
 endif()
 
@@ -71,7 +71,7 @@ elseif(WIN32)
   # (see https://github.com/microsoft/vcpkg/pull/15221 )
   # To avoid version mismatch we point to vcpkg's libs directly
   set(Python_VERSION $ENV{PY_VERSION})
-  string(REPLACE "." ";" VERSION_LIST Python_VERSION)
+  string(REPLACE "." ";" VERSION_LIST ${Python_VERSION})
   list(GET VERSION_LIST 0 Python_VERSION_MAJOR)
   list(GET VERSION_LIST 1 Python_VERSION_MINOR)
   set(Python_LIBRARIES "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib/python${Python_VERSION_MAJOR}${Python_VERSION_MINOR}.lib")
@@ -104,12 +104,9 @@ endif()
 message("Using python_boost: ${BOOST_PYTHON_VERSION}")
 
 FIND_PACKAGE(Boost REQUIRED COMPONENTS thread system filesystem ${BOOST_PYTHON_VERSION})
-# TODO: Test and change to DIRS
-include_directories(${Boost_INCLUDE_DIR})
+include_directories(${Boost_INCLUDE_DIRS})
 
 include_directories(${Python_INCLUDE_DIRS})
-# Debug:
-message("Python_INCLUDE_DIRS: ${Python_INCLUDE_DIRS}")
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/src/cmake)
@@ -152,7 +149,7 @@ endif()
 
 set(LIBRARIES gamelib menulib datalib blunted2
    Boost::filesystem Boost::system Boost::thread Boost::${BOOST_PYTHON_VERSION}
-   ${Python_LIBRARIES} ${SDL2_LIBS_ALL} ${EGL_LIBRARIES} ${OPENGL_LIBRARY})
+   ${Python_LIBRARIES} ${SDL2_LIBS_ALL} ${EGL_LIBRARIES} ${OPENGL_LIBRARIES})
 
 if(UNIX)
   set(LIB_NAME game)
