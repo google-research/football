@@ -11,9 +11,9 @@ if(WIN32)
   endif()
 
   if(${CMAKE_GENERATOR_PLATFORM} STREQUAL Win32)
-    set(VCPKG_TARGET_TRIPLET x86-windows)
+    set(VCPKG_TARGET_TRIPLET "x86-windows")
   elseif(${CMAKE_GENERATOR_PLATFORM} STREQUAL x64)
-    set(VCPKG_TARGET_TRIPLET x64-windows)
+    set(VCPKG_TARGET_TRIPLET "x64-windows")
   else()
     message(FATAL_ERROR "Unsupported Generator Platform, only Win32 or x64 are supported")
   endif()
@@ -40,6 +40,7 @@ FIND_PACKAGE(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIR})
 
 FIND_PACKAGE(SDL2 REQUIRED)
+# TODO: Test and change to DIRS
 include_directories(${SDL2_INCLUDE_DIR})
 
 if(UNIX AND NOT APPLE)
@@ -63,35 +64,31 @@ include_directories(${SDL2_GFX_DIRS})
 
 if(UNIX)
   find_package(Python COMPONENTS Development REQUIRED)
-else()
-  set(PYTHONLIBS_VERSION_STRING $ENV{PY_VERSION})
-endif()
-
-message("Using Python: ${Python_VERSION}")
-# TODO: Use Python_VERSION_MAJOR and MINOR provided by FindPython3 package
-string(REPLACE "." ";" VERSION_LIST ${Python_VERSION})
-list(GET VERSION_LIST 0 PYTHON_MAJOR)
-list(GET VERSION_LIST 1 PYTHON_MINOR)
-
-if(WIN32)
+elseif(WIN32)
   # find_package (Python COMPONENTS Development)
   # FindPython package searches for system-wide python installations first.
   # It was improved only recently (Jan 2021), so we can't use it for earlier py versions:
   # (see https://github.com/microsoft/vcpkg/pull/15221 )
   # To avoid version mismatch we point to vcpkg's libs directly
-  set(Python_LIBRARIES "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib/python${PYTHON_MAJOR}${PYTHON_MINOR}.lib")
-  set(Python_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include/python${PYTHON_MAJOR}.${PYTHON_MINOR}")
+  set(Python_VERSION $ENV{PY_VERSION})
+  string(REPLACE "." ";" VERSION_LIST Python_VERSION)
+  list(GET VERSION_LIST 0 Python_VERSION_MAJOR)
+  list(GET VERSION_LIST 1 Python_VERSION_MINOR)
+  set(Python_LIBRARIES "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib/python${Python_VERSION_MAJOR}${Python_VERSION_MINOR}.lib")
+  set(Python_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}")
 endif()
+
+message("Using Python: ${Python_VERSION}")
 
 # Include Boost Python.
 if(WIN32 OR APPLE)
-  set(BOOST_PYTHON_VERSION python${PYTHON_MAJOR}${PYTHON_MINOR})
+  set(BOOST_PYTHON_VERSION python${Python_VERSION_MAJOR}${Python_VERSION_MINOR})
 else()
   # Unfortunately different linux distributions are using different naming for boost-python
   # list of prefixes: Ubuntu, Debian, Some other distributions
   set(BOOST_PYTHON_PREFIXES python3-py python-py python)
   foreach(BP_PREFIX ${BOOST_PYTHON_PREFIXES})
-    set(BOOST_PYTHON_NAME ${BP_PREFIX}${PYTHON_MAJOR}${PYTHON_MINOR})
+    set(BOOST_PYTHON_NAME ${BP_PREFIX}${Python_VERSION_MAJOR}${Python_VERSION_MINOR})
     string(TOUPPER ${BOOST_PYTHON_NAME} BOOST_PYTHON_NAME_UPPER)
     FIND_PACKAGE(Boost COMPONENTS ${BOOST_PYTHON_NAME})
     if(Boost_${BOOST_PYTHON_NAME_UPPER}_FOUND)
@@ -107,10 +104,12 @@ endif()
 message("Using python_boost: ${BOOST_PYTHON_VERSION}")
 
 FIND_PACKAGE(Boost REQUIRED COMPONENTS thread system filesystem ${BOOST_PYTHON_VERSION})
+# TODO: Test and change to DIRS
 include_directories(${Boost_INCLUDE_DIR})
 
-# TODO: Find what is correct: DIR or DIRS (see boost above)
 include_directories(${Python_INCLUDE_DIRS})
+# Debug:
+message("Python_INCLUDE_DIRS: ${Python_INCLUDE_DIRS}")
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/src/cmake)
