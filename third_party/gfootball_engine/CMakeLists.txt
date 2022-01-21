@@ -35,16 +35,15 @@ if(UNIX)
   SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -O3 -g")
 endif(UNIX)
 
-# Find needed libraries
+# Find required libraries
 FIND_PACKAGE(OpenGL REQUIRED)
-include_directories(${OPENGL_INCLUDE_DIRS})
+include_directories(${OPENGL_INCLUDE_DIR})
 
 FIND_PACKAGE(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
 
 if(UNIX AND NOT APPLE)
   FIND_PACKAGE(EGL REQUIRED)
-  # TODO: Change to DIRS according to the convention
   include_directories(${EGL_INCLUDE_DIR})
 endif()
 
