@@ -56,7 +56,7 @@ pip install .
 ```
 
 
-## macOS
+## macOS (both Intel processors and Apple Silicon)
 
 First, install [brew](https://brew.sh/). It should automatically download Command Line Tools.
 Next, install the required packages:
@@ -72,11 +72,9 @@ git clone https://github.com/google-research/football.git
 cd football
 ```
 
-### Intel processor
-#### Installation with brew version of Python
+### Installation with brew version of Python
 It is recommended to use Python shipped with `brew`, because `boost-python3` is compiled against the same version.
 To check which Python 3 is used by default on your setup, execute `which python3`.
-For Intel-based Macs it should be `/usr/local/bin/python3`.
 If you have a different path, and you don't want to change symlinks, create a virtual environment with
 `/usr/local/bin/python3 -m venv football-env` or `$(brew --prefix python3)/bin/python3.9 -m venv football-env`.
 
@@ -96,7 +94,7 @@ Finally, build the game environment:
 python3 -m pip install .
 ```
 
-#### Installation with conda
+### Installation with conda
 
 If you installed the engine using `conda`, you might encounter the following error:
 `TypeError: __init__() should return None, not 'NoneType'` when trying to run the game.
@@ -112,14 +110,6 @@ python3 -m pip install --upgrade pip setuptools psutil wheel
 python3 -m pip install .
 ```
 
-### Apple Silicon
-The environment can be compiled and run on Apple Silicon. Until some dependencies (`opencv-python`, `numpy`, etc.)
-fully support new architecture, the required components should be installed manually beforehand,
-and Google Research Football should be installed without dependencies (`--no-deps`).
-
-#### Installation with conda
-Python dependencies can be installed via `conda's` fork [miniforge](https://github.com/conda-forge/miniforge).
-But you may encounter a `TypeError` when running the game if you use `boost-python3` from `brew`.
 
 ## Linux
 Install required packages:
