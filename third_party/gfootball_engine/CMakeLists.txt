@@ -33,6 +33,7 @@ set (CMAKE_CXX_STANDARD 14)
 if(UNIX)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS} -fPIC -g -O3")
   SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -O3 -g")
+  set(OpenGL_GL_PREFERENCE GLVND)
 endif(UNIX)
 
 # Find required libraries
@@ -62,30 +63,42 @@ include_directories(${SDL2_TTF_DIRS})
 include_directories(${SDL2_GFX_DIRS})
 
 if(UNIX)
-  find_package(Python COMPONENTS Development REQUIRED)
+  if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12")
+    find_package(Python COMPONENTS Development REQUIRED)
+  else()
+    # Starting from CMake 3.12 FindPythonLibs was deprecated in favour of FindPython.
+    # But Ubuntu 18.04 and other older distributions have CMake version less than 3.12,
+    # so we have to support the old behaviour for some time.
+    find_package(PythonLibs 3 REQUIRED)
+    string(REPLACE "." ";" VERSION_LIST ${PYTHONLIBS_VERSION_STRING})
+    list(GET VERSION_LIST 0 Python_VERSION_MAJOR)
+    list(GET VERSION_LIST 1 Python_VERSION_MINOR)
+    set(Python_INCLUDE_DIRS ${PYTHON_INCLUDE_DIRS})
+    set(Python_LIBRARIES ${PYTHON_LIBRARIES})
+  endif()
 elseif(WIN32)
   # find_package (Python COMPONENTS Development)
   # FindPython package searches for system-wide python installations first.
   # It was improved only recently (Jan 2021), so we can't use it for earlier py versions:
   # (see https://github.com/microsoft/vcpkg/pull/15221 )
   # To avoid version mismatch we point to vcpkg's libs directly
-  set(Python_VERSION $ENV{PY_VERSION})
-  string(REPLACE "." ";" VERSION_LIST ${Python_VERSION})
+  string(REPLACE "." ";" VERSION_LIST $ENV{PY_VERSION})
   list(GET VERSION_LIST 0 Python_VERSION_MAJOR)
   list(GET VERSION_LIST 1 Python_VERSION_MINOR)
-  set(Python_LIBRARIES "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib/python${Python_VERSION_MAJOR}${Python_VERSION_MINOR}.lib")
   set(Python_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}")
+  set(Python_LIBRARIES "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib/python${Python_VERSION_MAJOR}${Python_VERSION_MINOR}.lib")
 endif()
 
-message("Using Python: ${Python_VERSION}")
+message("Using Python: ${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}")
+include_directories(${Python_INCLUDE_DIRS})
 
 # Include Boost Python.
 if(WIN32 OR APPLE)
   set(BOOST_PYTHON_VERSION python${Python_VERSION_MAJOR}${Python_VERSION_MINOR})
 else()
   # Unfortunately different linux distributions are using different naming for boost-python
-  # list of prefixes: Ubuntu, Debian, Some other distributions
-  set(BOOST_PYTHON_PREFIXES python3-py python-py python)
+  # list of prefixes: newer Ubuntu and other distributions, older Ubuntu, Debian
+  set(BOOST_PYTHON_PREFIXES python python3-py python-py)
   foreach(BP_PREFIX ${BOOST_PYTHON_PREFIXES})
     set(BOOST_PYTHON_NAME ${BP_PREFIX}${Python_VERSION_MAJOR}${Python_VERSION_MINOR})
     string(TOUPPER ${BOOST_PYTHON_NAME} BOOST_PYTHON_NAME_UPPER)
@@ -100,12 +113,10 @@ else()
     message(FATAL_ERROR "Boost Python not found")
   endif()
 endif()
-message("Using python_boost: ${BOOST_PYTHON_VERSION}")
+message("Using Boost.Python: ${BOOST_PYTHON_VERSION}")
 
 FIND_PACKAGE(Boost REQUIRED COMPONENTS thread system filesystem ${BOOST_PYTHON_VERSION})
 include_directories(${Boost_INCLUDE_DIRS})
-
-include_directories(${Python_INCLUDE_DIRS})
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/src/cmake)
