@@ -11,9 +11,9 @@ if(WIN32)
   endif()
 
   if(${CMAKE_GENERATOR_PLATFORM} STREQUAL Win32)
-    set(VCPKG_TARGET_TRIPLET x86-windows)
+    set(VCPKG_TARGET_TRIPLET "x86-windows")
   elseif(${CMAKE_GENERATOR_PLATFORM} STREQUAL x64)
-    set(VCPKG_TARGET_TRIPLET x64-windows)
+    set(VCPKG_TARGET_TRIPLET "x64-windows")
   else()
     message(FATAL_ERROR "Unsupported Generator Platform, only Win32 or x64 are supported")
   endif()
@@ -33,14 +33,15 @@ set (CMAKE_CXX_STANDARD 14)
 if(UNIX)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS} -fPIC -g -O3")
   SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -O3 -g")
+  set(OpenGL_GL_PREFERENCE GLVND)
 endif(UNIX)
 
-# Find needed libraries
+# Find required libraries
 FIND_PACKAGE(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIR})
 
 FIND_PACKAGE(SDL2 REQUIRED)
-include_directories(${SDL2_INCLUDE_DIR})
+include_directories(${SDL2_INCLUDE_DIRS})
 
 if(UNIX AND NOT APPLE)
   FIND_PACKAGE(EGL REQUIRED)
@@ -62,35 +63,44 @@ include_directories(${SDL2_TTF_DIRS})
 include_directories(${SDL2_GFX_DIRS})
 
 if(UNIX)
-  find_package(PythonLibs 3 REQUIRED)
-else()
-  set(PYTHONLIBS_VERSION_STRING $ENV{PY_VERSION})
-endif()
-
-message("Using Python: ${PYTHONLIBS_VERSION_STRING}")
-string(REPLACE "." ";" VERSION_LIST ${PYTHONLIBS_VERSION_STRING})
-list(GET VERSION_LIST 0 PYTHON_MAJOR)
-list(GET VERSION_LIST 1 PYTHON_MINOR)
-
-if(WIN32)
+  if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12")
+    find_package(Python COMPONENTS Development REQUIRED)
+  else()
+    # Starting from CMake 3.12 FindPythonLibs was deprecated in favour of FindPython.
+    # But Ubuntu 18.04 and other older distributions have CMake version less than 3.12,
+    # so we have to support the old behaviour for some time.
+    find_package(PythonLibs 3 REQUIRED)
+    string(REPLACE "." ";" VERSION_LIST ${PYTHONLIBS_VERSION_STRING})
+    list(GET VERSION_LIST 0 Python_VERSION_MAJOR)
+    list(GET VERSION_LIST 1 Python_VERSION_MINOR)
+    set(Python_INCLUDE_DIRS ${PYTHON_INCLUDE_DIRS})
+    set(Python_LIBRARIES ${PYTHON_LIBRARIES})
+  endif()
+elseif(WIN32)
   # find_package (Python COMPONENTS Development)
   # FindPython package searches for system-wide python installations first.
   # It was improved only recently (Jan 2021), so we can't use it for earlier py versions:
   # (see https://github.com/microsoft/vcpkg/pull/15221 )
   # To avoid version mismatch we point to vcpkg's libs directly
-  set(PYTHON_LIBRARIES "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib/python${PYTHON_MAJOR}${PYTHON_MINOR}.lib")
-  set(PYTHON_INCLUDE_DIR "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include/python${PYTHON_MAJOR}.${PYTHON_MINOR}")
+  string(REPLACE "." ";" VERSION_LIST $ENV{PY_VERSION})
+  list(GET VERSION_LIST 0 Python_VERSION_MAJOR)
+  list(GET VERSION_LIST 1 Python_VERSION_MINOR)
+  set(Python_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}")
+  set(Python_LIBRARIES "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib/python${Python_VERSION_MAJOR}${Python_VERSION_MINOR}.lib")
 endif()
+
+message("Using Python: ${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}")
+include_directories(${Python_INCLUDE_DIRS})
 
 # Include Boost Python.
 if(WIN32 OR APPLE)
-  set(BOOST_PYTHON_VERSION python${PYTHON_MAJOR}${PYTHON_MINOR})
+  set(BOOST_PYTHON_VERSION python${Python_VERSION_MAJOR}${Python_VERSION_MINOR})
 else()
   # Unfortunately different linux distributions are using different naming for boost-python
-  # list of prefixes: Ubuntu, Debian, Some other distributions
-  set(BOOST_PYTHON_PREFIXES python3-py python-py python)
+  # list of prefixes: newer Ubuntu and other distributions, older Ubuntu, Debian
+  set(BOOST_PYTHON_PREFIXES python python3-py python-py)
   foreach(BP_PREFIX ${BOOST_PYTHON_PREFIXES})
-    set(BOOST_PYTHON_NAME ${BP_PREFIX}${PYTHON_MAJOR}${PYTHON_MINOR})
+    set(BOOST_PYTHON_NAME ${BP_PREFIX}${Python_VERSION_MAJOR}${Python_VERSION_MINOR})
     string(TOUPPER ${BOOST_PYTHON_NAME} BOOST_PYTHON_NAME_UPPER)
     FIND_PACKAGE(Boost COMPONENTS ${BOOST_PYTHON_NAME})
     if(Boost_${BOOST_PYTHON_NAME_UPPER}_FOUND)
@@ -103,12 +113,10 @@ else()
     message(FATAL_ERROR "Boost Python not found")
   endif()
 endif()
-message("Using python_boost: ${BOOST_PYTHON_VERSION}")
+message("Using Boost.Python: ${BOOST_PYTHON_VERSION}")
 
 FIND_PACKAGE(Boost REQUIRED COMPONENTS thread system filesystem ${BOOST_PYTHON_VERSION})
-include_directories(${Boost_INCLUDE_DIR})
-
-include_directories(${PYTHON_INCLUDE_DIR})
+include_directories(${Boost_INCLUDE_DIRS})
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/src/cmake)
@@ -151,7 +159,7 @@ endif()
 
 set(LIBRARIES gamelib menulib datalib blunted2
    Boost::filesystem Boost::system Boost::thread Boost::${BOOST_PYTHON_VERSION}
-   ${PYTHON_LIBRARIES} ${SDL2_LIBS_ALL} ${EGL_LIBRARIES} ${OPENGL_LIBRARY})
+   ${Python_LIBRARIES} ${SDL2_LIBS_ALL} ${EGL_LIBRARIES} ${OPENGL_LIBRARIES})
 
 if(UNIX)
   set(LIB_NAME game)
