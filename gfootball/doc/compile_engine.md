@@ -52,7 +52,7 @@ python -m pip install --upgrade pip setuptools wheel
 python -m pip install psutil
 
 :: Run the installation. It installs vcpkg dependencies and compiles the engine
-pip install .
+python -m pip install .
 ```
 
 
