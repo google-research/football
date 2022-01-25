@@ -1,7 +1,7 @@
 {
   "name": "gfootball-engine",
-  "version-string": "2.10.1",
-  "builtin-baseline": "8e0a801c6253a2c8e81f59427a4a5d66f10c0ca4",
+  "version-string": "2.10.2",
+  "builtin-baseline": "b18b17865cfb6bd24620a00f30691be6775abb96",
   "dependencies": [
     "python3",
     "boost-thread",

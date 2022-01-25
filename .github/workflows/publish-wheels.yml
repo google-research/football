@@ -13,8 +13,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ 3.6, 3.7, 3.8, 3.9 ]
+        python-version: [ '3.6', '3.7', '3.8', '3.9', '3.10' ]
         architecture: ['x86', 'x64']
+        # SciPy doesn't provide a wheel for Python 3.10 x86
+        exclude:
+          - python-version: '3.10'
+            architecture: 'x86'
 
     env:
       VCPKG_ROOT: "${{ github.workspace }}/vcpkg"
@@ -34,15 +38,15 @@ jobs:
     - name: Upgrade pip and essential dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -U build setuptools psutil wheel
-        pip install -r requirements.txt
+        python -m pip install -U build setuptools psutil wheel
+        python -m pip install -r requirements.txt
       working-directory: football
 
     - name: Checkout vcpkg
       uses: actions/checkout@v2
       with:
         repository: microsoft/vcpkg
-        ref: 8e0a801c6253a2c8e81f59427a4a5d66f10c0ca4
+        ref: b18b17865cfb6bd24620a00f30691be6775abb96
         path: vcpkg
         fetch-depth: 0
 
