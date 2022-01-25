@@ -10,10 +10,10 @@ RUN apt-get update && apt-get --no-install-recommends install -yq git cmake buil
   python3-pip
 
 RUN python3 -m pip install --upgrade pip setuptools wheel
-RUN pip3 install --no-cache-dir psutil dm-sonnet==1.*
-RUN pip list | grep 'tensorflow ' || pip3 install --no-cache-dir tensorflow==1.15.*
+RUN python3 -m pip install --no-cache-dir psutil dm-sonnet==1.*
+RUN python3 -m pip list | grep 'tensorflow ' || python3 -m pip install --no-cache-dir tensorflow==1.15.*
 
-RUN pip3 install --no-cache-dir git+https://github.com/openai/baselines.git@master
+RUN python3 -m pip install --no-cache-dir git+https://github.com/openai/baselines.git@master
 COPY . /gfootball
-RUN cd /gfootball && pip3 install .
+RUN cd /gfootball && python3 -m pip install .
 WORKDIR '/gfootball'
