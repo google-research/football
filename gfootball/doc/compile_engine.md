@@ -55,7 +55,7 @@ python -m pip install --upgrade pip setuptools wheel
 python -m pip install psutil
 
 :: Run the installation. It installs vcpkg dependencies and compiles the engine
-pip install . --use-feature=in-tree-build
+python -m pip install .
 ```
 
 
