@@ -1,9 +1,15 @@
 Numbering scheme:
-Each environment release number is of the form vX.Y. X is the major version
-number, Y is the minor version number. Experiment results within the same X
+Each environment release number is of the form vX.Y[.P]. X is the major version
+number, Y is the minor version number, P is the patch version if any. Experiment results within the same X
 should not change, as modifications made to the environment are either
 new features or backward compatible bug fixes. We will maintain vX branches
 pointing at the most recent vX.Y.
+
+v2.10.2
+- Replace deprecated FindPythonLibs CMake module.
+- Support Apple Silicon.
+- Build and publish Python 3.10-x64 wheels on Windows.
+- Speed up `docker build` by ignoring development files.
 
 v2.10.1
 - Improve crash reporting in the engine.

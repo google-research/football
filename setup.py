@@ -126,7 +126,7 @@ packages = find_packages() + find_packages('third_party')
 
 setup(
     name='gfootball',
-    version='2.10.1',
+    version='2.10.2',
     description=('Google Research Football - RL environment based on '
                  'open-source game Gameplay Football'),
     long_description=('Please see [our GitHub page](https://github.com/google-research/football) '
