@@ -21,18 +21,21 @@ if(WIN32)
   set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
   set(VCPKG_MANIFEST_DIR "${CMAKE_SOURCE_DIR}/vcpkg_manifests/py$ENV{PY_VERSION}")
   set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+  # Windows requires the library to have the same name as the module
+  set(OUTPUT_LIB_NAME _gameplayfootball)
 else()  # UNIX
+  set(OUTPUT_LIB_NAME game)
   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules")
 endif()
 
 project(gameplayfootball)
 set(PACKAGE gameplayfootball)
 
-set (CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 14)
 
 if(UNIX)
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS} -fPIC -g -O3")
-  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -O3 -g")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS} -fPIC -g -O3")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -O3 -g")
   set(OpenGL_GL_PREFERENCE GLVND)
 endif(UNIX)
 
@@ -63,11 +66,11 @@ include_directories(${SDL2_TTF_DIRS})
 include_directories(${SDL2_GFX_DIRS})
 
 if(UNIX)
-  if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12")
+  if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12")
     find_package(Python COMPONENTS Development REQUIRED)
   else()
     # Starting from CMake 3.12 FindPythonLibs was deprecated in favour of FindPython.
-    # But Ubuntu 18.04 and other older distributions have CMake version less than 3.12,
+    # But Ubuntu 18.04 and other older distributions are shipped with CMake version < 3.12,
     # so we have to support the old behaviour for some time.
     find_package(PythonLibs 3 REQUIRED)
     string(REPLACE "." ";" VERSION_LIST ${PYTHONLIBS_VERSION_STRING})
@@ -91,6 +94,11 @@ endif()
 
 message("Using Python: ${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}")
 include_directories(${Python_INCLUDE_DIRS})
+if(NOT WIN32 AND ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.15")
+  set(Py_TARGETS Python::Module)
+else()
+  set(Py_TARGETS ${Python_LIBRARIES})
+endif()
 
 # Include Boost Python.
 if(WIN32 OR APPLE)
@@ -159,18 +167,11 @@ endif()
 
 set(LIBRARIES gamelib menulib datalib blunted2
    Boost::filesystem Boost::system Boost::thread Boost::${BOOST_PYTHON_VERSION}
-   ${Python_LIBRARIES} ${SDL2_LIBS_ALL} ${EGL_LIBRARIES} ${OPENGL_LIBRARIES})
+   ${Py_TARGETS} ${SDL2_LIBS_ALL} ${EGL_LIBRARIES} ${OPENGL_LIBRARIES})
 
-if(UNIX)
-  set(LIB_NAME game)
-else()  # WIN32
-  # Windows requires the library to have the same name as the module
-  set(LIB_NAME _gameplayfootball)
-endif()
-
-add_library(${LIB_NAME} SHARED ${CORE_SOURCES} ${CORE_HEADERS} ${AI_HEADERS} ${AI_SOURCES})
-target_link_libraries(${LIB_NAME} ${LIBRARIES})
+add_library(${OUTPUT_LIB_NAME} SHARED ${CORE_SOURCES} ${CORE_HEADERS} ${AI_HEADERS} ${AI_SOURCES})
+target_link_libraries(${OUTPUT_LIB_NAME} ${LIBRARIES})
 
 if(WIN32)
-  set_target_properties(${LIB_NAME} PROPERTIES SUFFIX ".pyd")
+  set_target_properties(${OUTPUT_LIB_NAME} PROPERTIES SUFFIX ".pyd")
 endif()

@@ -66,7 +66,7 @@ python3 -m pip install gfootball
 ```
 
 #### Option b. Installing from sources using GitHub repository 
-(On Windows you have to install additional tools and set environment variables, see 
+(On Windows you have to install additional tools and set an environment variable, see 
 [Compiling Engine](gfootball/doc/compile_engine.md#windows) for detailed instructions.)
 
 ```shell

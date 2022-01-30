@@ -21,7 +21,6 @@ import platform
 import shutil
 from setuptools import find_packages
 from setuptools import setup, Extension
-from setuptools.command.install import install
 from setuptools.command.build_ext import build_ext
 
 
@@ -44,12 +43,6 @@ class CustomBuild(build_ext):
     super(CustomBuild, self).run()
 
   def run_unix(self):
-    # https://stackoverflow.com/questions/32419594/how-to-create-a-dylib-c-extension-on-mac-os-x-with-distutils-and-or-setuptools
-    if sys.platform == 'darwin':
-      from distutils import sysconfig
-      vars = sysconfig.get_config_vars()
-      vars['LDSHARED'] = vars['LDSHARED'].replace('-bundle',
-                                                  '-dynamiclib -Wl,-F.')
     if os.path.exists(self.build_lib):
       dest_dir = os.path.join(self.build_lib, 'gfootball_engine')
     else:
@@ -126,7 +119,7 @@ packages = find_packages() + find_packages('third_party')
 
 setup(
     name='gfootball',
-    version='2.10.2',
+    version='2.10.3',
     description=('Google Research Football - RL environment based on '
                  'open-source game Gameplay Football'),
     long_description=('Please see [our GitHub page](https://github.com/google-research/football) '

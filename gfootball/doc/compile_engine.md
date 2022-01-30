@@ -58,6 +58,7 @@ python -m pip install .
 
 ## macOS (both Intel processors and Apple Silicon)
 
+### Install prerequisites
 First, install [brew](https://brew.sh/). It should automatically download Command Line Tools.
 Next, install the required packages:
 ```shell
@@ -72,41 +73,33 @@ git clone https://github.com/google-research/football.git
 cd football
 ```
 
-### Installation with brew version of Python
-It is recommended to use Python shipped with `brew`, because `boost-python3` is compiled against the same version.
-To check which Python 3 is used by default on your setup, execute `which python3`.
-If you have a different path, and you don't want to change symlinks, create a virtual environment with
-`/usr/local/bin/python3 -m venv football-env` or `$(brew --prefix python3)/bin/python3.9 -m venv football-env`.
+### Choosing Python distribution
+It is recommended to use Python shipped with `brew` because `boost-python3` is compiled against the same version.
+To check which Python 3 is used by default on your setup, execute `which python3`. If the output is `/usr/local/bin/python3`
+or `/opt/homebrew/bin/python3`, you're good to go.  
+If you see a different path, e.g. `/Library/Frameworks/Python.framework/Versions/3.9/bin/python3` or `...conda...`, 
+create a virtual environment with `$(brew --prefix python3)/bin/python3 -m venv football-env`. If you have `conda`, 
+you might need to deactivate base environment beforehand `conda deactivate`. 
 
+It is possible to use `conda` to create a virtual environment, but make sure that you select the same version of Python 
+that was used to build `boost-python` (`3.9` as of January 2022):
+```shell
+conda create --name football-env python=3.9 -y
+conda activate football-env
+```
+
+### Create virtual environment and build the game
 Use [virtual environment](https://docs.python.org/3/tutorial/venv.html) to avoid messing up with global dependencies:
 
 ```shell
 python3 -m venv football-env
 source football-env/bin/activate
-# update pip and setuptools
-python3 -m pip install --upgrade pip setuptools wheel
-python3 -m pip install psutil
+
 ```
 
 Finally, build the game environment:
 
 ```shell
-python3 -m pip install .
-```
-
-### Installation with conda
-
-If you installed the engine using `conda`, you might encounter the following error:
-`TypeError: __init__() should return None, not 'NoneType'` when trying to run the game.
-It may happen because the `boost-python3` installed with `brew` is compiled against a different
-version of Python (see the [discussion](https://github.com/google-research/football/issues/156)).
-If you successfully installed and ran Google Research Football using `conda` please update this guide.
-For now, the easiest way is to deactivate `conda` environment and install GRF with `brew` version of Python:
-```shell
-conda deactivate
-$(brew --prefix python3)/bin/python3.9 -m venv football-env
-source football-env/bin/activate
-python3 -m pip install --upgrade pip setuptools psutil wheel
 python3 -m pip install .
 ```
 
@@ -148,5 +141,5 @@ in the [development](https://packaging.python.org/guides/distributing-packages-u
 python3 -m pip install -e .
 ```
 
-In such case, Python source files in projects can be edited in-place without reinstallation,
+In such case, Python source files can be edited in-place without reinstallation,
 the changes will be reflected the next time an interpreter process is started.
