@@ -2,6 +2,8 @@ name: Build gfootball on Mac
 
 on:
   push:
+    branches:
+      - master
     paths-ignore:
       - 'gfootball/doc/**'
       - '*.md'

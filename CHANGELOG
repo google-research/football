@@ -10,6 +10,7 @@ v2.10.3
 - Improve development setup on all platforms (symlink instead of copying).
 - Fix Boost.Bind compilation warnings.
 - Replace scipy dependency with numpy.
+- Limit Gym version to v0.21.0 for now.
 - Add GitHub workflow for building on macOS.
 
 v2.10.2
