@@ -25,7 +25,7 @@ This method doesn't support game rendering on screen - if you want to see the ga
 
 ### Using Docker
 
-This is the recommended way to avoid incompatible package versions.
+This is the recommended way for Linux-based systems to avoid incompatible package versions.
 Instructions are available [here](gfootball/doc/docker.md).
 
 ### On your computer

@@ -82,11 +82,7 @@ create a virtual environment with `$(brew --prefix python3)/bin/python3 -m venv 
 you might need to deactivate base environment beforehand `conda deactivate`. 
 
 It is possible to use `conda` to create a virtual environment, but make sure that you select the same version of Python 
-that was used to build `boost-python` (`3.9` as of January 2022):
-```shell
-conda create --name football-env python=3.9 -y
-conda activate football-env
-```
+that was used to build `boost-python3` (`3.9` as of February 2022).
 
 ### Create virtual environment and build the game
 Use [virtual environment](https://docs.python.org/3/tutorial/venv.html) to avoid messing up with global dependencies:
@@ -94,7 +90,18 @@ Use [virtual environment](https://docs.python.org/3/tutorial/venv.html) to avoid
 ```shell
 python3 -m venv football-env
 source football-env/bin/activate
+```
+If you decide to use `conda` environment, use the following commands instead:
 
+```shell
+conda create --name football-env python=3.9 -y
+conda activate football-env
+```
+
+Upgrade `pip`, `setuptools`, `wheel` and install `psutil` inside the virtual environment:
+```shell
+python3 -m pip install --upgrade pip setuptools wheel
+python3 -m pip install psutil
 ```
 
 Finally, build the game environment:
@@ -115,6 +122,13 @@ libdirectfb-dev libst-dev mesa-utils xvfb x11vnc python3-pip
 python3 -m pip install --upgrade pip setuptools wheel
 python3 -m pip install psutil
 ```
+
+Clone the repository and navigate to the directory:
+```shell
+git clone https://github.com/google-research/football.git
+cd football
+```
+
 Use [virtual environment](https://docs.python.org/3/tutorial/venv.html) to avoid messing up with global dependencies:
 
 ```shell

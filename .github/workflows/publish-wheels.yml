@@ -8,17 +8,13 @@ on:
 
 jobs:
   build-windows:
-    # TODO: Change back to windows-latest once the SDK problem is resolved
+    # TODO: Change back to windows-latest after March 15, 2022 and exclude unsupported Python versions
     runs-on: windows-2016
     strategy:
       fail-fast: false
       matrix:
         python-version: [ '3.6', '3.7', '3.8', '3.9', '3.10' ]
         architecture: ['x86', 'x64']
-        # SciPy doesn't provide a wheel for Python 3.10 x86
-        exclude:
-          - python-version: '3.10'
-            architecture: 'x86'
 
     env:
       VCPKG_ROOT: "${{ github.workspace }}/vcpkg"

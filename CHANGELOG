@@ -6,7 +6,11 @@ new features or backward compatible bug fixes. We will maintain vX branches
 pointing at the most recent vX.Y.
 
 v2.10.3
-- Add Conda support on macOS
+- Add Conda support on macOS.
+- Improve development setup on all platforms (symlink instead of copying).
+- Fix Boost.Bind compilation warnings.
+- Replace scipy dependency with numpy.
+- Add GitHub workflow for building on macOS.
 
 v2.10.2
 - Replace deprecated FindPythonLibs CMake module.
