@@ -8,13 +8,38 @@ on:
 
 jobs:
   build-windows:
-    # TODO: Change back to windows-latest after March 15, 2022 and exclude unsupported Python versions
-    runs-on: windows-2016
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ '3.6', '3.7', '3.8', '3.9', '3.10' ]
+        os: [windows-latest]
+        python-version: [ '3.9', '3.10' ]
         architecture: ['x86', 'x64']
+        include:
+          - os: windows-2016
+            python-version: '3.6'
+            architecture: 'x86'
+            experimental: true
+          - os: windows-2016
+            python-version: '3.6'
+            architecture: 'x64'
+            experimental: true
+          - os: windows-2016
+            python-version: '3.7'
+            architecture: 'x86'
+            experimental: true
+          - os: windows-2016
+            python-version: '3.7'
+            architecture: 'x64'
+            experimental: true
+          - os: windows-2016
+            python-version: '3.8'
+            architecture: 'x86'
+            experimental: true
+          - os: windows-2016
+            python-version: '3.8'
+            architecture: 'x64'
+            experimental: true
 
     env:
       VCPKG_ROOT: "${{ github.workspace }}/vcpkg"
