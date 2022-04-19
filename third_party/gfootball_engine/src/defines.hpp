@@ -43,7 +43,7 @@
 #include <boost/thread/condition.hpp>
 #include <boost/signals2.hpp>
 #include <boost/signals2/slot.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include "backtrace.h"
 #include "base/log.hpp"
 
@@ -58,6 +58,8 @@ constexpr float EPSILON = 0.000001;
 #define MAX_PLAYERS 11
 
 typedef std::string screenshoot;
+
+using namespace boost::placeholders;
 
 namespace blunted {
   class Animation;

@@ -8,17 +8,38 @@ on:
 
 jobs:
   build-windows:
-    # TODO: Change back to windows-latest once the SDK problem is resolved
-    runs-on: windows-2016
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ '3.6', '3.7', '3.8', '3.9', '3.10' ]
+        os: [windows-latest]
+        python-version: [ '3.9', '3.10' ]
         architecture: ['x86', 'x64']
-        # SciPy doesn't provide a wheel for Python 3.10 x86
-        exclude:
-          - python-version: '3.10'
+        include:
+          - os: windows-2016
+            python-version: '3.6'
             architecture: 'x86'
+            experimental: true
+          - os: windows-2016
+            python-version: '3.6'
+            architecture: 'x64'
+            experimental: true
+          - os: windows-2016
+            python-version: '3.7'
+            architecture: 'x86'
+            experimental: true
+          - os: windows-2016
+            python-version: '3.7'
+            architecture: 'x64'
+            experimental: true
+          - os: windows-2016
+            python-version: '3.8'
+            architecture: 'x86'
+            experimental: true
+          - os: windows-2016
+            python-version: '3.8'
+            architecture: 'x64'
+            experimental: true
 
     env:
       VCPKG_ROOT: "${{ github.workspace }}/vcpkg"
@@ -35,7 +56,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
         architecture: ${{ matrix.architecture }}
 
-    - name: Upgrade pip and essential dependencies
+    - name: Upgrade pip and install dependencies
       run: |
         python -m pip install --upgrade pip
         python -m pip install -U build setuptools psutil wheel

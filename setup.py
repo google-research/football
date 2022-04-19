@@ -21,7 +21,6 @@ import platform
 import shutil
 from setuptools import find_packages
 from setuptools import setup, Extension
-from setuptools.command.install import install
 from setuptools.command.build_ext import build_ext
 
 
@@ -44,32 +43,26 @@ class CustomBuild(build_ext):
     super(CustomBuild, self).run()
 
   def run_unix(self):
-    # https://stackoverflow.com/questions/32419594/how-to-create-a-dylib-c-extension-on-mac-os-x-with-distutils-and-or-setuptools
-    if sys.platform == 'darwin':
-      from distutils import sysconfig
-      vars = sysconfig.get_config_vars()
-      vars['LDSHARED'] = vars['LDSHARED'].replace('-bundle',
-                                                  '-dynamiclib -Wl,-F.')
     if os.path.exists(self.build_lib):
       dest_dir = os.path.join(self.build_lib, 'gfootball_engine')
     else:
-      # Development install (pip install -e .)
+      # For the development install (pip install -e .)
+      # gfootball_engine module has to be located in the project root directory.
       dest_dir = "gfootball_engine"
-      if os.system('cp -r third_party/gfootball_engine/ ' + dest_dir):
-        raise OSError("Google Research Football: Could not copy "
-                      "engine to %s." % dest_dir)
-    if os.system('cp -r third_party/fonts ' + dest_dir):
-      raise OSError('Google Research Football: Could not copy '
-                    'fonts to %s.' % dest_dir)
+      if not os.path.exists(dest_dir):
+        try:
+          os.symlink(os.path.abspath('third_party/gfootball_engine'), dest_dir)
+        except:
+          raise OSError("Google Research Football: Could not create symlink to %s"
+                        "for the development install." % dest_dir)
 
     try:
-      use_prebuilt_library = int(
-          os.environ.get('GFOOTBALL_USE_PREBUILT_SO', '0'))
+      use_prebuilt_lib = int(os.environ.get('GFOOTBALL_USE_PREBUILT_SO', '0'))
     except ValueError:
       raise ValueError('Could not parse GFOOTBALL_USE_PREBUILT_SO environment '
                        'variable as int. Please set it to 0 or 1')
 
-    if use_prebuilt_library:
+    if use_prebuilt_lib:
       if os.system(
             'cp third_party/gfootball_engine/lib/prebuilt_gameplayfootball.so ' +
             dest_dir + '/_gameplayfootball.so'):
@@ -77,56 +70,104 @@ class CustomBuild(build_ext):
             'Failed to copy pre-built library to a final destination %s.' %
             dest_dir)
     else:
-      if (os.system('gfootball/build_game_engine.sh') or
-          os.system('cp third_party/gfootball_engine/_gameplayfootball.so ' +
-                    dest_dir)):
+      # Compile the engine
+      if os.system('gfootball/build_game_engine.sh'):
         raise OSError('Google Research Football compilation failed')
+      # There might be multiple compiled modules (e.g. for different python versions)
+      # Copy them all
+      libs = glob.glob(f'third_party/gfootball_engine/_gameplayfootball*.so')
+      copy_compiled_libs(libs, dest_dir)
+    copy_fonts(dest_dir)
 
   def run_windows(self):
-    if os.path.exists(self.build_lib):
-      dest_dir = os.path.join(self.build_lib, 'gfootball_engine')
-    else:  # Development install
-      dest_dir = "gfootball_engine"
-      if not os.path.exists(dest_dir):
-        os.mkdir(dest_dir)
-      # For development mode (pip install -e .) gfootball_engine module has to be located
-      # in the project root directory. So we copy only __init__.py and `data` directory
-      shutil.copy2('third_party/gfootball_engine/__init__.py', dest_dir)
-      data_dir = os.path.join(dest_dir, 'data')
-      if not os.path.exists(data_dir):
-        shutil.copytree('third_party/gfootball_engine/data', data_dir)
-
-    # Copy fonts
-    dst_fonts = os.path.join(dest_dir, "fonts")
-    if not os.path.exists(dst_fonts):
-      shutil.copytree("third_party/fonts", dst_fonts)
-
-    py_major, py_minor, _ = platform.python_version_tuple()
     guide_message = 'Please follow the guide on how to install prerequisites: ' \
-                  'https://github.com/google-research/football/blob/master/gfootball/doc/compile_engine.md#windows'
+                    'https://github.com/google-research/football/blob/master/gfootball/doc/compile_engine.md#windows'
     if not os.environ.get('VCPKG_ROOT'):
       raise OSError('VCPKG_ROOT environment variable is not defined.\n' + guide_message)
+
+    if os.path.exists(self.build_lib):
+      dest_dir = os.path.join(self.build_lib, 'gfootball_engine')
+    else:
+      # For the development install (pip install -e .)
+      # gfootball_engine module has to be located in the project root directory.
+      dest_dir = "gfootball_engine"
+      if not os.path.exists(dest_dir):
+        try:
+          os.symlink(os.path.abspath('third_party/gfootball_engine'), dest_dir, target_is_directory=True)
+        except OSError:
+          # Windows doesn't support symlinks for unprivileged users
+          # Fall back to copying the files
+          os.mkdir(dest_dir)
+          shutil.copy2('third_party/gfootball_engine/__init__.py', dest_dir)
+          data_dir = os.path.join(dest_dir, 'data')
+          if not os.path.exists(data_dir):
+            shutil.copytree('third_party/gfootball_engine/data', data_dir)
+
     os.environ['GENERATOR_PLATFORM'] = 'x64' if sys.maxsize > 2 ** 32 else 'Win32'
+    py_major, py_minor, _ = platform.python_version_tuple()
     os.environ['PY_VERSION'] = f'{py_major}.{py_minor}'
     if os.system('gfootball\\build_game_engine.bat'):
       raise OSError('Google Research Football compilation failed.\n' + guide_message)
     # Copy compiled library and its dependencies
     lib_path = 'third_party/gfootball_engine/build_win/Release/'
     libs = glob.glob(f'{lib_path}*.pyd') + glob.glob(f'{lib_path}*.dll')
-    for file in libs:
-      shutil.copy2(file, dest_dir)
+    copy_compiled_libs(libs, dest_dir)
+    copy_fonts(dest_dir)
 
 
-# To support development (a.k.a. editable) install (`pip install -e .` or `python3 setup.py develop`),
-# we remove `build` directory created by a regular setup
-if 'develop' in sys.argv and os.path.exists('build'):
-  shutil.rmtree('build')
+def copy_compiled_libs(libs, dest_dir):
+  """Copy compiled libraries to the destination directory."""
+  for lib in libs:
+    try:
+      shutil.copy2(lib, dest_dir)
+    except shutil.SameFileError:
+      # In case the file is the same do nothing
+      pass
 
+
+def copy_fonts(dest_dir):
+  """Copy fonts to the destination directory."""
+  dst_fonts = os.path.join(dest_dir, "fonts")
+  if not os.path.exists(dst_fonts):
+    shutil.copytree("third_party/fonts", dst_fonts)
+
+
+def process_develop_setup():
+  """
+  Clean up (if necessary) some directories before or after running
+  setup in development (a.k.a. editable) mode (`pip install -e .`).
+  """
+  if 'develop' in sys.argv and os.path.exists('build'):
+    # Remove `build` directory created by a regular installation
+    shutil.rmtree('build')
+  elif 'develop' not in sys.argv and os.path.exists('gfootball_engine'):
+    # If `pip install .` is called after development mode,
+    # remove the 'fonts' directory copied by a `develop` setup
+    copied_fonts = 'third_party/gfootball_engine/fonts'
+    if os.path.exists(copied_fonts):
+      shutil.rmtree(copied_fonts)
+    # Remove .so files (.pyd on Windows)
+    for empty_lib in glob.glob("brainball_cpp_engine*"):
+      os.remove(empty_lib)
+    # Finally, remove symlink to the gfootball_engine directory
+    if not os.path.exists('gfootball_engine'):
+      return
+    if os.path.islink('gfootball_engine'):
+      if platform.system() == 'Windows':
+        os.remove('gfootball_engine')
+      else:
+        os.unlink('gfootball_engine')
+    else:
+      shutil.rmtree('gfootball_engine')
+
+
+# TODO: Add CI tests for develop setup on all platforms
+process_develop_setup()
 packages = find_packages() + find_packages('third_party')
 
 setup(
     name='gfootball',
-    version='2.10.2',
+    version='2.10.3',
     description=('Google Research Football - RL environment based on '
                  'open-source game Gameplay Football'),
     long_description=('Please see [our GitHub page](https://github.com/google-research/football) '
@@ -143,8 +184,8 @@ setup(
         'pygame>=1.9.6',
         'opencv-python',
         'psutil',
-        'scipy',
-        'gym>=0.11.0',
+        'numpy',
+        'gym<=0.21.0',
         'absl-py',
         'wheel',
     ],
