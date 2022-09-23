@@ -108,8 +108,8 @@ struct Anim {
     state->process(anim);
     state->process(id);
     state->process(frameNum);
-    state->process(static_cast<void*>(&functionType), sizeof(functionType));
-    state->process(static_cast<void*>(&originatingInterrupt), sizeof(originatingInterrupt));
+    state->process(functionType);
+    state->process(originatingInterrupt);
     state->process(actionSmuggle);
     state->process(actionSmuggleOffset);
     state->process(actionSmuggleSustain);
@@ -204,7 +204,7 @@ struct SpatialState {
     state->process(position);
     state->process(angle);
     state->process(directionVec);
-    state->process(static_cast<void*>(&enumVelocity), sizeof(enumVelocity));
+    state->process(enumVelocity);
     state->process(floatVelocity);
     state->process(actualMovement);
     state->process(physicsMovement);
@@ -219,7 +219,7 @@ struct SpatialState {
     state->process(relBodyAngle);
     state->process(relBodyDirectionVec);
     state->process(relBodyDirectionVecNonquantized);
-    state->process(static_cast<void*>(&foot), sizeof(foot));
+    state->process(foot);
   }
 };
 

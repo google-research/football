@@ -19,14 +19,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from absl.testing import absltest
+
 from gfootball.env import config
 from gfootball.env import football_action_set
 from gfootball.env import observation_rotation
 import numpy as np
-import tensorflow.compat.v1 as tf
 
 
-class ObservationRotationTest(tf.test.TestCase):
+class ObservationRotationTest(absltest.TestCase):
 
   def testObservationFlipping(self):
     cfg = config.Config()
@@ -38,12 +39,14 @@ class ObservationRotationTest(tf.test.TestCase):
     observation['left_team_tired_factor'] = np.random.rand(num_players)
     observation['left_team_yellow_card'] = np.random.rand(num_players)
     observation['left_team_active'] = [3]
+    observation['left_team_designated_player'] = 3
     observation['right_team'] = np.random.rand(num_players * 2) - 0.5
     observation['right_team_roles'] = np.random.rand(num_players)
     observation['right_team_direction'] = np.random.rand(num_players * 2) - 0.5
     observation['right_team_tired_factor'] = np.random.rand(num_players)
     observation['right_team_yellow_card'] = np.random.rand(num_players)
     observation['right_team_active'] = [0]
+    observation['right_team_designated_player'] = 0
     observation['ball'] = np.array([1, -1, 0])
     observation['ball_direction'] = np.random.rand(3) - 0.5
     observation['ball_rotation'] = np.random.rand(3) - 0.5
@@ -76,4 +79,4 @@ class ObservationRotationTest(tf.test.TestCase):
 
 
 if __name__ == '__main__':
-  tf.test.main()
+  absltest.main()

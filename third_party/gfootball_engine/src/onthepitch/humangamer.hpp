@@ -29,34 +29,27 @@ using namespace blunted;
 
 class Team;
 
-enum e_PlayerColor {
-  e_PlayerColor_Blue,
-  e_PlayerColor_Green,
-  e_PlayerColor_Red,
-  e_PlayerColor_Yellow,
-  e_PlayerColor_Purple,
-  e_PlayerColor_Default
-};
-
 class HumanGamer {
 
   public:
-    HumanGamer(Team *team, IHIDevice *hid, e_PlayerColor color);
+    HumanGamer(Team *team, AIControlledKeyboard *hid);
     HumanGamer() {}
+    HumanGamer(const HumanGamer&) = delete;
+    void operator=(const HumanGamer&) = delete;
     ~HumanGamer();
 
-    Player *GetSelectedPlayer() const { return selectedPlayer; }
+    Player *GetSelectedPlayer() const {
+      return selectedPlayer;
+    }
     void SetSelectedPlayer(Player* player);
-    IHIDevice *GetHIDevice() { DO_VALIDATION; return hid; }
+    AIControlledKeyboard *GetHIDevice() { DO_VALIDATION; return hid; }
     HumanController* GetHumanController() { DO_VALIDATION; return &controller; }
     void ProcessState(EnvState *state);
-    e_PlayerColor GetPlayerColor() const { return playerColor; }
 
   protected:
     Team *team = nullptr;
-    IHIDevice *hid = nullptr;
+    AIControlledKeyboard *hid = nullptr;
     HumanController controller;
-    e_PlayerColor playerColor;
     Player *selectedPlayer = nullptr;
 };
 

@@ -98,6 +98,8 @@ def flip_team_observation(observation, result, config, from_team, to_team):
       from_team)]
   result['{}_team_active'.format(to_team)] = observation[
       '{}_team_active'.format(from_team)]
+  result['{}_team_designated_player'.format(to_team)] = observation[
+      '{}_team_designated_player'.format(from_team)]
   if '{}_agent_controlled_player'.format(from_team) in observation:
     result['{}_agent_controlled_player'.format(to_team)] = observation[
         '{}_agent_controlled_player'.format(from_team)]

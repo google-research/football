@@ -430,7 +430,7 @@ BallSpatialInfo Ball::CalculatePrediction() {
         groundRotationEffects_enabled) {
       DO_VALIDATION;
 
-      // rewrite idea: find out difference in ball velo / roll velo and then change both ball velo and rot (instead of having these 2 seperate sections)
+      // rewrite idea: find out difference in ball velo / roll velo and then change both ball velo and rot (instead of having these 2 separate sections)
 
       // ground friction induced rotation
       radian xR, yR;
@@ -608,7 +608,9 @@ void Ball::ProcessState(EnvState *state) {
   DO_VALIDATION;
   state->process(momentum);
   state->process(rotation_ms);
-  state->process(predictions, sizeof(predictions));
+  for (int x = 0; x < sizeof(predictions) / sizeof(predictions[0]); x++) {
+    state->process(predictions[x]);
+  }
   state->process(valid_predictions);
   state->process(orientPrediction);
   int size = ballPosHistory.size();

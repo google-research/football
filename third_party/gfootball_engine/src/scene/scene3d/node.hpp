@@ -59,7 +59,7 @@ namespace blunted {
         int objectsSize = objects.size();
         for (int i = 0; i < objectsSize; i++) { DO_VALIDATION;
           if (objects[i]->GetObjectType() == targetObjectType) { DO_VALIDATION;
-            gatherObjects.push_back(static_pointer_cast<T>(objects[i]));
+            gatherObjects.push_back(boost::static_pointer_cast<T>(objects[i]));
           }
         }
 
@@ -76,7 +76,7 @@ namespace blunted {
         int objectsSize = objects.size();
         for (int i = 0; i < objectsSize; i++) { DO_VALIDATION;
           if (objects[i]->GetObjectType() == targetObjectType) { DO_VALIDATION;
-            if (objects[i]->GetAABB().Intersects(bounding)) gatherObjects.push_back(static_pointer_cast<T>(objects[i]));
+            if (objects[i]->GetAABB().Intersects(bounding)) gatherObjects.push_back(boost::static_pointer_cast<T>(objects[i]));
           }
         }
 

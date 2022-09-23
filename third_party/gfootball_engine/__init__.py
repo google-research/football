@@ -29,6 +29,10 @@ if game_path not in sys.path:
 
 gfootball_dir = os.path.dirname(os.path.abspath(__file__))
 font_file = os.path.join(gfootball_dir, 'fonts/AlegreyaSansSC-ExtraBold.ttf')
+if 'MESA_GL_VERSION_OVERRIDE' not in os.environ:
+  os.environ['MESA_GL_VERSION_OVERRIDE'] = '3.2'
+if 'MESA_GLSL_VERSION_OVERRIDE' not in os.environ:
+  os.environ['MESA_GLSL_VERSION_OVERRIDE'] = '150'
 if 'GFOOTBALL_FONT' not in os.environ:
   os.environ['GFOOTBALL_FONT'] = font_file
 data_dir = os.path.join(gfootball_dir, 'data')

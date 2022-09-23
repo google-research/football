@@ -76,31 +76,17 @@ TeamData::TeamData(int teamDatabaseID, const std::vector<FormationEntry> &f) {
 
   const bool national = false;
   const std::string formationString =
-      "<p1><position> -1.0,  0.0 "
-      "</position><role>GK</role></p1><p2><position> -0.7,  "
-      "0.75</position><role>LB</role></p2><p3><position> -1.0,  "
-      "0.25</position><role>CB</role></p3><p4><position> -1.0, "
-      "-0.25</position><role>CB</role></p4><p5><position> -0.7, "
-      "-0.75</position><role>RB</role></p5><p6><position>  0.0,  0.5 "
-      "</position><role>CM</role></p6><p7><position> -0.2,  0.0 "
-      "</position><role>CM</role></p7><p8><position>  0.0, -0.5 "
-      "</position><role>CM</role></p8><p9><position>  0.6,  0.75 "
-      "</position><role>LM</role></p9><p10><position> 1.0,  0.0 "
-      "</position><role>CF</role></p10><p11><position> 0.6, -0.75 "
-      "</position><role>RM</role></p11>";
-  const std::string factoryFormationString =
-      "<p1><position> -1.0,  0.0 "
-      "</position><role>GK</role></p1><p2><position> -0.7,  "
-      "0.75</position><role>LB</role></p2><p3><position> -1.0,  "
-      "0.25</position><role>CB</role></p3><p4><position> -1.0, "
-      "-0.25</position><role>CB</role></p4><p5><position> -0.7, "
-      "-0.75</position><role>RB</role></p5><p6><position>  0.0,  0.5 "
-      "</position><role>CM</role></p6><p7><position> -0.2,  0.0 "
-      "</position><role>CM</role></p7><p8><position>  0.0, -0.5 "
-      "</position><role>CM</role></p8><p9><position>  0.6,  0.75 "
-      "</position><role>LM</role></p9><p10><position> 1.0,  0.0 "
-      "</position><role>CF</role></p10><p11><position> 0.6, -0.75 "
-      "</position><role>RM</role></p11>";
+      "<p1><position> -1.0,  0.0</position><role>GK</role></p1>"
+      "<p2><position> -0.7,  0.75</position><role>LB</role></p2>"
+      "<p3><position> -1.0,  0.25</position><role>CB</role></p3>"
+      "<p4><position> -1.0, -0.25</position><role>CB</role></p4>"
+      "<p5><position> -0.7, -0.75</position><role>RB</role></p5>"
+      "<p6><position>  0.0,  0.5 </position><role>CM</role></p6>"
+      "<p7><position> -0.2,  0.0 </position><role>CM</role></p7>"
+      "<p8><position>  0.0, -0.5 </position><role>CM</role></p8>"
+      "<p9><position>  0.6,  0.75 </position><role>LM</role></p9>"
+      "<p10><position> 1.0,  0.0 </position><role>CF</role></p10>"
+      "<p11><position> 0.6, -0.75 </position><role>RM</role></p11>";
   const std::string tacticsString =
       "<dribble_centermagnet>0.720000</"
       "dribble_centermagnet><dribble_offensiveness>0.500000</"
@@ -187,7 +173,7 @@ TeamData::TeamData(int teamDatabaseID, const std::vector<FormationEntry> &f) {
       DO_VALIDATION;
       if ((*iter).first == "p" + int_to_str(num + 1)) {
         DO_VALIDATION;
-        formation[num].databasePosition = GetVectorFromString(
+        Vector3 databasePosition = GetVectorFromString(
             (*iter).second.children.find("position")->second.value);
         formation[num].role = GetRoleFromString(
             (*iter).second.children.find("role")->second.value);
@@ -195,13 +181,8 @@ TeamData::TeamData(int teamDatabaseID, const std::vector<FormationEntry> &f) {
         // combine custom positions with hardcoded formation positions belonging
         // to certain roles. this way, more extreme user formation settings are
         // 'normalized' somewhat.
-        formation[num].position =
-            formation[num].databasePosition * 0.6f +
+        formation[num].position = databasePosition * 0.6f +
             GetDefaultRolePosition(formation[num].role) * 0.4f;
-
-        // GetVectorFromString((*iter).second.children.find("position")->second.value).Print();
-        // printf("%s\n",
-        // (*iter).second.children.find("role")->second.value.c_str());
       }
     }
 
@@ -217,7 +198,11 @@ TeamData::TeamData(int teamDatabaseID, const std::vector<FormationEntry> &f) {
 
   while (changed && iterations < maxIterations) {
     DO_VALIDATION;
+#ifdef WIN32
+    std::vector<Vector3> offset(player_count);
+#else
     Vector3 offset[player_count];
+#endif
 
     changed = false;
     for (int p1 = 0; p1 < player_count - 1; p1++) {
@@ -289,17 +274,17 @@ TeamData::TeamData(int teamDatabaseID, const std::vector<FormationEntry> &f) {
 
   tree = loader.Load(factoryTacticsString);
   // load players
-  playerData.push_back(new PlayerData(398));
-  playerData.push_back(new PlayerData(11));
-  playerData.push_back(new PlayerData(254));
-  playerData.push_back(new PlayerData(320));
-  playerData.push_back(new PlayerData(103));
-  playerData.push_back(new PlayerData(188));
-  playerData.push_back(new PlayerData(74));
-  playerData.push_back(new PlayerData(332));
-  playerData.push_back(new PlayerData(290));
-  playerData.push_back(new PlayerData(391));
-  playerData.push_back(new PlayerData(264));
+  playerData.push_back(new PlayerData(398, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(11, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(254, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(320, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(103, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(188, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(74, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(332, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(290, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(391, teamDatabaseID == 3));
+  playerData.push_back(new PlayerData(264, teamDatabaseID == 3));
   playerData.resize(player_count);
 }
 

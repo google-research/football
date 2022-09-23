@@ -119,7 +119,7 @@ inline e_ObjectType Object::GetObjectType() {
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
       DO_VALIDATION;
-      boost::intrusive_ptr<Interpreter> interpreter = static_pointer_cast<Interpreter>(observers[i]);
+      boost::intrusive_ptr<Interpreter> interpreter = boost::static_pointer_cast<Interpreter>(observers[i]);
       interpreter->OnSynchronize();
     }
   }
@@ -138,7 +138,7 @@ inline e_ObjectType Object::GetObjectType() {
     int observersSize = observers.size();
     for (int i = 0; i < observersSize; i++) {
       DO_VALIDATION;
-      boost::intrusive_ptr<Interpreter> interpreter = static_pointer_cast<Interpreter>(observers[i]);
+      boost::intrusive_ptr<Interpreter> interpreter = boost::static_pointer_cast<Interpreter>(observers[i]);
       if (interpreter->GetSystemType() == targetSystemType) result = interpreter;
     }
     return result;

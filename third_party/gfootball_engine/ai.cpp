@@ -16,6 +16,9 @@
 #include "src/game_env.hpp"
 #include <Python.h>
 
+#ifdef WIN32
+#define BOOST_USE_WINDOWS_H
+#endif
 #include <boost/python.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
@@ -98,7 +101,8 @@ BOOST_PYTHON_MODULE(_gameplayfootball) {
       .def_readonly("tired_factor", &PlayerInfo::tired_factor)
       .def_readonly("has_card", &PlayerInfo::has_card)
       .def_readonly("is_active", &PlayerInfo::is_active)
-      .def_readonly("role", &PlayerInfo::role);
+      .def_readonly("role", &PlayerInfo::role)
+      .def_readonly("designated_player", &PlayerInfo::designated_player);
 
   class_<ControllerInfo>("ControllerInfo", init<int>())
       .add_property("controlled_player", &ControllerInfo::controlled_player);
@@ -148,13 +152,18 @@ BOOST_PYTHON_MODULE(_gameplayfootball) {
 
   class_<Vector3>("Vector3", init<float, float, float>())
      .def("__getitem__", &Vector3::GetEnvCoord)
-     .def("__setitem__", &Vector3::SetEnvCoord)
-  ;
+     .def("__setitem__", &Vector3::SetEnvCoord);
 
-  class_<GameConfig>("GameConfig")
+  class_<GameConfig, SHARED_PTR<GameConfig>, boost::noncopyable>("GameConfig", no_init)
+      .def("make", &GameConfig::make)
+      .staticmethod("make")
       .def_readwrite("render", &GameConfig::render)
       .def_readwrite("physics_steps_per_frame",
-                     &GameConfig::physics_steps_per_frame);
+                     &GameConfig::physics_steps_per_frame)
+      .def_readwrite("render_resolution_x",
+                     &GameConfig::render_resolution_x)
+      .def_readwrite("render_resolution_y",
+                     &GameConfig::render_resolution_y);
 
   class_<ScenarioConfig, SHARED_PTR<ScenarioConfig>, boost::noncopyable>(
       "ScenarioConfig", no_init)
@@ -183,7 +192,16 @@ BOOST_PYTHON_MODULE(_gameplayfootball) {
                      &ScenarioConfig::end_episode_on_possession_change)
       .def_readwrite("end_episode_on_out_of_play",
                      &ScenarioConfig::end_episode_on_out_of_play)
-      .def_readwrite("game_duration", &ScenarioConfig::game_duration);
+      .def_readwrite("game_duration", &ScenarioConfig::game_duration)
+      .def_readwrite("second_half", &ScenarioConfig::second_half)
+      .def_readwrite("control_all_players",
+                     &ScenarioConfig::control_all_players)
+      .def_readonly("dynamic_player_selection",
+                    &ScenarioConfig::DynamicPlayerSelection)
+      .def_readonly("controllable_left_players",
+                    &ScenarioConfig::ControllableLeftPlayers)
+      .def_readonly("controllable_right_players",
+                    &ScenarioConfig::ControllableRightPlayers);
 
   class_<std::vector<FormationEntry> >("FormationEntryVec").def(
       vector_indexing_suite<std::vector<FormationEntry> >());
@@ -253,7 +271,8 @@ BOOST_PYTHON_MODULE(_gameplayfootball) {
     .value("release_team_pressure", Action::game_release_team_pressure)
     .value("release_switch", Action::game_release_switch)
     .value("release_sprint", Action::game_release_sprint)
-    .value("release_dribble", Action::game_release_dribble);
+    .value("release_dribble", Action::game_release_dribble)
+    .value("builtin_ai", Action::game_builtin_ai);
 
   enum_<e_Team>("e_Team")
       .value("e_Left", e_Team::e_Left)

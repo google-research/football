@@ -1,9 +1,83 @@
 Numbering scheme:
-Each environment release number is of the form vX.Y. X is the major version
-number, Y is the minor version number. Experiment results within the same X
+Each environment release number is of the form vX.Y[.P]. X is the major version
+number, Y is the minor version number, P is the patch version if any. Experiment results within the same X
 should not change, as modifications made to the environment are either
 new features or backward compatible bug fixes. We will maintain vX branches
 pointing at the most recent vX.Y.
+
+v2.10.3
+- Add Conda support on macOS.
+- Improve development setup on all platforms (symlink instead of copying).
+- Fix Boost.Bind compilation warnings.
+- Replace scipy dependency with numpy.
+- Limit Gym version to v0.21.0 for now.
+- Add GitHub workflow for building on macOS.
+
+v2.10.2
+- Replace deprecated FindPythonLibs CMake module.
+- Support Apple Silicon.
+- Build and publish Python 3.10-x64 wheels on Windows.
+- Speed up `docker build` by ignoring development files.
+
+v2.10.1
+- Improve crash reporting in the engine.
+- Update environment tests.
+
+v2.10
+- Windows support.
+- Development mode (pip install -e .)
+
+v2.9
+- Drop hard dependency on Tensorflow.
+- Make installation easier, support for Ubuntu 20.04.
+
+v2.8
+- Added support for hardware accelerated headless rendering.
+- Minor fixes for the issues reported by Kaggle contestants.
+
+v2.7
+- Fix propagation of a single pass/shot action between players upon control switch.
+- Improve logic which prevents agents blocking the game.
+
+v2.6
+- Address minor issues reported by Kaggle contestants.
+
+v2.5
+- Make 2D videos more readable and color-blind friendly.
+- Do not allow agents to block the game by exploiting kick-off.
+
+v2.4
+- Support for configurable rendering resolution.
+- Kaggle competition links.
+
+v2.3
+- Fix to scenario's second_half feature.
+
+v2.2
+- Minor changes to the information displayed in the video replays.
+- Changes to Kaggle competition scenario.
+- Minor code cleanups.
+
+v2.1
+- Introduction of `builtin_ai` action, which lets agent dynamically give control
+  of the player to the native game's built-in AI. It can be useful when training
+  multiagent setup incrementally (for example start by controlling all 11 players,
+  for 10 of them generate `builtin_ai` action. Over time stop using `builtin_ai`
+  action for an increasing number of players). Introduction of `v2` action set
+  which is an extension of the `default` action set with `builtin_ai` action.
+- Improved documentation for using Docker image, support for rendering with Docker.
+- Fix to observation shape returned by wrappers.
+
+v2.0.7
+- A number of documentation updates.
+- `info` returned by step() API call returns pointers to recorded dumps.
+
+v2.0.6
+- Small fixes to getState/setState.
+- Memory usage reduction when saving replay videos is enabled.
+
+v2.0.5
+- Support compilation on OSX.
 
 v2.0.4
 - Added Colab support (see readme file).

@@ -149,7 +149,7 @@ struct Quadrant {
   void ProcessState(EnvState* state) {
     state->process(id);
     state->process(position);
-    state->process(&velocity, sizeof(velocity));
+    state->process(velocity);
     state->process(angle);
   }
 };

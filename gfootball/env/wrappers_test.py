@@ -22,10 +22,10 @@ from __future__ import print_function
 import os
 import gym
 import numpy as np
-import unittest
+from absl.testing import absltest
 
 
-class SingleAgentWrapperTest(unittest.TestCase):
+class SingleAgentWrapperTest(absltest.TestCase):
 
   def test_consistent_observation_and_action(self):
     env = gym.make(
@@ -121,7 +121,8 @@ class SingleAgentWrapperTest(unittest.TestCase):
         number_of_left_players_agent_controls=1)
 
     self.assertEqual(
-        gym.spaces.Box(low=-1, high=1, shape=(115,), dtype=np.float32),
+        gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(115,), dtype=np.float32),
         env.observation_space)
 
     env.reset()
@@ -134,7 +135,8 @@ class SingleAgentWrapperTest(unittest.TestCase):
         number_of_left_players_agent_controls=2)
 
     self.assertEqual(
-        gym.spaces.Box(low=-1, high=1, shape=(2, 115), dtype=np.float32),
+        gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(2, 115), dtype=np.float32),
         env.observation_space)
 
     env.reset()
@@ -143,4 +145,4 @@ class SingleAgentWrapperTest(unittest.TestCase):
     env.close()
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

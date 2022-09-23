@@ -13,7 +13,18 @@
 # limitations under the License.
 
 set -e
-# Delete pre-existing version of CMakeCache.txt to make 'pip3 install' work.
+
+LIB_EXTENSION="so"
+
+if [[ "$OSTYPE" == "darwin"* ]] ; then
+    LIB_EXTENSION="dylib"
+fi
+
+# Take into account # of cores and available RAM for deciding on compilation parallelism.
+# TODO: Try importing psutil and if failed fall back to 1 thread
+PARALLELISM=$(python3 -c 'import psutil; import multiprocessing as mp; print(int(max(1,min((psutil.virtual_memory().available/1000000000-1)/0.5, mp.cpu_count()))))')
+
+# Delete pre-existing version of CMakeCache.txt to make 'python3 -m pip install' work.
 rm -f third_party/gfootball_engine/CMakeCache.txt
-pushd third_party/gfootball_engine && cmake . && make -j `nproc` && popd
-pushd third_party/gfootball_engine && ln -sf libgame.so _gameplayfootball.so && popd
+pushd third_party/gfootball_engine && cmake . && make -j $PARALLELISM && popd
+pushd third_party/gfootball_engine && ln -sf libgame.$LIB_EXTENSION _gameplayfootball.so && popd

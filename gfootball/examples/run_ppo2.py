@@ -91,7 +91,7 @@ def train(_):
 
   # Import tensorflow after we create environments. TF is not fork sake, and
   # we could be using TF as part of environment if one of the players is
-  # controled by an already trained model.
+  # controlled by an already trained model.
   import tensorflow.compat.v1 as tf
   ncpu = multiprocessing.cpu_count()
   config = tf.ConfigProto(allow_soft_placement=True,

@@ -21,18 +21,19 @@ from __future__ import print_function
 
 import glob
 import os
-import unittest
 import zlib
+import tempfile
+from absl.testing import absltest
+
 from gfootball.env import config
 from gfootball.env import football_action_set
 from gfootball.env import football_env
 from gfootball.env import script_helpers
-import six.moves.cPickle
 
-test_tmpdir = '/tmp/gfootball_test'
+test_tmpdir = os.path.join(tempfile.gettempdir(), 'gfootball_test')
 
 
-class ScriptHelpersTest(unittest.TestCase):
+class ScriptHelpersTest(absltest.TestCase):
 
   def generate_replay(self):
     """Generates replay of an episode."""
@@ -58,8 +59,7 @@ class ScriptHelpersTest(unittest.TestCase):
     env.close()
 
   def compute_hash(self, trace_file):
-    with open(trace_file, 'rb') as f:
-      replay = six.moves.cPickle.load(f)
+    replay = script_helpers.ScriptHelpers().load_dump(trace_file)
     hash_value = 0
     for frame in replay:
       del frame['debug']
@@ -102,4 +102,4 @@ class ScriptHelpersTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

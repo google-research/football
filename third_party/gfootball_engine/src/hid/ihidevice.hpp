@@ -20,37 +20,8 @@
 
 #include "../base/math/vector3.hpp"
 #include "../defines.hpp"
+#include "../ai/ai_keyboard.hpp"
 
 using namespace blunted;
-
-enum e_ButtonFunction {
-  e_ButtonFunction_LongPass,
-  e_ButtonFunction_HighPass,
-  e_ButtonFunction_ShortPass,
-  e_ButtonFunction_Shot,
-  e_ButtonFunction_KeeperRush,
-  e_ButtonFunction_Sliding,
-  e_ButtonFunction_Pressure,
-  e_ButtonFunction_TeamPressure,
-  e_ButtonFunction_Switch,
-  e_ButtonFunction_Sprint,
-  e_ButtonFunction_Dribble,
-  e_ButtonFunction_Size
-};
-
-class IHIDevice {
-
-  public:
-    virtual ~IHIDevice() { DO_VALIDATION;}
-
-    virtual void Reset() { DO_VALIDATION;};
-    virtual void ResetNotSticky() = 0;
-    virtual bool GetButton(e_ButtonFunction buttonFunction) = 0;
-    virtual bool GetPreviousButtonState(e_ButtonFunction buttonFunction) = 0;
-    virtual Vector3 GetDirection() = 0;
-    virtual Vector3 GetOriginalDirection() = 0;
-    virtual void ProcessState(EnvState* state) = 0;
-    virtual void Mirror(float mirror) = 0;
-};
 
 #endif

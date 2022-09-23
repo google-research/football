@@ -12,17 +12,21 @@
 // limitations under the License.
 
 #include <stdio.h>
+#ifndef WIN32
 #include <execinfo.h>
+#include <unistd.h>
+#endif
 #include <signal.h>
 #include "backtrace.h"
 #include <stdlib.h>
-#include <unistd.h>
 
 void print_stacktrace() {
-  void *array[10];
+  void *array[20];
   size_t size;
-  size = backtrace(array, 10);
+#ifndef WIN32
+  size = backtrace(array, 20);
   backtrace_symbols_fd(array, size, STDERR_FILENO);
+#endif
 }
 
 

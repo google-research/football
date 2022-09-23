@@ -48,14 +48,9 @@ class PlayerProperties {
 class PlayerData {
 
   public:
-    PlayerData(int playerDatabaseID);
+    PlayerData(int playerDatabaseID, bool left_team);
     PlayerData();
     virtual ~PlayerData();
-
-    void UpdateName(const std::string& first, const std::string& last) { DO_VALIDATION;
-      firstName = first;
-      lastName = last;
-    }
     std::string GetLastName() const { return lastName; }
     inline float GetStat(PlayerStat name) const { return stats.GetReal(name); }
     float get_physical_velocity() const { return physical_velocity; }
@@ -68,15 +63,10 @@ class PlayerData {
     std::string GetHairColor() const { return hairColor; }
     float GetHeight() const { return height; }
 
-    // Player mesh body model. Possible values: 0 or 1.
-    int GetModelId() const { return model_id; }
-    void SetModelId(const int id) { DO_VALIDATION; model_id = id; }
-
   private:
     void UpdateValues();
     float physical_velocity = 0.0;
   protected:
-    int databaseID = 0;
     PlayerProperties stats;
 
     int skinColor = 0;
@@ -85,8 +75,6 @@ class PlayerData {
     float height = 0.0f;
     std::string firstName;
     std::string lastName;
-    int model_id = 0;
-
 };
 
 #endif

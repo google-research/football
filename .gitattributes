@@ -1,0 +1,5 @@
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text=auto
+
+# Bash scripts should always have LF line endings to support Docker on Windows
+*.sh text eol=lf

@@ -21,6 +21,7 @@
 #include "humanoid/humanoidbase.hpp"
 #include "../../data/playerdata.hpp"
 #include "controller/icontroller.hpp"
+#include "../../onthepitch/humangamer.hpp"
 
 #include "../../scene/scene3d/node.hpp"
 
@@ -67,8 +68,9 @@ class PlayerBase {
 
     void RequestCommand(PlayerCommandQueue &commandQueue);
     IController *GetController();
-    void SetExternalController(HumanController *externalController);
-    HumanController *GetExternalController();
+    void SetExternalController(HumanGamer *externalController);
+    HumanController *ExternalController();
+    bool ExternalControllerActive();
 
     boost::intrusive_ptr<Node> GetHumanoidNode() { DO_VALIDATION; return humanoid->GetHumanoidNode(); }
     boost::intrusive_ptr<Node> GetFullbodyNode() { DO_VALIDATION; return humanoid->GetFullbodyNode(); }
@@ -114,7 +116,7 @@ class PlayerBase {
 
     std::unique_ptr<HumanoidBase> humanoid;
     std::unique_ptr<IController> controller;
-    HumanController *externalController = 0;
+    HumanGamer *externalController = 0;
 
     bool isActive = false;
 

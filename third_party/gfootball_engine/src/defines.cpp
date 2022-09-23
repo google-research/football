@@ -31,48 +31,13 @@ EnvState::EnvState(GameEnv* game, const std::string& state,
       context(game->context) {
 }
 
-void EnvState::process(unsigned long& value) {
-  DO_VALIDATION;
-  process(&value, sizeof(value));
-}
-
-void EnvState::process(unsigned int& value) {
-  DO_VALIDATION;
-  process(&value, sizeof(value));
-}
-
-void EnvState::process(bool& value) {
-  DO_VALIDATION;
-  process(&value, sizeof(value));
-}
-
-void EnvState::process(blunted::Vector3& value) {
-  DO_VALIDATION;
-  process(&value, sizeof(value));
-}
-
-void EnvState::process(blunted::radian& value) {
-  DO_VALIDATION;
-  process(&value, sizeof(value));
-}
-
-void EnvState::process(blunted::Quaternion& value) {
-  process(&value, sizeof(value));
-}
-
-void EnvState::process(int& value) {
-  process(&value, sizeof(value));
-}
-
 void EnvState::process(std::string& value) {
   int s = value.size();
   process(s);
   value.resize(s);
-  process(&value[0], s);
-}
-
-void EnvState::process(float& value) {
-  process(&value, sizeof(value));
+  for (char& c : value) {
+    process(c);
+  }
 }
 
 void EnvState::process(void** collection, int size, void*& element) {
@@ -80,7 +45,7 @@ void EnvState::process(void** collection, int size, void*& element) {
   if (load) {
     DO_VALIDATION;
     int index;
-    process(&index, sizeof(int));
+    process(index);
     if (index == -1) {
       DO_VALIDATION;
       element = 0;
@@ -95,13 +60,13 @@ void EnvState::process(void** collection, int size, void*& element) {
     if (element == 0) {
       DO_VALIDATION;
       int index = -1;
-      process(&index, sizeof(int));
+      process(index);
     } else {
       for (int x = 0; x < size; x++) {
         DO_VALIDATION;
         if (collection[x] == element) {
           DO_VALIDATION;
-          process(&x, sizeof(int));
+          process(x);
           return;
         }
       }
@@ -124,18 +89,18 @@ void EnvState::process(Player*& value) {
   value = static_cast<Player*>(v);
 }
 
-void EnvState::process(HumanController*& value) {
+void EnvState::process(HumanGamer*& value) {
   DO_VALIDATION;
   void* v = value;
   process(reinterpret_cast<void**>(&human_controllers[0]), human_controllers.size(), v);
-  value = static_cast<HumanController*>(v);
+  value = static_cast<HumanGamer*>(v);
 }
 
-void EnvState::process(IHIDevice*& value) {
+void EnvState::process(AIControlledKeyboard*& value) {
   DO_VALIDATION;
   void* v = value;
   process(reinterpret_cast<void**>(&controllers[0]), controllers.size(), v);
-  value = static_cast<IHIDevice*>(v);
+  value = static_cast<AIControlledKeyboard*>(v);
 }
 
 void EnvState::process(blunted::Animation*& value) {
@@ -150,42 +115,18 @@ bool EnvState::eos() {
   return pos == state.size();
 }
 
-void EnvState::process(void* ptr, int size) {
-  if (load) {
-    if (pos + size > state.size()) {
-      Log(blunted::e_FatalError, "EnvState", "state", "state is invalid");
-    }
-    memcpy(ptr, &state[pos], size);
-    pos += size;
-  } else {
-    state.resize(pos + size);
-    memcpy(&state[pos], ptr, size);
-    if (disable_cnt == 0 && !reference.empty() &&
-        memcmp(&state[pos], &reference[pos], size)) {
-      failure = true;
-      if (crash) {
-        Log(blunted::e_FatalError, "EnvState", "state", "Reference mismatch");
-      }
-    }
-    pos += size;
-    if (pos > 10000000) {
-      Log(blunted::e_FatalError, "EnvState", "state", "state is too big");
-    }
-  }
-}
-
 void EnvState::SetPlayers(const std::vector<Player*>& players) {
   DO_VALIDATION;
   this->players = players;
 }
 
 void EnvState::SetHumanControllers(
-    const std::vector<HumanController*>& controllers) {
+    const std::vector<HumanGamer*>& controllers) {
   DO_VALIDATION;
   this->human_controllers = controllers;
 }
 
-void EnvState::SetControllers(const std::vector<IHIDevice*>& controllers) {
+void EnvState::SetControllers(const std::vector<AIControlledKeyboard*>& controllers) {
   DO_VALIDATION;
   this->controllers = controllers;
 }

@@ -27,6 +27,7 @@ from gfootball.eval_server.proto import master_pb2
 from gfootball.eval_server.proto import master_pb2_grpc
 import grpc
 import gym
+import numpy as np
 
 
 CONNECTION_TRIALS = 20
@@ -90,8 +91,8 @@ class RemoteFootballEnv(gym.Env):
   def step(self, action):
     if self._game_id is None:
       raise RuntimeError('Environment should be reset!')
-    if isinstance(action, int):
-      action = [action]
+    if np.isscalar(action):
+      action = [int(action)]
     request = game_server_pb2.StepRequest(
         game_version=config.game_version, game_id=self._game_id,
         username=self._username, token=self._token, action=-1,
@@ -132,14 +133,14 @@ class RemoteFootballEnv(gym.Env):
         logging.warning('Exception during request: %s', e)
         logging.warning('Sleeping for %d seconds', time_to_sleep)
         time.sleep(time_to_sleep)
-        if time_to_sleep < 1000:
+        if time_to_sleep < 30:
           time_to_sleep *= 2
         self._update_master()
       except BaseException as e:
         logging.warning('Exception during request: %s', e)
         logging.warning('Sleeping for %d seconds', time_to_sleep)
         time.sleep(time_to_sleep)
-        if time_to_sleep < 1000:
+        if time_to_sleep < 30:
           time_to_sleep *= 2
         self._update_master()
     raise RuntimeError('Connection problems!')
@@ -161,12 +162,12 @@ class RemoteFootballEnv(gym.Env):
           raise e
         logging.warning('Exception during request: %s', e)
         time.sleep(time_to_sleep)
-        if time_to_sleep < 1000:
+        if time_to_sleep < 30:
           time_to_sleep *= 2
       except BaseException as e:
         logging.warning('Exception during request: %s', e)
         time.sleep(time_to_sleep)
-        if time_to_sleep < 1000:
+        if time_to_sleep < 30:
           time_to_sleep *= 2
     if response is None:
       raise RuntimeError('Connection problems!')

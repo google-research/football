@@ -19,6 +19,7 @@
 
 from . import *
 
+
 def build_scenario(builder):
   builder.config().game_duration = 50
   builder.config().deterministic = True
@@ -30,7 +31,7 @@ def build_scenario(builder):
     second_team = Team.e_Right
   builder.SetTeam(first_team)
   builder.AddPlayer(-0.050000, 0.000000, e_PlayerRole_GK)
-  builder.AddPlayer(0.8000000,  0.000000, e_PlayerRole_RM)
+  builder.AddPlayer(0.8000000, 0.000000, e_PlayerRole_RM)
   builder.SetTeam(second_team)
   builder.AddPlayer(0.000000, 0.400000, e_PlayerRole_GK, True)
   builder.AddPlayer(0.000000, -0.400000, e_PlayerRole_RM, True)

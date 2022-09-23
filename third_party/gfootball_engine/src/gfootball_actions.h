@@ -46,7 +46,8 @@ enum Action {
   game_release_team_pressure = 28,
   game_release_switch = 29,
   game_release_sprint = 30,
-  game_release_dribble = 31
+  game_release_dribble = 31,
+  game_builtin_ai = 32
 };
 
 #endif

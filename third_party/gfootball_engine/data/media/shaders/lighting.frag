@@ -58,7 +58,7 @@ void main(void) {
   texCoord.x /= contextWidth;
   texCoord.y /= contextHeight;
 
-  float depth = texture2D(map_depth, texCoord).x; // non-linear (0 .. 1)
+  float depth = texture(map_depth, texCoord).x; // non-linear (0 .. 1)
 
   vec3 worldPosition = GetWorldPosition(texCoord, depth);
 
@@ -70,7 +70,7 @@ void main(void) {
 
   vec3 lightDir = normalize(lightPosition - worldPosition.xyz);
 
-  vec4 normalshine = texture2D(map_normal, texCoord);
+  vec4 normalshine = texture(map_normal, texCoord);
   vec3 normal = normalize(normalshine.xyz);
 
   float nDotLD = dot(lightDir, normal);
@@ -105,7 +105,7 @@ void main(void) {
   vec3 eyeToFrag = worldPosition.xyz - cameraPosition;
   vec3 refl = reflect(normalize(eyeToFrag), normal);
 
-  vec4 base = texture2D(map_albedo, texCoord);
+  vec4 base = texture(map_albedo, texCoord);
 
   float spec = base.w;
   vec3 specularColor = lightColor;// * 0.2f + base.rgb * 0.8f;
@@ -140,7 +140,7 @@ void main(void) {
     }
 
     // nice debug
-    //shaded = pow(texture2D(map_depth, texCoord * 1.1f + vec2(0.05, 0.05)).r, 3.0f) * 3.0f - 0.6f;
+    //shaded = pow(texture(map_depth, texCoord * 1.1f + vec2(0.05, 0.05)).r, 3.0f) * 3.0f - 0.6f;
 
     // how 'seriously' do we take shadows? various options below
     //shaded *= 0.25;

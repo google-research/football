@@ -23,18 +23,14 @@
 
 #include "../main.hpp"
 
-HumanGamer::HumanGamer(Team *team, IHIDevice *hid, e_PlayerColor color)
-    : team(team), hid(hid), controller(team->GetMatch(), hid), playerColor(color) {
+HumanGamer::HumanGamer(Team *team, AIControlledKeyboard *hid)
+    : team(team), hid(hid), controller(team->GetMatch(), hid) {
   DO_VALIDATION;
-  std::vector<Player*> activePlayers;
-  team->GetActivePlayers(activePlayers);
-  selectedPlayer = 0;
   SetSelectedPlayer(0);
 }
 
 HumanGamer::~HumanGamer() {
   DO_VALIDATION;
-
   if (selectedPlayer) {
     DO_VALIDATION;
     selectedPlayer->SetExternalController(0);
@@ -43,6 +39,9 @@ HumanGamer::~HumanGamer() {
 
 void HumanGamer::SetSelectedPlayer(Player *player) {
   DO_VALIDATION;
+  if (player && player->ExternalController()) {
+    return;
+  }
   if (selectedPlayer) {
     DO_VALIDATION;
     if (selectedPlayer == player) return;
@@ -51,7 +50,7 @@ void HumanGamer::SetSelectedPlayer(Player *player) {
   if (player) {
     DO_VALIDATION;
     selectedPlayer = player;
-    selectedPlayer->SetExternalController(&controller);
+    selectedPlayer->SetExternalController(this);
   } else {
     selectedPlayer = 0;
   }
@@ -63,7 +62,6 @@ void HumanGamer::ProcessState(EnvState *state) {
   state->process(team);
   state->setValidate(false);
   state->process(hid);
-  state->process((void*) &playerColor, sizeof(playerColor));
   state->setValidate(true);
   controller.PreProcess(team->GetMatch(), hid);
   controller.ProcessState(state);

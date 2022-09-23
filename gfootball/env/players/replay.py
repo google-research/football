@@ -15,8 +15,7 @@
 """Player with actions coming from specific game replay."""
 
 from gfootball.env import player_base
-import six.moves.cPickle
-import pdb
+from gfootball.env import script_helpers
 
 
 class Player(player_base.PlayerBase):
@@ -25,8 +24,7 @@ class Player(player_base.PlayerBase):
   def __init__(self, player_config, env_config):
     player_base.PlayerBase.__init__(self, player_config)
     self._can_play_right = True
-    with open(player_config['path'], 'rb') as f:
-      self._replay = six.moves.cPickle.load(f)
+    self._replay = script_helpers.ScriptHelpers().load_dump(player_config['path'])
     self._step = 0
     self._player = player_config['index']
 

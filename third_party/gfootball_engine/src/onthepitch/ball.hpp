@@ -48,7 +48,7 @@ class Ball {
     boost::intrusive_ptr<Geometry> GetBallGeom() { DO_VALIDATION; return ball; }
 
     inline Vector3 Predict(int predictTime_ms) const {
-      unsigned int index = predictTime_ms;
+      int index = predictTime_ms;
       if (index >= ballPredictionSize_ms) index = ballPredictionSize_ms - 10;
       index = index / 10;
       if (index < 0) index = 0;

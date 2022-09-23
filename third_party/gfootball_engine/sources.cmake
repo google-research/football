@@ -56,9 +56,6 @@ set(SYSTEMS_COMMON_HEADERS
    src/systems/isystemobject.hpp
 )
 
-set(SYSTEMS_COMMON_SOURCES
-)
-
 set(SYSTEMS_GRAPHICS_HEADERS
    src/systems/graphics/graphics_task.hpp
    src/systems/graphics/graphics_scene.hpp
@@ -95,29 +92,6 @@ set(SYSTEMS_GRAPHICS_SOURCES
    src/systems/graphics/resources/texture.cpp
    src/systems/graphics/rendering/opengl_renderer3d.cpp
    src/systems/graphics/graphics_system.cpp
-)
-
-set(SYSTEMS_PHYSICS_HEADERS
-   src/systems/physics/physics_scene.hpp
-   src/systems/physics/physics_object.hpp
-   src/systems/physics/objects/physics_geometry.hpp
-   src/systems/physics/objects/physics_joint.hpp
-   src/systems/physics/wrappers/ode_physics.hpp
-   src/systems/physics/wrappers/interface_physics.hpp
-   src/systems/physics/resources/vertexbuffer.hpp
-   src/systems/physics/physics_system.hpp
-   src/systems/physics/physics_task.hpp
-)
-
-set(SYSTEMS_PHYSICS_SOURCES
-   src/systems/physics/physics_scene.cpp
-   src/systems/physics/physics_task.cpp
-   src/systems/physics/physics_system.cpp
-   src/systems/physics/physics_object.cpp
-   src/systems/physics/objects/physics_joint.cpp
-   src/systems/physics/objects/physics_geometry.cpp
-   src/systems/physics/wrappers/ode_physics.cpp
-   src/systems/physics/resources/vertexbuffer.cpp
 )
 
 set(LOADERS_HEADERS
@@ -199,9 +173,6 @@ set(MANAGERS_HEADERS
    src/managers/resourcemanager.hpp
 )
 
-set(MANAGERS_SOURCES
-)
-
 set(UTILS_HEADERS
    src/utils/animation.hpp
    src/utils/objectloader.hpp
@@ -250,8 +221,6 @@ set(UTILS_GUI2_SOURCES
    src/utils/gui2/guitask.cpp
    src/utils/gui2/page.cpp
 )
-
-set(ALL_LIBS_HEADERS ${LIBS_HEADERS})
 
 set(BLUNTED_CORE_HEADERS
    src/defines.hpp
@@ -393,6 +362,3 @@ set(DATA_SOURCES
    src/data/playerdata.cpp
    src/data/teamdata.cpp
 )
-   
-      
-

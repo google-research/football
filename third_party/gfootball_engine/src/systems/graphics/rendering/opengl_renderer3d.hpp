@@ -17,6 +17,9 @@
 
 #ifndef _HPP_GRAPHICS3D_OPENGL
 #define _HPP_GRAPHICS3D_OPENGL
+#ifdef __linux__
+#include <EGL/egl.h>
+#endif
 
 #include "interface_renderer3d.hpp"
 
@@ -116,8 +119,13 @@ namespace blunted {
       virtual void SetUniformMatrix4(const std::string &shaderName, const std::string &varName, const Matrix4 &mat);
 
     protected:
-      SDL_GLContext context;
-      SDL_Window* window;
+      SDL_GLContext context = 0;
+      SDL_Window* window = nullptr;
+#ifdef __linux__
+      EGLDisplay egl_display = nullptr;
+      EGLSurface egl_surface;
+      EGLContext egl_context;
+#endif
       int context_width, context_height, context_bpp;
 
       float cameraNear = 0.0f;
@@ -130,6 +138,7 @@ namespace blunted {
       float overallBrightness = 0.0f;
 
       float largest_supported_anisotropy = 0.0f;
+      void SetMaxAnisotropy();
 
       std::map<std::string, int> uniformCache;
 
@@ -139,7 +148,16 @@ namespace blunted {
 
       signed int _cache_activeTextureUnit = 0;
       screenshoot last_screen_;
-
+      // members and functions for rendering overlay with shaders instead of deprecated methods
+      VertexBufferID overlayBuffer;  // buffer for drawing textures such as player's names and game score
+      VertexBufferID quadBuffer;     // buffer for drawing simple quads
+      VertexBufferID CreateSimpleVertexBuffer(float *vertices, unsigned int size);
+      void DeleteSimpleVertexBuffer(VertexBufferID vertexBufferID);
+      void InitializeOverlayAndQuadBuffers();
+      void CreateContextSdl();
+#ifdef __linux__
+      void CreateContextEgl();
+#endif
   };
 }
 

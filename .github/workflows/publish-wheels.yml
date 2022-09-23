@@ -1,0 +1,139 @@
+name: Build and Publish Python Wheels
+
+on:
+  release:
+    types: [published]
+  # Allow to trigger the workflow manually
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest]
+        python-version: [ '3.9', '3.10' ]
+        architecture: ['x86', 'x64']
+        include:
+          - os: windows-2016
+            python-version: '3.6'
+            architecture: 'x86'
+            experimental: true
+          - os: windows-2016
+            python-version: '3.6'
+            architecture: 'x64'
+            experimental: true
+          - os: windows-2016
+            python-version: '3.7'
+            architecture: 'x86'
+            experimental: true
+          - os: windows-2016
+            python-version: '3.7'
+            architecture: 'x64'
+            experimental: true
+          - os: windows-2016
+            python-version: '3.8'
+            architecture: 'x86'
+            experimental: true
+          - os: windows-2016
+            python-version: '3.8'
+            architecture: 'x64'
+            experimental: true
+
+    env:
+      VCPKG_ROOT: "${{ github.workspace }}/vcpkg"
+
+    steps:
+    - name: Check out football repository
+      uses: actions/checkout@v2
+      with:
+        path: football
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: ${{ matrix.architecture }}
+
+    - name: Upgrade pip and install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -U build setuptools psutil wheel
+        python -m pip install -r requirements.txt
+      working-directory: football
+
+    - name: Checkout vcpkg
+      uses: actions/checkout@v2
+      with:
+        repository: microsoft/vcpkg
+        ref: b18b17865cfb6bd24620a00f30691be6775abb96
+        path: vcpkg
+        fetch-depth: 0
+
+     # Uncomment to speed up building by caching C++ dependencies. Requires `python -m build --wheel` in the next step.
+#    - name: Restore vcpkg_installed cache
+#      uses: actions/cache@v2
+#      with:
+#        path: ${{ github.workspace }}/football/third_party/gfootball_engine/build_win/vcpkg_installed
+#        key: vcpkg-${{ runner.os }}-py${{ matrix.python-version }}-${{ matrix.architecture }}-${{ hashFiles('football/third_party/gfootball_engine/vcpkg_manifests/py3*/vcpkg.json') }}
+
+    - name: Build package
+      # `python -m build` without any arguments is used to check if the wheel can be built from source (sdist):
+      #  the tool copies source code to the random temp directory, and proceeds with building.
+      #  Doing so insures that MANIFEST.in contains all the required files to build engine from source.
+      #  The downside is that we can't cache vcpkg_installed packages, since they'll be located in the random temp directory.
+      #  It increases workflow running time from ~15 minutes to ~40 minutes. On the other hand, cache is valid only for 7 days,
+      #  and releases are coming not so often anyway.
+      # To build in-place and take advantage of vcpkg_installed cache use `python -m build --wheel` instead.
+      run: python -m build
+      working-directory: football
+
+    - name: Install the package using the wheel
+      run: python -m pip install gfootball --no-index --find-links=dist
+      working-directory: football
+
+    - name: Run the tests
+      run: FOR %%f IN (gfootball\env\*test.py) DO ( call python %%f & if errorlevel 1 exit /B 1 )
+      env:
+        UNITTEST_IN_DOCKER: 1
+      shell: cmd
+      working-directory: football
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: windows-wheel-py-${{ matrix.python-version }}-${{ matrix.architecture }}
+        path: ${{ github.workspace }}/football/dist/*.whl
+        retention-days: 7
+
+  upload-wheels:
+    needs: [build-windows]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out football repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: python -m pip install --upgrade pip setuptools wheel psutil build
+
+    - name: Build sdist
+      run: python -m build --sdist
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v2
+      with:
+        path: ${{ github.workspace }}/artifacts
+
+    - name: Move wheels to dist directory
+      run:  mv artifacts/**/*.whl dist
+
+    - name: Publish package
+      uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}

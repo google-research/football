@@ -43,7 +43,7 @@ void Foul::ProcessState(EnvState *state) {
 void RefereeBuffer::ProcessState(EnvState *state) {
   DO_VALIDATION;
   state->process(active);
-  state->process((void*) &desiredSetPiece, sizeof(desiredSetPiece));
+  state->process(desiredSetPiece);
   if (state->getConfig()->reverse_team_processing) {
     teamID = 1 - teamID;
   }
@@ -96,6 +96,28 @@ void Referee::Process() {
     DO_VALIDATION;
 
     Vector3 ballPos = match->GetBall()->Predict(0);
+    // Single step maps to 1800 units.
+    if (match->GetMatchTime_ms() >= 1800 * GetScenarioConfig().second_half &&
+        match->GetMatchPhase() == e_MatchPhase_1stHalf) {
+      match->StopPlay();
+      buffer.desiredSetPiece = e_GameMode_KickOff;
+      buffer.stopTime = match->GetActualTime_ms();
+      buffer.prepareTime = buffer.stopTime + 100;
+      buffer.startTime = buffer.prepareTime + 200;
+      buffer.restartPos = GetScenarioConfig().ball_position;
+      buffer.active = true;
+      buffer.endPhase = true;
+      buffer.teamID = GetScenarioConfig().LeftTeamOwnsBall() ? 1 : 0;
+      buffer.setpiece_team = match->GetTeam(buffer.teamID);
+      buffer.taker = 0;
+      foul.foulPlayer = 0;
+      foul.foulType = 0;
+      foul.advantage = false;
+      foul.foulTime = 0;
+      foul.hasBeenProcessed = true;
+      match->SetMatchPhase(e_MatchPhase_2ndHalf);
+    }
+
     // We process corner setup in not mirrored setup.
     if (GetScenarioConfig().reverse_team_processing) {
       ballPos.Mirror();
@@ -134,7 +156,6 @@ void Referee::Process() {
           buffer.restartPos = Vector3(0, 0, 0);
           buffer.teamID = match->FirstTeam();
           buffer.setpiece_team = match->GetLastGoalTeam()->Opponent();
-          match->SetMatchPhase(e_MatchPhase_1stHalf);
         } else if ((ballPos.coords[0] > 0 && lastSide > 0) ||
                    (ballPos.coords[0] < 0 && lastSide < 0)) {
           DO_VALIDATION;
@@ -252,6 +273,12 @@ void Referee::Process() {
 void Referee::PrepareSetPiece(e_GameMode setPiece) {
   DO_VALIDATION;
   // position players for set piece situation
+  if (setPiece == e_GameMode_FreeKick) {
+    buffer.restartPos.coords[0] = clamp(buffer.restartPos.coords[0],
+                                        -0.95 * pitchHalfW, 0.95 * pitchHalfW);
+    buffer.restartPos.coords[1] = clamp(buffer.restartPos.coords[1],
+                                        -0.95 * pitchHalfH, 0.95 * pitchHalfH);
+  }
   match->ResetSituation(GetScenarioConfig().reverse_team_processing
                             ? -buffer.restartPos
                             : buffer.restartPos);

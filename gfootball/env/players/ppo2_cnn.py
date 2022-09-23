@@ -38,7 +38,8 @@ class Player(player_base.PlayerBase):
   def __init__(self, player_config, env_config):
     player_base.PlayerBase.__init__(self, player_config)
 
-    self._action_set = 'default'
+    self._action_set = (env_config['action_set']
+                        if 'action_set' in env_config else 'default')
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     self._sess = tf.Session(config=config)

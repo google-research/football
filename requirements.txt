@@ -1,0 +1,8 @@
+# If you change any of the requirements here please don't forget to change them in setup.py too
+pygame>=1.9.6
+opencv-python
+psutil
+numpy
+gym<=0.21.0
+absl-py
+wheel

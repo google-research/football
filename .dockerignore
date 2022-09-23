@@ -1,0 +1,39 @@
+.git/
+
+# Output directories
+build*/
+third_party/gfootball_engine/build*/
+
+# CMake files and directories
+**CMakeCache.txt
+**CMakeFiles/
+**Makefile
+**cmake_install.cmake
+
+# Some Python directories
+gfootball.egg-info/
+dist/
+football-env*/
+# in case someone named virtual environment differently
+**/site-packages/
+**__pycache__/
+
+# Compiled object files and libraries (dynamic and static)
+**/*.o
+**/*.obj
+**/*.so
+**/*.so.*
+**/*.dylib
+**/*.dll
+**/*.a
+**/*.lib
+
+
+# IDEA files
+**.idea/
+**cmake-build-*/
+
+# Visual Studio and VS Code
+**.vsbuild/
+**.vscode/
+**.vs/

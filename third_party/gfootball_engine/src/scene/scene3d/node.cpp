@@ -183,7 +183,7 @@ void Node::DeleteNode(boost::intrusive_ptr<Node> node) {
     state->process(position);
     state->process(rotation);
     state->process(scale);
-    state->process((void*) &localMode, sizeof(localMode));
+    state->process(localMode);
     _dirty_DerivedPosition = true;
     _dirty_DerivedRotation = true;
     _dirty_DerivedScale = true;

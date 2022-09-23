@@ -16,7 +16,7 @@
 """Script converting dump file to human readable format.
 
    Example usage:
-   python dump_to_txt.py --dump=/tmp/input.dump --output=/tmp/output.txt
+   python dump_to_txt.py --trace_file=/tmp/input.dump --output=/tmp/output.txt
 
 """
 
@@ -24,10 +24,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from gfootball.env import script_helpers
-
 from absl import app
 from absl import flags
+from gfootball.env import script_helpers
 
 FLAGS = flags.FLAGS
 

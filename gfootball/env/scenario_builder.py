@@ -16,12 +16,13 @@
 """Class responsible for generating scenarios."""
 
 import importlib
-from absl import logging
 import os
 import pkgutil
 import random
+import sys
 
 from absl import flags
+from absl import logging
 
 import gfootball_engine as libgame
 
@@ -58,7 +59,7 @@ class Scenario(object):
     except ImportError as e:
       logging.error('Loading scenario "%s" failed' % config['level'])
       logging.error(e)
-      exit(1)
+      sys.exit(1)
     scenario.build_scenario(self)
     self.SetTeam(libgame.e_Team.e_Left)
     self._FakePlayersForEmptyTeam(self._scenario_cfg.left_team)

@@ -18,44 +18,46 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
 from absl.testing import parameterized
-import multiprocessing
+from collections.abc import Iterable
 from multiprocessing import pool
 from multiprocessing import Queue
 import gfootball
 import os
+import platform
+import sys
 import random
 import threading
+import atexit
 import zlib
+from absl.testing import absltest
 
 from gfootball.env import config
 from gfootball.env import football_action_set
 from gfootball.env import football_env
-from gfootball.env import observation_rotation
+from gfootball.env import wrappers
 from gfootball.env import scenario_builder
 import numpy as np
 import psutil
 from six.moves import range
-import unittest
 
 fast_run = False
 
 
 def observation_hash(observation, hash_value = 0):
   for obs in observation:
-    hash_value = zlib.adler32(
-        str(tuple(sorted(obs.items()))).encode(), hash_value)
+    for key, value in sorted(obs.items()):
+      hash_value = zlib.adler32(key.encode(), hash_value)
+      hash_value = zlib.adler32(np.ascontiguousarray(value), hash_value)
   return hash_value
 
 
-def compute_hash(env, actions, extensive=False):
+def compute_hash(env, actions):
   """Computes hash of observations returned by environment for a given scenario.
 
   Args:
     env: environment
     actions: number of actions
-    extensive: whether to run full episode
 
   Returns:
     hash
@@ -68,26 +70,45 @@ def compute_hash(env, actions, extensive=False):
     o, _, done, _ = env.step(step % actions)
     hash_value = observation_hash(o, hash_value)
     step += 1
-    if not extensive and step >= 200:
+    if step >= 200:
       break
   return hash_value
 
 
-def run_scenario(cfg, seed, queue, actions, render=False, validation=True):
+def run_scenario(cfg, queue, actions, render=False, validation=True):
   env = football_env.FootballEnv(cfg)
   if render:
     env.render()
-  env.reset()
+  obs = env.reset()
+  queue.put(obs)
   if validation:
-    env.tracker_setup(0, 999999999999999)
+    # Otherwise the following error is generated on Windows:
+    #  OverflowError: Python int too large to convert to C long
+    # The number can be also derived by
+    #  import struct
+    #  end = 2 ** (struct.Struct('l').size * 8 - 1) - 1
+    end = 999999999999999 if platform.system() != 'Windows' else 2147483647
+    env.tracker_setup(0, end)
   done = False
-  for action in actions:
-    obs, _, done, _ = env.step([action, action])
+  step = 0
+  while not done:
+    if isinstance(actions, Iterable):
+      if step >= len(actions):
+        break
+      action = actions[step]
+    else:
+      action = actions.get()
+      if action is None:
+        break
+    step += 1
+    if isinstance(action, Iterable):
+      obs, _, done, _ = env.step(action)
+    else:
+      obs, _, done, _ = env.step([action, action])
     queue.put(obs)
-    if done:
-      break
   queue.put(None)
   env.close()
+
 
 def normalize_observation(o):
   if o['ball'][0] == -0:
@@ -98,6 +119,7 @@ def normalize_observation(o):
     o['ball_direction'][0] = 0
   if o['ball_direction'][1] == -0:
     o['ball_direction'][1] = 0
+
 
 class FootballEnvTest(parameterized.TestCase):
 
@@ -113,24 +135,82 @@ class FootballEnvTest(parameterized.TestCase):
       o2 = str(tuple(sorted(o2.items())))
       self.assertEqual(o1, o2)
 
-  def check_determinism(self, extensive=False):
-    """Check that environment is deterministic."""
-    if 'UNITTEST_IN_DOCKER' in os.environ:
-      return
-    cfg = config.Config({
-        'level': 'tests.11_vs_11_hard_deterministic'
-    })
-    env = football_env.FootballEnv(cfg)
-    actions = len(football_action_set.get_action_set(cfg))
-    for episode in range(1 if extensive else 2):
-      hash_value = compute_hash(env, actions, extensive)
-      if extensive:
-        self.assertEqual(hash_value, 2258127135)
-      elif episode % 2 == 0:
-        self.assertEqual(hash_value, 716323440)
-      else:
-        self.assertEqual(hash_value, 1663893701)
-    env.close()
+  def test___control_all_players(self):
+    """Validate MultiAgentToSingleAgent wrapper and control_all_players flag."""
+    try:
+      gfootball.env.create_environment(
+          env_name='tests.multiagent_wrapper',
+          rewards='checkpoints,scoring',
+          number_of_left_players_agent_controls=2)
+    except AssertionError:
+      pass
+    else:
+      self.assertTrue(False)
+
+    env = gfootball.env.create_environment(
+        env_name='tests.multiagent_wrapper',
+        rewards='checkpoints,scoring',
+        representation='simple115v2',
+        number_of_left_players_agent_controls=11,
+        number_of_right_players_agent_controls=11)
+    obs = env.reset()
+    self.assertLen(obs, 22)
+    self.assertIn(obs, env.observation_space)
+
+    env = gfootball.env.create_environment(
+        env_name='tests.multiagent_wrapper',
+        rewards='checkpoints,scoring',
+        number_of_left_players_agent_controls=11,
+        number_of_right_players_agent_controls=0)
+    obs = env.reset()
+    self.assertLen(obs, 11)
+    self.assertIn(obs, env.observation_space)
+
+    env = gfootball.env.create_environment(
+        env_name='tests.multiagent_wrapper',
+        rewards='checkpoints,scoring',
+        representation='simple115v2',
+        number_of_left_players_agent_controls=0,
+        number_of_right_players_agent_controls=11)
+    obs = env.reset()
+    self.assertLen(obs, 11)
+    self.assertIn(obs, env.observation_space)
+
+    env = gfootball.env.create_environment(
+        env_name='tests.multiagent_wrapper',
+        rewards='checkpoints,scoring',
+        number_of_left_players_agent_controls=1,
+        number_of_right_players_agent_controls=1)
+    obs = env.reset()
+    self.assertLen(obs, 2)
+    self.assertIn(obs, env.observation_space)
+
+    env = gfootball.env.create_environment(
+        env_name='tests.multiagent_wrapper',
+        rewards='checkpoints,scoring',
+        number_of_left_players_agent_controls=1)
+    obs = env.reset()
+    self.assertEqual(np.shape(obs), (72, 96, 4))
+    self.assertIn(obs, env.observation_space)
+    obs, _, _, _ = env.step([football_action_set.action_left])
+    self.assertEqual(np.shape(obs), (72, 96, 4))
+    env = gfootball.env.create_environment(
+        env_name='tests.multiagent_wrapper',
+        rewards='checkpoints,scoring',
+        representation='raw',
+        number_of_left_players_agent_controls=1,
+        number_of_right_players_agent_controls=1)
+    obs = env.reset()
+    self.assertLen(obs, 2)
+    self.assertEqual(obs[0]['sticky_actions'][0], 0)
+    self.assertEqual(obs[1]['sticky_actions'][4], 0)
+    obs, _, _, _ = env.step(
+        [football_action_set.action_idle, football_action_set.action_idle])
+    obs, _, _, _ = env.step(
+        [football_action_set.action_left, football_action_set.action_right])
+    self.assertLen(obs, 2)
+    self.assertEqual(obs[0]['sticky_actions'][0], 1)
+    self.assertEqual(obs[1]['sticky_actions'][4], 1)
 
   def test_score_empty_goal(self):
     """Score on an empty goal."""
@@ -154,7 +234,24 @@ class FootballEnvTest(parameterized.TestCase):
     self.assertTrue(done)
     env.close()
 
-  def test_render(self):
+  def test_second_half(self):
+    """Test second half feature."""
+    cfg = config.Config()
+    cfg['level'] = 'tests.second_half'
+    env = football_env.FootballEnv(cfg)
+    for _ in range(5):
+      o, _, done, _ = env.step(football_action_set.action_idle)
+      self.assertFalse(done)
+      self.assertAlmostEqual(o[0]['left_team'][o[0]['active']][0], 0, delta=0.1)
+    for _ in range(6):
+      self.assertFalse(done)
+      o, _, done, _ = env.step(football_action_set.action_idle)
+      self.assertAlmostEqual(
+          o[0]['left_team'][o[0]['active']][0], -0.5, delta=0.1)
+    self.assertTrue(done)
+    env.close()
+
+  def test___render(self):
     """Make sure rendering is not broken."""
     if 'UNITTEST_IN_DOCKER' in os.environ:
       # Rendering is not supported.
@@ -165,11 +262,24 @@ class FootballEnvTest(parameterized.TestCase):
     env = football_env.FootballEnv(cfg)
     env.render()
     o = env.reset()
-    hash = observation_hash(o)
+    hash_value = observation_hash(o)
     for _ in range(10):
       o, _, _, _ = env.step(football_action_set.action_right)
-      hash = observation_hash(o, hash)
-    self.assertEqual(hash, 845594868)
+      hash_value = observation_hash(o, hash_value)
+    # Linux
+    expected_hash_value = 4000732293
+    if platform.system() == 'Windows':
+      # On Windows we may have to check four possible values:
+      #  for each of architectures (32 or 64 bits)
+      #    what SDK was used (latest or from Visual Studio 2017)
+      #  We will check only two values once we start using windows-latest VM again
+      if sys.maxsize > 2 ** 32:  # x64
+        expected_hash_value = 683941870 if hash_value != 3676773624 else 3676773624
+      else:  # x86
+        expected_hash_value = 1490754124 if hash_value != 2808421794 else 2808421794
+    elif platform.system() == 'Darwin':
+      expected_hash_value = 1865563121
+    self.assertEqual(hash_value, expected_hash_value)
     env.close()
 
   def test_dynamic_render(self):
@@ -205,19 +315,26 @@ class FootballEnvTest(parameterized.TestCase):
     env.step(np.array(football_action_set.action_right))
     env.close()
 
-  def test_determinism_extensive(self):
-    self.check_determinism(extensive=True)
-
-  def test_determinism(self):
-    self.check_determinism()
-
   def test_multi_instance(self):
     """Validates that two instances of the env can run in the same thread."""
+
+    def run_episode():
+      if 'UNITTEST_IN_DOCKER' in os.environ:
+        return 0
+      cfg = config.Config({
+          'level': 'tests.11_vs_11_hard_deterministic'
+      })
+      env = football_env.FootballEnv(cfg)
+      actions = len(football_action_set.get_action_set(cfg))
+      hash_value = compute_hash(env, actions)
+      env.close()
+      return hash_value
+
     tpool = pool.ThreadPool(processes=2)
-    run1 = tpool.apply_async(self.check_determinism)
-    run2 = tpool.apply_async(self.check_determinism)
-    run1.get()
-    run2.get()
+    atexit.register(tpool.close)
+    run1 = tpool.apply_async(run_episode)
+    run2 = tpool.apply_async(run_episode)
+    self.assertEqual(run1.get(), run2.get())
 
   def test_multi_render(self):
     """Only one rendering instance allowed at a time."""
@@ -295,12 +412,12 @@ class FootballEnvTest(parameterized.TestCase):
     cfg1 = config.Config({
         'level': 'tests.symmetric',
         'game_engine_random_seed': seed,
-        'reverse_team_processing' : False
+        'reverse_team_processing': False
     })
     cfg2 = config.Config({
         'level': 'tests.symmetric',
         'game_engine_random_seed': seed + 10,
-        'reverse_team_processing' : False
+        'reverse_team_processing': False
     })
     env1 = football_env.FootballEnv(cfg1)
     env2 = football_env.FootballEnv(cfg2)
@@ -354,11 +471,11 @@ class FootballEnvTest(parameterized.TestCase):
     actions = [random.randint(0, action_cnt - 1) for _ in range(10 if fast_run else 3000)]
     queue1 = Queue()
     thread1 = threading.Thread(
-        target=run_scenario, args=(cfg1, seed, queue1, actions))
+        target=run_scenario, args=(cfg1, queue1, actions))
     thread1.start()
     queue2 = Queue()
     thread2 = threading.Thread(
-        target=run_scenario, args=(cfg2, seed, queue2, actions))
+        target=run_scenario, args=(cfg2, queue2, actions))
     thread2.start()
     while True:
       o1 = queue1.get()
@@ -373,7 +490,7 @@ class FootballEnvTest(parameterized.TestCase):
 
   @parameterized.parameters((1, 'left', True), (0, 'right', True),
                             (1, 'left', False), (0, 'right', False))
-  def offside_helper(self, episode, team2, reverse):
+  def test_offside(self, episode, team2, reverse):
     cfg = config.Config({
         'level': 'tests.offside_test',
         'players': ['agent:{}_players=1'.format(team2)],
@@ -406,7 +523,8 @@ class FootballEnvTest(parameterized.TestCase):
     o = env.reset()
     done = False
     while not done:
-      o, _, done, _ = env.step([football_action_set.action_left, football_action_set.action_left])
+      o, _, done, _ = env.step([football_action_set.action_left,
+                                football_action_set.action_left])
     self.assertAlmostEqual(o[0]['ball'][0], -0.95 * factor, delta=0.1)
     self.assertAlmostEqual(o[0]['ball'][1], 0.4 * factor, delta=0.1)
     self.assertAlmostEqual(o[0]['right_team'][0][0], 1, delta=0.1)
@@ -446,7 +564,8 @@ class FootballEnvTest(parameterized.TestCase):
     o = env.reset()
     done = False
     while not done:
-      o, _, done, _ = env.step([football_action_set.action_right, football_action_set.action_right])
+      o, _, done, _ = env.step([football_action_set.action_right,
+                                football_action_set.action_right])
     self.assertAlmostEqual(o[0]['ball'][0], -1.0 * factor, delta=0.1)
     self.assertAlmostEqual(o[0]['ball'][1], 0.0, delta=0.1)
     self.assertAlmostEqual(o[0]['right_team'][0][0], 1, delta=0.1)
@@ -480,7 +599,6 @@ class FootballEnvTest(parameterized.TestCase):
     if 'UNITTEST_IN_DOCKER' in os.environ:
       # Forge doesn't support rendering.
       return
-    processes = []
     cfg1 = config.Config({
         'level': 'tests.symmetric',
         'game_engine_random_seed': seed,
@@ -498,11 +616,11 @@ class FootballEnvTest(parameterized.TestCase):
     actions = [random.randint(0, action_cnt - 1) for _ in range(50)]
     queue1 = Queue()
     thread1 = threading.Thread(
-        target=run_scenario, args=(cfg1, seed, queue1, actions, False, False))
+        target=run_scenario, args=(cfg1, queue1, actions, False, False))
     thread1.start()
     queue2 = Queue()
     thread2 = threading.Thread(
-        target=run_scenario, args=(cfg2, seed, queue2, actions, True, False))
+        target=run_scenario, args=(cfg2, queue2, actions, True, False))
     thread2.start()
     while True:
       o1 = queue1.get()
@@ -553,6 +671,20 @@ class FootballEnvTest(parameterized.TestCase):
     self.compare_observations(obs, obs_)
     self.assertEqual(state, state_)
 
+  def test_restore_after_done(self):
+    cfg = config.Config({
+        'level': 'academy_empty_goal_close',
+    })
+    env = football_env.FootballEnv(cfg)
+    env.reset()
+    state = env.get_state()
+    # Go right until reaching the goal.
+    done = False
+    while not done:
+      _, _, done, _ = env.step(5)
+    env.set_state(state)
+    env.step(0)  # Test if can take step
+
 
 if __name__ == '__main__':
-  unittest.main(failfast=True)
+  absltest.main(failfast=True)

@@ -85,7 +85,7 @@ bool _PassFiddlingEnabled() {
 void Humanoid::Process() {
   DO_VALIDATION;
   auto currentMentalImage = match->GetMentalImage(mentalImageTime);
-  // this might be the solution to long-term inbalance
+  // this might be the solution to long-term imbalance
   decayingPositionOffset *= 0.95f;
   if (decayingPositionOffset.GetLength() < 0.005) decayingPositionOffset.Set(0);
   decayingDifficultyFactor = clamp(decayingDifficultyFactor - 0.002f, 0.0f, 1.0f);
@@ -435,7 +435,7 @@ void Humanoid::Process() {
         float ballPower = currentAnim.originatingCommand.touchInfo.desiredPower;
         Player *targetPlayer = currentAnim.originatingCommand.touchInfo.targetPlayer;
         Vector3 inputDirection = currentAnim.originatingCommand.touchInfo.inputDirection;
-        if (CastPlayer()->GetExternalController()) inputDirection = CastPlayer()->GetExternalController()->GetDirection();
+        if (CastPlayer()->ExternalControllerActive()) inputDirection = CastPlayer()->ExternalController()->GetDirection();
 
 
         // refine/change target, if new target is close enough to old target
@@ -471,8 +471,10 @@ void Humanoid::Process() {
 
         }  // else: just stick to original
 
-        if (targetPlayer) team->SelectPlayer(targetPlayer);
+        if (targetPlayer) {
+          team->SelectPlayer(targetPlayer);
 
+        }
         float zcurve = 0.0f;
         Vector3 touchVec = ballDirection * 36 * (ballPower + 0.3f);
 
@@ -510,10 +512,10 @@ void Humanoid::Process() {
       else if (currentAnim.functionType == e_FunctionType_Shot) {
         DO_VALIDATION;
 
-        // alter direction, if neeeded
+        // alter direction, if needed
         Vector3 ballDirection = currentAnim.originatingCommand.touchInfo.desiredDirection;
         Vector3 inputDirection = currentAnim.originatingCommand.touchInfo.inputDirection;
-        if (CastPlayer()->GetExternalController()) inputDirection = CastPlayer()->GetExternalController()->GetDirection();
+        if (CastPlayer()->ExternalControllerActive()) inputDirection = CastPlayer()->ExternalController()->GetDirection();
         Vector3 ballDirectionAltered = AI_GetShotDirection(CastPlayer(), inputDirection, currentAnim.originatingCommand.touchInfo.autoDirectionBias);
 
         float maxDeviationAngle = 0.1f * pi;
@@ -1065,7 +1067,9 @@ void Humanoid::SelectRetainAnim() {
 
   assert(dataSet.size() != 0);
 
+  GetContext().tracker_disabled++;
   std::stable_sort(dataSet.begin(), dataSet.end(), boost::bind(&Humanoid::CompareMovementSimilarity, this, _1, _2));
+  GetContext().tracker_disabled--;
 
   startAngle = FixAngle((Vector3(0) - startPos).GetAngle2D());//0.5 * pi; (facing right)
 
@@ -1454,6 +1458,7 @@ bool Humanoid::SelectAnim(const PlayerCommand &command,
     }
   }
 
+  GetContext().tracker_disabled++;
   std::stable_sort(dataSet.begin(), dataSet.end(), boost::bind(&Humanoid::ComparePriorityVariable, this, _1, _2));
 
   int desiredIdleLevel = 0;
@@ -1494,6 +1499,7 @@ bool Humanoid::SelectAnim(const PlayerCommand &command,
     DO_VALIDATION;
     std::stable_sort(dataSet.begin(), dataSet.end(), boost::bind(&Humanoid::CompareCatchOrDeflect, this, _1, _2));
   }
+  GetContext().tracker_disabled--;
 
   int selectedAnimID = -1;
   std::vector<Vector3> positions_tmp;
@@ -1841,7 +1847,11 @@ signed int Humanoid::GetBestCheatableAnimID(const DataSet &sortedDataSet, bool u
     boost::shared_ptr<FootballAnimationExtension> footballExtension = boost::static_pointer_cast<FootballAnimationExtension>(anim->GetExtension("football"));
 
     int totalTouches = footballExtension->GetTouchCount();
+#ifdef WIN32
+    std::vector<int> touchIDs(totalTouches);
+#else
     int touchIDs[totalTouches];
+#endif
     int count = 0;
 
     int defaultTouchFrame = atoi(anim->GetVariable("touchframe").c_str());

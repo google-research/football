@@ -21,6 +21,7 @@ from __future__ import print_function
 
 import collections
 import cv2
+from gfootball.env import football_action_set
 from gfootball.env import observation_preprocessing
 import gym
 import numpy as np
@@ -62,9 +63,10 @@ class GetStateWrapper(gym.Wrapper):
 class PeriodicDumpWriter(gym.Wrapper):
   """A wrapper that only dumps traces/videos periodically."""
 
-  def __init__(self, env, dump_frequency):
+  def __init__(self, env, dump_frequency, render=False):
     gym.Wrapper.__init__(self, env)
     self._dump_frequency = dump_frequency
+    self._render = render
     self._original_dump_config = {
         'write_video': env._config['write_video'],
         'dump_full_episodes': env._config['dump_full_episodes'],
@@ -79,12 +81,14 @@ class PeriodicDumpWriter(gym.Wrapper):
     if (self._dump_frequency > 0 and
         (self._current_episode_number % self._dump_frequency == 0)):
       self.env._config.update(self._original_dump_config)
-      self.env.render()
+      if self._render:
+        self.env.render()
     else:
       self.env._config.update({'write_video': False,
                                'dump_full_episodes': False,
                                'dump_scores': False})
-      self.env.disable_render()
+      if self._render:
+        self.env.disable_render()
     self._current_episode_number += 1
     return self.env.reset()
 
@@ -92,29 +96,67 @@ class PeriodicDumpWriter(gym.Wrapper):
 class Simple115StateWrapper(gym.ObservationWrapper):
   """A wrapper that converts an observation to 115-features state."""
 
-  def __init__(self, env):
+  def __init__(self, env, fixed_positions=False):
+    """Initializes the wrapper.
+
+    Args:
+      env: an envorinment to wrap
+      fixed_positions: whether to fix observation indexes corresponding to teams
+    Note: simple115v2 enables fixed_positions option.
+    """
     gym.ObservationWrapper.__init__(self, env)
-    shape = (self.env.unwrapped._config.number_of_players_agent_controls(), 115)
+    action_shape = np.shape(self.env.action_space)
+    shape = (action_shape[0] if len(action_shape) else 1, 115)
     self.observation_space = gym.spaces.Box(
-        low=-1, high=1, shape=shape, dtype=np.float32)
+        low=-np.inf, high=np.inf, shape=shape, dtype=np.float32)
+    self._fixed_positions = fixed_positions
 
   def observation(self, observation):
-    """Converts an observation into simple115 format.
+    """Converts an observation into simple115 (or simple115v2) format."""
+    return Simple115StateWrapper.convert_observation(observation, self._fixed_positions)
+
+  @staticmethod
+  def convert_observation(observation, fixed_positions):
+    """Converts an observation into simple115 (or simple115v2) format.
 
     Args:
       observation: observation that the environment returns
+      fixed_positions: Players and positions are always occupying 88 fields
+                       (even if the game is played 1v1).
+                       If True, the position of the player will be the same - no
+                       matter how many players are on the field:
+                       (so first 11 pairs will belong to the first team, even
+                       if it has less players).
+                       If False, then the position of players from team2
+                       will depend on number of players in team1).
 
     Returns:
       (N, 115) shaped representation, where N stands for the number of players
       being controlled.
     """
+
+    def do_flatten(obj):
+      """Run flatten on either python list or numpy array."""
+      if type(obj) == list:
+        return np.array(obj).flatten()
+      return obj.flatten()
+
     final_obs = []
     for obs in observation:
       o = []
-      o.extend(obs['left_team'].flatten())
-      o.extend(obs['left_team_direction'].flatten())
-      o.extend(obs['right_team'].flatten())
-      o.extend(obs['right_team_direction'].flatten())
+      if fixed_positions:
+        for i, name in enumerate(['left_team', 'left_team_direction',
+                                  'right_team', 'right_team_direction']):
+          o.extend(do_flatten(obs[name]))
+          # If there were less than 11vs11 players we backfill missing values
+          # with -1.
+          if len(o) < (i + 1) * 22:
+            o.extend([-1] * ((i + 1) * 22 - len(o)))
+      else:
+        o.extend(do_flatten(obs['left_team']))
+        o.extend(do_flatten(obs['left_team_direction']))
+        o.extend(do_flatten(obs['right_team']))
+        o.extend(do_flatten(obs['right_team_direction']))
 
       # If there were less than 11vs11 players we backfill missing values with
       # -1.
@@ -155,9 +197,11 @@ class PixelsStateWrapper(gym.ObservationWrapper):
     gym.ObservationWrapper.__init__(self, env)
     self._grayscale = grayscale
     self._channel_dimensions = channel_dimensions
+    action_shape = np.shape(self.env.action_space)
     self.observation_space = gym.spaces.Box(
-        low=0, high=255,
-        shape=(self.env.unwrapped._config.number_of_players_agent_controls(),
+        low=0,
+        high=255,
+        shape=(action_shape[0] if len(action_shape) else 1,
                channel_dimensions[1], channel_dimensions[0],
                1 if grayscale else 3),
         dtype=np.uint8)
@@ -165,6 +209,10 @@ class PixelsStateWrapper(gym.ObservationWrapper):
   def observation(self, obs):
     o = []
     for observation in obs:
+      assert 'frame' in observation, ("Missing 'frame' in observations. Pixel "
+                                      "representation requires rendering and is"
+                                      " supported only for players on the left "
+                                      "team.")
       frame = observation['frame']
       if self._grayscale:
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
@@ -178,17 +226,19 @@ class PixelsStateWrapper(gym.ObservationWrapper):
 
 
 class SMMWrapper(gym.ObservationWrapper):
-  """A wrapper that returns an observation only for the first agent."""
+  """A wrapper that convers observations into a minimap format."""
 
   def __init__(self, env,
                channel_dimensions=(observation_preprocessing.SMM_WIDTH,
                                    observation_preprocessing.SMM_HEIGHT)):
     gym.ObservationWrapper.__init__(self, env)
     self._channel_dimensions = channel_dimensions
-    shape = (self.env.unwrapped._config.number_of_players_agent_controls(),
-             channel_dimensions[1], channel_dimensions[0],
-             len(observation_preprocessing.get_smm_layers(
-                 self.env.unwrapped._config)))
+    action_shape = np.shape(self.env.action_space)
+    shape = (action_shape[0] if len(action_shape) else 1, channel_dimensions[1],
+             channel_dimensions[0],
+             len(
+                 observation_preprocessing.get_smm_layers(
+                     self.env.unwrapped._config)))
     self.observation_space = gym.spaces.Box(
         low=0, high=255, shape=shape, dtype=np.uint8)
 
@@ -199,7 +249,7 @@ class SMMWrapper(gym.ObservationWrapper):
 
 
 class SingleAgentObservationWrapper(gym.ObservationWrapper):
-  """A wrapper that returns a reward only for the first agent."""
+  """A wrapper that returns an observation only for the first agent."""
 
   def __init__(self, env):
     gym.ObservationWrapper.__init__(self, env)
@@ -320,3 +370,69 @@ class FrameStack(gym.Wrapper):
 
   def _get_observation(self):
     return np.concatenate(list(self.obs), axis=-1)
+
+
+class MultiAgentToSingleAgent(gym.Wrapper):
+  """Converts raw multi-agent observations to single-agent observation.
+
+  It returns observations of the designated player on the team, so that
+  using this wrapper in multi-agent setup is equivalent to controlling a single
+  player. This wrapper is used for scenarios with control_all_players set when
+  agent controls only one player on the team. It can also be used
+  in a standalone manner:
+
+  env = gfootball.env.create_environment(env_name='tests/multiagent_wrapper',
+      number_of_left_players_agent_controls=11)
+  observations = env.reset()
+  single_observation = MultiAgentToSingleAgent.get_observation(observations)
+  single_action = agent.run(single_observation)
+  actions = MultiAgentToSingleAgent.get_action(single_action, observations)
+  env.step(actions)
+  """
+
+  def __init__(self, env, left_players, right_players):
+    assert left_players < 2
+    assert right_players < 2
+    players = left_players + right_players
+    gym.Wrapper.__init__(self, env)
+    self._observation = None
+    if players > 1:
+      self.action_space = gym.spaces.MultiDiscrete([env._num_actions] * players)
+    else:
+      self.action_space = gym.spaces.Discrete(env._num_actions)
+
+  def reset(self):
+    self._observation = self.env.reset()
+    return self._get_observation()
+
+  def step(self, action):
+    assert self._observation, 'Reset must be called before step'
+    action = MultiAgentToSingleAgent.get_action(action, self._observation)
+    self._observation, reward, done, info = self.env.step(action)
+    return self._get_observation(), reward, done, info
+
+  def _get_observation(self):
+    return MultiAgentToSingleAgent.get_observation(self._observation)
+
+  @staticmethod
+  def get_observation(observation):
+    assert 'designated' in observation[
+        0], 'Only raw observations can be converted'
+    result = []
+    for obs in observation:
+      if obs['designated'] == obs['active']:
+        result.append(obs)
+    return result
+
+  @staticmethod
+  def get_action(actions, orginal_observation):
+    assert 'designated' in orginal_observation[
+        0], 'Only raw observations can be converted'
+    result = [football_action_set.action_builtin_ai] * len(orginal_observation)
+    action_idx = 0
+    for idx, obs in enumerate(orginal_observation):
+      if obs['designated'] == obs['active']:
+        assert action_idx < len(actions)
+        result[idx] = actions[action_idx]
+        action_idx += 1
+    return result

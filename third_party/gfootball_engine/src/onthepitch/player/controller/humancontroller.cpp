@@ -23,7 +23,7 @@
 
 #include "../../../main.hpp"
 
-HumanController::HumanController(Match *match, IHIDevice *hid)
+HumanController::HumanController(Match *match, AIControlledKeyboard *hid)
     : PlayerController(match), hid(hid) {
   DO_VALIDATION;
   Reset();
@@ -591,6 +591,7 @@ void HumanController::Reset() {
   previousDirection = Vector3(0, -1, 0);
 
   fadingTeamPossessionAmount = 1.0;
+  hid->ResetNotSticky();
 }
 
 void HumanController::_GetHidInput(Vector3 &rawInputDirection,

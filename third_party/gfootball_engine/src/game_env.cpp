@@ -16,8 +16,6 @@
 #include "game_env.hpp"
 
 #include <fenv.h>
-#include <sys/prctl.h>
-#include <sys/wait.h>
 
 #include <cerrno>
 #include <chrono>
@@ -28,8 +26,6 @@
 #include "ai/ai_keyboard.hpp"
 #include "file.h"
 #include "gametask.hpp"
-
-#define FRAME_SIZE (1280*720*3)
 
 using std::string;
 
@@ -179,6 +175,7 @@ void GameEnv::action(int action, bool left_team, int player) {
   GetTracker()->setDisabled(true);
   int controller_id = player + (left_team ? 0 : 11);
   auto controller = static_cast<AIControlledKeyboard*>(GetControllers()[controller_id]);
+  controller->SetDisabled(false);
   switch (Action(action)) {
     case game_idle:
       break;
@@ -276,6 +273,9 @@ void GameEnv::action(int action, bool left_team, int player) {
     case game_release_dribble:
       controller->SetButton(e_ButtonFunction_Dribble, false);
       break;
+    case game_builtin_ai:
+      controller->SetDisabled(true);
+      break;
   }
   GetTracker()->setDisabled(false);
 }
@@ -338,16 +338,18 @@ void GameEnv::step() {
   }
   if (context->gameTask->GetMatch()->IsInPlay()) {
     DO_VALIDATION;
+    GetTracker()->setDisabled(true);
     context->step++;
     for (auto controller : GetControllers()) {
       DO_VALIDATION;
       controller->ResetNotSticky();
     }
+    GetTracker()->setDisabled(false);
   }
 }
 
 void GameEnv::ProcessState(EnvState* state) {
-  state->process(&this->state, sizeof(this->state));
+  state->process(this->state);
   state->process(waiting_for_game_count);
   context->ProcessState(state);
   context->gameTask->GetMatch()->ProcessState(state);
@@ -370,7 +372,7 @@ void GameEnv::reset(ScenarioConfig& game_config, bool animations) {
   setConfig(game_config);
   for (auto controller : GetControllers()) {
     DO_VALIDATION;
-    controller->Reset();
+    controller->SetDisabled(true);
   }
   context->geometry_manager.RemoveUnused();
   context->surface_manager.RemoveUnused();

@@ -19,7 +19,9 @@
 #define _HPP_DEFINES
 
 #ifdef WIN32
+#define NOMINMAX
 #include <windows.h>
+#undef NOMINMAX
 #endif
 
 #include <cstdio>
@@ -41,7 +43,7 @@
 #include <boost/thread/condition.hpp>
 #include <boost/signals2.hpp>
 #include <boost/signals2/slot.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include "backtrace.h"
 #include "base/log.hpp"
 
@@ -57,15 +59,17 @@ constexpr float EPSILON = 0.000001;
 
 typedef std::string screenshoot;
 
+using namespace boost::placeholders;
+
 namespace blunted {
   class Animation;
-  using namespace boost;
+  //using namespace boost;
 }
 
 class Player;
 class Team;
-class HumanController;
-class IHIDevice;
+class HumanGamer;
+class AIControlledKeyboard;
 class ScenarioConfig;
 class GameContext;
 class GameEnv;
@@ -78,27 +82,27 @@ class EnvState {
   EnvState(GameEnv* game_env, const std::string& state, const std::string reference = "");
   const ScenarioConfig* getConfig() { return scenario_config; }
   const GameContext* getContext() { return context; }
-  void process(unsigned long &value);
-  void process(unsigned int &value);
-  void process(bool &value);
-  void process(blunted::Vector3 &value);
-  void process(blunted::radian &value);
-  void process(blunted::Quaternion &value);
-  void process(int &value);
   void process(std::string &value);
-  void process(float &value);
   void process(blunted::Animation* &value);
-  template<typename T> void process(T& collection) {
+  template<typename T> void process(std::vector<T>& collection) {
     int size = collection.size();
-    process(&size, sizeof(int));
+    process(size);
     collection.resize(size);
     for (auto& el : collection) {
-      process(&el, sizeof(el));
+      process(el);
+    }
+  }
+  template<typename T> void process(std::list<T>& collection) {
+    int size = collection.size();
+    process(size);
+    collection.resize(size);
+    for (auto& el : collection) {
+      process(el);
     }
   }
   void process(Player*& value);
-  void process(HumanController*& value);
-  void process(IHIDevice*& value);
+  void process(HumanGamer*& value);
+  void process(AIControlledKeyboard*& value);
   void process(Team*& value);
   bool isFailure() {
     return failure;
@@ -113,55 +117,55 @@ class EnvState {
     this->crash = crash;
   }
   bool Load() { return load; }
-  void process(void* ptr, int size);
   int getpos() {
     return pos;
   }
   bool eos();
-  template<typename T> void process(T* ptr, int size) {
+  template<typename T> void process(T& obj) {
     if (load) {
-      if (pos + size > state.size()) {
+      if (pos + sizeof(T) > state.size()) {
         Log(blunted::e_FatalError, "EnvState", "state", "state is invalid");
       }
-      memcpy(ptr, &state[pos], size);
-      pos += size;
+      memcpy(&obj, &state[pos], sizeof(T));
+      pos += sizeof(T);
     } else {
-      state.resize(pos + size);
-      memcpy(&state[pos], ptr, size);
-      if (disable_cnt == 0 && !reference.empty() && (*(T*) &state[pos]) != (*(T*) &reference[pos])) {
+      state.resize(pos + sizeof(T));
+      memcpy(&state[pos], &obj, sizeof(T));
+      if (!failure && disable_cnt == 0 && !reference.empty() && (*(T*) &state[pos]) != (*(T*) &reference[pos])) {
         failure = true;
+        std::cout << "Position:  " << pos << std::endl;
+        std::cout << "Type:      " << typeid(obj).name() << std::endl;
+        std::cout << "Value:     " << obj << std::endl;
+        std::cout << "Reference: " << (*(T*) &reference[pos]) << std::endl;
         if (crash) {
-          T ref_value;
-          memcpy(&ref_value, &reference[pos], size);
-          std::cout << "Position:  " << pos << std::endl;
-          std::cout << "Value:     " << *ptr << std::endl;
-          std::cout << "Reference: " << ref_value << std::endl;
           Log(blunted::e_FatalError, "EnvState", "state", "Reference mismatch");
+        } else {
+          print_stacktrace();
         }
       }
-      pos += size;
+      pos += sizeof(T);
       if (pos > 10000000) {
         Log(blunted::e_FatalError, "EnvState", "state", "state is too big");
       }
     }
   }
   void SetPlayers(const std::vector<Player*>& players);
-  void SetHumanControllers(const std::vector<HumanController*>& controllers);
-  void SetControllers(const std::vector<IHIDevice*>& controllers);
+  void SetHumanControllers(const std::vector<HumanGamer*>& controllers);
+  void SetControllers(const std::vector<AIControlledKeyboard*>& controllers);
   void SetAnimations(const std::vector<blunted::Animation*>& animations);
   void SetTeams(Team* team0, Team* team1);
   const std::string& GetState();
  protected:
+  bool failure = false;
   bool stack = true;
   bool load = false;
   char disable_cnt = 0;
-  bool failure = false;
-  bool crash = true;
+  bool crash = false;
   std::vector<Player*> players;
   std::vector<blunted::Animation*> animations;
   std::vector<Team*> teams;
-  std::vector<HumanController*> human_controllers;
-  std::vector<IHIDevice*> controllers;
+  std::vector<HumanGamer*> human_controllers;
+  std::vector<AIControlledKeyboard*> controllers;
   std::string state;
   std::string reference;
   int pos = 0;
@@ -231,6 +235,15 @@ enum e_GameMode {
   e_GameMode_Penalty,
 };
 
+enum e_PlayerColor {
+  e_PlayerColor_Blue,
+  e_PlayerColor_Green,
+  e_PlayerColor_Red,
+  e_PlayerColor_Yellow,
+  e_PlayerColor_Purple,
+  e_PlayerColor_Default
+};
+
 enum e_Team {
   e_Left,
   e_Right,
@@ -246,6 +259,7 @@ struct PlayerInfo {
     is_active = f.is_active;
     tired_factor = f.tired_factor;
     role = f.role;
+    designated_player = f.designated_player;
   }
   bool operator == (const PlayerInfo& f) const {
     return player_position == f.player_position &&
@@ -253,12 +267,14 @@ struct PlayerInfo {
         has_card == f.has_card &&
         is_active == f.is_active &&
         tired_factor == f.tired_factor &&
-        role == f.role;
+        role == f.role &&
+        designated_player == f.designated_player;
   }
   Position player_position;
   Position player_direction;
   bool has_card = false;
   bool is_active = true;
+  bool designated_player = false;
   float tired_factor = 0.0f; // In the [0..1] range.
   e_PlayerRole role = e_PlayerRole_GK;
 };

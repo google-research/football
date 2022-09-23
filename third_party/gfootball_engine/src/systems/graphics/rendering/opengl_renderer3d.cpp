@@ -16,27 +16,40 @@
 // i do not offer support, so don't ask. to be used for inspiration :)
 
 #include "opengl_renderer3d.hpp"
-#include <GL/glu.h>
+
+#ifndef GL_GLEXT_PROTOTYPES
+#define GL_GLEXT_PROTOTYPES
+#endif
+#ifdef __APPLE__
+#define GL_SILENCE_DEPRECATION
+#include <OpenGL/gl3.h>
+#include <OpenGL/gl3ext.h>
+#else
+#include <GL/gl.h>
+#endif
+
+#ifdef __linux__
+#include <GL/glext.h>
+#define EGL_EGLEXT_PROTOTYPES
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#elif defined(WIN32)
+#include <SDL2/SDL_opengl_glext.h>
+#endif
 
 #include <cmath>
 #include "wrap_SDL.h"
 
-#include "../../../main.hpp"
-#include "../../../base/log.hpp"
-#include "../../../utils/gui2/widgets/image.hpp"
-#include "../../../types/command.hpp"
-#include "../../../base/sdl_surface.hpp"
-#include "../../../base/utils.hpp"
-#include "../../../base/math/bluntmath.hpp"
-
 #include "../../../base/geometry/aabb.hpp"
 #include "../../../base/geometry/trianglemeshutils.hpp"
-
+#include "../../../base/log.hpp"
+#include "../../../base/math/bluntmath.hpp"
+#include "../../../base/sdl_surface.hpp"
+#include "../../../base/utils.hpp"
+#include "../../../main.hpp"
+#include "../../../types/command.hpp"
+#include "../../../utils/gui2/widgets/image.hpp"
 #include "../resources/texture.hpp"
-
-#ifdef WIN32
-#include <wingdi.h>
-#endif
 
 namespace blunted {
 
@@ -48,7 +61,7 @@ struct GLfunctions {
 
 GLfunctions mapping;
 
-OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
+OpenGLRenderer3D::OpenGLRenderer3D() {
   DO_VALIDATION;
   FOV = 45;
   overallBrightness = 128;
@@ -60,13 +73,17 @@ OpenGLRenderer3D::OpenGLRenderer3D() : context(0) {
   // SetPriorityClass(thread.native_handle(), HIGH_PRIORITY_CLASS);
 };
 
-OpenGLRenderer3D::~OpenGLRenderer3D() { DO_VALIDATION; };
+OpenGLRenderer3D::~OpenGLRenderer3D() {
+    DO_VALIDATION;
+};
 
 void OpenGLRenderer3D::SwapBuffers() {
   DO_VALIDATION;
-  last_screen_.resize(1280 * 720 * 3);
-  SDL_GL_SwapWindow(window);
-  mapping.glReadPixels(0, 0, 1280, 720, GL_RGB, GL_UNSIGNED_BYTE,
+  last_screen_.resize(context_width * context_height * 3);
+  if (window) {
+    SDL_GL_SwapWindow(window);
+  }
+  mapping.glReadPixels(0, 0, context_width, context_height, GL_RGB, GL_UNSIGNED_BYTE,
                        &last_screen_[0]);
 }
 
@@ -82,83 +99,47 @@ void OpenGLRenderer3D::RenderOverlay2D(
     const std::vector<Overlay2DQueueEntry> &overlay2DQueue) {
   DO_VALIDATION;
 
-  assert(context);
-
-
-
-  mapping.glMatrixMode(GL_PROJECTION);
-  mapping.glPushMatrix();
-  mapping.glLoadIdentity();
-  mapping.glOrtho(0, 1280, 720, 0, 0.1, 10);
-
-  mapping.glMatrixMode(GL_MODELVIEW);
-  mapping.glPushMatrix();
-  mapping.glLoadIdentity();
-  mapping.glTranslatef(0, 0, -1);
+  if (overlay2DQueue.empty()) {
+    return;
+  }
 
   mapping.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   mapping.glEnable(GL_BLEND);
-
   mapping.glDisable(GL_DEPTH_TEST);
   SetDepthMask(false);
-  mapping.glShadeModel(GL_FLAT);
-  mapping.glDisable(GL_FOG);
   mapping.glDisable(GL_CULL_FACE);
-  mapping.glDisable(GL_LIGHTING);
 
-  mapping.glEnable(GL_TEXTURE_2D);
+  UseShader("overlay");
+
+  Matrix4 orthoMatrix = CreateOrthoMatrix(0, context_width, context_height, 0, 0.1, 10);
+  SetMatrix("projection", orthoMatrix);
+
+  mapping.glBindVertexArray(overlayBuffer.vertexArrayID);
+  SetTextureUnit(0);
 
   for (unsigned int i = 0; i < overlay2DQueue.size(); i++) {
     DO_VALIDATION;
     const Overlay2DQueueEntry &queueEntry = overlay2DQueue[i];
 
-    /* fun!
-    float xf = (context->w * 1.0) / 2.0 - 128  + sin(i       + i2 * 1.2) * 200
-    + sin(i * 0.4 + i2 * 0.6) * 100; float yf = (context->h * 1.0) / 2.0 - 32 +
-    cos(i * 0.7 + i2 * 0.7) * 160  + cos(i * 0.6 + i2 * 1.3) * 80; i2 += 0.15 -
-    (i2 * 0.01);
-    */
+    Matrix4 modelMatrix(MATRIX4_IDENTITY);
+    modelMatrix.SetTranslation(Vector3(queueEntry.position[0], queueEntry.position[1], -1.0f));
+    modelMatrix.SetScale(Vector3(queueEntry.size[0], queueEntry.size[1], 1.0f));
+    SetMatrix("model", modelMatrix);
 
-    mapping.glBindTexture(GL_TEXTURE_2D,
-                          queueEntry.texture->GetResource()->GetID());
-
-    mapping.glBegin(GL_QUADS);
-
-    mapping.glTexCoord3f(0, 0, 0);
-    mapping.glVertex2f(queueEntry.position[0], queueEntry.position[1]);
-    mapping.glTexCoord3f(1, 0, 0);
-    mapping.glVertex2f(queueEntry.position[0] + queueEntry.size[0],
-                       queueEntry.position[1]);
-    mapping.glTexCoord3f(1, 1, 0);
-    mapping.glVertex2f(queueEntry.position[0] + queueEntry.size[0],
-                       queueEntry.position[1] + queueEntry.size[1]);
-    mapping.glTexCoord3f(0, 1, 0);
-    mapping.glVertex2f(queueEntry.position[0],
-                       queueEntry.position[1] + queueEntry.size[1]);
-
-    mapping.glEnd();
+    BindTexture(queueEntry.texture->GetResource()->GetID());
+    mapping.glDrawArrays(GL_TRIANGLES, 0, 6);
   }
+
+  mapping.glBindVertexArray(0);
 
   mapping.glEnable(GL_DEPTH_TEST);
   mapping.glEnable(GL_CULL_FACE);
-  mapping.glShadeModel(GL_SMOOTH);
   SetDepthMask(true);
-
   mapping.glDisable(GL_BLEND);
-
-  mapping.glPopMatrix();
-
-  mapping.glMatrixMode(GL_PROJECTION);
-  mapping.glPopMatrix();
-
-  mapping.glMatrixMode(GL_MODELVIEW);
-
-  mapping.glLoadIdentity();
 }
 
 void OpenGLRenderer3D::RenderOverlay2D() {
   DO_VALIDATION;
-  assert(context);
 
   Matrix4 orthoMatrix = CreateOrthoMatrix(-1, 1, -1, 1, 0.0f, 1.0f);
   SetMatrix("orthoProjectionMatrix", orthoMatrix);
@@ -166,28 +147,15 @@ void OpenGLRenderer3D::RenderOverlay2D() {
   viewMatrix.SetTranslation(Vector3(0, 0, -0.5f));
   SetMatrix("orthoViewMatrix", viewMatrix);
 
-  mapping.glShadeModel(GL_FLAT);
-  mapping.glDisable(GL_LIGHTING);
-
   SetCullingMode(e_CullingMode_Off);
 
-  mapping.glEnable(GL_TEXTURE_2D);
   SetTextureUnit(4);  // noise
   BindTexture(noiseTexID);
   SetTextureUnit(0);
 
-  mapping.glBegin(GL_QUADS);
-
-  mapping.glTexCoord3f(0, 1, 0);
-  mapping.glVertex2f(-1, 1);
-  mapping.glTexCoord3f(1, 1, 0);
-  mapping.glVertex2f(1, 1);
-  mapping.glTexCoord3f(1, 0, 0);
-  mapping.glVertex2f(1, -1);
-  mapping.glTexCoord3f(0, 0, 0);
-  mapping.glVertex2f(-1, -1);
-
-  mapping.glEnd();
+  mapping.glBindVertexArray(quadBuffer.vertexArrayID);
+  mapping.glDrawArrays(GL_TRIANGLES, 0, 6);
+  mapping.glBindVertexArray(0);
 
   // unbind noise
   SetTextureUnit(4);
@@ -198,6 +166,10 @@ void OpenGLRenderer3D::RenderOverlay2D() {
 
 void drawSphere(float r, int lats, int longs) {
   DO_VALIDATION;
+  // Never called (because light.type is always set to 0) and uses deprecated methods.
+  // Possible implementation, that uses modern OpenGl can be found here:
+  // https://gist.github.com/zwzmzd/0195733fa1210346b00d
+  /*
   int i, j;
   for (i = 0; i <= lats; i++) {
     DO_VALIDATION;
@@ -223,6 +195,7 @@ void drawSphere(float r, int lats, int longs) {
     }
     mapping.glEnd();
   }
+   */
 }
 
 void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
@@ -231,7 +204,7 @@ void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
   DO_VALIDATION;
   Vector3 cameraPos = viewMatrix.GetInverse().GetTranslation();
 
-  mapping.glDisable(GL_ALPHA_TEST);
+  //  mapping.glDisable(GL_ALPHA_TEST);
 
   SetUniformFloat3(currentShader->first, "cameraPosition", cameraPos.coords[0],
                    cameraPos.coords[1], cameraPos.coords[2]);
@@ -242,14 +215,12 @@ void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
     DO_VALIDATION;
     const LightQueueEntry &light = (*lightIter);
 
-
-
     // bind shadow map
     SetUniformInt(currentShader->first, "has_shadow", (int)light.hasShadow);
     if (light.hasShadow) {
       DO_VALIDATION;
       SetTextureUnit(7);
-      mapping.glEnable(GL_TEXTURE_2D);
+      //mapping.glEnable(GL_TEXTURE_2D);
       mapping.glBindTexture(GL_TEXTURE_2D,
                             light.shadowMapTexture->GetResource()->GetID());
 
@@ -261,7 +232,7 @@ void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
                             (*lightIter).lightViewMatrix);
 
     } else {
-      mapping.glDisable(GL_TEXTURE_2D);
+      //mapping.glDisable(GL_TEXTURE_2D);
     }
 
     SetUniformFloat3(currentShader->first, "lightColor", light.color.coords[0],
@@ -312,20 +283,10 @@ void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
       Matrix4 modelMatrix(MATRIX4_IDENTITY);
       SetMatrix("modelMatrix", modelMatrix);
 
-      mapping.glBegin(GL_QUADS);
-
-      mapping.glTexCoord3f(0, 1, 0);
-      mapping.glVertex2f(-1, 1);
-      mapping.glTexCoord3f(1, 1, 0);
-      mapping.glVertex2f(1, 1);
-      mapping.glTexCoord3f(1, 0, 0);
-      mapping.glVertex2f(1, -1);
-      mapping.glTexCoord3f(0, 0, 0);
-      mapping.glVertex2f(-1, -1);
-
-      mapping.glEnd();
-
-    } else {
+      mapping.glBindVertexArray(quadBuffer.vertexArrayID);
+      mapping.glDrawArrays(GL_TRIANGLES, 0, 6);
+      mapping.glBindVertexArray(0);
+    } else {  // Never called (because light.type is always set to 0)
       // SPHERE
 
       SetCullingMode(e_CullingMode_Back);
@@ -344,7 +305,7 @@ void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
     if (light.hasShadow) {
       DO_VALIDATION;
       mapping.glBindTexture(GL_TEXTURE_2D, 0);
-      mapping.glDisable(GL_TEXTURE_2D);
+      //mapping.glDisable(GL_TEXTURE_2D);
       SetTextureUnit(0);
     }
 
@@ -357,23 +318,67 @@ void OpenGLRenderer3D::RenderLights(std::deque<LightQueueEntry> &lightQueue,
 
   // init & exit
 
-bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
-                                     bool fullscreen) {
+VertexBufferID OpenGLRenderer3D::CreateSimpleVertexBuffer(GLfloat *vertices, unsigned int size) {
+  GLuint VBO, VAO;
+  mapping.glGenVertexArrays(1, &VAO);
+  mapping.glGenBuffers(1, &VBO);
+
+  mapping.glBindVertexArray(VAO);
+
+  mapping.glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  mapping.glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
+
+  mapping.glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
+  mapping.glEnableVertexAttribArray(0);
+
+  mapping.glBindBuffer(GL_ARRAY_BUFFER, 0);
+  mapping.glBindVertexArray(0);
+
+  VertexBufferID vertexBufferId;
+  vertexBufferId.bufferID = VBO;
+  vertexBufferId.vertexArrayID = VAO;
+  return vertexBufferId;
+}
+
+void OpenGLRenderer3D::DeleteSimpleVertexBuffer(VertexBufferID vertexBufferID) {
   DO_VALIDATION;
-  this->context_width = width;
-  this->context_height = height;
-  this->context_bpp = bpp;
+  GLuint glVertexBufferID = vertexBufferID.bufferID;
+  mapping.glDeleteBuffers(1, &glVertexBufferID);
 
-  // default values
-  this->cameraNear = 30.0;
-  this->cameraFar = 270.0;
+  GLuint glVertexArrayID = vertexBufferID.vertexArrayID;
+  mapping.glDeleteVertexArrays(1, &glVertexArrayID);
+}
 
-  // #ifdef __linux__
-  //     #include <X11/Xlib.h>
-  //     XInitThreads();
-  // #endif
+// This method was introduced to replace OpenGL's fixed function pipeline
+// (e.g. glBegin, glEnd, etc.) that was used for overlay rendering.
+void OpenGLRenderer3D::InitializeOverlayAndQuadBuffers() {
+  GLfloat overlayVertices[] = {
+          0.0f, 1.0f, 0.0f, 1.0f,
+          1.0f, 0.0f, 0.0f, 1.0f,
+          0.0f, 0.0f, 0.0f, 1.0f,
 
-  //#ifdef WIN32
+          0.0f, 1.0f, 0.0f, 1.0f,
+          1.0f, 1.0f, 0.0f, 1.0f,
+          1.0f, 0.0f, 0.0f, 1.0f
+  };
+  overlayBuffer = CreateSimpleVertexBuffer(overlayVertices, sizeof(overlayVertices));
+
+  GLfloat quadVertices[] = {
+          -1.0f,  1.0f, 0.0f, 1.0f,
+          1.0f, -1.0f, 0.0f, 1.0f,
+          -1.0f, -1.0f, 0.0f, 1.0f,
+
+          -1.0f,  1.0f, 0.0f, 1.0f,
+          1.0f,  1.0f, 0.0f, 1.0f,
+          1.0f, -1.0f, 0.0f, 1.0f
+  };
+  quadBuffer = CreateSimpleVertexBuffer(quadVertices, sizeof(quadVertices));
+}
+
+void OpenGLRenderer3D::CreateContextSdl() {
+  DO_VALIDATION;
+  SDL_Init(SDL_INIT_VIDEO);
+
   SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
@@ -384,33 +389,34 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
 
   SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);  // DISABLED?
 
-  // SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-  // SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-  // SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
-  // SDL_GL_CONTEXT_PROFILE_CORE);
-
-
-
-  //    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-  //    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-  //    SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-  // recently disabled  SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, 1); // wait for
-  // vsync?
-  //  int SDLerror = SDL_GL_SetSwapInterval(-1);
-  //  if (SDLerror == -1) SDL_GL_SetSwapInterval(1);
-
-  //#endif
+#ifdef __APPLE__
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+#endif
 
   window = SDL_CreateWindow("Google Research Football", SDL_WINDOWPOS_UNDEFINED,
-                            SDL_WINDOWPOS_UNDEFINED, width, height,
-                            SDL_WINDOW_OPENGL /* | SDL_RESIZABLE*/ |
-                                (fullscreen ? SDL_WINDOW_FULLSCREEN : 0));
+                            SDL_WINDOWPOS_UNDEFINED, context_width,
+                            context_height, SDL_WINDOW_OPENGL);
   context = SDL_GL_CreateContext(window);
 
-  //    *reinterpret_cast<void**>(&(mapping.func)) =
-  //    SDL_GL_GetProcAddress(#func); *reinterpret_cast<void**>(&(mapping.func))
-  //    = (void*) func;
-
+  if (!context) {
+    DO_VALIDATION;
+    std::string errorString = SDL_GetError();
+    std::cout << "Failed on SDL error: " << errorString << std::endl;
+    std::cout << "You can solve this problem by:" << std::endl;
+    std::cout << "1) If you are running inside Docker make sure container has "
+                 "access to XServer by running (outside of the container):"
+              << std::endl;
+    std::cout << "  > xhost +\"local:docker@\"" << std::endl;
+    std::cout << "2) Switch to off-screen rendering by unsetting DISPLAY "
+                 "environment variable"
+              << std::endl;
+    std::cout
+        << "3) Disable 3D rendering (which makes environment run much faster)."
+        << std::endl;
+    exit(1);
+  }
 #define SDL_PROC(ret, func, params)                                        \
   do {                                                                     \
     *reinterpret_cast<void **>(&(mapping.func)) =                          \
@@ -426,78 +432,154 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
   } while (0);
 #include "sdl_glfuncs.h"
 #undef SDL_PROC
-
-
-    int glVersion[2] = { 0, 0 };
-    //ASSERT_TRUE(glGetIntegervFunc != nullptr);
-    mapping.glGetIntegerv(GL_MAJOR_VERSION, &glVersion[0]);
-    mapping.glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]);
-
-    if (!context) {
-      DO_VALIDATION;
-      std::string errorString = SDL_GetError();
-      Log(e_FatalError, "OpenGLRenderer3D", "CreateContext", "Failed on SDL errwwwwor: " + errorString);
-      return false;
-    }
-
-    bool higherThan32 = false;
-    if (glVersion[0] < 4) {
-      DO_VALIDATION;
-      if (glVersion[0] == 3 && glVersion[1] >= 2) higherThan32 = true;
-    } else
-      higherThan32 = true;
-
-    if (!higherThan32) Log(e_Warning, "OpenGLRenderer3D", "CreateContext", "OpenGL version not equal to or higher than 3.2 (or not reported as such)");
-
-    //SDL_WM_SetCaption("Gameplay Football", NULL);
-
+}
 
 #ifdef __linux__
-    bool success = true;//glXSwapIntervalSGI(-1); // anti-tear blah
+// Helper macro to check for EGL errors.
+#define FAIL_IF_EGL_ERROR(egl_expr)                             \
+  do {                                                          \
+    (egl_expr);                                                 \
+    auto error = eglGetError();                                 \
+    if (error != EGL_SUCCESS) {                                 \
+      Log(e_FatalError, "OpenGLRenderer3D", "CreateContextEgl", \
+          "EGL failure: " + int_to_str(__LINE__));              \
+    }                                                           \
+  } while (false)
+
+void OpenGLRenderer3D::CreateContextEgl() {
+  static const int MAX_DEVICES = 16;
+  EGLDeviceEXT eglDevs[MAX_DEVICES];
+  EGLint numDevices;
+  PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT =
+      (PFNEGLQUERYDEVICESEXTPROC)eglGetProcAddress("eglQueryDevicesEXT");
+  if (eglQueryDevicesEXT == nullptr) {
+    Log(e_FatalError, "OpenGLRenderer3D", "CreateContextEgl",
+        "Failed on obtain eglQueryDevicesEXT function");
+  }
+  eglQueryDevicesEXT(MAX_DEVICES, eglDevs, &numDevices);
+
+  PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
+      (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress(
+          "eglGetPlatformDisplayEXT");
+  if (eglGetPlatformDisplayEXT == nullptr) {
+    Log(e_FatalError, "OpenGLRenderer3D", "CreateContextEgl",
+        "Failed on obtain eglGetPlatformDisplayEXT function");
+  }
+  EGLBoolean success;
+  int major, minor;
+  for (EGLint i = 0; i < numDevices; ++i) {
+    EGLDisplay display =
+        eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevs[i], nullptr);
+    if (eglGetError() == EGL_SUCCESS && display != EGL_NO_DISPLAY) {
+      success = eglInitialize(display, &major, &minor);
+      if (eglGetError() == EGL_SUCCESS && success == EGL_TRUE) {
+        egl_display = display;
+        break;
+      }
+    }
+  }
+  if (egl_display == EGL_NO_DISPLAY) {
+    Log(e_FatalError, "OpenGLRenderer3D", "CreateContextEgl",
+        "Failed on construct EGL Display");
+  }
+
+  FAIL_IF_EGL_ERROR(success = eglBindAPI(EGL_OPENGL_API));
+  EGLint num_configs;
+  EGLConfig egl_config;
+  constexpr EGLint kConfigAttribs[] = {EGL_RED_SIZE,
+                                       8,
+                                       EGL_GREEN_SIZE,
+                                       8,
+                                       EGL_BLUE_SIZE,
+                                       8,
+                                       EGL_SURFACE_TYPE,
+                                       EGL_PBUFFER_BIT,
+                                       EGL_RENDERABLE_TYPE,
+                                       EGL_OPENGL_BIT,
+                                       EGL_NONE};
+  FAIL_IF_EGL_ERROR(success = eglChooseConfig(egl_display, kConfigAttribs,
+                                              &egl_config, 1, &num_configs));
+
+  // Create EGL surface.
+  EGLint kPixelBufferAttribs[] = {
+      EGL_WIDTH, context_width, EGL_HEIGHT, context_height, EGL_NONE,
+  };
+  FAIL_IF_EGL_ERROR(egl_surface = eglCreatePbufferSurface(
+                        egl_display, egl_config, kPixelBufferAttribs));
+
+  FAIL_IF_EGL_ERROR(egl_context = eglCreateContext(egl_display, egl_config,
+                                                   EGL_NO_CONTEXT, nullptr));
+  FAIL_IF_EGL_ERROR(
+      eglMakeCurrent(egl_display, egl_surface, egl_surface, egl_context));
+#define SDL_PROC(ret, func, params)                                        \
+  do {                                                                     \
+    *reinterpret_cast<void **>(&(mapping.func)) =                          \
+        (void*) eglGetProcAddress(#func);                                          \
+    if (!mapping.func) {                                                   \
+      DO_VALIDATION;                                                       \
+      printf("Couldn't load mapping.gl function %s\n", #func); \
+      SDL_SetError("Couldn't load mapping.gl function %s\n", #func);               \
+      print_stacktrace();                                                  \
+      exit(1);                                                             \
+    }                                                                      \
+  } while (0);
+#include "sdl_glfuncs.h"
+#undef SDL_PROC
+}
 #endif
 
-    largest_supported_anisotropy = 2;
-    mapping.glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &largest_supported_anisotropy);
-    //largest_supported_anisotropy = clamp(largest_supported_anisotropy, 0, 8); // don't overdo it
+bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
+                                     bool fullscreen) {
+  this->context_width = width;
+  this->context_height = height;
+  this->context_bpp = bpp;
 
-    mapping.glDisable(GL_LIGHTING);
+  // default values
+  this->cameraNear = 30.0;
+  this->cameraFar = 270.0;
+#ifdef __linux__
+  if (!getenv("DISPLAY")) {
+    std::cout << "No DISPLAY defined, doing off-screen rendering" << std::endl;
+    CreateContextEgl();
+  } else {
+    CreateContextSdl();
+  }
+#else
+  CreateContextSdl();
+#endif
+  largest_supported_anisotropy = 2;
+  mapping.glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT,
+                      &largest_supported_anisotropy);
 
-    GLfloat color[4] = { 0, 0, 0, 0 };
-    mapping.glMaterialfv(GL_FRONT, GL_SPECULAR, color);
-    mapping.glMateriali(GL_FRONT, GL_SHININESS, 80);
+  mapping.glDisable(GL_MULTISAMPLE);
+  mapping.glCullFace(GL_BACK);
 
-    // enable color tracking
-    mapping.glEnable(GL_COLOR_MATERIAL);
-    mapping.glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+  // shaders
+  LoadShader("simple", "media/shaders/simple");
+  LoadShader("lighting", "media/shaders/lighting");
+  LoadShader("ambient", "media/shaders/ambient");
+  LoadShader("zphase", "media/shaders/zphase");
+  LoadShader("postprocess", "media/shaders/postprocess");
+  LoadShader("overlay", "media/shaders/overlay");
 
-    mapping.glDisable(GL_MULTISAMPLE);
+  currentShader = shaders.begin();
 
-    mapping.glCullFace(GL_BACK);
+  SDL_Surface *noise = IMG_LoadBmp("media/shaders/noise.png");
+  noiseTexID =
+      CreateTexture(e_InternalPixelFormat_RGB8, e_PixelFormat_RGB, noise->w,
+                    noise->h, false, true, false, false, false);
+  UpdateTexture(noiseTexID, noise, false, false);
+  SDL_FreeSurface(noise);
 
+  // create buffers for overlay and simple quad rendering to use shaders instead
+  // of fixed pipeline.
+  InitializeOverlayAndQuadBuffers();
 
-    // shaders
-
-    LoadShader("simple", "media/shaders/simple");
-    LoadShader("lighting", "media/shaders/lighting");
-    LoadShader("ambient", "media/shaders/ambient");
-    LoadShader("zphase", "media/shaders/zphase");
-    LoadShader("postprocess", "media/shaders/postprocess");
-
-    currentShader = shaders.begin();
-
-
-    SDL_Surface *noise = IMG_LoadBmp("media/shaders/noise.png");
-    noiseTexID = CreateTexture(e_InternalPixelFormat_RGB8, e_PixelFormat_RGB, noise->w, noise->h, false, true, false, false, false);
-    UpdateTexture(noiseTexID, noise, false, false);
-    SDL_FreeSurface(noise);
-
-    mapping.glClearColor(0, 0, 0, 0);
-    mapping.glClearDepth(1.0);
-    mapping.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-    mapping.glDisable(GL_MULTISAMPLE);
-
-    return true;
+  mapping.glClearColor(0, 0, 0, 0);
+  mapping.glClearDepth(1.0);
+  mapping.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+  mapping.glDisable(GL_MULTISAMPLE);
+  return true;
 }
 
 void OpenGLRenderer3D::Exit() {
@@ -514,9 +596,10 @@ void OpenGLRenderer3D::Exit() {
   }
 
   currentShader = shaders.end();
+  DeleteSimpleVertexBuffer(overlayBuffer);
+  DeleteSimpleVertexBuffer(quadBuffer);
 
   // assert(views.size() == 0);
-
 }
 
 int OpenGLRenderer3D::CreateView(float x_percent, float y_percent,
@@ -780,7 +863,8 @@ void OpenGLRenderer3D::SetDepthMask(bool OnOff) {
 
 void OpenGLRenderer3D::SetTextureMode(e_TextureMode textureMode) {
   DO_VALIDATION;
-
+  // Never called. Uses deprecated methods
+  /*
   switch (textureMode) {
     DO_VALIDATION;
 
@@ -792,6 +876,7 @@ void OpenGLRenderer3D::SetTextureMode(e_TextureMode textureMode) {
       mapping.glEnable(GL_TEXTURE_2D);
       break;
   }
+   */
 }
 
 void OpenGLRenderer3D::SetColor(const Vector3 &color, float alpha) {
@@ -1034,7 +1119,6 @@ void OpenGLRenderer3D::UpdateVertexBuffer(VertexBufferID vertexBufferID,
   mapping.glBindBuffer(
       GL_ARRAY_BUFFER,
       writeVertexBufferID);
-
   // glBufferData(GL_ARRAY_BUFFER, verticesDataSize * sizeof(float), vertices,
   // GL_DYNAMIC_DRAW);
 
@@ -1146,12 +1230,13 @@ void OpenGLRenderer3D::RenderVertexBuffer(
   DO_VALIDATION;
   VertexBuffer *vertexBuffer;
 
-  if (renderMode != e_RenderMode_GeometryOnly) {
-    DO_VALIDATION;
-    mapping.glEnable(GL_TEXTURE_2D);
-  } else {
-    mapping.glDisable(GL_TEXTURE_2D);
-  }
+// Deprecated
+//  if (renderMode != e_RenderMode_GeometryOnly) {
+//    DO_VALIDATION;
+//    mapping.glEnable(GL_TEXTURE_2D);
+//  } else {
+//    mapping.glDisable(GL_TEXTURE_2D);
+//  }
 
   signed int currentDiffuseTextureID = -1;
   signed int currentNormalTextureID = -1;
@@ -1406,7 +1491,7 @@ void OpenGLRenderer3D::RenderVertexBuffer(
       }
       SetTextureUnit(0);
       mapping.glBindTexture(GL_TEXTURE_2D, 0);
-      mapping.glDisable(GL_TEXTURE_2D);
+      //mapping.glDisable(GL_TEXTURE_2D);
     }
 
     mapping.glBindVertexArray(0);
@@ -1417,7 +1502,8 @@ void OpenGLRenderer3D::RenderVertexBuffer(
 void OpenGLRenderer3D::SetLight(const Vector3 &position, const Vector3 &color,
                                 float radius) {
   DO_VALIDATION;
-
+  // Deprecated functionality, everything is implemented in the shaders
+  /*
   Vector3 pos = position;
 
   // printf("%f %f %f\n", cameraPos.coords[0], cameraPos.coords[1],
@@ -1436,6 +1522,7 @@ void OpenGLRenderer3D::SetLight(const Vector3 &position, const Vector3 &color,
   mapping.glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
 
   mapping.glEnable(GL_LIGHT0);
+   */
 }
 
   // textures
@@ -1460,7 +1547,8 @@ GLenum GetGLPixelFormat(e_PixelFormat pixelFormat) {
       format = GL_DEPTH_COMPONENT;
       break;
     case e_PixelFormat_Luminance:
-      format = GL_LUMINANCE;
+      Log(e_Error, "OpenGLRenderer3D", "GetGLPixelFormat",
+          "e_PixelFormat_Luminance not supported");
       break;
   }
 
@@ -1587,8 +1675,7 @@ int OpenGLRenderer3D::CreateTexture(e_InternalPixelFormat internalPixelFormat,
 
   if (filter) {
     DO_VALIDATION;
-    mapping.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                            largest_supported_anisotropy);
+    SetMaxAnisotropy();
   }
 
   if (!multisample) {
@@ -1618,6 +1705,22 @@ void OpenGLRenderer3D::ResizeTexture(int textureID, SDL_Surface *source,
   DO_VALIDATION;
 
   BindTexture(textureID);
+  int x = 0;
+  int y = 0;
+  int width = source->w;
+  int height = source->h;
+
+  SDL_LockSurface(source);
+  mapping.glTexImage2D(GL_TEXTURE_2D, 0,
+          GetGLInternalPixelFormat(internalPixelFormat), width,
+          height, 0, GetGLPixelFormat(pixelFormat),
+          GL_UNSIGNED_BYTE, source->pixels);
+  SDL_UnlockSurface(source);
+
+  if (mipmaps) {
+    DO_VALIDATION;
+    mapping.glGenerateMipmap(GL_TEXTURE_2D);
+  }
 
   bool repeat = false;
   bool filter = true;
@@ -1630,8 +1733,7 @@ void OpenGLRenderer3D::ResizeTexture(int textureID, SDL_Surface *source,
     filter_mag = GL_LINEAR;
     // glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT,
     // &largest_supported_anisotropy);
-    mapping.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                            largest_supported_anisotropy);
+    SetMaxAnisotropy();
   } else {
     filter_min = (mipmaps) ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST;
     filter_mag = GL_NEAREST;
@@ -1649,25 +1751,10 @@ void OpenGLRenderer3D::ResizeTexture(int textureID, SDL_Surface *source,
       internalPixelFormat == e_InternalPixelFormat_DepthComponent32F) {
     DO_VALIDATION;
     mapping.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-    mapping.glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_INTENSITY);
+    // Post-GLSL 1.3, DEPTH_TEXTURE_MODE is deprecated and GLSL behaves as if
+    // its always set to LUMINANCE
+    //mapping.glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_INTENSITY);
   }
-
-  if (mipmaps) {
-    DO_VALIDATION;
-    mapping.glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-  }
-
-  int x = 0;
-  int y = 0;
-  int width = source->w;
-  int height = source->h;
-
-  SDL_LockSurface(source);
-  mapping.glTexImage2D(GL_TEXTURE_2D, 0,
-                       GetGLInternalPixelFormat(internalPixelFormat), width,
-                       height, 0, GetGLPixelFormat(pixelFormat),
-                       GL_UNSIGNED_BYTE, source->pixels);
-  SDL_UnlockSurface(source);
 
   // GLclampf prior = (width * height) / 1048576.0; // 1024*1024 tex = max
   // priority printf("%f\n", (pot(source->w) * pot(source->h)) / 1048576.0);
@@ -1690,6 +1777,15 @@ void OpenGLRenderer3D::UpdateTexture(int textureID, SDL_Surface *source,
   int w = source->w;
   int h = source->h;
 
+  SDL_LockSurface(source);
+  mapping.glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, type2, GL_UNSIGNED_BYTE,
+          source->pixels);
+  SDL_UnlockSurface(source);
+
+  if (mipmaps) {
+    DO_VALIDATION;
+    mapping.glGenerateMipmap(GL_TEXTURE_2D);
+  }
   GLint filter_min, filter_mag;
 
   bool filter = true;
@@ -1700,8 +1796,7 @@ void OpenGLRenderer3D::UpdateTexture(int textureID, SDL_Surface *source,
     filter_mag = GL_LINEAR;
     // glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT,
     // &largest_supported_anisotropy);
-    mapping.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                            largest_supported_anisotropy);
+    SetMaxAnisotropy();
   } else {
     filter_min = (mipmaps) ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST;
     filter_mag = GL_NEAREST;
@@ -1709,16 +1804,6 @@ void OpenGLRenderer3D::UpdateTexture(int textureID, SDL_Surface *source,
 
   mapping.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min);
   mapping.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag);
-
-  if (mipmaps) {
-    DO_VALIDATION;
-    mapping.glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-  }
-  SDL_LockSurface(source);
-  mapping.glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, type2, GL_UNSIGNED_BYTE,
-                          source->pixels);
-
-  SDL_UnlockSurface(source);
 
   BindTexture(0);
 }
@@ -1756,6 +1841,14 @@ void OpenGLRenderer3D::SetClientTextureUnit(int textureUnit) {
   DO_VALIDATION;
   // assert(glClientActiveTexture);
   mapping.glClientActiveTexture(GL_TEXTURE0 + (GLuint)textureUnit);
+}
+
+void OpenGLRenderer3D::SetMaxAnisotropy() {
+  DO_VALIDATION;
+//#ifndef __APPLE__  // Can be used to check for Core Profile Mode on Linux
+  mapping.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
+          largest_supported_anisotropy);
+//#endif
 }
 
   // frame buffer objects
@@ -1851,12 +1944,20 @@ bool OpenGLRenderer3D::CheckFrameBufferStatus() {
 void OpenGLRenderer3D::SetRenderTargets(
     std::vector<e_TargetAttachment> targetAttachments) {
   DO_VALIDATION;
+#ifdef WIN32
+  std::vector<GLenum> targets(targetAttachments.size());
+#else
   GLenum targets[targetAttachments.size()];
+#endif
   for (int i = 0; i < (signed int)targetAttachments.size(); i++) {
     DO_VALIDATION;
     targets[i] = GetGLTargetAttachment(targetAttachments[i]);
   }
+#ifdef WIN32
+  mapping.glDrawBuffers(targetAttachments.size(), &targets[0]);
+#else
   mapping.glDrawBuffers(targetAttachments.size(), targets);
+#endif
 }
 
   // utility
@@ -1921,7 +2022,7 @@ void LoadGLShader(GLuint shaderID, const std::string &filename) {
   if (blen > 1) {
     DO_VALIDATION;
     GLchar *compiler_log = (GLchar *)malloc(blen);
-    mapping.glGetInfoLogARB(shaderID, blen, &slen, compiler_log);
+    mapping.glGetShaderInfoLog(shaderID, blen, &slen, compiler_log);
     printf("shader compilation info: %s\n", compiler_log);
     Log(e_Warning, "", "LoadGLShader",
         "shader compilation info (" + filename + "):\n" +
@@ -1939,8 +2040,13 @@ void GeneratePoissonKernel(float *kernel, unsigned int kernelSize) {
     DO_VALIDATION;
     unsigned int candidateSize = 32;
 
+#ifdef WIN32
+    std::vector<Vector3> samples(kernelSize);
+    std::vector<Vector3> candidates(candidateSize);
+#else
     Vector3 samples[kernelSize];
     Vector3 candidates[candidateSize];
+#endif
 
     for (unsigned int i = 0; i < kernelSize; i++) {
       DO_VALIDATION;
@@ -2008,8 +2114,11 @@ void GeneratePoissonKernel(float *kernel, unsigned int kernelSize) {
     }
 
   } else {  // PRECALCULATED SET
-
+#ifdef WIN32
+    std::vector<Vector3> samples(kernelSize);
+#else
     Vector3 samples[kernelSize];
+#endif
 
     // these samples seem relatively close to z = 0 (much 'ground effect' on
     // flat surface)
@@ -2130,6 +2239,11 @@ void OpenGLRenderer3D::LoadShader(const std::string &name,
     mapping.glBindAttribLocation(shader.programID, 0, "position");
     mapping.glBindFragDataLocation(shader.programID, 0, "stdout");
   }
+  if (name == "overlay") {
+    DO_VALIDATION;
+    mapping.glBindAttribLocation(shader.programID, 0, "vertex");
+    mapping.glBindFragDataLocation(shader.programID, 0, "stdout");
+  }
 
   mapping.glLinkProgram(shader.programID);
 
@@ -2158,7 +2272,11 @@ void OpenGLRenderer3D::LoadShader(const std::string &name,
 
     unsigned int kernelSize = 32;
     // SetUniformInt("ambient", "SSAO_kernelSize", kernelSize);
+#ifdef WIN32
+    std::vector<float> SSAO_kernel(kernelSize * 3);
+#else
     float SSAO_kernel[kernelSize * 3];
+#endif
     GeneratePoissonKernel(&SSAO_kernel[0], kernelSize);
     SetUniformFloat3Array("ambient", "SSAO_kernel", kernelSize,
                           &SSAO_kernel[0]);

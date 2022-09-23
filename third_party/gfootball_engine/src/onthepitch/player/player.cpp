@@ -34,7 +34,6 @@ Player::Player(Team *team, PlayerData *playerData)
     : PlayerBase(team->GetMatch(), playerData), team(team) {
   DO_VALIDATION;
   SetDesiredTimeToBall_ms(0);
-  nameCaption = 0;
 
   triggerControlledBallCollision = false;
 
@@ -45,15 +44,17 @@ Player::Player(Team *team, PlayerData *playerData)
   cards = 0;
 
   cardEffectiveTime_ms = 0;
+  nameCaption = new Gui2Caption(GetMenuTask()->GetWindowManager(),
+                                "game_player_name_" + int_to_str(stable_id), 0,
+                                0, 1, 2.0, playerData->GetLastName());
+  nameCaption->SetTransparency(0.3f);
+  GetMenuTask()->GetWindowManager()->GetRoot()->AddView(nameCaption);
 }
 
 Player::~Player() {
   DO_VALIDATION;
-  if (nameCaption) {
-    DO_VALIDATION;
-    nameCaption->Exit();
-    delete nameCaption;
-  }
+  nameCaption->Exit();
+  delete nameCaption;
 }
 
 Humanoid *Player::CastHumanoid() {
@@ -103,10 +104,7 @@ void Player::Activate(boost::intrusive_ptr<Node> humanoidSourceNode,
   controller.reset(new ElizaController(match, lazyPlayer));
   CastController()->SetPlayer(this);
   buf_nameCaptionShowCondition = false;
-
-  nameCaption = new Gui2Caption(GetMenuTask()->GetWindowManager(), "game_player_name_" + int_to_str(stable_id), 0, 0, 1, 2.0, playerData->GetLastName());
-  nameCaption->SetTransparency(0.3f);
-  GetMenuTask()->GetWindowManager()->GetRoot()->AddView(nameCaption);
+  nameCaption->Show();
   CastHumanoid()->ResetPosition(
       GetFormationEntry().position * 25 *
           Vector3(-team->GetDynamicSide(), -team->GetDynamicSide(), 0),
@@ -117,11 +115,8 @@ void Player::Activate(boost::intrusive_ptr<Node> humanoidSourceNode,
 void Player::Deactivate() {
   DO_VALIDATION;
   ResetSituation(GetPosition());
-  nameCaption->Exit();
-  delete nameCaption;
-  nameCaption = 0;
-
-  if (team->IsHumanControlled(this)) {
+  nameCaption->Hide();
+  if (ExternalController()) {
     DO_VALIDATION;
     team->DeselectPlayer(this); // don't want any humangamer to have control of this player anymore
   }
@@ -306,7 +301,7 @@ void Player::Process() {
 
     desiredTimeToBall_ms = std::max(desiredTimeToBall_ms - 10, 0);
 
-    if (externalController) externalController->Process();
+    if (ExternalControllerActive()) externalController->GetHumanController()->Process();
     CastController()->Process();
 
     if (match->IsInPlay()) {
@@ -346,7 +341,7 @@ void Player::Process() {
 void Player::PreparePutBuffers() {
   DO_VALIDATION;
   PlayerBase::PreparePutBuffers();
-  buf_nameCaptionShowCondition = team->IsHumanControlled(this);
+  buf_nameCaptionShowCondition = ExternalControllerActive();
   if (team->GetHumanGamerCount() == 0) buf_nameCaptionShowCondition = team->GetDesignatedTeamPossessionPlayer() == this;
   e_PlayerColor playerColor = team->GetPlayerColor(this);
     switch (playerColor) {
@@ -370,16 +365,12 @@ void Player::PreparePutBuffers() {
         break;
     };
 
-  if (GetExternalController()) {
+  if (ExternalControllerActive()) {
     DO_VALIDATION;
-    if (static_cast<HumanController *>(GetExternalController())
-            ->GetActionMode() == 1) {
+    if (ExternalController()->GetActionMode() == 1) {
       DO_VALIDATION;
-      //buf_nameCaption += " X";
-    } else if (static_cast<HumanController *>(GetExternalController())
-                   ->GetActionMode() == 2) {
+    } else if (ExternalController()->GetActionMode() == 2) {
       DO_VALIDATION;
-      //buf_nameCaption += " !";
       buf_playerColor =
           buf_playerColor *
           (std::sin(match->GetActualTime_ms() * 0.02f) * 0.3f + 0.7f);

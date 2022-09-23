@@ -43,14 +43,15 @@ def main(_):
   players = FLAGS.players.split(';') if FLAGS.players else ''
   assert not (any(['agent' in player for player in players])
              ), ('Player type \'agent\' can not be used with play_game.')
-  cfg = config.Config({
+  cfg_values = {
       'action_set': FLAGS.action_set,
       'dump_full_episodes': True,
       'players': players,
       'real_time': FLAGS.real_time,
-  })
+  }
   if FLAGS.level:
-    cfg['level'] = FLAGS.level
+    cfg_values['level'] = FLAGS.level
+  cfg = config.Config(cfg_values)
   env = football_env.FootballEnv(cfg)
   if FLAGS.render:
     env.render()
