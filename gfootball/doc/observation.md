@@ -182,3 +182,29 @@ The default action set consists of 19 actions:
 It is an extension of the default action set:
 
 *   `action_builtin_ai` = 19, let game's built-in AI generate an action.
+
+### Full action set
+
+Special action set that includes all the core actions in the same order as in the default action set. It also includes the following actions:
+
+*   Goalkeeper actions
+
+    *   `action_keeper_rush` = 20, the goalkeeper rushes out of the goal to get the ball.
+
+*   Defense actions
+
+    *   `action_pressure` = 21, apply pressure to the opponent who has the ball.
+    *   `action_team_pressure` = 22, the whole team applies pressure to get the ball back.
+    *   `action_switch` = 23, switch control to another player.
+
+*  Release actions
+
+    *   `action_release_long_pass` = 24, release a long pass.
+    *   `action_release_high_pass` = 25, release a high pass.
+    *   `action_release_short_pass` = 26, release a short pass.
+    *   `action_release_shot` = 27, release a shot.
+    *   `action_release_keeper_rush` = 28, the goalkeeper stops rushing out of the goal.
+    *   `action_release_sliding` = 29, release a slide.
+    *   `action_release_pressure` = 30, stop applying pressure to the opponent who has the ball.
+    *   `action_release_team_pressure` = 31, stop the whole team from applying pressure to get the ball back.
+    *   `action_release_switch` = 32, stop switching control to another player.
