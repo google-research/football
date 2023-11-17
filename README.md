@@ -116,7 +116,7 @@ To quit the game press Ctrl+C in the terminal.
 ## Training agents to play GRF
 
 ### Run training
-In order to run TF training, you need to install additional dependencies
+In order to run TF training, you need to install additional dependencies:
 
 - Update PIP, so that tensorflow 1.15 is available: `python3 -m pip install --upgrade pip setuptools wheel`
 - TensorFlow: `python3 -m pip install tensorflow==1.15.*` or
