@@ -23,7 +23,7 @@ import collections
 import cv2
 from gfootball.env import football_action_set
 from gfootball.env import observation_preprocessing
-import gym
+import gymnasium as gym
 import numpy as np
 
 
@@ -401,15 +401,15 @@ class MultiAgentToSingleAgent(gym.Wrapper):
     else:
       self.action_space = gym.spaces.Discrete(env._num_actions)
 
-  def reset(self):
-    self._observation = self.env.reset()
-    return self._get_observation()
+  def reset(self, seed=None):
+    self._observation, info = self.env.reset(seed=seed)
+    return self._get_observation(), info
 
   def step(self, action):
     assert self._observation, 'Reset must be called before step'
     action = MultiAgentToSingleAgent.get_action(action, self._observation)
-    self._observation, reward, done, info = self.env.step(action)
-    return self._get_observation(), reward, done, info
+    self._observation, reward, terminated, truncated, info = self.env.step(action)
+    return self._get_observation(), reward, terminated or truncated, info
 
   def _get_observation(self):
     return MultiAgentToSingleAgent.get_observation(self._observation)

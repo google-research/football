@@ -26,7 +26,7 @@ from gfootball.env import football_action_set
 from gfootball.env import observation_preprocessing
 from gfootball.env import player_base
 from gfootball.examples import models  
-import gym
+import gymnasium as gym
 import joblib
 import numpy as np
 import tensorflow.compat.v1 as tf

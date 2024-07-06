@@ -26,7 +26,7 @@ from gfootball.eval_server.proto import game_server_pb2_grpc
 from gfootball.eval_server.proto import master_pb2
 from gfootball.eval_server.proto import master_pb2_grpc
 import grpc
-import gym
+import gymnasium as gym
 import numpy as np
 
 
@@ -97,9 +97,10 @@ class RemoteFootballEnv(gym.Env):
         game_version=config.game_version, game_id=self._game_id,
         username=self._username, token=self._token, action=-1,
         model_name=self._model_name, action_list=action)
-    return self._get_env_result(request, 'Step')
+    observation, reward, terminated, truncated, info = self._get_env_result(request, 'Step')
+    return observation, reward, terminated, truncated, info
 
-  def reset(self):
+  def reset(self, seed=None):
     if self._channel is not None:
       # Client surrenders in the current game and starts next one.
 
@@ -110,7 +111,7 @@ class RemoteFootballEnv(gym.Env):
     start_game_request = master_pb2.StartGameRequest(
         game_version=config.game_version, username=self._username,
         token=self._token, model_name=self._model_name,
-        include_rendering=self._include_rendering)
+        include_rendering=self._include_rendering, seed=seed)
     response = self._reset_with_retries(start_game_request)
     self._game_id = response.game_id
     self._channel = utils.get_grpc_channel(response.game_server_address)
@@ -120,12 +121,12 @@ class RemoteFootballEnv(gym.Env):
         username=self._username, token=self._token, model_name=self._model_name)
     return self._get_env_result(get_env_result_request, 'GetEnvResult')[0]
 
-  def _reset_with_retries(self, request):
+  def _reset_with_retries(self, request, seed=None):
     time_to_sleep = 1
     while True:
       try:
         stub = master_pb2_grpc.MasterStub(self._master_channel)
-        return stub.StartGame(request, timeout=10*60)
+        return stub.StartGame(request, timeout=10*60, metadata=(('seed', str(seed)),))
       except grpc.RpcError as e:
         if e.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
           time_to_sleep = 1
@@ -177,11 +178,11 @@ class RemoteFootballEnv(gym.Env):
     return env_result[0], env_result[1], env_result[2], env_result[3]
 
   def _process_env_result(self, env_result):
-    ob, rew, done, info = env_result
+    ob, rew, terminated, truncated, info = env_result
     if self._include_rendering and 'frame' in info:
       cv2.imshow('GRF League', info['frame'])
       cv2.waitKey(1)
-    if done:
+    if terminated or truncated:
       self._game_id = None
       self._channel.close()
       self._channel = None
