@@ -33,8 +33,7 @@ from gfootball.env import constants
 from gfootball.env import football_action_set
 from gfootball.env import observation_processor
 import numpy as np
-import six.moves.cPickle
-from six.moves import range
+import pickle
 import timeit
 
 _unused_engines = []
@@ -106,7 +105,7 @@ class FootballEnvCore(object):
             scenario_config.controllable_right_players)
     self._env.reset(scenario_config, animations)
 
-  def reset(self, seed=None, inc=1):
+  def reset(self, inc=1):
     """Reset environment for a new episode using a given config."""
     self._episode_start = timeit.default_timer()
     self._action_set = football_action_set.get_action_set(self._config)
@@ -114,12 +113,10 @@ class FootballEnvCore(object):
     self._cumulative_reward = 0
     self._step_count = 0
     self._trace = trace
-    self._env.np_random(seed)  # Set the seed for the random number generator
     self._reset(self._env.game_config.render, inc=inc)
     while not self._retrieve_observation():
       self._env.step()
-    info = {}
-    return self._observation, info
+    return True
 
   def _rendering_in_use(self):
     global _active_rendering
@@ -241,12 +238,11 @@ class FootballEnvCore(object):
     if self._step >= self._env.config.game_duration:
       self._env.state = GameState.game_done
 
-    terminated  = self._env.state == GameState.game_done
-    truncated = False
+    episode_done = self._env.state == GameState.game_done
     debug['time'] = timeit.default_timer()
     debug.update(extra_data)
     self._cumulative_reward += reward
-    single_observation = copy.deepcopy(terminated or truncated)
+    single_observation = copy.deepcopy(self._observation)
     trace = {
         'debug': debug,
         'observation': single_observation,
@@ -255,10 +251,10 @@ class FootballEnvCore(object):
     }
     info = {}
     self._trace.update(trace)
-    dumps = self._trace.process_pending_dumps(terminated or truncated)
+    dumps = self._trace.process_pending_dumps(episode_done)
     if dumps:
       info['dumps'] = dumps
-    if terminated or truncated:
+    if episode_done:
       del self._trace
       self._trace = None
       fps = self._step_count / (debug['time'] - self._episode_start)
@@ -271,7 +267,7 @@ class FootballEnvCore(object):
     if self._step_count == 1:
       # Start writing episode_done
       self.write_dump('episode_done')
-    return self._observation, reward, terminated or truncated, info
+    return self._observation, reward, episode_done, info
 
   def _retrieve_observation(self):
     """Constructs observations exposed by the environment.
@@ -391,8 +387,8 @@ class FootballEnvCore(object):
             self._env.state == GameState.game_done), (
                 'reset() must be called before get_state()')
     to_pickle['FootballEnvCore'] = self._state
-    pickle = six.moves.cPickle.dumps(to_pickle)
-    return self._env.get_state(pickle)
+    pickle_obj = pickle.dumps(to_pickle)
+    return self._env.get_state(pickle_obj)
 
   def set_state(self, state):
     assert (self._env.state == GameState.game_running or
@@ -400,7 +396,7 @@ class FootballEnvCore(object):
                 'reset() must be called before set_state()')
     res = self._env.set_state(state)
     assert self._retrieve_observation()
-    from_picle = six.moves.cPickle.loads(res)
+    from_picle = pickle.loads(res)
     self._state = from_picle['FootballEnvCore']
     if self._trace is None:
       self._trace = observation_processor.ObservationProcessor(self._config)
@@ -412,7 +408,7 @@ class FootballEnvCore(object):
   def write_dump(self, name):
     return self._trace.write_dump(name)
 
-  def render(self, render_mode):
+  def render(self, mode):
     global _unused_rendering_engine
     if self._env.state == GameState.game_created:
       self._rendering_in_use()
@@ -436,11 +432,11 @@ class FootballEnvCore(object):
         self._env.game_config.render = True
       self._env.render(True)
       self._retrieve_observation()
-    if render_mode == 'rgb_array':
+    if mode == 'rgb_array':
       frame = self._observation['frame']
       b, g, r = cv2.split(frame)
       return cv2.merge((r, g, b))
-    elif render_mode == 'human':
+    elif mode == 'human':
       return True
     return False
 

@@ -185,7 +185,7 @@ setup(
         'opencv-python',
         'psutil',
         'numpy',
-        'gym<=0.21.0',
+        'gymnasium',
         'absl-py',
         'wheel',
     ],

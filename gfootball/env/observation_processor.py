@@ -32,9 +32,7 @@ from gfootball.env import constants as const
 from gfootball.env import football_action_set
 from gfootball.scenarios import e_PlayerRole_GK
 import numpy as np
-from six.moves import range
-from six.moves import zip
-import six.moves.cPickle
+import pickle
 
 # How many past frames are kept around for the dumps to make use of them.
 PAST_STEPS_TRACE_SIZE = 100
@@ -332,7 +330,7 @@ class ActiveDump(object):
     if self._step_cnt == 0:
       o['debug']['config'] = self._config.get_dictionary()
 
-    six.moves.cPickle.dump(o._trace, self._dump_file)
+    pickle.dump(o._trace, self._dump_file)
     if temp_frame is not None:
       o._trace['observation']['frame'] = temp_frame
     self._step_cnt += 1

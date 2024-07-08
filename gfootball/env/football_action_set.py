@@ -24,7 +24,6 @@ from __future__ import print_function
 
 from gfootball_engine import e_BackendAction
 import numpy
-from six.moves import range
 
 
 class CoreAction(object):

@@ -93,6 +93,7 @@ def create_environment(env_name='',
                        write_goal_dumps=False,
                        write_full_episode_dumps=False,
                        render=False,
+                       render_mode='human',
                        write_video=False,
                        dump_frequency=1,
                        logdir='',
@@ -205,6 +206,7 @@ def create_environment(env_name='',
       'level': env_name,
       'tracesdir': logdir,
       'write_video': write_video,
+      'render_mode': render_mode,
   }
   config_values.update(other_config_options)
   c = config.Config(config_values)

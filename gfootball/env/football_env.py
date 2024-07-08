@@ -35,6 +35,8 @@ import numpy as np
 class FootballEnv(gym.Env):
   """Allows multiple players to play in the same environment."""
 
+  metadata = {'render.modes': ['human', 'rgb_array']}
+
   def __init__(self, config):
     self._config = config
     player_config = {'index': 0}
@@ -48,6 +50,7 @@ class FootballEnv(gym.Env):
     self._env = football_env_core.FootballEnvCore(self._config)
     self._num_actions = len(football_action_set.get_action_set(self._config))
     self._cached_observation = None
+    self.render_mode = config['render_mode']
 
   @property
   def action_space(self):
@@ -173,17 +176,17 @@ class FootballEnv(gym.Env):
       ) == 0, 'step() received {} actions, but no agent is playing.'.format(
           len(action))
 
-    _, reward, terminated, truncated, info = self._env.step(self._get_actions())
+    _, reward, terminated, info = self._env.step(self._get_actions())
     score_reward = reward
     if self._agent:
       reward = ([reward] * self._agent.num_controlled_left_players() +
                 [-reward] * self._agent.num_controlled_right_players())
     self._cached_observation = None
     info['score_reward'] = score_reward
-    return (self.observation(), np.array(reward, dtype=np.float32), terminated, truncated, info)
+    return (self.observation(), np.array(reward, dtype=np.float32), terminated, False, info)
 
-  def reset(self, seed=None):
-    self._env.reset(seed=seed)
+  def reset(self, seed=None, options=None):
+    self._env.reset()
     for player in self._players:
       player.reset()
     self._cached_observation = None
@@ -215,9 +218,9 @@ class FootballEnv(gym.Env):
   def tracker_setup(self, start, end):
     self._env.tracker_setup(start, end)
 
-  def render(self, mode='human'):
+  def render(self):
     self._cached_observation = None
-    return self._env.render(mode=mode)
+    return self._env.render(self.render_mode)
 
   def disable_render(self):
     self._cached_observation = None

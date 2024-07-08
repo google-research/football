@@ -23,7 +23,6 @@ from __future__ import print_function
 
 from gfootball.env import football_action_set
 import numpy as np
-from six.moves import range
 
 
 SMM_WIDTH = 96

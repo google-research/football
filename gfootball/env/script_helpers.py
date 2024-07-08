@@ -25,9 +25,9 @@ from gfootball.env import football_env
 from gfootball.env import observation_processor
 
 import copy
-import six.moves.cPickle
 import os
 import tempfile
+import pickle
 
 
 class ScriptHelpers(object):
@@ -71,7 +71,7 @@ class ScriptHelpers(object):
     with open(dump_file, 'rb') as in_fd:
       while True:
         try:
-          step = six.moves.cPickle.load(in_fd)
+          step = pickle.load(in_fd)
         except EOFError:
           return dump
         dump.append(step)
@@ -103,7 +103,7 @@ class ScriptHelpers(object):
     fd, temp_path = tempfile.mkstemp(suffix='.dump')
     with open(temp_path, 'wb') as f:
       for step in trace:
-        six.moves.cPickle.dump(step, f)
+        pickle.dump(step, f)
     assert replay[0]['debug']['frame_cnt'] == 0, (
         'Trace does not start from the beginning of the episode, can not replay')
     cfg = config.Config(replay[0]['debug']['config'])

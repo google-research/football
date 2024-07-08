@@ -39,7 +39,6 @@ from gfootball.env import wrappers
 from gfootball.env import scenario_builder
 import numpy as np
 import psutil
-from six.moves import range
 
 fast_run = False
 
