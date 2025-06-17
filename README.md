@@ -178,8 +178,8 @@ action set):
 ### Trained checkpoints
 We provide trained PPO checkpoints for the following scenarios:
 
-  - [11_vs_11_easy_stochastic](https://storage.googleapis.com/gfootball/11_vs_11_easy_stochastic_v2),
-  - [academy_run_to_score_with_keeper](https://storage.googleapis.com/gfootball/academy_run_to_score_with_keeper_v2).
+  - [11_vs_11_easy_stochastic](https://storage.googleapis.com/gfootball-public-bucket/trained_model_11_vs_11_easy_stochastic),
+  - [academy_run_to_score_with_keeper](https://storage.googleapis.com/gfootball-public-bucket/trained_model_academy_run_to_score_with_keeper_v2).
 
 In order to see the checkpoints playing, run
 `python3 -m gfootball.play_game --players "ppo2_cnn:left_players=1,policy=gfootball_impala_cnn,checkpoint=$CHECKPOINT" --level=$LEVEL`,
