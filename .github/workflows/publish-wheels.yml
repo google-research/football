@@ -125,7 +125,7 @@ jobs:
       run: python -m build --sdist
 
     - name: Download artifacts
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4.1.7
       with:
         path: ${{ github.workspace }}/artifacts
 
