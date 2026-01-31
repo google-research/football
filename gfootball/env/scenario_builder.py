@@ -103,6 +103,9 @@ class Scenario(object):
   def config(self):
     return self._scenario_cfg
 
+  def Context(self):
+    return self._config
+
   def SetTeam(self, team):
     self._active_team = team
 
