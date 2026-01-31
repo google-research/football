@@ -26,7 +26,8 @@ from baselines.bench import monitor
 from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
 from baselines.ppo2 import ppo2
 import gfootball.env as football_env
-from gfootball.examples import models  
+from gfootball.examples import models
+import gymnasium as gym
 
 
 FLAGS = flags.FLAGS
@@ -67,6 +68,15 @@ flags.DEFINE_bool('dump_scores', False,
 flags.DEFINE_string('load_path', None, 'Path to load initial checkpoint from.')
 
 
+class GymCompatibilityWrapper(gym.Wrapper):
+  def step(self, action):
+    obs, reward, terminated, truncated, info = self.env.step(action)
+    return obs, reward, terminated or truncated, info
+
+  def reset(self, **kwargs):
+    obs, info = self.env.reset(**kwargs)
+    return obs
+
 def create_single_football_env(iprocess):
   """Creates gfootball environment."""
   env = football_env.create_environment(
@@ -77,6 +87,7 @@ def create_single_football_env(iprocess):
       write_full_episode_dumps=FLAGS.dump_full_episodes and (iprocess == 0),
       render=FLAGS.render and (iprocess == 0),
       dump_frequency=50 if FLAGS.render and iprocess == 0 else 0)
+  env = GymCompatibilityWrapper(env)
   env = monitor.Monitor(env, logger.get_dir() and os.path.join(logger.get_dir(),
                                                                str(iprocess)))
   return env

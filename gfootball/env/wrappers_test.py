@@ -37,7 +37,7 @@ class SingleAgentWrapperTest(absltest.TestCase):
         env.observation_space)
 
     env.reset()
-    obs, _, _, _ = env.step(env.action_space.sample())
+    obs, _, _, _, _ = env.step(env.action_space.sample())
     self.assertEqual((72, 96, 4), obs.shape)
     env.close()
 
@@ -50,7 +50,7 @@ class SingleAgentWrapperTest(absltest.TestCase):
         env.observation_space)
 
     env.reset()
-    obs, _, _, _ = env.step(env.action_space.sample())
+    obs, _, _, _, _ = env.step(env.action_space.sample())
     self.assertEqual((2, 72, 96, 4), obs.shape)
     env.close()
 
@@ -65,7 +65,7 @@ class SingleAgentWrapperTest(absltest.TestCase):
         env.observation_space)
 
     env.reset()
-    obs, _, _, _ = env.step(env.action_space.sample())
+    obs, _, _, _, _ = env.step(env.action_space.sample())
     self.assertEqual((72, 96, 16), obs.shape)
     env.close()
 
@@ -79,7 +79,7 @@ class SingleAgentWrapperTest(absltest.TestCase):
         env.observation_space)
 
     env.reset()
-    obs, _, _, _ = env.step(env.action_space.sample())
+    obs, _, _, _, _ = env.step(env.action_space.sample())
     self.assertEqual((2, 72, 96, 16), obs.shape)
     env.close()
 
@@ -97,7 +97,7 @@ class SingleAgentWrapperTest(absltest.TestCase):
         env.observation_space)
 
     env.reset()
-    obs, _, _, _ = env.step(env.action_space.sample())
+    obs, _, _, _, _ = env.step(env.action_space.sample())
     self.assertEqual((72, 96, 3), obs.shape)
     env.close()
 
@@ -111,7 +111,7 @@ class SingleAgentWrapperTest(absltest.TestCase):
         env.observation_space)
 
     env.reset()
-    obs, _, _, _ = env.step(env.action_space.sample())
+    obs, _, _, _, _ = env.step(env.action_space.sample())
     self.assertEqual((2, 72, 96, 3), obs.shape)
     env.close()
 
@@ -126,7 +126,7 @@ class SingleAgentWrapperTest(absltest.TestCase):
         env.observation_space)
 
     env.reset()
-    obs, _, _, _ = env.step(env.action_space.sample())
+    obs, _, _, _, _ = env.step(env.action_space.sample())
     self.assertEqual((115,), obs.shape)
     env.close()
 
@@ -140,7 +140,7 @@ class SingleAgentWrapperTest(absltest.TestCase):
         env.observation_space)
 
     env.reset()
-    obs, _, _, _ = env.step(env.action_space.sample())
+    obs, _, _, _, _ = env.step(env.action_space.sample())
     self.assertEqual((2, 115), obs.shape)
     env.close()
 
