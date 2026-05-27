@@ -132,6 +132,10 @@ namespace blunted {
       float cameraFar = 0.0f;
 
       int noiseTexID = 0;
+      // agentloop: 1x1 white texture bound to units 1/2/3 when no material
+      // texture is present, so default texture 0 (sampler-incomplete on
+      // macOS Core Profile) is never sampled.
+      int dummyTexID = 0;
 
       float FOV = 0.0f;
 

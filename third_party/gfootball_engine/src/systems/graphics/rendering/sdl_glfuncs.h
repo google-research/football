@@ -178,7 +178,7 @@ SDL_PROC_UNUSED(void,glEvalMesh2,(GLenum mode, GLint i1, GLint i2, GLint j1, GLi
 SDL_PROC_UNUSED(void,glEvalPoint1,(GLint i))
 SDL_PROC_UNUSED(void,glEvalPoint2,(GLint i, GLint j))
 SDL_PROC_UNUSED(void,glFeedbackBuffer,(GLsizei size, GLenum type, GLfloat *buffer))
-SDL_PROC_UNUSED(void,glFinish,(void))
+SDL_PROC(void,glFinish,(void))
 SDL_PROC(void,glFlush,(void))
 SDL_PROC_UNUSED(void,glFogf,(GLenum pname, GLfloat param))
 SDL_PROC_UNUSED(void,glFogfv,(GLenum pname, const GLfloat *params))

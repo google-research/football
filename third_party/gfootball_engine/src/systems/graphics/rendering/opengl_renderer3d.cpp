@@ -81,7 +81,17 @@ void OpenGLRenderer3D::SwapBuffers() {
   DO_VALIDATION;
   last_screen_.resize(context_width * context_height * 3);
   if (window) {
+    // agentloop: force GL to flush all pending work before swap.
+    // On macOS/Apple Silicon, without this, SDL_GL_SwapWindow can
+    // return before the back buffer is fully populated, presenting
+    // an empty front buffer to Cocoa (visible black window).
+    mapping.glFinish();
     SDL_GL_SwapWindow(window);
+    // agentloop: pump the SDL event queue so Cocoa actually flushes
+    // the swapped framebuffer to the on-screen NSView. Without this
+    // the swap chain can stall on macOS — the OS never "sees" that
+    // the window was redrawn.
+    SDL_PumpEvents();
   }
   mapping.glReadPixels(0, 0, context_width, context_height, GL_RGB, GL_UNSIGNED_BYTE,
                        &last_screen_[0]);
@@ -564,6 +574,29 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
 
   currentShader = shaders.begin();
 
+  // agentloop: Create a 1x1 white dummy texture used as a fallback on
+  // sampler units that would otherwise be left bound to default texture 0.
+  // On macOS Core Profile, default texture 0 is sampler-incomplete and the
+  // driver substitutes a zero texture, producing the
+  // "GLD_TEXTURE_INDEX_2D unloadable" warning and an all-black framebuffer.
+  {
+    DO_VALIDATION;
+    GLuint dummyID = 0;
+    mapping.glGenTextures(1, &dummyID);
+    mapping.glBindTexture(GL_TEXTURE_2D, dummyID);
+    const unsigned char whitePixel[4] = {255, 255, 255, 255};
+    mapping.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA,
+                         GL_UNSIGNED_BYTE, whitePixel);
+    mapping.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    mapping.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    mapping.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    mapping.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    mapping.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+    mapping.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+    dummyTexID = (int)dummyID;
+    mapping.glBindTexture(GL_TEXTURE_2D, 0);
+  }
+
   SDL_Surface *noise = IMG_LoadBmp("media/shaders/noise.png");
   noiseTexID =
       CreateTexture(e_InternalPixelFormat_RGB8, e_PixelFormat_RGB, noise->w,
@@ -585,6 +618,7 @@ bool OpenGLRenderer3D::CreateContext(int width, int height, int bpp,
 void OpenGLRenderer3D::Exit() {
   DO_VALIDATION;
   DeleteTexture(noiseTexID);
+  DeleteTexture(dummyTexID);
 
   std::map<std::string, Shader>::iterator shaderIter = shaders.begin();
   while (shaderIter != shaders.end()) {
@@ -1386,21 +1420,29 @@ void OpenGLRenderer3D::RenderVertexBuffer(
 
           if (renderMode == e_RenderMode_Full) {
             DO_VALIDATION;
-            if (has_normal && normalTextureID != currentNormalTextureID) {
+            // agentloop: always bind SOMETHING complete to units 1/2/3,
+            // never default texture 0 (sampler-incomplete on macOS).
+            if (normalTextureID != currentNormalTextureID) {
               DO_VALIDATION;
               SetTextureUnit(1);
-              mapping.glBindTexture(GL_TEXTURE_2D, normalTextureID);
+              mapping.glBindTexture(GL_TEXTURE_2D,
+                                    has_normal ? (GLuint)normalTextureID
+                                               : (GLuint)dummyTexID);
             }
-            if (has_specular && specularTextureID != currentSpecularTextureID) {
+            if (specularTextureID != currentSpecularTextureID) {
               DO_VALIDATION;
               SetTextureUnit(2);
-              mapping.glBindTexture(GL_TEXTURE_2D, specularTextureID);
+              mapping.glBindTexture(GL_TEXTURE_2D,
+                                    has_specular ? (GLuint)specularTextureID
+                                                 : (GLuint)dummyTexID);
             }
-            if (has_illumination &&
-                illuminationTextureID != currentIlluminationTextureID) {
+            if (illuminationTextureID != currentIlluminationTextureID) {
               DO_VALIDATION;
               SetTextureUnit(3);
-              mapping.glBindTexture(GL_TEXTURE_2D, illuminationTextureID);
+              mapping.glBindTexture(
+                  GL_TEXTURE_2D,
+                  has_illumination ? (GLuint)illuminationTextureID
+                                   : (GLuint)dummyTexID);
             }
           }
 
@@ -1482,12 +1524,14 @@ void OpenGLRenderer3D::RenderVertexBuffer(
       DO_VALIDATION;
       if (renderMode == e_RenderMode_Full) {
         DO_VALIDATION;
+        // agentloop: rebind dummy (complete) texture instead of 0 so units
+        // 1/2/3 stay sampler-complete on macOS Core Profile.
         SetTextureUnit(1);
-        mapping.glBindTexture(GL_TEXTURE_2D, 0);
+        mapping.glBindTexture(GL_TEXTURE_2D, (GLuint)dummyTexID);
         SetTextureUnit(2);
-        mapping.glBindTexture(GL_TEXTURE_2D, 0);
+        mapping.glBindTexture(GL_TEXTURE_2D, (GLuint)dummyTexID);
         SetTextureUnit(3);
-        mapping.glBindTexture(GL_TEXTURE_2D, 0);
+        mapping.glBindTexture(GL_TEXTURE_2D, (GLuint)dummyTexID);
       }
       SetTextureUnit(0);
       mapping.glBindTexture(GL_TEXTURE_2D, 0);
