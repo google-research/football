@@ -21,8 +21,13 @@ if [[ "$OSTYPE" == "darwin"* ]] ; then
 fi
 
 # Take into account # of cores and available RAM for deciding on compilation parallelism.
-# TODO: Try importing psutil and if failed fall back to 1 thread
-PARALLELISM=$(python3 -c 'import psutil; import multiprocessing as mp; print(int(max(1,min((psutil.virtual_memory().available/1000000000-1)/0.5, mp.cpu_count()))))')
+# Try importing psutil; if unavailable, fall back to CPU count (or 1 if that fails).
+PARALLELISM=$(python3 -c 'import multiprocessing as mp
+try:
+    import psutil
+    print(int(max(1, min((psutil.virtual_memory().available/1000000000-1)/0.5, mp.cpu_count()))))
+except ImportError:
+    print(mp.cpu_count())' 2>/dev/null || echo 1)
 
 # Delete pre-existing version of CMakeCache.txt to make 'python3 -m pip install' work.
 rm -f third_party/gfootball_engine/CMakeCache.txt
